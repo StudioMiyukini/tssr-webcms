@@ -1,0 +1,291 @@
+{
+  "slug": "systemes-de-fichiers",
+  "title": "Les systèmes de fichiers",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Qu'est-ce qu'un système de fichiers ?",
+          "options": ["Un logiciel antivirus qui protège les fichiers", "Une méthode d'organisation et de stockage des données sur un support (disque, clé USB)", "Un protocole réseau pour partager des fichiers", "Un type de disque dur spécifique"],
+          "answer": 1,
+          "explain": "Un système de fichiers définit la façon dont les données sont organisées, nommées et stockées sur un support de stockage."
+        },
+        {
+          "q": "Quel système de fichiers est utilisé par défaut par Windows pour les disques internes ?",
+          "options": ["FAT32", "exFAT", "ext4", "NTFS"],
+          "answer": 3,
+          "explain": "NTFS (New Technology File System) est le système de fichiers principal de Windows depuis Windows NT, utilisé pour les disques système."
+        },
+        {
+          "q": "Quelle est la taille maximale d'un fichier sur une partition FAT32 ?",
+          "options": ["4 Go - 1 octet", "2 To", "16 To", "Illimitée"],
+          "answer": 0,
+          "explain": "FAT32 est limité à 4 Go - 1 octet par fichier, ce qui le rend inadapté aux fichiers vidéo volumineux modernes."
+        },
+        {
+          "q": "Quel système de fichiers est le plus utilisé sous Linux ?",
+          "options": ["NTFS", "FAT32", "ext4", "exFAT"],
+          "answer": 2,
+          "explain": "ext4 (Fourth Extended Filesystem) est le système de fichiers par défaut de la majorité des distributions Linux modernes."
+        },
+        {
+          "q": "Quel système de fichiers permet de stocker des fichiers de plus de 4 Go sur une clé USB tout en restant compatible avec Windows et macOS ?",
+          "options": ["FAT32", "NTFS", "exFAT", "ext4"],
+          "answer": 2,
+          "explain": "exFAT est conçu pour les supports amovibles et n'a pratiquement pas de limite de taille de fichier, tout en étant compatible Windows et macOS."
+        },
+        {
+          "q": "Que signifie «NTFS» ?",
+          "options": ["New Technology File System", "Network Transfer File Storage", "Non-Transferable File System", "Native Transfer for Storage"],
+          "answer": 0,
+          "explain": "NTFS signifie New Technology File System, développé par Microsoft pour remplacer FAT dans les systèmes Windows NT et suivants."
+        },
+        {
+          "q": "Quel est l'avantage de la «journalisation» dans un système de fichiers comme NTFS ou ext4 ?",
+          "options": ["Elle comprime automatiquement les fichiers", "Elle enregistre les opérations avant qu'elles soient effectuées, permettant une récupération après une coupure de courant", "Elle chiffre tous les fichiers automatiquement", "Elle accélère le temps de lecture des fichiers"],
+          "answer": 1,
+          "explain": "La journalisation consigne les opérations en attente dans un journal, permettant au système de récupérer un état cohérent après une interruption."
+        },
+        {
+          "q": "Quelle est la limite de taille de partition pour FAT32 ?",
+          "options": ["2 Go", "4 Go", "32 Go selon Windows, mais techniquement jusqu'à 8 To", "128 Go"],
+          "answer": 2,
+          "explain": "L'outil Windows limite la création FAT32 à 32 Go, mais techniquement le format supporte jusqu'à 8 To de partition."
+        },
+        {
+          "q": "NTFS supporte-t-il les permissions de fichiers (droits d'accès utilisateurs) ?",
+          "options": ["Non, NTFS n'a pas de système de permissions", "Oui, NTFS gère des ACL (listes de contrôle d'accès) détaillées", "Oui, mais uniquement pour les administrateurs", "Non, les permissions sont gérées par Windows uniquement en réseau"],
+          "answer": 1,
+          "explain": "NTFS intègre un système de permissions via des ACL (Access Control Lists) qui définissent les droits de chaque utilisateur sur chaque fichier ou dossier."
+        },
+        {
+          "q": "Quel système de fichiers est le plus adapté pour une clé USB utilisée uniquement sous Windows avec des fichiers de moins de 4 Go ?",
+          "options": ["ext4", "NTFS", "FAT32", "Btrfs"],
+          "answer": 2,
+          "explain": "FAT32 est universellement compatible et suffisant pour des clés USB avec de petits fichiers, sans les limitations d'écriture de NTFS sur certains systèmes."
+        },
+        {
+          "q": "Est-ce que FAT32 supporte les permissions de fichiers ?",
+          "options": ["Oui, comme NTFS", "Non, FAT32 ne gère pas les permissions ni la sécurité des fichiers", "Oui, mais uniquement sous Windows 10", "Non, sauf si chiffré avec BitLocker"],
+          "answer": 1,
+          "explain": "FAT32 est un système de fichiers simple sans gestion des permissions ou de la sécurité, contrairement à NTFS ou ext4."
+        },
+        {
+          "q": "Quel système de fichiers est nativement en lecture seule sur macOS sans logiciel tiers ?",
+          "options": ["FAT32", "exFAT", "NTFS", "HFS+"],
+          "answer": 2,
+          "explain": "macOS peut lire les partitions NTFS nativement mais ne peut pas y écrire sans logiciel tiers, contrairement à exFAT qui est pleinement supporté."
+        },
+        {
+          "q": "Qu'est-ce que «ext4» ?",
+          "options": ["Un système de fichiers Windows de quatrième génération", "Le quatrième système de fichiers étendu Linux, successeur de ext3", "Un format d'archive compressée Linux", "Un protocole de transfert de fichiers réseau"],
+          "answer": 1,
+          "explain": "ext4 est le successeur de ext3, le système de fichiers journalisé le plus courant sous Linux, offrant de meilleures performances et une plus grande capacité."
+        },
+        {
+          "q": "Quel système de fichiers choisir pour un disque dur externe partagé entre Windows, macOS et Linux ?",
+          "options": ["NTFS", "ext4", "exFAT", "HFS+"],
+          "answer": 2,
+          "explain": "exFAT est le choix idéal pour la compatibilité multiplateforme avec des fichiers volumineux, car il est supporté nativement par Windows, macOS et Linux (noyau 5.4+)."
+        },
+        {
+          "q": "Qu'est-ce que «exFAT» ?",
+          "options": ["Extended File Allocation Table, conçu par Microsoft pour les supports amovibles avec de grands fichiers", "External File Access Tool", "Extended FAT32 avec journalisation", "Un système de fichiers développé par Apple"],
+          "answer": 0,
+          "explain": "exFAT (Extended File Allocation Table) est un système de fichiers Microsoft conçu pour les clés USB et cartes SD avec support des grands fichiers."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Quelle est la taille maximale d'un volume NTFS sur Windows ?",
+          "options": ["2 To", "16 To", "256 To avec des clusters de 64 Ko, et théoriquement jusqu'à 16 Eo", "4 Go"],
+          "answer": 2,
+          "explain": "NTFS supporte théoriquement des volumes allant jusqu'à 16 Eo (Exaoctets), bien au-delà des besoins pratiques actuels."
+        },
+        {
+          "q": "Qu'est-ce qu'un «inode» dans les systèmes de fichiers Linux (ext4) ?",
+          "options": ["Un nœud réseau interne", "Une structure de données qui stocke les métadonnées d'un fichier (permissions, taille, dates, emplacement des blocs)", "Un secteur physique défaillant marqué", "Un type de lien symbolique"],
+          "answer": 1,
+          "explain": "Un inode est une structure de données Linux qui contient toutes les métadonnées d'un fichier (droits, taille, horodatages) sauf son nom."
+        },
+        {
+          "q": "Qu'est-ce que la «fragmentation» d'un système de fichiers ?",
+          "options": ["La division d'un disque en plusieurs partitions", "L'éparpillement des blocs d'un fichier en différents emplacements non contigus sur le disque, ralentissant les lectures", "Le formatage d'un disque en plusieurs systèmes de fichiers différents", "La perte de données due à une mauvaise déconnexion"],
+          "answer": 1,
+          "explain": "La fragmentation survient quand les données d'un fichier sont dispersées sur le disque, obligeant la tête de lecture à se déplacer davantage."
+        },
+        {
+          "q": "Pourquoi la défragmentation est-elle inutile, voire néfaste, sur un SSD ?",
+          "options": ["Car les SSD n'utilisent pas de système de fichiers", "Car les SSD n'ont pas de tête de lecture mécanique et la fragmentation n'impacte pas les performances, tandis que les cycles d'écriture supplémentaires usent le SSD", "Car Windows ne peut pas défragmenter les SSD", "Car les SSD se défragmentent automatiquement à chaque démarrage"],
+          "answer": 1,
+          "explain": "Les SSD accèdent à n'importe quelle cellule en temps constant ; défragmenter génère des écritures inutiles qui réduisent la durée de vie du SSD."
+        },
+        {
+          "q": "Qu'est-ce que la commande TRIM pour les SSD et quel système de fichiers en bénéficie ?",
+          "options": ["TRIM informe le SSD des blocs libérés pour qu'il puisse les effacer en avance, améliorant les performances futures ; NTFS, ext4 et exFAT le supportent", "TRIM comprime les données sur le SSD", "TRIM est une commande de formatage rapide", "TRIM s'applique uniquement aux disques durs mécaniques"],
+          "answer": 0,
+          "explain": "TRIM signale au SSD les pages libérées afin qu'il les efface en arrière-plan, maintenant des performances stables dans le temps."
+        },
+        {
+          "q": "Qu'est-ce qu'un «lien symbolique» dans un système de fichiers Linux (ext4) ?",
+          "options": ["Un raccourci qui pointe vers un autre fichier ou dossier, similaire à un raccourci Windows mais géré au niveau du système de fichiers", "Un fichier chiffré par le système", "Un bloc réservé pour la journalisation", "Un type d'inode pour les périphériques"],
+          "answer": 0,
+          "explain": "Un lien symbolique (symlink) est un fichier spécial qui référence un autre chemin, similaire à un raccourci mais transparent pour les applications."
+        },
+        {
+          "q": "Quelle est la différence entre un «lien physique» (hard link) et un «lien symbolique» (symlink) ?",
+          "options": ["Le lien physique pointe vers le même inode que le fichier original (même données), le symlink pointe vers le chemin du fichier", "Les deux sont identiques fonctionnellement", "Le lien physique peut traverser les systèmes de fichiers, pas le symlink", "Le lien physique est disponible sous Windows uniquement"],
+          "answer": 0,
+          "explain": "Un hard link partage le même inode et les mêmes données ; le fichier n'est effacé que quand tous les hard links sont supprimés."
+        },
+        {
+          "q": "Qu'est-ce que le «MFT» (Master File Table) dans NTFS ?",
+          "options": ["La table principale de NTFS qui indexe chaque fichier et dossier avec ses métadonnées (attributs, emplacement des données)", "La table de partition du disque MBR/GPT", "Un index de recherche Windows pour les fichiers récents", "Le journal des transactions NTFS"],
+          "answer": 0,
+          "explain": "Le MFT est la base de données centrale de NTFS : chaque entrée décrit un fichier ou dossier avec ses attributs, permissions et localisation des données."
+        },
+        {
+          "q": "Qu'est-ce que le «journaling» en mode «writeback» vs «ordered» vs «journal» dans ext4 ?",
+          "options": ["Ce sont trois modes de journalisation offrant des compromis différents entre vitesse et sécurité : journal (le plus sûr) journalise données et métadonnées, ordered journalise seulement les métadonnées, writeback est le plus rapide mais le moins sûr", "Ce sont des types de partitions ext4 différentes", "Ce sont des algorithmes de compression différents", "Ce sont des modes de chiffrement ext4"],
+          "answer": 0,
+          "explain": "ext4 offre trois modes : writeback (rapide, métadonnées seulement), ordered (défaut, métadonnées après données), journal (complet, données et métadonnées)."
+        },
+        {
+          "q": "Pourquoi le système de fichiers APFS d'Apple est-il optimisé pour les SSD ?",
+          "options": ["Car il utilise FAT32 comme base", "Car il utilise le copy-on-write, le clonage instantané et les snapshots, des opérations adaptées aux SSD sans fragmentation excessive", "Car il est exclusivement en lecture seule", "Car il chiffre toutes les données par défaut avec un algorithme spécifique SSD"],
+          "answer": 1,
+          "explain": "APFS utilise le copy-on-write et les snapshots sans réécriture de données, ce qui est très adapté aux SSD et améliore la cohérence des données."
+        },
+        {
+          "q": "Qu'est-ce que le «sparse file» (fichier creux) supporté par NTFS et ext4 ?",
+          "options": ["Un fichier compressé automatiquement", "Un fichier dont les zones de zéros ne sont pas réellement écrites sur le disque, économisant de l'espace", "Un fichier fragmenté en de nombreux petits blocs", "Un fichier dont les métadonnées sont stockées ailleurs"],
+          "answer": 1,
+          "explain": "Un sparse file est un fichier dont les grandes plages de zéros ne consomment pas d'espace disque réel ; seules les données significatives sont écrites."
+        },
+        {
+          "q": "Quel système de fichiers Windows supporte nativement la compression transparente des fichiers ?",
+          "options": ["FAT32", "exFAT", "NTFS", "ReFS"],
+          "answer": 2,
+          "explain": "NTFS supporte la compression transparente à la volée au niveau du fichier ou du dossier, sans que l'application doive le gérer explicitement."
+        },
+        {
+          "q": "Qu'est-ce que ReFS (Resilient File System) chez Microsoft ?",
+          "options": ["Un successeur de FAT32 pour les clés USB", "Un système de fichiers Microsoft conçu pour la résilience et l'intégrité des données dans les environnements serveur, avec correction d'erreurs intégrée", "Un alias de NTFS version 4", "Un système de fichiers Linux porté sous Windows"],
+          "answer": 1,
+          "explain": "ReFS est conçu pour les serveurs et les espaces de stockage Windows avec vérification d'intégrité, résistance à la corruption et support des très grands volumes."
+        },
+        {
+          "q": "Pourquoi ext4 est-il généralement plus rapide que NTFS sous Linux même pour les mêmes données ?",
+          "options": ["Car les pilotes Linux pour NTFS sont moins optimisés que le pilote ext4 natif, et ext4 est architecturalement adapté au noyau Linux", "Car ext4 utilise moins d'espace disque", "Car ext4 n'a pas de journalisation", "Car NTFS compresse toujours les données, ralentissant les accès"],
+          "answer": 0,
+          "explain": "ext4 est intégré nativement dans le noyau Linux et optimisé pour ses I/O, tandis que les pilotes NTFS Linux (même ntfs3) ajoutent une couche d'abstraction."
+        },
+        {
+          "q": "Quelle est la taille maximale d'un fichier sur ext4 ?",
+          "options": ["4 Go", "2 To", "16 To", "1 Eo (Exaoctet)"],
+          "answer": 2,
+          "explain": "ext4 supporte des fichiers individuels jusqu'à 16 To (avec des blocs de 4 Ko), bien au-delà des besoins habituels."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Qu'est-ce que Btrfs et en quoi se distingue-t-il d'ext4 sous Linux ?",
+          "options": ["Btrfs est identique à ext4 avec un nom différent", "Btrfs est un système de fichiers copy-on-write qui supporte nativement les snapshots, la compression, le RAID logiciel et la vérification d'intégrité par somme de contrôle", "Btrfs est exclusivement pour les SSD NVMe", "Btrfs remplace le gestionnaire de partitions LVM"],
+          "answer": 1,
+          "explain": "Btrfs apporte des fonctionnalités avancées comme les snapshots atomiques, la compression transparente, le RAID intégré et la détection de corruption par checksums."
+        },
+        {
+          "q": "Qu'est-ce que le «copy-on-write» (COW) dans un système de fichiers comme Btrfs ou ZFS ?",
+          "options": ["Un mécanisme qui copie chaque fichier automatiquement lors de sa création", "Une technique qui n'écrase jamais les données existantes : les modifications sont écrites dans de nouveaux blocs, préservant les anciennes données jusqu'à validation", "Un algorithme de compression différentielle", "Un système de quota utilisateur"],
+          "answer": 1,
+          "explain": "Le copy-on-write écrit les données modifiées dans de nouveaux emplacements et met à jour les métadonnées atomiquement, garantissant la cohérence après une coupure."
+        },
+        {
+          "q": "Qu'est-ce qu'un «snapshot» dans le contexte des systèmes de fichiers Btrfs ou ZFS ?",
+          "options": ["Une capture d'écran enregistrée sur le disque", "Un état instantané et cohérent du système de fichiers à un moment donné, créé quasi instantanément grâce au COW", "Une copie complète de toutes les données sur un disque externe", "Un export chiffré du système de fichiers"],
+          "answer": 1,
+          "explain": "Un snapshot capture l'état du système de fichiers sans dupliquer physiquement les données grâce au COW ; seules les modifications futures consomment de l'espace supplémentaire."
+        },
+        {
+          "q": "Qu'est-ce que la «déduplication» dans ZFS ou ReFS, et quel est son coût ?",
+          "options": ["La suppression des fichiers en double par l'utilisateur", "L'identification et le partage de blocs identiques pour économiser de l'espace, au prix d'une grande consommation de RAM pour maintenir la table de hachage", "La compression des fichiers identiques en un seul archive", "La répartition des données dupliquées sur plusieurs disques"],
+          "answer": 1,
+          "explain": "La déduplication évite de stocker plusieurs fois les blocs identiques, mais nécessite une table de hachage en RAM proportionnelle à la quantité de données."
+        },
+        {
+          "q": "Qu'est-ce que l'«allocation des extents» dans ext4 par rapport à l'ancienne allocation par blocs d'ext3 ?",
+          "options": ["Les extents regroupent des plages contiguës de blocs en une seule entrée de métadonnées, réduisant la fragmentation et accélérant les accès aux grands fichiers", "Les extents chiffrent les blocs de données", "Les extents permettent d'allouer des blocs sur plusieurs disques", "Les extents remplacent les inodes dans ext4"],
+          "answer": 0,
+          "explain": "Les extents d'ext4 décrivent des plages de blocs contigus en une seule structure, réduisant la taille des métadonnées et la fragmentation des grands fichiers."
+        },
+        {
+          "q": "Qu'est-ce que le «block group» dans ext4 et quel est son rôle ?",
+          "options": ["Un groupe de blocs consécutifs avec ses propres superbloc, bitmap et table d'inodes, permettant de localiser les données et métadonnées proches les unes des autres", "Un groupe de disques en RAID géré par ext4", "Un type de cache kernel pour les blocs ext4", "Une unité d'allocation réservée au journal ext4"],
+          "answer": 0,
+          "explain": "Les block groups organisent le disque en zones locales avec leurs propres structures, réduisant les déplacements de tête et améliorant la localité des données."
+        },
+        {
+          "q": "Qu'est-ce que le «superbloc» dans un système de fichiers Linux ?",
+          "options": ["Un bloc de données prioritaire stocké en RAM", "Une structure critique qui contient les paramètres globaux du système de fichiers : taille des blocs, nombre d'inodes, état du volume, UUID", "Le premier bloc du MBR", "Un journal de secours en cas de corruption"],
+          "answer": 1,
+          "explain": "Le superbloc contient toutes les informations de configuration du système de fichiers ; il est dupliqué dans plusieurs block groups pour résister à la corruption."
+        },
+        {
+          "q": "Pourquoi XFS est-il souvent préféré à ext4 pour les très grands fichiers et les workloads parallèles en entreprise ?",
+          "options": ["Car XFS n'a pas de limite de taille de fichier", "Car XFS excelle dans les I/O parallèles grâce à son architecture multi-allocation groups et est optimisé pour les fichiers volumineux", "Car XFS consomme moins de RAM que ext4", "Car XFS intègre une déduplication native plus efficace"],
+          "answer": 1,
+          "explain": "XFS utilise des groupes d'allocation indépendants permettant des allocations parallèles, offrant d'excellentes performances pour les flux de données importants."
+        },
+        {
+          "q": "Qu'est-ce que la «compression transparente» dans Btrfs (ex. avec l'algorithme zstd) ?",
+          "options": ["Les fichiers sont compressés manuellement par l'utilisateur avant stockage", "Le système de fichiers compresse et décompresse automatiquement les données à la volée sans que les applications le sachent", "La compression s'applique uniquement aux archives .tar.gz", "La compression transparente est une fonctionnalité exclusive à ZFS"],
+          "answer": 1,
+          "explain": "Btrfs peut compresser les données de façon transparente avec des algorithmes comme zstd, économisant de l'espace sans modification des applications."
+        },
+        {
+          "q": "Qu'est-ce que le «fsck» (file system check) et dans quelle situation est-il déclenché ?",
+          "options": ["Un outil de vérification et de réparation du système de fichiers, déclenché au démarrage si le volume n'a pas été démonté proprement ou après un certain nombre de montages", "Un antivirus intégré au noyau Linux", "Un outil de défragmentation Linux", "Un utilitaire de mise à jour des pilotes de stockage"],
+          "answer": 0,
+          "explain": "fsck vérifie et répare l'intégrité d'un système de fichiers, notamment après un arrêt brutal, en s'appuyant sur le journal pour identifier les incohérences."
+        },
+        {
+          "q": "Qu'est-ce que le «delayed allocation» (allocation différée) dans ext4 ?",
+          "options": ["Une technique qui retarde l'allocation physique des blocs jusqu'au moment où les données sont effectivement écrites sur disque, permettant de meilleures décisions d'allocation et réduisant la fragmentation", "Un mécanisme de cache qui retarde toutes les écritures de 30 secondes", "Un mode d'économie d'énergie qui réduit la fréquence des écritures", "Une stratégie d'allocation uniquement applicable aux SSD"],
+          "answer": 0,
+          "explain": "L'allocation différée d'ext4 regroupe les écritures et choisit les meilleurs emplacements au dernier moment, réduisant la fragmentation et améliorant les performances."
+        },
+        {
+          "q": "Quelle est la différence entre MBR et GPT en lien avec les systèmes de fichiers ?",
+          "options": ["MBR et GPT sont deux systèmes de fichiers concurrents", "MBR et GPT sont des schémas de partitionnement du disque, pas des systèmes de fichiers ; MBR est limité à 4 partitions primaires et 2 To, GPT supporte 128 partitions et des disques de très grande taille", "MBR est utilisé uniquement par Linux, GPT par Windows", "GPT est un système de fichiers qui remplace NTFS sur les nouveaux disques"],
+          "answer": 1,
+          "explain": "MBR et GPT définissent comment le disque est partitionné ; les systèmes de fichiers (NTFS, ext4…) sont ensuite créés dans ces partitions."
+        },
+        {
+          "q": "Qu'est-ce que le «chiffrement de volume» LUKS sur Linux par rapport au chiffrement natif NTFS ?",
+          "options": ["LUKS est identique au BitLocker de Windows", "LUKS chiffre le périphérique bloc entier sous le système de fichiers, indépendamment de celui-ci, tandis que NTFS propose un chiffrement au niveau fichier (EFS) intégré", "LUKS ne peut chiffrer que les partitions ext4", "NTFS chiffre les données automatiquement sans configuration"],
+          "answer": 1,
+          "explain": "LUKS (Linux Unified Key Setup) opère au niveau bloc, chiffrant tout le volume avant le système de fichiers, contrairement à EFS qui chiffre fichier par fichier dans NTFS."
+        },
+        {
+          "q": "Qu'est-ce que ZFS et pourquoi est-il considéré comme l'un des systèmes de fichiers les plus robustes ?",
+          "options": ["Un système de fichiers Microsoft pour les environnements de virtualisation", "Un système de fichiers développé par Sun Microsystems combinant gestionnaire de volumes, checksums, déduplication, snapshots et RAID logiciel intégrés, avec vérification d'intégrité end-to-end", "Un alias de Btrfs utilisé sous FreeBSD", "Un système de fichiers sans journalisation pour maximiser les performances"],
+          "answer": 1,
+          "explain": "ZFS intègre RAID logiciel, checksums sur toutes les données et métadonnées, snapshots, déduplication et auto-réparation dans un système de fichiers complet et autosuffisant."
+        },
+        {
+          "q": "Qu'est-ce que le «quota utilisateur» dans NTFS ou ext4, et à quoi sert-il ?",
+          "options": ["Un quota limite la quantité d'espace disque ou le nombre de fichiers qu'un utilisateur peut utiliser, permettant à l'administrateur de contrôler l'utilisation de l'espace", "Un quota est un seuil d'alerte de remplissage du disque", "Un quota est une mesure de performance du disque", "Un quota est une limite de taille des partitions dans l'OS"],
+          "answer": 0,
+          "explain": "Les quotas permettent à l'administrateur de limiter l'espace ou le nombre d'inodes utilisables par utilisateur ou groupe, évitant qu'un seul utilisateur sature le disque."
+        }
+      ]
+    }
+  ]
+}

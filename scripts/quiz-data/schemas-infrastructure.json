@@ -1,0 +1,291 @@
+{
+  "slug": "schemas-infrastructure",
+  "title": "Les schémas d'infrastructure",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Quel outil gratuit est couramment utilisé pour dessiner des schémas réseau ?",
+          "options": ["Microsoft Visio uniquement", "draw.io (diagrams.net)", "Adobe Illustrator", "GIMP"],
+          "answer": 1,
+          "explain": "draw.io (aussi accessible sur diagrams.net) est un outil gratuit et en ligne très utilisé pour les schémas réseau."
+        },
+        {
+          "q": "À quoi sert un schéma d'infrastructure réseau ?",
+          "options": ["À configurer automatiquement les équipements", "À représenter visuellement l'organisation et l'interconnexion des équipements", "À mesurer la vitesse du réseau", "À sauvegarder les fichiers de configuration"],
+          "answer": 1,
+          "explain": "Le schéma d'infrastructure donne une vue d'ensemble visuelle du réseau pour faciliter la compréhension et la maintenance."
+        },
+        {
+          "q": "Quel symbole représente habituellement Internet sur un schéma réseau ?",
+          "options": ["Un rectangle gris", "Un nuage", "Un triangle", "Une flèche bidirectionnelle"],
+          "answer": 1,
+          "explain": "Internet est conventionnellement représenté par un nuage sur les schémas réseau."
+        },
+        {
+          "q": "Quel symbole représente typiquement un pare-feu sur un schéma réseau ?",
+          "options": ["Un nuage", "Un cylindre", "Un mur ou un bouclier stylisé", "Une flèche"],
+          "answer": 2,
+          "explain": "Le pare-feu est souvent représenté par un mur ou un bouclier, symbolisant la protection du réseau."
+        },
+        {
+          "q": "Qu'est-ce qu'un cartouche sur un schéma technique ?",
+          "options": ["Un type de câble réseau", "Un encadré récapitulatif avec titre, auteur, date et version du document", "Un symbole représentant un serveur", "Une zone colorée délimitant un VLAN"],
+          "answer": 1,
+          "explain": "Le cartouche est l'encadré de référence du document : titre, auteur, date, version — indispensable pour la traçabilité."
+        },
+        {
+          "q": "Pourquoi est-il important d'ajouter une légende à un schéma réseau ?",
+          "options": ["Pour rendre le schéma plus coloré", "Pour expliquer la signification de chaque symbole utilisé", "Pour indiquer le prix des équipements", "Pour remplacer le plan d'adressage"],
+          "answer": 1,
+          "explain": "La légende permet à tout lecteur de comprendre les symboles, même sans formation préalable."
+        },
+        {
+          "q": "Qu'est-ce qu'un plan d'adressage IP dans le contexte d'un schéma réseau ?",
+          "options": ["La liste des mots de passe des équipements", "Le tableau recensant les adresses IP attribuées à chaque équipement ou sous-réseau", "Le schéma physique du câblage", "Le plan d'évacuation du datacenter"],
+          "answer": 1,
+          "explain": "Le plan d'adressage recense les sous-réseaux et adresses IP pour éviter les conflits et faciliter la maintenance."
+        },
+        {
+          "q": "Dans draw.io, comment exporter un schéma en image ?",
+          "options": ["En copiant-collant dans Word", "Via le menu Fichier > Exporter en PNG ou PDF", "En faisant une capture d'écran uniquement", "En l'envoyant par e-mail"],
+          "answer": 1,
+          "explain": "draw.io propose un menu d'exportation en PNG, PDF, SVG et d'autres formats directement dans l'application."
+        },
+        {
+          "q": "Quel symbole représente généralement un switch (commutateur) sur un schéma réseau ?",
+          "options": ["Un nuage", "Un rectangle avec plusieurs flèches ou ports représentés", "Un cylindre", "Une sphère bleue"],
+          "answer": 1,
+          "explain": "Le switch est typiquement représenté par un rectangle horizontal symbolisant ses multiples ports."
+        },
+        {
+          "q": "À quoi servent les zones colorées sur un schéma réseau ?",
+          "options": ["À décorer le document", "À distinguer visuellement les différents segments ou zones du réseau (DMZ, LAN, WAN…)", "À indiquer la marque des équipements", "À montrer le chemin physique des câbles"],
+          "answer": 1,
+          "explain": "Les couleurs permettent de délimiter clairement les zones réseau (LAN, DMZ, WAN) pour une lecture rapide."
+        },
+        {
+          "q": "Quelle information doit obligatoirement figurer dans le cartouche d'un schéma professionnel ?",
+          "options": ["Le prix de l'infrastructure", "Le titre, l'auteur et la date", "L'adresse MAC des équipements", "La liste des fournisseurs"],
+          "answer": 1,
+          "explain": "Titre, auteur et date sont les éléments minimaux d'un cartouche pour assurer la traçabilité du document."
+        },
+        {
+          "q": "Quel format de fichier draw.io est idéal pour partager un schéma éditable ?",
+          "options": [".png", ".pdf", ".drawio ou .xml", ".docx"],
+          "answer": 2,
+          "explain": "Le format .drawio (XML natif) conserve toutes les informations d'édition et peut être rouvert dans draw.io."
+        },
+        {
+          "q": "Sur un schéma réseau, comment représente-t-on généralement un serveur ?",
+          "options": ["Par un nuage", "Par un cylindre horizontal ou un rectangle avec une icône serveur", "Par une flèche", "Par un losange"],
+          "answer": 1,
+          "explain": "Les serveurs sont souvent représentés par un rectangle stylisé ou une icône de rack/serveur."
+        },
+        {
+          "q": "Qu'est-ce qu'un schéma logique dans une infrastructure réseau ?",
+          "options": ["Le plan des câbles physiques dans les locaux", "La représentation des flux, protocoles et adressage IP sans tenir compte de l'emplacement physique", "Le schéma électrique des alimentations", "La carte géographique de l'entreprise"],
+          "answer": 1,
+          "explain": "Le schéma logique montre l'organisation IP et les flux, indépendamment de l'emplacement des équipements."
+        },
+        {
+          "q": "Quelle est la différence entre un schéma physique et un schéma logique ?",
+          "options": ["Le schéma physique montre les flux réseau, le logique montre les câbles", "Le schéma physique montre l'emplacement réel des équipements et câbles, le logique montre l'organisation IP et les flux", "Ils sont identiques", "Le schéma logique est réservé aux grands réseaux"],
+          "answer": 1,
+          "explain": "Le schéma physique correspond à la réalité matérielle, le logique à l'organisation fonctionnelle du réseau."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Comment adapter un schéma réseau à une petite entreprise (moins de 20 postes) ?",
+          "options": ["Utiliser exactement le même modèle que pour une grande entreprise", "Simplifier : un seul switch, une box/routeur, pas de DMZ", "Toujours inclure une DMZ et un cœur de réseau redondant", "Représenter uniquement les serveurs"],
+          "answer": 1,
+          "explain": "Pour une petite structure, un schéma simple (box > switch > postes) suffit ; la complexité doit être proportionnelle à l'infra."
+        },
+        {
+          "q": "Pour une PME de 50 à 200 utilisateurs, quels éléments supplémentaires apparaissent généralement sur le schéma ?",
+          "options": ["Uniquement les postes de travail", "Un ou plusieurs switches managés, un routeur dédié, un serveur et éventuellement une DMZ", "Un cœur de réseau redondant avec OSPF", "Des liaisons satellite"],
+          "answer": 1,
+          "explain": "La PME introduit des switches managés, une segmentation de base et des serveurs dédiés visibles sur le schéma."
+        },
+        {
+          "q": "Qu'est-ce qu'une DMZ sur un schéma réseau ?",
+          "options": ["Un type de switch géré", "Une zone réseau isolée entre Internet et le LAN interne, pour les services exposés", "Un protocole de routage", "Un plan d'adressage réservé aux serveurs"],
+          "answer": 1,
+          "explain": "La DMZ (zone démilitarisée) héberge les services accessibles depuis Internet (serveur web, mail) tout en protégeant le LAN."
+        },
+        {
+          "q": "Sur un schéma multi-sites, comment représente-t-on le lien entre deux sites distants ?",
+          "options": ["Par un câble Ethernet direct", "Par une liaison WAN, VPN ou MPLS entre les routeurs des deux sites", "Par un switch commun", "Par une zone colorée commune"],
+          "answer": 1,
+          "explain": "Les liaisons inter-sites passent par Internet (VPN) ou des liaisons dédiées (MPLS, fibre LS), représentées par un lien spécifique."
+        },
+        {
+          "q": "Pourquoi numéroter les versions d'un schéma réseau (v1, v2…) ?",
+          "options": ["Pour comptabiliser le nombre d'équipements", "Pour tracer l'évolution de l'infrastructure et revenir à une version antérieure si nécessaire", "Pour respecter les normes ISO obligatoires", "Pour indiquer le nombre de VLAN"],
+          "answer": 1,
+          "explain": "Le versionnage permet de retrouver l'état du réseau à un instant donné et de documenter les évolutions."
+        },
+        {
+          "q": "Sur un schéma, quelle convention de couleur est souvent utilisée pour la DMZ ?",
+          "options": ["Bleu pour Internet, rouge pour la DMZ, vert pour le LAN interne", "Uniquement du noir et blanc", "Rose pour la DMZ, jaune pour le WAN", "Il n'existe pas de convention, seule la légende compte"],
+          "answer": 0,
+          "explain": "Une convention courante : bleu/gris pour Internet, orange/rouge pour la DMZ, vert pour le LAN — mais la légende reste obligatoire."
+        },
+        {
+          "q": "Qu'indique un trait en pointillés entre deux équipements sur un schéma réseau ?",
+          "options": ["Une connexion physique principale", "Une connexion logique, virtuelle ou en cours de planification selon la convention définie en légende", "Une connexion sans fil Wi-Fi", "Une connexion hors service"],
+          "answer": 1,
+          "explain": "Les pointillés peuvent signifier connexion logique, VPN ou liaison optionnelle — la légende doit toujours le préciser."
+        },
+        {
+          "q": "Pourquoi indiquer les adresses de sous-réseau (ex. 192.168.10.0/24) directement sur le schéma ?",
+          "options": ["Pour remplir l'espace vide du document", "Pour permettre une lecture rapide de la segmentation IP sans consulter un document séparé", "Car c'est une obligation légale", "Pour indiquer la marque du routeur"],
+          "answer": 1,
+          "explain": "Annoter les sous-réseaux sur le schéma permet de comprendre la segmentation IP au premier coup d'oeil."
+        },
+        {
+          "q": "Dans un réseau multi-sites, qu'est-ce qu'un schéma de type « macro » ?",
+          "options": ["Un schéma très détaillé d'un seul équipement", "Une vue d'ensemble montrant tous les sites et leurs interconnexions sans détail interne", "Un schéma automatiquement généré par le réseau", "Un schéma exporté en très haute résolution"],
+          "answer": 1,
+          "explain": "Le schéma macro donne la vue globale des sites et liaisons, complété de schémas détaillés par site."
+        },
+        {
+          "q": "Quel avantage offre l'export en PDF d'un schéma réseau ?",
+          "options": ["Le PDF est éditable par tous les logiciels", "Le PDF garantit une présentation fixe et professionnelle, indépendante du logiciel de destination", "Le PDF compresse le réseau automatiquement", "Le PDF chiffre les adresses IP du schéma"],
+          "answer": 1,
+          "explain": "L'export PDF garantit que le schéma sera rendu identiquement sur n'importe quel ordinateur ou imprimante."
+        },
+        {
+          "q": "Sur un schéma, comment représente-t-on un routeur ?",
+          "options": ["Par un cylindre vertical", "Par un cercle avec des flèches ou une icône de routeur standardisée", "Par un nuage", "Par un triangle"],
+          "answer": 1,
+          "explain": "Le routeur est traditionnellement représenté par un cercle avec des flèches directionnelles ou une icône spécifique."
+        },
+        {
+          "q": "Que doit-on mentionner pour chaque équipement clé sur un schéma professionnel ?",
+          "options": ["Uniquement sa couleur", "Son rôle, son nom d'hôte et si possible son adresse IP", "Son prix d'achat", "Son âge et sa date de fabrication"],
+          "answer": 1,
+          "explain": "Annoter chaque équipement avec son rôle (ex. FW-1 / Pare-feu périmétrique) et son adresse IP facilite la maintenance."
+        },
+        {
+          "q": "Quel est l'intérêt de draw.io par rapport à un outil payant comme Visio pour un technicien TSSR ?",
+          "options": ["draw.io génère automatiquement les configurations des équipements", "draw.io est gratuit, multiplateforme et collaboratif, sans licence à acheter", "draw.io est plus performant pour les très grandes entreprises", "draw.io est le seul outil reconnu par l'ANSSI"],
+          "answer": 1,
+          "explain": "draw.io est gratuit, fonctionne dans le navigateur et permet un partage facile des fichiers, idéal pour une équipe ou un étudiant."
+        },
+        {
+          "q": "Pourquoi inclure un titre clair sur chaque schéma réseau ?",
+          "options": ["Pour remplir le cartouche obligatoire", "Pour identifier immédiatement l'objet du schéma et éviter toute confusion entre plusieurs documents", "Pour améliorer la résolution graphique", "Car les outils comme draw.io l'exigent"],
+          "answer": 1,
+          "explain": "Un titre explicite (ex. « Schéma logique LAN Siège social — v2 ») évite les erreurs lors de la maintenance ou des audits."
+        },
+        {
+          "q": "Sur un schéma réseau, qu'est-ce que l'on entend par « topologie étoile » ?",
+          "options": ["Tous les équipements sont reliés entre eux directement", "Tous les équipements sont connectés à un équipement central (switch ou hub)", "Les équipements sont en anneau", "Les équipements sont reliés en ligne droite"],
+          "answer": 1,
+          "explain": "La topologie étoile centralise les connexions vers un équipement central, c'est la topologie LAN la plus répandue."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Quelle norme ISO définit les symboles graphiques à utiliser dans les schémas réseau ?",
+          "options": ["ISO 9001", "ISO/IEC 11801", "Il n'existe pas de norme unique, mais des conventions de fait (Cisco, IEEE)", "ISO 27001"],
+          "answer": 2,
+          "explain": "Il n'existe pas de norme ISO unique pour les symboles réseau ; les conventions Cisco et les bibliothèques draw.io font référence."
+        },
+        {
+          "q": "Dans un schéma d'infra multi-sites, qu'est-ce qu'un lien MPLS ?",
+          "options": ["Un câble coaxial entre deux bâtiments", "Un lien WAN opérateur offrant une qualité de service et un routage privé entre sites", "Un protocole Wi-Fi longue portée", "Un type de VLAN inter-sites"],
+          "answer": 1,
+          "explain": "MPLS est une technologie opérateur permettant de relier des sites distants avec une QoS garantie et un réseau privé."
+        },
+        {
+          "q": "Pourquoi représenter séparément le cœur de réseau (core) et les switchs d'accès sur un schéma ?",
+          "options": ["Par obligation réglementaire", "Pour montrer la hiérarchie réseau et identifier les points critiques à haute disponibilité", "Car les deux ne peuvent pas être sur le même schéma", "Pour réduire le nombre de symboles utilisés"],
+          "answer": 1,
+          "explain": "La séparation core/accès illustre la hiérarchie et met en évidence les équipements redondants au cœur du réseau."
+        },
+        {
+          "q": "Sur un schéma très détaillé, comment représenter les VLAN ?",
+          "options": ["En ajoutant un switch par VLAN", "En coloriant les liens ou en créant des zones colorées avec l'identifiant VLAN annoté", "En remplaçant les switchs par des routeurs", "En supprimant la légende"],
+          "answer": 1,
+          "explain": "Les VLAN sont représentés par des zones ou des couleurs de lien annotées avec leur numéro (ex. VLAN 10 — Production)."
+        },
+        {
+          "q": "Qu'est-ce qu'un schéma de câblage structuré ?",
+          "options": ["Un schéma montrant uniquement les connexions Wi-Fi", "Un schéma physique décrivant le chemin des câbles, les baies de brassage et les prises murales", "Un diagramme de flux applicatif", "Un schéma d'adressage IP"],
+          "answer": 1,
+          "explain": "Le câblage structuré documente l'infrastructure physique : baies de brassage, chemins de câbles, prises RJ45, connectique."
+        },
+        {
+          "q": "Quelle information supplémentaire est utile d'indiquer sur les liens entre équipements dans un schéma professionnel ?",
+          "options": ["La couleur du câble uniquement", "La vitesse du lien (100M, 1G, 10G) et le type de support (cuivre, fibre)", "Le fabricant du câble", "Le prix du câble au mètre"],
+          "answer": 1,
+          "explain": "Annoter la vitesse et le support (cuivre/fibre) permet d'identifier rapidement les goulets d'étranglement potentiels."
+        },
+        {
+          "q": "Dans draw.io, à quoi servent les « bibliothèques de formes » réseau ?",
+          "options": ["À générer automatiquement les adresses IP", "À disposer de symboles standardisés pour routeurs, switches, serveurs, etc.", "À exporter en format propriétaire", "À sauvegarder les configurations des équipements"],
+          "answer": 1,
+          "explain": "Les bibliothèques de formes (Network, Cisco, AWS…) fournissent des icônes standardisées pour des schémas professionnels."
+        },
+        {
+          "q": "Qu'est-ce que la redondance et comment la représente-t-on sur un schéma ?",
+          "options": ["La duplication des adresses IP, représentée par des doubles flèches", "La présence de liens ou équipements de secours, représentés par des traits en pointillés ou une mention « standby »", "L'utilisation de deux schémas identiques", "Un mécanisme de chiffrement des liens"],
+          "answer": 1,
+          "explain": "La redondance (lien de secours, équipement passif) est souvent symbolisée par un trait pointillé ou une annotation « standby »."
+        },
+        {
+          "q": "Pourquoi est-il conseillé de ne pas surcharger un schéma réseau avec trop de détails ?",
+          "options": ["Car les outils comme draw.io ont une limite de symboles", "Pour garder le document lisible ; trop de détails le rend illisible et inutilisable", "Car les détails doivent figurer dans un autre logiciel", "Pour réduire la taille du fichier"],
+          "answer": 1,
+          "explain": "Un schéma trop chargé perd en lisibilité ; il vaut mieux plusieurs schémas thématiques plutôt qu'un seul surchargé."
+        },
+        {
+          "q": "Que signifie « schéma de flux » dans une infrastructure réseau ?",
+          "options": ["Un schéma montrant le sens de circulation des données entre systèmes", "Un schéma des câbles électriques", "Un schéma montrant les adresses MAC", "Un schéma de la topologie physique uniquement"],
+          "answer": 0,
+          "explain": "Le schéma de flux montre comment les données circulent entre les équipements (ex. client > pare-feu > serveur web)."
+        },
+        {
+          "q": "Pour un audit de sécurité, quel type de schéma est le plus utile ?",
+          "options": ["Le schéma physique du câblage", "Le schéma logique avec zones réseau, flux autorisés et position des pare-feux", "Le schéma des alimentations électriques", "Le schéma des sauvegardes"],
+          "answer": 1,
+          "explain": "L'auditeur a besoin du schéma logique pour analyser la segmentation, les flux autorisés et les points de contrôle de sécurité."
+        },
+        {
+          "q": "Qu'est-ce qu'une « baie de brassage » (patch panel) et doit-elle apparaître sur un schéma ?",
+          "options": ["C'est un type de switch managé ; oui, toujours sur tous les schémas", "C'est un panneau de connexion passif en baie de brassage ; utile sur le schéma physique/câblage", "C'est un pare-feu matériel ; ne figure jamais sur les schémas", "C'est un serveur de fichiers ; optionnel"],
+          "answer": 1,
+          "explain": "La baie de brassage est un panneau passif organisant les câbles ; elle figure sur les schémas physiques de câblage structuré."
+        },
+        {
+          "q": "Dans un contexte de cloud hybride, comment représenter les services cloud sur le schéma d'infrastructure ?",
+          "options": ["Par des symboles identiques aux serveurs physiques", "Par des icônes spécifiques cloud (AWS, Azure…) dans une zone distincte reliée au réseau on-premise", "En les omettant car ils ne font pas partie du réseau local", "Par un second nuage en plus du nuage Internet"],
+          "answer": 1,
+          "explain": "Les services cloud utilisent leurs icônes propriétaires dans une zone « cloud » distincte, reliée par une liaison VPN ou directe au LAN."
+        },
+        {
+          "q": "Quel est le risque d'un schéma réseau non mis à jour ?",
+          "options": ["Il génère des erreurs de routage automatiquement", "Il donne une image fausse de l'infrastructure, compliquant le dépannage et la prise de décision", "Il efface les configurations des équipements", "Il bloque les nouvelles connexions réseau"],
+          "answer": 1,
+          "explain": "Un schéma obsolète induit en erreur lors des interventions et peut faire manquer des failles de sécurité."
+        },
+        {
+          "q": "Dans draw.io, comment partager un schéma pour travail collaboratif en temps réel ?",
+          "options": ["En envoyant le fichier .png par e-mail", "En utilisant draw.io intégré à Confluence, Google Drive ou Microsoft Teams", "En imprimant le schéma et en le distribuant", "En exportant en .docx"],
+          "answer": 1,
+          "explain": "draw.io s'intègre à des plateformes collaboratives (Confluence, G Drive, Teams) pour l'édition simultanée à plusieurs."
+        }
+      ]
+    }
+  ]
+}

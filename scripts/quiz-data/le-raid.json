@@ -1,0 +1,291 @@
+{
+  "slug": "le-raid",
+  "title": "Les niveaux de RAID",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Que signifie l'acronyme RAID ?",
+          "options": ["Redundant Array of Independent Disks", "Random Access for Isolated Drives", "Reliable Array of Internal Disks", "Rapid Access Input/Output Device"],
+          "answer": 0,
+          "explain": "RAID signifie Redundant Array of Independent Disks : une combinaison de disques offrant redondance et/ou performance."
+        },
+        {
+          "q": "Quel niveau de RAID offre uniquement de la vitesse sans aucune redondance ?",
+          "options": ["RAID 1", "RAID 5", "RAID 0", "RAID 6"],
+          "answer": 2,
+          "explain": "Le RAID 0 (striping) répartit les données sur plusieurs disques pour maximiser les performances, mais la perte d'un seul disque détruit toutes les données."
+        },
+        {
+          "q": "Comment fonctionne le RAID 0 ?",
+          "options": ["En dupliquant les données sur deux disques", "En répartissant (striping) les données par blocs sur tous les disques du tableau", "En stockant une parité pour récupérer les données", "En combinant RAID 1 et RAID 0"],
+          "answer": 1,
+          "explain": "Le RAID 0 découpe les données en blocs et les répartit sur tous les disques en parallèle, augmentant ainsi le débit."
+        },
+        {
+          "q": "Que se passe-t-il si un disque tombe en panne dans un RAID 0 à 2 disques ?",
+          "options": ["Le système continue à fonctionner normalement", "Seules les données du disque défaillant sont perdues", "Toutes les données du tableau sont perdues", "Le RAID 0 passe automatiquement en RAID 1"],
+          "answer": 2,
+          "explain": "En RAID 0, les données sont réparties sur tous les disques ; si l'un est défaillant, la totalité des données est irrémédiablement perdue."
+        },
+        {
+          "q": "Quel niveau de RAID crée un miroir exact des données sur deux disques ?",
+          "options": ["RAID 0", "RAID 5", "RAID 6", "RAID 1"],
+          "answer": 3,
+          "explain": "Le RAID 1 (mirroring) écrit simultanément les données sur deux disques identiques, assurant la redondance totale."
+        },
+        {
+          "q": "Quelle est la capacité utile d'un RAID 1 composé de deux disques de 1 To chacun ?",
+          "options": ["2 To", "1 To", "500 Go", "Cela dépend du système de fichiers"],
+          "answer": 1,
+          "explain": "En RAID 1, les deux disques contiennent les mêmes données ; la capacité utile est donc égale à celle d'un seul disque, soit 1 To."
+        },
+        {
+          "q": "Quel est l'avantage principal du RAID 1 par rapport au RAID 0 ?",
+          "options": ["Le RAID 1 est deux fois plus rapide en écriture", "Le RAID 1 offre une redondance : si un disque tombe en panne, les données restent accessibles", "Le RAID 1 multiplie la capacité de stockage", "Le RAID 1 consomme moins d'électricité"],
+          "answer": 1,
+          "explain": "Le RAID 1 garantit la disponibilité des données même en cas de panne d'un des deux disques, grâce au miroir."
+        },
+        {
+          "q": "Combien de disques minimum faut-il pour un RAID 5 ?",
+          "options": ["2 disques", "4 disques", "3 disques", "5 disques"],
+          "answer": 2,
+          "explain": "Le RAID 5 nécessite au minimum 3 disques pour répartir les données et les informations de parité."
+        },
+        {
+          "q": "Quel est le rôle de la «parité» dans un RAID 5 ?",
+          "options": ["Accélérer les lectures", "Permettre de reconstruire les données d'un disque défaillant à partir des autres disques", "Chiffrer les données stockées", "Compresser les données pour économiser de l'espace"],
+          "answer": 1,
+          "explain": "La parité est une information calculée à partir des données qui permet de reconstituer les données d'un disque perdu."
+        },
+        {
+          "q": "En RAID 5 avec 3 disques de 1 To, quelle est la capacité utile ?",
+          "options": ["3 To", "1 To", "2 To", "500 Go"],
+          "answer": 2,
+          "explain": "En RAID 5, l'équivalent d'un disque est utilisé pour la parité : avec 3 × 1 To, la capacité utile est de 2 To."
+        },
+        {
+          "q": "Combien de pannes de disque le RAID 5 peut-il tolérer ?",
+          "options": ["Zéro panne", "Une seule panne de disque", "Deux pannes simultanées", "Trois pannes simultanées"],
+          "answer": 1,
+          "explain": "Le RAID 5 ne tolère qu'une seule panne de disque à la fois ; deux pannes simultanées entraînent la perte de toutes les données."
+        },
+        {
+          "q": "Quel niveau de RAID combine les avantages du RAID 1 (miroir) et du RAID 0 (striping) ?",
+          "options": ["RAID 5", "RAID 6", "RAID 10", "RAID 3"],
+          "answer": 2,
+          "explain": "Le RAID 10 (ou RAID 1+0) associe le striping du RAID 0 et le miroir du RAID 1, offrant à la fois vitesse et redondance."
+        },
+        {
+          "q": "Quelle est la différence principale entre RAID 5 et RAID 6 ?",
+          "options": ["RAID 6 utilise deux blocs de parité et tolère deux pannes simultanées, contre une seule pour le RAID 5", "RAID 6 est plus rapide que RAID 5 en écriture", "RAID 6 nécessite moins de disques que RAID 5", "RAID 6 ne supporte pas la reconstruction automatique"],
+          "answer": 0,
+          "explain": "Le RAID 6 ajoute un second bloc de parité, permettant de survivre à deux pannes de disques simultanées là où le RAID 5 ne tolère qu'une seule."
+        },
+        {
+          "q": "Est-ce que le RAID remplace une sauvegarde (backup) ?",
+          "options": ["Oui, le RAID 1 est une sauvegarde complète", "Non, le RAID protège contre la panne matérielle mais pas contre la suppression accidentelle, les ransomwares ou les sinistres", "Oui, à condition d'utiliser un RAID 5 ou supérieur", "Oui, uniquement si le RAID est géré par le matériel"],
+          "answer": 1,
+          "explain": "Le RAID offre de la haute disponibilité mais n'est pas une sauvegarde : une suppression ou un chiffrement malveillant se propage sur tous les disques."
+        },
+        {
+          "q": "Quel niveau de RAID est généralement préféré pour un NAS domestique combinant sécurité et espace utile ?",
+          "options": ["RAID 0 pour la vitesse maximale", "RAID 1 ou RAID 5 selon le nombre de disques disponibles", "RAID 6 exclusivement", "Aucun RAID n'est adapté aux NAS"],
+          "answer": 1,
+          "explain": "RAID 1 (2 disques) ou RAID 5 (3+ disques) sont les choix courants pour un NAS : ils offrent redondance avec une capacité utile raisonnable."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Quelle est la différence entre RAID matériel et RAID logiciel ?",
+          "options": ["Le RAID matériel est géré par une carte contrôleur dédiée, le RAID logiciel par le CPU et l'OS", "Le RAID logiciel est toujours plus rapide que le RAID matériel", "Le RAID matériel ne supporte que le RAID 0 et 1", "Il n'y a aucune différence de performances"],
+          "answer": 0,
+          "explain": "Le RAID matériel utilise une carte contrôleur dédiée avec son propre processeur, soulageant le CPU principal et offrant souvent une meilleure fiabilité."
+        },
+        {
+          "q": "Qu'est-ce qu'un «hot spare» dans un tableau RAID ?",
+          "options": ["Un disque de remplacement à chaud, préconfiguré pour remplacer automatiquement un disque défaillant", "Un disque utilisé uniquement en lecture", "Le disque principal d'un RAID 1", "Un disque qui stocke uniquement la parité"],
+          "answer": 0,
+          "explain": "Un hot spare est un disque disponible en permanence dans l'enceinte, qui prend automatiquement la place d'un disque défaillant pour lancer la reconstruction."
+        },
+        {
+          "q": "Qu'est-ce que la «reconstruction» (rebuild) d'un RAID 5 après une panne ?",
+          "options": ["L'effacement complet du tableau pour repartir de zéro", "Le processus qui recalcule et écrit les données du disque défaillant sur un disque de remplacement à partir des données et de la parité restantes", "La mise à jour du firmware du contrôleur RAID", "Le formatage du disque défaillant avant son retrait"],
+          "answer": 1,
+          "explain": "La reconstruction recalcule les données manquantes grâce à la parité et les écrit sur le disque de remplacement, restaurant la redondance du tableau."
+        },
+        {
+          "q": "Pourquoi une reconstruction RAID peut-elle être risquée sur de très grands disques ?",
+          "options": ["Car elle efface définitivement les données restantes", "Car le stress mécanique prolongé sur les disques restants augmente le risque qu'un second disque tombe en panne pendant la reconstruction", "Car elle monopolise toute la bande passante réseau", "Car elle nécessite un redémarrage du serveur"],
+          "answer": 1,
+          "explain": "Pendant la reconstruction, les disques restants sont sollicités intensément ; un second disque défaillant pendant ce processus peut rendre les données irrécupérables."
+        },
+        {
+          "q": "En RAID 10 avec 4 disques de 2 To, quelle est la capacité utile ?",
+          "options": ["8 To", "2 To", "4 To", "6 To"],
+          "answer": 2,
+          "explain": "Le RAID 10 crée deux miroirs de 2 To chacun, puis les stripe : capacité utile = 50 % du total, soit 4 To sur 8 To bruts."
+        },
+        {
+          "q": "Combien de pannes de disque un RAID 10 à 4 disques peut-il tolérer au minimum, et dans quel cas ?",
+          "options": ["Aucune panne tolérée", "Une panne garantie, jusqu'à deux si les disques défaillants ne sont pas dans le même miroir", "Deux pannes garanties quels que soient les disques", "Trois pannes simultanées"],
+          "answer": 1,
+          "explain": "Un RAID 10 à 4 disques tolère toujours 1 panne ; il peut tolérer 2 pannes à condition qu'elles ne touchent pas les deux disques d'un même miroir."
+        },
+        {
+          "q": "Quel est l'inconvénient principal du RAID 6 par rapport au RAID 5 ?",
+          "options": ["Une capacité utile encore plus réduite (2 disques dédiés à la double parité) et des performances d'écriture plus faibles", "Le RAID 6 ne supporte pas les disques SATA", "Le RAID 6 nécessite un système d'exploitation spécifique", "Le RAID 6 ne tolère qu'une seule panne"],
+          "answer": 0,
+          "explain": "Le RAID 6 sacrifie l'équivalent de deux disques pour la double parité et génère plus de calculs en écriture, réduisant les performances."
+        },
+        {
+          "q": "Qu'est-ce que le «stripe size» (taille de bande) dans un RAID 0 ou RAID 5 ?",
+          "options": ["La taille physique du disque dur", "La taille des blocs de données découpés et répartis sur chaque disque lors d'une opération de striping", "Le nombre de disques dans le tableau", "La capacité maximale du tableau RAID"],
+          "answer": 1,
+          "explain": "La taille de bande détermine la granularité de la répartition des données ; elle influe sur les performances selon le type de workload (petits fichiers vs gros fichiers)."
+        },
+        {
+          "q": "Qu'est-ce que le JBOD (Just a Bunch Of Disks) ?",
+          "options": ["Un niveau de RAID haute performance", "Des disques indépendants sans striping ni redondance, parfois concaténés en un seul volume logique", "Un RAID 0 avec plus de deux disques", "Un RAID propriétaire des NAS Synology"],
+          "answer": 1,
+          "explain": "JBOD est un groupement de disques sans RAID : chaque disque peut être indépendant ou ils peuvent être concaténés en un seul volume sans redondance."
+        },
+        {
+          "q": "Dans un RAID 5 à 4 disques de 1 To, quelle est la capacité utile ?",
+          "options": ["4 To", "2 To", "3 To", "1 To"],
+          "answer": 2,
+          "explain": "En RAID 5, l'équivalent d'un disque est dédié à la parité : 4 × 1 To - 1 To = 3 To de capacité utile."
+        },
+        {
+          "q": "Qu'est-ce que le «write hole» (trou d'écriture) dans un RAID 5 ?",
+          "options": ["Une zone réservée pour les données de parité", "Un risque d'incohérence des données si le système perd de l'alimentation pendant une opération d'écriture avant que la parité soit mise à jour", "Un espace inutilisable entre les blocs de données", "Une fonctionnalité de trim pour les SSD en RAID"],
+          "answer": 1,
+          "explain": "Le write hole est une fenêtre de vulnérabilité où une coupure de courant pendant l'écriture peut laisser les données et la parité incohérentes."
+        },
+        {
+          "q": "Comment le RAID 6 est-il noté en termes de capacité utile avec N disques de capacité C ?",
+          "options": ["Capacité utile = (N - 1) × C", "Capacité utile = (N - 2) × C", "Capacité utile = N × C / 2", "Capacité utile = N × C"],
+          "answer": 1,
+          "explain": "Le RAID 6 utilise l'équivalent de 2 disques pour la double parité : capacité utile = (N - 2) × C."
+        },
+        {
+          "q": "Quel niveau de RAID est le plus adapté pour un serveur de base de données nécessitant à la fois haute performance en lecture/écriture et redondance ?",
+          "options": ["RAID 0 pour la vitesse pure", "RAID 10, car il combine striping et mirroring", "RAID 5, car la parité est suffisante", "JBOD pour la capacité maximale"],
+          "answer": 1,
+          "explain": "Le RAID 10 offre des performances proches du RAID 0 et la redondance du RAID 1, ce qui en fait le choix privilégié pour les bases de données critiques."
+        },
+        {
+          "q": "Qu'est-ce qu'un contrôleur RAID avec «cache BBU» ?",
+          "options": ["Un contrôleur avec une batterie de sauvegarde qui protège le cache d'écriture en cas de coupure de courant", "Un contrôleur qui utilise la RAM du serveur comme cache", "Un module de contrôle de la température des disques", "Un contrôleur sans cache, pour plus de fiabilité"],
+          "answer": 0,
+          "explain": "Le BBU (Battery Backup Unit) alimente le cache du contrôleur en cas de coupure, permettant de vider le cache sur disque et d'éviter la perte de données."
+        },
+        {
+          "q": "Quelle est la formule de capacité utile pour un RAID 1 à N disques identiques de capacité C ?",
+          "options": ["N × C", "C (capacité d'un seul disque, quelle que soit la quantité)", "N × C / 2", "(N - 1) × C"],
+          "answer": 1,
+          "explain": "En RAID 1, tous les disques sont des copies identiques : la capacité utile est toujours égale à C, la capacité d'un seul disque."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Qu'est-ce que le RAID 50 (ou RAID 5+0) ?",
+          "options": ["Un RAID 5 avec un hot spare supplémentaire", "Un striping (RAID 0) appliqué sur plusieurs tableaux RAID 5, combinant parité et performance", "Un RAID 5 sur des disques SSD uniquement", "Un alias du RAID 10 utilisé par certains constructeurs"],
+          "answer": 1,
+          "explain": "Le RAID 50 combine plusieurs groupes RAID 5 eux-mêmes stripés en RAID 0, offrant meilleures performances et tolérance à une panne par groupe."
+        },
+        {
+          "q": "Qu'est-ce que le RAID 60 (ou RAID 6+0) ?",
+          "options": ["Un RAID 6 limité à 6 disques", "Un striping (RAID 0) appliqué sur plusieurs tableaux RAID 6, tolérant jusqu'à deux pannes par sous-groupe", "Un RAID 6 avec des disques SSD NVMe", "Un RAID 6 administré par un logiciel uniquement"],
+          "answer": 1,
+          "explain": "Le RAID 60 stripe plusieurs groupes RAID 6, combinant la double tolérance de panne par groupe avec les performances du striping."
+        },
+        {
+          "q": "Qu'est-ce que le «scrubbing» (vérification d'intégrité) dans un tableau RAID ?",
+          "options": ["Un processus périodique qui vérifie la cohérence des données et de la parité sur tous les disques pour détecter les secteurs défaillants silencieux", "L'effacement sécurisé des disques avant suppression", "La mise à jour du firmware du contrôleur RAID", "Le processus de reconstruction après une panne"],
+          "answer": 0,
+          "explain": "Le scrubbing lit et vérifie toutes les données et parités du tableau pour détecter les URE (Unrecoverable Read Errors) avant qu'ils causent une perte de données."
+        },
+        {
+          "q": "Qu'est-ce qu'un URE (Unrecoverable Read Error) et en quoi est-ce critique pour le RAID 5 ?",
+          "options": ["Une erreur de lecture non corrigible qui, survenant sur un disque sain pendant la reconstruction d'un RAID 5, peut rendre la reconstruction impossible", "Une erreur de firmware du contrôleur RAID", "Une incompatibilité entre disques de marques différentes", "Une perte de données due à une mauvaise configuration RAID"],
+          "answer": 0,
+          "explain": "Si un URE survient sur un disque sain pendant la reconstruction RAID 5, les données ne peuvent être reconstituées, entraînant une perte totale."
+        },
+        {
+          "q": "Qu'est-ce que le «RAID adaptatif» proposé par certains systèmes NAS (ex. Synology SHR) ?",
+          "options": ["Un RAID qui s'adapte automatiquement à la charge CPU", "Un niveau de RAID flexible qui optimise la capacité utile en tenant compte de disques de tailles différentes, contrairement au RAID classique", "Un RAID qui bascule automatiquement entre RAID 0 et RAID 1", "Un RAID qui s'étend automatiquement via Internet"],
+          "answer": 1,
+          "explain": "Synology Hybrid RAID (SHR) optimise la capacité en utilisant au mieux des disques de tailles inégales, là où un RAID 5 classique se limiterait à la taille du plus petit."
+        },
+        {
+          "q": "Dans un RAID 6 à 6 disques de 4 To, quelle est la capacité utile et combien de pannes sont tolérées ?",
+          "options": ["20 To utiles, 2 pannes tolérées", "16 To utiles, 2 pannes tolérées", "12 To utiles, 1 panne tolérée", "24 To utiles, 3 pannes tolérées"],
+          "answer": 1,
+          "explain": "RAID 6 : (6 - 2) × 4 To = 16 To utiles, avec tolérance à 2 pannes simultanées grâce à la double parité."
+        },
+        {
+          "q": "Qu'est-ce que la «dégradation de performances en écriture» spécifique au RAID 5 ?",
+          "options": ["Chaque écriture nécessite de lire l'ancienne donnée et l'ancienne parité pour calculer la nouvelle parité (read-modify-write), générant 4 opérations I/O pour chaque écriture logique", "Le RAID 5 n'a pas de pénalité d'écriture", "La pénalité vient uniquement de la reconstruction", "Elle survient uniquement lors de la première écriture sur le tableau"],
+          "answer": 0,
+          "explain": "Le RAID 5 souffre du «penalty write» : chaque écriture déclenche une lecture de l'ancienne donnée, une lecture de l'ancienne parité, une écriture de la nouvelle donnée et une écriture de la nouvelle parité."
+        },
+        {
+          "q": "Pourquoi le RAID 10 est-il souvent préféré au RAID 5 pour les bases de données OLTP ?",
+          "options": ["Car le RAID 10 offre de meilleures performances en écriture (pas de pénalité read-modify-write) et une reconstruction plus rapide", "Car le RAID 10 est moins cher", "Car le RAID 10 supporte plus de disques", "Car le RAID 5 n'est pas compatible avec les bases de données"],
+          "answer": 0,
+          "explain": "Le RAID 10 écrit simultanément sur les miroirs sans calcul de parité, éliminant la pénalité d'écriture du RAID 5 et offrant une reconstruction plus rapide."
+        },
+        {
+          "q": "Qu'est-ce que le «RAID logiciel ZFS RAIDZ» par rapport au RAID 5 classique ?",
+          "options": ["RAIDZ est identique au RAID 5 mais avec un nom différent", "RAIDZ élimine le write hole grâce à ses transactions atomiques copy-on-write, offrant plus de fiabilité que le RAID 5 traditionnel", "RAIDZ est exclusivement matériel", "RAIDZ ne supporte pas les disques de grande capacité"],
+          "answer": 1,
+          "explain": "ZFS RAIDZ utilise le copy-on-write pour éliminer le write hole du RAID 5, rendant les données cohérentes même après une coupure de courant."
+        },
+        {
+          "q": "Qu'est-ce que le «temps de reconstruction» et comment est-il affecté par la taille des disques ?",
+          "options": ["Le temps de reconstruction est fixe quelle que soit la taille des disques", "Plus les disques sont grands, plus la reconstruction est longue car il faut relire et réécrire davantage de données, augmentant le risque d'une seconde panne", "La taille des disques n'influence pas la durée de reconstruction", "Une reconstruction sur des grands disques est plus rapide car le débit est plus élevé"],
+          "answer": 1,
+          "explain": "Avec des disques de 8, 12 ou 16 To, la reconstruction d'un RAID peut durer des dizaines d'heures, exposant longtemps le tableau à un risque de seconde panne."
+        },
+        {
+          "q": "Qu'est-ce que le RAID 2 et pourquoi est-il obsolète ?",
+          "options": ["Un RAID avec striping au bit et codes de correction ECC Hamming, abandonné car la correction ECC est maintenant intégrée aux disques eux-mêmes", "Un RAID miroir à deux disques, remplacé par le RAID 1", "Un RAID avec double parité précurseur du RAID 6", "Un RAID logiciel sans matériel dédié"],
+          "answer": 0,
+          "explain": "Le RAID 2 utilisait un striping au niveau du bit avec des disques ECC dédiés, mais les disques modernes intègrent leur propre correction d'erreur, le rendant inutile."
+        },
+        {
+          "q": "Qu'est-ce que le «near-line SAS» et quel impact a-t-il sur le choix du RAID en datacenter ?",
+          "options": ["Des disques à haute capacité, plus lents que le SAS traditionnel, souvent utilisés en RAID 6 pour maximiser la capacité avec une tolérance aux pannes adaptée", "Des SSD NAS de faible consommation", "Des disques hybrides (SSHD) pour serveurs", "Des disques SAS réservés aux environnements RAID 0"],
+          "answer": 0,
+          "explain": "Les disques near-line SAS (NL-SAS) offrent une grande capacité à moindre coût mais sont plus lents ; le RAID 6 est souvent choisi pour compenser leur taux de défaillance plus élevé."
+        },
+        {
+          "q": "Qu'est-ce que le «cache de lecture RAID» et comment améliore-t-il les performances ?",
+          "options": ["Un cache en RAM qui stocke les données lues récemment pour éviter les accès disque répétés, accélérant les lectures fréquentes", "Un disque SSD dédié à la parité", "Un algorithme de préchargement des fichiers les plus anciens", "Un espace réservé sur chaque disque du tableau"],
+          "answer": 0,
+          "explain": "Le cache de lecture conserve en RAM les données accédées fréquemment, réduisant les accès aux disques mécaniques plus lents et améliorant la latence."
+        },
+        {
+          "q": "Pourquoi mélanger des disques de capacités différentes dans un RAID 5 classique est-il pénalisant ?",
+          "options": ["Car un RAID 5 classique utilise la capacité du plus petit disque pour tous les disques, gaspillant l'espace supplémentaire des grands disques", "Car les disques de tailles différentes chauffent différemment", "Car le contrôleur RAID ne peut pas gérer des vitesses différentes", "Car la parité ne peut pas être calculée entre disques de tailles inégales"],
+          "answer": 0,
+          "explain": "Un RAID 5 classique limite chaque disque à la capacité du plus petit : l'espace en surplus sur les grands disques est inutilisable."
+        },
+        {
+          "q": "Qu'est-ce que le «RAID 1E» (mirroring étendu) ?",
+          "options": ["Un RAID 1 qui stripe les données tout en les dupliquant, permettant le mirroring sur un nombre impair de disques (3+)", "Un RAID 1 avec une extension cloud automatique", "Un RAID 1 exclusif aux disques SSD NVMe", "Un alias du RAID 10 utilisé par les NAS"],
+          "answer": 0,
+          "explain": "Le RAID 1E stripe et duplique les données en alternance, permettant d'utiliser un nombre impair de disques avec redondance, contrairement au RAID 1 classique."
+        }
+      ]
+    }
+  ]
+}

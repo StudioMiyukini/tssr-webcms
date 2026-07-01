@@ -1,0 +1,222 @@
+{
+  "n": 3,
+  "layer": "3 · Réseau",
+  "diff": 3,
+  "title": "Internet en panne !",
+  "setup": "Un utilisateur te signale qu'il ne peut pas acceder a Internet depuis son poste Windows. Il ne peut pas non plus ouvrir les partages reseau. Le poste est allume et l'ecran s'affiche normalement.",
+  "start": "n1",
+  "nodes": {
+    "n1": {
+      "kind": "step",
+      "text": "Tu arrives au bureau de l'utilisateur. Le poste est allume et Windows est charge.",
+      "question": "Quelle est ta premiere action ?",
+      "choices": [
+        { "t": "Je regarde le voyant du port reseau sur la carte du PC", "to": "n2" },
+        { "t": "Je lance ipconfig tout de suite pour voir l'adresse IP", "to": "det_skip1" },
+        { "t": "Je redemarre le PC directement", "to": "fail_bases" }
+      ]
+    },
+    "n2": {
+      "kind": "step",
+      "text": "Tu observes : le voyant du port reseau sur la carte du PC est vert et clignote. Tu regardes aussi le switch : le voyant du port correspondant est allume.",
+      "question": "Les voyants sont au vert. Que verifies-tu ensuite pour valider la couche 1 ?",
+      "choices": [
+        { "t": "Je verifie que le cable n'est pas abime et bien enclenche des deux cotes", "to": "n3" },
+        { "t": "Les voyants suffisent, je passe directement a l'IP", "to": "det_skip1" },
+        { "t": "Je debranche le cable et le rebranche sur un autre port du switch au hasard", "to": "det_cable" }
+      ]
+    },
+    "n3": {
+      "kind": "step",
+      "text": "Le cable est bien enclenche aux deux extremites et ne presente aucun dommage visible. Couche 1 validee : la liaison physique est saine.",
+      "question": "Tu passes a la couche 2. Comment verifies-tu que le lien switch est operationnel ?",
+      "choices": [
+        { "t": "Je consulte l'etat du port sur le switch et verifie qu'il n'y a pas d'erreur de VLAN", "to": "n4" },
+        { "t": "Je saute la couche 2 et lance ipconfig directement", "to": "det_skip2" },
+        { "t": "Je reinstalle le pilote de la carte reseau dans le gestionnaire de peripheriques", "to": "fail_osi" }
+      ]
+    },
+    "n4": {
+      "kind": "step",
+      "text": "Le port du switch est actif, en mode acces, sur le bon VLAN. Aucune erreur signalee. Couche 2 validee : le lien commute fonctionne correctement.",
+      "question": "Couche 1 OK, couche 2 OK. Tu passes a la couche 3. Que lances-tu d'abord ?",
+      "choices": [
+        { "t": "ipconfig", "to": "n5" },
+        { "t": "ping 8.8.8.8", "to": "det_pingext" },
+        { "t": "Je configure directement une IP fixe sans verifier", "to": "fail_ip" }
+      ]
+    },
+    "n5": {
+      "kind": "step",
+      "text": "ipconfig affiche : Adresse IPv4 = 169.254.47.12, masque 255.255.0.0, passerelle vide. C'est une adresse APIPA : Windows se l'est attribue tout seul car le serveur DHCP n'a pas repondu.",
+      "question": "Que t'indique cette adresse en 169.254 ?",
+      "choices": [
+        { "t": "Le serveur DHCP est injoignable. Je vais tester le ping vers la passerelle pour confirmer", "to": "n6" },
+        { "t": "La carte reseau est defectueuse, il faut la changer", "to": "fail_ip" },
+        { "t": "Je configure une IP fixe, ca reglera le probleme", "to": "fail_ip" }
+      ]
+    },
+    "n6": {
+      "kind": "step",
+      "text": "Tu lances ping 192.168.1.254 (la passerelle indiquee dans le plan reseau). Resultat : 'Delai d'attente depasse'. La passerelle ne repond pas depuis ce poste.",
+      "question": "La passerelle est inaccessible. Ou cherches-tu la cause du probleme DHCP ?",
+      "choices": [
+        { "t": "J'ouvre le Gestionnaire de serveurs sur le serveur Windows pour verifier le role DHCP", "to": "n7" },
+        { "t": "Je verifie les DNS, c'est peut-etre un probleme de resolution de nom", "to": "det_dns" },
+        { "t": "Je remplace le switch, le probleme vient forcement de lui", "to": "fail_osi" }
+      ]
+    },
+    "n7": {
+      "kind": "step",
+      "text": "Dans le Gestionnaire de serveurs, tu ouvres Outils puis DHCP. Tu vois l'etendue 192.168.1.0/24. Son statut est affiche comme 'Inactif' : l'etendue est desactivee, aucun bail ne peut etre delivre.",
+      "question": "L'etendue DHCP est inactive. Que fais-tu ?",
+      "choices": [
+        { "t": "Clic droit sur l'etendue, puis Activer", "to": "n8" },
+        { "t": "Je supprime l'etendue et en cree une nouvelle", "to": "fail_gestionnaire" },
+        { "t": "Je verifie d'abord le pool d'adresses disponibles avant d'activer", "to": "n7b" }
+      ]
+    },
+    "n7b": {
+      "kind": "step",
+      "text": "Tu inspectes le pool : plage 192.168.1.100 a 192.168.1.200, passerelle 192.168.1.254, DNS 192.168.1.1. Tout est coherent. Il y a de la place. L'etendue est simplement desactivee.",
+      "question": "Maintenant que tu as verifie le pool, que fais-tu ?",
+      "choices": [
+        { "t": "Activer l'etendue via clic droit puis Activer", "to": "n8" },
+        { "t": "Modifier la plage pour ajouter plus d'adresses avant d'activer", "to": "fail_ip" }
+      ]
+    },
+    "n8": {
+      "kind": "step",
+      "text": "L'etendue passe au vert dans la console DHCP. Le service peut maintenant delivrer des baux. Tu retournes sur le poste client.",
+      "question": "Quelle commande lances-tu pour que le PC obtienne une nouvelle adresse IP ?",
+      "choices": [
+        { "t": "ipconfig /renew", "to": "n9" },
+        { "t": "ipconfig /release uniquement, sans /renew", "to": "det_release" },
+        { "t": "Je redemarre le PC", "to": "det_reboot" }
+      ]
+    },
+    "n9": {
+      "kind": "step",
+      "text": "ipconfig /renew s'execute. Le PC obtient : Adresse IPv4 = 192.168.1.103, masque 255.255.255.0, passerelle 192.168.1.254. L'adresse APIPA a disparu.",
+      "question": "Le PC a une vraie adresse. Comment confirmes-tu que la couche 3 est pleinement operationnelle ?",
+      "choices": [
+        { "t": "Je ping la passerelle (192.168.1.254) puis 8.8.8.8 pour valider la connectivite", "to": "win" },
+        { "t": "Je ping uniquement 127.0.0.1, c'est suffisant", "to": "det_loopback" },
+        { "t": "Je declare le probleme resolu sans faire de test", "to": "det_notest" }
+      ]
+    },
+    "det_skip1": {
+      "kind": "step",
+      "text": "Tu vois une adresse APIPA mais tu n'as pas valide les couches inferieures. Un probleme physique ou de VLAN peut aussi provoquer une APIPA. Impossible de savoir sans avoir verifie avant.",
+      "question": "Dans quel ordre doit-on toujours remonter les couches reseau ?",
+      "choices": [
+        { "t": "De bas en haut : couche 1 d'abord, puis 2, puis 3", "to": "n1" },
+        { "t": "On commence par la couche la plus probable selon l'experience", "to": "fail_osi" }
+      ]
+    },
+    "det_skip2": {
+      "kind": "step",
+      "text": "Tu vois une APIPA mais tu n'as pas encore verifie la couche 2. Un mauvais VLAN peut aussi bloquer le DHCP. Il faut valider la couche 2 avant de conclure sur la couche 3.",
+      "question": "Que dois-tu verifier avant de passer a l'analyse IP ?",
+      "choices": [
+        { "t": "Le lien switch et la configuration du port VLAN", "to": "n4" },
+        { "t": "Peu importe, l'adresse APIPA dit deja tout", "to": "fail_osi" }
+      ]
+    },
+    "det_cable": {
+      "kind": "step",
+      "text": "Tu as change de port sans raison valable. Le lien remonte, mais en production changer de port sans diagnostic peut creer un conflit de VLAN. La bonne pratique est de verifier l'etat du port actuel avant d'intervenir.",
+      "question": "Quelle est la bonne pratique avant de changer de port sur un switch ?",
+      "choices": [
+        { "t": "Verifier d'abord l'etat et la config du port actuel dans la console switch", "to": "n3" },
+        { "t": "Changer de port est toujours la solution la plus rapide", "to": "fail_bases" }
+      ]
+    },
+    "det_pingext": {
+      "kind": "step",
+      "text": "Ping vers 8.8.8.8 : echec. Normal, le PC n'a pas d'adresse routable. Pinger vers Internet sans connaitre l'etat de l'IP locale n'apporte pas d'information utile a ce stade.",
+      "question": "Quelle commande aurait ete plus utile d'abord ?",
+      "choices": [
+        { "t": "ipconfig pour voir l'adresse IP actuelle du poste", "to": "n5" },
+        { "t": "Continuer a pinger differentes IP pour trouver laquelle repond", "to": "fail_bases" }
+      ]
+    },
+    "det_dns": {
+      "kind": "step",
+      "text": "Le DNS n'est pas la cause ici : le poste n'a meme pas d'adresse IP valide. Un probleme DNS se manifeste apres l'obtention d'une adresse. Sans IP routable, aucune requete DNS ne peut partir.",
+      "question": "Quelle est la priorite quand le poste a une adresse APIPA ?",
+      "choices": [
+        { "t": "Trouver pourquoi le serveur DHCP ne repond pas", "to": "n7" },
+        { "t": "Verifier les DNS puis l'IP ensuite", "to": "fail_ip" }
+      ]
+    },
+    "det_release": {
+      "kind": "step",
+      "text": "ipconfig /release supprime l'adresse. Le PC n'a maintenant plus aucune adresse et ne peut rien faire du tout. Il fallait enchaiver avec /renew pour en demander une nouvelle au serveur DHCP.",
+      "question": "Quelle sequence complete faut-il utiliser ?",
+      "choices": [
+        { "t": "ipconfig /release puis ipconfig /renew", "to": "n9" },
+        { "t": "ipconfig /release suffit, Windows redemande tout seul", "to": "fail_ip" }
+      ]
+    },
+    "det_reboot": {
+      "kind": "step",
+      "text": "Le PC redemarre et obtient bien une adresse valide cette fois, car le service DHCP tourne a nouveau. Ca a fonctionne, mais ipconfig /renew est plus rapide, moins intrusif et ne coupe pas le travail de l'utilisateur.",
+      "question": "Quelle est la methode recommandee pour renouveler un bail DHCP sans rebooter ?",
+      "choices": [
+        { "t": "ipconfig /renew", "to": "n9" },
+        { "t": "Le reboot est toujours la meilleure solution", "to": "fail_bases" }
+      ]
+    },
+    "det_loopback": {
+      "kind": "step",
+      "text": "Ping 127.0.0.1 reussit, mais ca teste uniquement la pile TCP/IP locale du PC. Ca ne valide pas la connectivite vers la passerelle ni vers Internet.",
+      "question": "Que dois-tu tester pour valider la couche 3 end-to-end ?",
+      "choices": [
+        { "t": "Pinger la passerelle puis une IP publique comme 8.8.8.8", "to": "win" },
+        { "t": "Le loopback valide tout, c'est suffisant", "to": "fail_bases" }
+      ]
+    },
+    "det_notest": {
+      "kind": "step",
+      "text": "L'utilisateur te rappelle cinq minutes plus tard : les mails ne partent pas. Une adresse IP attribuee ne garantit pas la connectivite complete. Il fallait tester avant de clore.",
+      "question": "Que fais-tu maintenant ?",
+      "choices": [
+        { "t": "Je ping la passerelle et 8.8.8.8 pour valider la connectivite", "to": "win" },
+        { "t": "Je recommence tout le diagnostic depuis le debut", "to": "n1" }
+      ]
+    },
+    "fail_bases": {
+      "kind": "fail",
+      "text": "Cette action n'est pas methodique. En depannage reseau, on remonte toujours les couches OSI de bas en haut : physique, liaison, reseau. Sauter une etape ou agir sans diagnostic fait perdre du temps et peut aggraver la panne.",
+      "course": "bases-du-reseau",
+      "courseLabel": "Les bases du reseau",
+      "retryTo": "n1"
+    },
+    "fail_osi": {
+      "kind": "fail",
+      "text": "Tu as saute une couche du modele OSI ou choisi une action disproportionnee. Le bon reflexe est de remonter dans l'ordre : couche 1 (physique), couche 2 (liaison), couche 3 (reseau). Recommence depuis le debut.",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n1"
+    },
+    "fail_ip": {
+      "kind": "fail",
+      "text": "Une adresse APIPA signifie que le DHCP n'a pas repondu. Configurer une IP fixe sans comprendre la cause ou mal interpreter l'APIPA peut creer des conflits d'adresses et masquer la vraie panne.",
+      "course": "adresses-ip",
+      "courseLabel": "Les adresses IP",
+      "retryTo": "n5"
+    },
+    "fail_gestionnaire": {
+      "kind": "fail",
+      "text": "Supprimer une etendue DHCP existante efface tous les baux enregistres et la configuration de la plage. Il suffisait de l'activer en deux clics. Toujours privilegier la correction minimale avant toute action destructrice.",
+      "course": "gestionnaire-de-serveurs",
+      "courseLabel": "Le gestionnaire de serveurs",
+      "retryTo": "n7"
+    },
+    "win": {
+      "kind": "win",
+      "text": "Bravo ! Ping 192.168.1.254 : OK. Ping 8.8.8.8 : OK. L'utilisateur retrouve Internet et les partages reseau. Diagnostic complet en quelques minutes. Methode appliquee : couche 1 validee (voyant + cable), couche 2 validee (port switch + VLAN), couche 3 : APIPA detectee, DHCP arrete identifie dans le Gestionnaire de serveurs, etendue reactivee, bail renouvele avec ipconfig /renew, connectivite confirmee par ping. Bien joue !"
+    }
+  }
+}

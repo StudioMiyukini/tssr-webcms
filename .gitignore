@@ -1,0 +1,16 @@
+node_modules
+dist
+.env
+.env.local
+*.log
+cms.sqlite
+cms.sqlite-shm
+cms.sqlite-wal
+.DS_Store
+uploads
+cloud
+.smoke-test.sqlite*
+portable
+.backup-miyukini-db/
+.legacy/
+ecosystem.config.cjs

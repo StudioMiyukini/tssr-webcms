@@ -1,0 +1,291 @@
+{
+  "slug": "carte-mere",
+  "title": "La carte mère (connectique interne)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Qu'est-ce que le socket CPU sur une carte mère ?",
+          "options": ["Un emplacement pour brancher un ventilateur", "Le connecteur physique qui accueille le processeur", "Un port pour la RAM", "Un slot pour les cartes d'extension"],
+          "answer": 1,
+          "explain": "Le socket est l'interface mécanique et électrique qui reçoit le processeur et assure la connexion avec le reste de la carte mère."
+        },
+        {
+          "q": "Que sont les slots DIMM sur une carte mère ?",
+          "options": ["Des emplacements pour les cartes graphiques", "Des connecteurs pour les barrettes de RAM", "Des ports SATA pour les disques", "Des connecteurs pour les ventilateurs"],
+          "answer": 1,
+          "explain": "Les slots DIMM (Dual Inline Memory Module) accueillent les barrettes de mémoire RAM."
+        },
+        {
+          "q": "À quoi sert un port SATA sur une carte mère ?",
+          "options": ["Connecter un écran", "Connecter des disques durs ou SSD via un câble SATA", "Alimenter la carte graphique", "Relier la carte mère à l'alimentation"],
+          "answer": 1,
+          "explain": "Le port SATA est l'interface utilisée pour connecter les disques durs (HDD) et SSD 2,5 et 3,5 pouces à la carte mère."
+        },
+        {
+          "q": "Que signifie PCIe ?",
+          "options": ["Peripheral Component Interface Extended", "Peripheral Component Interconnect Express", "Parallel Component Interconnect Express", "Primary Component Interface Express"],
+          "answer": 1,
+          "explain": "PCIe (Peripheral Component Interconnect Express) est le bus d'extension moderne utilisé pour les cartes graphiques, SSD NVMe et autres cartes d'extension."
+        },
+        {
+          "q": "Quel connecteur d'alimentation principal relie l'alimentation à la carte mère ?",
+          "options": ["Un connecteur 8 broches EPS", "Un connecteur 24 broches ATX", "Un connecteur SATA power", "Un connecteur Molex 4 broches"],
+          "answer": 1,
+          "explain": "Le connecteur ATX 24 broches est le connecteur principal qui fournit plusieurs tensions (3,3 V, 5 V, 12 V) à la carte mère."
+        },
+        {
+          "q": "Que stocke la pile CMOS sur une carte mère ?",
+          "options": ["Le système d'exploitation", "Les paramètres du BIOS/UEFI et l'heure système", "Les drivers des périphériques", "Les mots de passe des utilisateurs Windows"],
+          "answer": 1,
+          "explain": "La pile CMOS (généralement CR2032) alimente la mémoire CMOS qui conserve les paramètres BIOS et l'heure lorsque le PC est éteint."
+        },
+        {
+          "q": "Qu'est-ce qu'un slot M.2 ?",
+          "options": ["Un connecteur pour les ventilateurs", "Un emplacement pour cartes SSD NVMe ou SATA de petite taille", "Un port pour les barrettes RAM", "Un emplacement pour cartes son"],
+          "answer": 1,
+          "explain": "Le slot M.2 est un format compact qui accueille des SSD NVMe (via PCIe) ou SATA, directement sur la carte mère sans câble."
+        },
+        {
+          "q": "Combien de broches possède généralement le connecteur d'alimentation CPU (EPS) ?",
+          "options": ["4 broches", "6 broches", "8 broches (ou 4+4)", "24 broches"],
+          "answer": 2,
+          "explain": "Le connecteur EPS CPU est un connecteur 8 broches (souvent en deux blocs de 4 permettant d'utiliser 4 ou 8 broches selon le CPU)."
+        },
+        {
+          "q": "Que sont les «headers» USB sur une carte mère ?",
+          "options": ["Les ports USB situés sur le panneau arrière", "Des connecteurs internes permettant de relier les ports USB de façade du boîtier", "Des adaptateurs USB vers SATA", "Des ports USB réservés au clavier et à la souris"],
+          "answer": 1,
+          "explain": "Les headers USB sont des connecteurs internes sur la carte mère auxquels se branchent les câbles des ports USB situés en façade du boîtier."
+        },
+        {
+          "q": "À quoi servent les connecteurs de ventilateurs (fan headers) ?",
+          "options": ["À alimenter les disques durs", "À connecter et contrôler les ventilateurs du boîtier et du CPU", "À brancher des LEDs RGB", "À connecter les boutons d'alimentation du boîtier"],
+          "answer": 1,
+          "explain": "Les fan headers (connecteurs 3 ou 4 broches) alimentent les ventilateurs et permettent à la carte mère d'en contrôler la vitesse (PWM)."
+        },
+        {
+          "q": "Qu'est-ce qu'un slot PCIe x16 ?",
+          "options": ["Un slot avec 16 ports USB", "Un slot d'extension avec 16 lignes de données PCIe, utilisé principalement pour les cartes graphiques", "Un slot pour 16 barrettes de RAM", "Un connecteur d'alimentation 16 broches"],
+          "answer": 1,
+          "explain": "Un slot PCIe x16 dispose de 16 lignes de données (lanes) et est le connecteur principal pour les cartes graphiques dédiées."
+        },
+        {
+          "q": "Combien de ports SATA trouve-t-on typiquement sur une carte mère ATX grand public ?",
+          "options": ["1 à 2 ports", "4 à 8 ports", "10 à 12 ports", "16 ports"],
+          "answer": 1,
+          "explain": "La plupart des cartes mères ATX grand public proposent 4 à 8 ports SATA pour connecter les disques de stockage."
+        },
+        {
+          "q": "Que signifie BIOS ?",
+          "options": ["Basic Input Output System", "Binary Integrated Operating System", "Boot Input Output Storage", "Basic Integrated Operating System"],
+          "answer": 0,
+          "explain": "Le BIOS (Basic Input Output System) est le firmware de la carte mère qui initialise le matériel au démarrage avant de lancer le système d'exploitation."
+        },
+        {
+          "q": "Quel connecteur relie le boîtier à la carte mère pour le bouton d'alimentation ?",
+          "options": ["Le connecteur ATX 24 broches", "Les headers du panneau avant (front panel headers)", "Le connecteur USB 3.0 interne", "Le connecteur audio HD"],
+          "answer": 1,
+          "explain": "Les front panel headers sont un groupe de petits connecteurs sur la carte mère pour le bouton power, le bouton reset, les LEDs et le buzzer."
+        },
+        {
+          "q": "Que se passe-t-il si l'on retire la pile CMOS ?",
+          "options": ["L'ordinateur ne s'allume plus du tout", "Les paramètres BIOS sont réinitialisés aux valeurs par défaut et l'heure est perdue", "La RAM est effacée", "Le système d'exploitation doit être réinstallé"],
+          "answer": 1,
+          "explain": "Retirer la pile CMOS réinitialise le BIOS aux paramètres d'usine et efface l'heure ; c'est parfois utilisé pour débloquer un BIOS verrouillé."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Qu'est-ce que le chipset d'une carte mère ?",
+          "options": ["Un processeur secondaire pour les jeux vidéo", "Un ensemble de circuits qui gère les communications entre le CPU et les périphériques", "Le circuit qui alimente le processeur", "Un composant uniquement présent sur les cartes haut de gamme"],
+          "answer": 1,
+          "explain": "Le chipset orchestre les échanges de données entre le CPU, la RAM, le stockage, les ports USB et les slots PCIe."
+        },
+        {
+          "q": "Quelle est la différence entre un socket LGA et un socket PGA ?",
+          "options": ["LGA a les broches sur le processeur, PGA les a sur la carte mère", "LGA a les broches sur la carte mère, PGA les a sur le processeur", "Ils sont identiques, seul le nom diffère selon la marque", "LGA est AMD, PGA est Intel"],
+          "answer": 1,
+          "explain": "LGA (Land Grid Array) : broches sur le socket de la carte mère / le CPU a des plages. PGA (Pin Grid Array) : broches sur le processeur / le socket a des trous."
+        },
+        {
+          "q": "Qu'est-ce que le dual-channel et comment l'activer sur une carte mère à 4 slots ?",
+          "options": ["Installer 2 barrettes dans les slots 1 et 2 (consécutifs)", "Installer 2 barrettes dans les slots 1 et 3 (alternés, code couleur)", "Installer une seule barrette dans le slot recommandé", "Activer une option dans le BIOS sans contrainte de placement"],
+          "answer": 1,
+          "explain": "Pour le dual-channel sur 4 slots, il faut respecter les paires de slots (généralement A2 et B2, signalées par la même couleur dans le manuel)."
+        },
+        {
+          "q": "Que signifie M.2 2280 ?",
+          "options": ["Un SSD M.2 compatible uniquement PCIe 2.0", "Un SSD M.2 de 22 mm de large et 80 mm de long", "Un SSD M.2 avec 2 280 Mo/s de débit", "Un SSD M.2 supportant 2 interfaces : 2 SATA et 80 PCIe"],
+          "answer": 1,
+          "explain": "Le code 2280 indique les dimensions physiques : 22 mm de large et 80 mm de long, le format M.2 le plus courant."
+        },
+        {
+          "q": "Quelle est la différence entre un slot M.2 compatible NVMe et un M.2 compatible SATA ?",
+          "options": ["Il n'y a aucune différence physique ni logique", "Un M.2 NVMe utilise le protocole PCIe pour des vitesses bien supérieures au M.2 SATA", "Le M.2 SATA est plus rapide que le M.2 NVMe", "Le M.2 NVMe est plus court physiquement"],
+          "answer": 1,
+          "explain": "Un SSD M.2 NVMe communique via PCIe et peut atteindre plusieurs Go/s, tandis qu'un M.2 SATA est limité à ~600 Mo/s comme un SATA classique."
+        },
+        {
+          "q": "Qu'est-ce que le VRM (Voltage Regulator Module) sur une carte mère ?",
+          "options": ["Un module de gestion de la mémoire vidéo", "Un circuit qui régule et stabilise la tension fournie au processeur", "Un connecteur pour les ventilateurs RGB", "Un chipset secondaire pour les ports USB"],
+          "answer": 1,
+          "explain": "Le VRM convertit la tension du rail 12 V en tensions précises requises par le CPU, et sa qualité est cruciale pour l'overclocking."
+        },
+        {
+          "q": "Quelle est la fonction du connecteur «AURA» ou «ARGB» sur une carte mère ?",
+          "options": ["Connecter un périphérique audio haute définition", "Contrôler les éclairages RGB adressables des ventilateurs ou bandeaux LED", "Alimenter un SSD NVMe supplémentaire", "Connecter un port USB 3.2 en façade"],
+          "answer": 1,
+          "explain": "Les headers ARGB (3 broches) ou RGB (4 broches) permettent de connecter et de contrôler les éclairages adressables dans le boîtier."
+        },
+        {
+          "q": "Pourquoi certaines cartes mères ont-elles deux slots M.2 ?",
+          "options": ["Pour un débit doublé sur un seul SSD", "Pour permettre l'installation de deux SSD M.2 indépendants (système + données)", "Car le second slot est une sauvegarde en cas de panne du premier", "Pour prendre en charge le RAID 0 obligatoire"],
+          "answer": 1,
+          "explain": "Deux slots M.2 permettent d'installer deux SSD distincts, par exemple un pour l'OS et un autre pour le stockage des données."
+        },
+        {
+          "q": "Qu'est-ce que le POST (Power-On Self Test) ?",
+          "options": ["Un utilitaire Windows de diagnostic", "La séquence d'auto-test exécutée par le BIOS au démarrage pour vérifier le matériel", "Un type de port sur la carte mère", "Un protocole de communication PCIe"],
+          "answer": 1,
+          "explain": "Le POST est la phase de vérification initiale du BIOS qui teste la RAM, le CPU et les périphériques avant de lancer le démarrage du système."
+        },
+        {
+          "q": "Qu'est-ce que le connecteur «USB 3.0 interne» (19 broches) sur une carte mère ?",
+          "options": ["Un port USB externe à l'arrière de la carte mère", "Un header interne à 19 ou 20 broches reliant les ports USB 3.0 de façade du boîtier", "Un connecteur pour SSD USB", "Un connecteur réservé aux hubs USB"],
+          "answer": 1,
+          "explain": "Ce header interne 19/20 broches permet de connecter les ports USB 3.0 (bleus) situés en façade du boîtier à la carte mère."
+        },
+        {
+          "q": "Un processeur Intel LGA1700 est-il compatible avec un socket LGA1200 ?",
+          "options": ["Oui, les LGA sont tous compatibles entre eux", "Non, chaque socket a une configuration de broches différente et propre à une génération", "Oui, avec un adaptateur", "Non, uniquement si la carte mère a le bon BIOS"],
+          "answer": 1,
+          "explain": "Chaque socket Intel a un nombre et un agencement de broches spécifique ; le LGA1700 et le LGA1200 sont physiquement et électriquement incompatibles."
+        },
+        {
+          "q": "Que signifie UEFI par rapport au BIOS traditionnel ?",
+          "options": ["UEFI est uniquement disponible sur les cartes AMD", "UEFI est un firmware plus récent avec interface graphique, support des disques >2 To et démarrage sécurisé", "UEFI remplace le chipset de la carte mère", "UEFI est une version du BIOS uniquement pour les serveurs"],
+          "answer": 1,
+          "explain": "L'UEFI (Unified Extensible Firmware Interface) est le successeur du BIOS, avec des capacités étendues comme le support GPT, le Secure Boot et une interface graphique."
+        },
+        {
+          "q": "Qu'est-ce que le «Clear CMOS» sur une carte mère ?",
+          "options": ["Un bouton ou cavalier qui réinitialise les paramètres BIOS en effaçant la mémoire CMOS", "Une touche pour effacer le stockage SATA", "Un connecteur pour réinitialiser la RAM", "Un bouton pour mettre à jour le BIOS automatiquement"],
+          "answer": 0,
+          "explain": "Le Clear CMOS (bouton ou cavalier jumper) efface la mémoire CMOS et réinitialise le BIOS, utile après un overclocking qui rend le système instable."
+        },
+        {
+          "q": "Pourquoi l'alimentation CPU utilise-t-elle un connecteur séparé du 24 broches principal ?",
+          "options": ["Pour des raisons esthétiques de câblage", "Pour fournir un courant 12 V stable et suffisant directement au VRM du CPU, indépendamment du reste", "Car les processeurs récents utilisent une tension différente des autres composants", "Pour permettre l'alimentation hot-swap du CPU"],
+          "answer": 1,
+          "explain": "Séparer l'alimentation CPU garantit une tension 12 V propre et suffisante pour le VRM, évitant les chutes de tension lors des pics de charge du processeur."
+        },
+        {
+          "q": "Qu'est-ce que le «Q-Flash» ou «Flash BIOS button» présent sur certaines cartes mères ?",
+          "options": ["Un bouton pour overclocker rapidement le CPU", "Une fonction permettant de mettre à jour le BIOS depuis une clé USB sans CPU ni RAM installés", "Un indicateur lumineux de l'état de santé de la carte mère", "Un bouton de réinitialisation d'urgence du système d'exploitation"],
+          "answer": 1,
+          "explain": "Le Flash BIOS button (Q-Flash chez GIGABYTE, FlashBack chez ASUS) permet de flasher le BIOS depuis USB même sans CPU ni RAM, utile pour la compatibilité."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Que signifie le «x» dans PCIe x4 ou x16 ?",
+          "options": ["La version du protocole PCIe", "Le nombre de lanes (lignes de données) disponibles sur ce slot", "La vitesse en Go/s du slot", "Le nombre maximum de cartes installables"],
+          "answer": 1,
+          "explain": "Le «x» indique le nombre de lanes PCIe : x1 = 1 lane, x4 = 4 lanes, x16 = 16 lanes ; plus de lanes = plus de bande passante disponible."
+        },
+        {
+          "q": "Qu'est-ce que le «bifurcation» PCIe sur une carte mère ?",
+          "options": ["Un mode de secours en cas de panne d'une lane", "La capacité à diviser un slot PCIe x16 en plusieurs slots logiques (ex: x8/x8 ou x4/x4/x4/x4)", "Le partage de la bande passante PCIe entre le GPU et le SSD NVMe", "Un overclocking du bus PCIe"],
+          "answer": 1,
+          "explain": "La bifurcation PCIe permet de partager les lanes d'un slot x16 physique entre plusieurs appareils, utile pour les cartes d'extension multi-NVMe."
+        },
+        {
+          "q": "Que se passe-t-il si l'on installe un SSD NVMe PCIe 4.0 dans un slot M.2 PCIe 3.0 ?",
+          "options": ["Le SSD ne démarre pas", "Le SSD fonctionne mais à la vitesse maximale du PCIe 3.0 (rétrocompatibilité)", "La carte mère est endommagée", "Le BIOS refuse le démarrage"],
+          "answer": 1,
+          "explain": "Les générations PCIe sont rétrocompatibles : un SSD PCIe 4.0 dans un slot PCIe 3.0 fonctionnera, mais limité aux débits du PCIe 3.0."
+        },
+        {
+          "q": "Qu'est-ce que le «Secure Boot» dans l'UEFI ?",
+          "options": ["Un mot de passe BIOS pour protéger les paramètres", "Un mécanisme qui vérifie la signature cryptographique des chargeurs de démarrage pour empêcher les bootkit", "Un mode de démarrage rapide qui saute le POST", "Une fonctionnalité de sauvegarde automatique du BIOS"],
+          "answer": 1,
+          "explain": "Secure Boot vérifie que le bootloader et les drivers au démarrage sont signés par des clés de confiance, protégeant contre les logiciels malveillants au niveau du firmware."
+        },
+        {
+          "q": "Pourquoi l'installation d'un SSD M.2 peut-elle désactiver des ports SATA sur certaines cartes mères ?",
+          "options": ["Pour économiser l'énergie de l'alimentation", "Car le M.2 et certains ports SATA partagent les mêmes lanes PCIe ou contrôleur SATA du chipset", "Car le SSD M.2 chauffe et désactive les ports proches", "C'est une erreur de conception, toutes les cartes modernes l'ont corrigé"],
+          "answer": 1,
+          "explain": "Beaucoup de chipsets ont un nombre limité de lanes ; quand un slot M.2 les utilise, les ports SATA qui partagent ces ressources sont désactivés."
+        },
+        {
+          "q": "Qu'est-ce que le connecteur «Thunderbolt header» sur certaines cartes mères ?",
+          "options": ["Un connecteur pour barrettes RAM de type Thunderbolt", "Un header interne permettant de connecter une carte d'extension Thunderbolt", "Un connecteur pour afficher la foudre RGB sur le boîtier", "Un port de debug réservé aux ingénieurs"],
+          "answer": 1,
+          "explain": "Certaines cartes mères proposent un header interne pour connecter une carte Thunderbolt optionnelle, ajoutant des ports Thunderbolt à l'arrière du PC."
+        },
+        {
+          "q": "Qu'est-ce que le «DMI» sur une architecture Intel moderne ?",
+          "options": ["Direct Memory Interface : lien entre la RAM et le CPU", "Direct Media Interface : le lien haut débit entre le CPU et le chipset de la carte mère", "Dual Module Interface : un type de socket mémoire", "Digital Monitor Interface : connexion écran interne"],
+          "answer": 1,
+          "explain": "Le DMI (Direct Media Interface) est le bus propriétaire Intel reliant le processeur au chipset PCH, avec une bande passante limitée qui peut devenir un goulot d'étranglement."
+        },
+        {
+          "q": "Que mesure le «Q-Code» ou «LED debug» présent sur certaines cartes mères haut de gamme ?",
+          "options": ["La température du CPU en temps réel", "Un code hexadécimal POST indiquant l'état du démarrage pour faciliter le diagnostic de pannes", "La vitesse des ventilateurs connectés", "La version du BIOS installée"],
+          "answer": 1,
+          "explain": "Le Q-Code/LED debug affiche des codes POST en hexadécimal qui correspondent à des étapes du démarrage, permettant d'identifier précisément un composant défaillant."
+        },
+        {
+          "q": "Qu'est-ce que le «CMOS battery dead» symptôme sur un PC ?",
+          "options": ["Le PC ne s'allume plus du tout", "L'heure se réinitialise à chaque démarrage et les paramètres BIOS peuvent être perdus", "La RAM n'est plus détectée", "L'écran reste noir indéfiniment"],
+          "answer": 1,
+          "explain": "Une pile CMOS déchargée provoque la perte de l'heure et des paramètres BIOS à chaque extinction, car la mémoire CMOS n'est plus alimentée."
+        },
+        {
+          "q": "Que signifie PCIe 5.0 par rapport au PCIe 4.0 en termes de bande passante ?",
+          "options": ["PCIe 5.0 est 50% plus rapide que le 4.0", "PCIe 5.0 double la bande passante par lane par rapport au PCIe 4.0", "PCIe 5.0 réduit la latence mais pas le débit", "PCIe 5.0 triple la bande passante du 4.0"],
+          "answer": 1,
+          "explain": "Chaque génération PCIe double la bande passante par lane : PCIe 3.0 = ~1 Go/s/lane, PCIe 4.0 = ~2 Go/s/lane, PCIe 5.0 = ~4 Go/s/lane."
+        },
+        {
+          "q": "Quel est le rôle du connecteur «CPU_OPT» sur une carte mère ?",
+          "options": ["Un connecteur d'alimentation optionnel pour CPU très énergivores", "Un second header ventilateur pour la pompe ou ventilateurs d'un système de watercooling CPU", "Un connecteur pour overclocker le CPU via logiciel", "Un header pour le bouton de reset du CPU"],
+          "answer": 1,
+          "explain": "CPU_OPT est un header ventilateur supplémentaire souvent utilisé pour la pompe d'un watercooling tout-en-un (AIO), contrôlé en lien avec la température CPU."
+        },
+        {
+          "q": "Que permet la fonctionnalité «Re-Size BAR» (Smart Access Memory chez AMD) ?",
+          "options": ["D'augmenter la taille de la VRAM du GPU", "De permettre au CPU d'accéder à toute la VRAM du GPU en une seule fois, améliorant les performances", "De réduire la consommation de la carte graphique", "D'activer un second GPU en mode SLI/CrossFire"],
+          "answer": 1,
+          "explain": "Re-Size BAR supprime la limite de 256 Mo d'accès à la VRAM, permettant au CPU d'accéder directement à toute la mémoire du GPU, améliorant les FPS dans certains jeux."
+        },
+        {
+          "q": "Que signifie le terme «beep code» lors du démarrage d'un PC ?",
+          "options": ["Un signal sonore du ventilateur indiquant une surchauffe", "Une séquence de bips du haut-parleur interne codant une erreur matérielle détectée par le POST", "Le son normal du disque dur au démarrage", "Une alerte de mise à jour BIOS disponible"],
+          "answer": 1,
+          "explain": "Les beep codes sont des séquences de bips émises par le buzzer interne du PC pendant le POST pour signaler des pannes (RAM, GPU, CPU) quand l'affichage est impossible."
+        },
+        {
+          "q": "Qu'est-ce que le «power delivery» en rapport avec les cartes mères et l'overclocking ?",
+          "options": ["La puissance de l'alimentation connectée", "La qualité et le nombre de phases du VRM qui déterminent la stabilité de l'alimentation CPU sous charge", "Le câble d'alimentation ATX utilisé", "L'efficacité énergétique 80 Plus de l'alimentation"],
+          "answer": 1,
+          "explain": "La qualité du power delivery (VRM : nombre de phases, composants) détermine la capacité de la carte mère à fournir une tension stable au CPU en overclocking."
+        },
+        {
+          "q": "Que permet le connecteur «USB4 / Thunderbolt 4» interne sur une carte mère ?",
+          "options": ["D'atteindre 40 Gb/s sur les ports USB en façade du boîtier", "De connecter une carte fille ajoutant des ports USB4/TB4 40 Gb/s sur le panneau arrière", "D'alimenter en USB Power Delivery jusqu'à 240 W", "De connecter deux écrans 4K directement sur la carte mère"],
+          "answer": 1,
+          "explain": "Ce header interne permet de connecter une carte d'extension ou un module qui ajoute des ports USB4/Thunderbolt 4 (40 Gb/s) sur le panneau arrière du PC."
+        }
+      ]
+    }
+  ]
+}

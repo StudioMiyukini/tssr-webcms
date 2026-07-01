@@ -1,0 +1,291 @@
+{
+  "slug": "les-form-factor",
+  "title": "Les form factors",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Que désigne le terme «form factor» dans le contexte des cartes mères ?",
+          "options": ["La marque du fabricant", "Le format standard définissant les dimensions et la disposition des composants", "La couleur du PCB", "La génération de socket CPU"],
+          "answer": 1,
+          "explain": "Le form factor est une norme qui définit les dimensions physiques, les emplacements de fixation et la disposition des connecteurs d'une carte mère."
+        },
+        {
+          "q": "Quel est le form factor de carte mère le plus courant pour les PC de bureau grand public ?",
+          "options": ["Mini-ITX", "E-ATX", "ATX", "Micro-ATX"],
+          "answer": 2,
+          "explain": "L'ATX (Advanced Technology eXtended) est le format standard le plus répandu pour les PC de bureau, offrant un bon équilibre entre taille et fonctionnalités."
+        },
+        {
+          "q": "Quelles sont les dimensions d'une carte mère ATX standard ?",
+          "options": ["170 x 170 mm", "244 x 244 mm", "305 x 244 mm", "330 x 305 mm"],
+          "answer": 2,
+          "explain": "Une carte mère ATX mesure 305 mm de long pour 244 mm de large, c'est la référence des formats grand public."
+        },
+        {
+          "q": "Qu'est-ce qu'une carte mère Micro-ATX (mATX) ?",
+          "options": ["Une carte mère pour serveurs", "Une version compacte de l'ATX mesurant 244 x 244 mm", "Un format exclusif aux processeurs AMD", "Une carte mère sans ports PCIe"],
+          "answer": 1,
+          "explain": "La Micro-ATX mesure 244 x 244 mm et est compatible avec la plupart des boîtiers ATX et mATX tout en étant plus compacte."
+        },
+        {
+          "q": "Quel est le plus petit form factor de carte mère couramment disponible ?",
+          "options": ["Nano-ITX", "Mini-ITX", "Pico-ITX", "Micro-ATX"],
+          "answer": 1,
+          "explain": "Le Mini-ITX (170 x 170 mm) est le format le plus petit communément disponible pour construire un PC compact."
+        },
+        {
+          "q": "Un boîtier ATX peut-il accueillir une carte mère Micro-ATX ?",
+          "options": ["Non, les trous de fixation ne correspondent pas", "Oui, les boîtiers ATX acceptent généralement les cartes ATX, mATX et mini-ITX", "Non, le mATX nécessite un boîtier dédié", "Oui, mais uniquement avec un adaptateur"],
+          "answer": 1,
+          "explain": "Les boîtiers ATX sont rétrocompatibles : ils peuvent accueillir des cartes ATX, mais aussi mATX et mini-ITX car les emplacements de fixation sont standardisés."
+        },
+        {
+          "q": "Que signifie ITX dans «Mini-ITX» ?",
+          "options": ["Information Technology eXtended", "Internal Transfer eXpress", "Integrated Technology eXchange", "International Technology eXpress"],
+          "answer": 0,
+          "explain": "ITX signifie «Information Technology eXtended», un format développé par VIA Technologies en 2001."
+        },
+        {
+          "q": "Quel form factor est généralement plus grand que l'ATX standard ?",
+          "options": ["Micro-ATX", "Mini-ITX", "E-ATX", "Nano-ITX"],
+          "answer": 2,
+          "explain": "L'E-ATX (Extended ATX) dépasse les dimensions de l'ATX classique (souvent 305 x 330 mm) pour accueillir plus de slots mémoire et de PCIe."
+        },
+        {
+          "q": "Pourquoi choisir un boîtier Mini-ITX ?",
+          "options": ["Pour avoir plus de slots PCIe", "Pour construire un PC très compact avec peu d'encombrement", "Pour installer de très grands systèmes de refroidissement", "Pour utiliser des processeurs serveur"],
+          "answer": 1,
+          "explain": "Le Mini-ITX permet de construire des PC très compacts, pratiques pour le salon, un bureau encombré ou un usage portable."
+        },
+        {
+          "q": "Une carte mère ATX peut-elle être installée dans un boîtier Mini-ITX ?",
+          "options": ["Oui, avec un adaptateur", "Non, une carte ATX est trop grande pour un boîtier Mini-ITX", "Oui, si on retire les slots inutiles", "Non, seulement si le boîtier est de marque identique"],
+          "answer": 1,
+          "explain": "Une carte ATX (305 x 244 mm) ne rentre pas physiquement dans un boîtier conçu pour le Mini-ITX (170 x 170 mm)."
+        },
+        {
+          "q": "Combien de slots mémoire possède typiquement une carte Mini-ITX ?",
+          "options": ["4 slots DIMM", "1 slot DIMM", "2 slots DIMM", "8 slots DIMM"],
+          "answer": 2,
+          "explain": "Par contrainte d'espace, les cartes Mini-ITX disposent généralement de seulement 2 slots DIMM."
+        },
+        {
+          "q": "Quel form factor est typiquement utilisé pour les stations de travail et les PC haute performance avec de nombreux slots mémoire ?",
+          "options": ["Mini-ITX", "Micro-ATX", "E-ATX", "ATX"],
+          "answer": 2,
+          "explain": "L'E-ATX offre plus d'espace pour accueillir jusqu'à 8 slots DIMM et davantage de slots PCIe, idéal pour les stations de travail."
+        },
+        {
+          "q": "La compatibilité entre un boîtier et une carte mère dépend principalement de :",
+          "options": ["La marque du fabricant", "La couleur du boîtier", "Le form factor (format standardisé)", "Le prix de la carte mère"],
+          "answer": 2,
+          "explain": "C'est le form factor qui détermine la compatibilité : les trous de fixation, les dimensions et la position des ports doivent correspondre."
+        },
+        {
+          "q": "Qu'est-ce qu'un boîtier «tour» (tower) ?",
+          "options": ["Un boîtier posé à l'horizontale", "Un boîtier de grande taille posé à la verticale, compatible ATX", "Un boîtier uniquement pour serveurs", "Un boîtier sans ventilateur"],
+          "answer": 1,
+          "explain": "Un boîtier tour (mid-tower ou full-tower) est un format vertical standard qui accueille les cartes mères ATX et offre de l'espace pour les composants."
+        },
+        {
+          "q": "Parmi ces boîtiers, lequel est typiquement le plus petit ?",
+          "options": ["Full tower", "Mid tower", "Mini-ITX", "Micro-ATX"],
+          "answer": 2,
+          "explain": "Les boîtiers Mini-ITX sont les plus compacts des formats courants, conçus pour la carte mère 170 x 170 mm."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Quelle est la dimension d'une carte mère Mini-ITX ?",
+          "options": ["170 x 170 mm", "244 x 244 mm", "305 x 244 mm", "203 x 170 mm"],
+          "answer": 0,
+          "explain": "Le Mini-ITX est un carré de 170 x 170 mm, ce qui le rend nettement plus compact que le Micro-ATX ou l'ATX."
+        },
+        {
+          "q": "Combien de slots PCIe x16 trouve-t-on généralement sur une carte Mini-ITX ?",
+          "options": ["0", "1", "2", "4"],
+          "answer": 1,
+          "explain": "La taille réduite du Mini-ITX ne laisse de place que pour un seul slot PCIe x16, limitant les options d'extension."
+        },
+        {
+          "q": "Une carte Micro-ATX possède généralement combien de slots d'extension PCIe ?",
+          "options": ["1", "4", "2 à 4", "6 à 7"],
+          "answer": 2,
+          "explain": "Les cartes mATX disposent typiquement de 2 à 4 slots PCIe selon le modèle, moins qu'une ATX standard."
+        },
+        {
+          "q": "Quel est l'avantage principal d'une carte mère ATX par rapport à une mATX ?",
+          "options": ["Elle consomme moins d'énergie", "Elle est moins chère", "Elle offre plus de slots d'extension et de connecteurs", "Elle est compatible avec plus de processeurs"],
+          "answer": 2,
+          "explain": "L'ATX offre davantage de slots PCIe, de ports SATA, de slots DIMM et de connecteurs, idéal pour les builds extensibles."
+        },
+        {
+          "q": "Les trous de vis d'une carte Micro-ATX sont-ils compatibles avec un boîtier ATX ?",
+          "options": ["Non, les standards sont incompatibles", "Oui, les spécifications ATX incluent les emplacements de fixation mATX", "Oui, mais uniquement avec des entretoises spéciales", "Non, il faut un plateau mATX dédié"],
+          "answer": 1,
+          "explain": "Le standard ATX prévoit les emplacements de fixation pour les cartes mATX, assurant la compatibilité ascendante des boîtiers."
+        },
+        {
+          "q": "Qu'est-ce qu'un boîtier «SFF» (Small Form Factor) ?",
+          "options": ["Un boîtier plein format pour stations de travail", "Un boîtier compact conçu pour des cartes Mini-ITX ou Micro-ATX", "Un boîtier destiné uniquement aux serveurs", "Un boîtier sans alimentation intégrée"],
+          "answer": 1,
+          "explain": "SFF désigne les boîtiers compacts conçus pour Mini-ITX ou mATX, populaires pour les HTPC et les postes de travail discrets."
+        },
+        {
+          "q": "Quelle est la principale limitation d'un boîtier Mini-ITX pour un PC gaming ?",
+          "options": ["Il ne peut pas accueillir un GPU dédié", "L'espace limité rend le refroidissement plus difficile et réduit les options d'extension", "Il est incompatible avec les processeurs Intel", "Il n'accepte que des SSD et pas de HDD"],
+          "answer": 1,
+          "explain": "Dans un boîtier Mini-ITX, l'espace réduit limite l'airflow, la taille du ventirad CPU et le nombre de composants installables."
+        },
+        {
+          "q": "Combien de slots DIMM offre typiquement une carte mère ATX ?",
+          "options": ["2 slots", "4 slots", "6 slots", "8 slots"],
+          "answer": 1,
+          "explain": "Une carte mère ATX standard dispose généralement de 4 slots DIMM, permettant d'exploiter le dual-channel avec deux ou quatre barrettes."
+        },
+        {
+          "q": "Quel form factor est souvent utilisé dans les PC «HTPC» (Home Theater PC) ?",
+          "options": ["E-ATX", "ATX full tower", "Mini-ITX", "Micro-ATX"],
+          "answer": 2,
+          "explain": "Le Mini-ITX est idéal pour les HTPC car il permet de construire des PC compacts et silencieux intégrés dans un salon."
+        },
+        {
+          "q": "Un boîtier «Micro-ATX» peut-il accueillir une carte mère ATX ?",
+          "options": ["Oui, avec un peu de force", "Non, une carte ATX est trop grande pour un boîtier mATX", "Oui, en retirant le panneau latéral", "Non, sauf si c'est le même fabricant"],
+          "answer": 1,
+          "explain": "Une carte ATX (305 x 244 mm) dépasse les dimensions d'un boîtier Micro-ATX et ne peut pas y être installée."
+        },
+        {
+          "q": "Quel form factor est le plus adapté pour une station de travail avec deux GPU et beaucoup de RAM ?",
+          "options": ["Mini-ITX", "Micro-ATX", "ATX", "E-ATX"],
+          "answer": 3,
+          "explain": "L'E-ATX avec ses dimensions étendues permet d'accueillir jusqu'à 8 slots DIMM, plusieurs slots PCIe et plusieurs GPU."
+        },
+        {
+          "q": "À quoi correspondent les entretoises («standoffs») dans un boîtier ?",
+          "options": ["Des supports pour les ventilateurs", "Des vis hexagonales qui surélèvent la carte mère du fond du boîtier pour éviter les courts-circuits", "Des fixations pour l'alimentation", "Des rails pour les disques durs"],
+          "answer": 1,
+          "explain": "Les entretoises surélèvent la carte mère du plateau métallique du boîtier, évitant tout contact électrique non désiré."
+        },
+        {
+          "q": "Qu'est-ce que le «backplate» d'un boîtier ?",
+          "options": ["Le panneau latéral amovible", "Le panneau arrière sur lequel s'alignent les ports de la carte mère (panneau I/O)", "La plaque de montage du CPU", "La paroi avant du boîtier"],
+          "answer": 1,
+          "explain": "Le backplate (ou panneau arrière) contient les ouvertures pour accéder aux ports USB, audio, vidéo et réseau de la carte mère."
+        },
+        {
+          "q": "Une carte E-ATX nécessite-t-elle obligatoirement un boîtier E-ATX ?",
+          "options": ["Non, tout boîtier ATX est compatible", "Oui, uniquement un boîtier E-ATX ou full-tower compatible E-ATX", "Non, elle rentre dans un mid-tower standard", "Oui, mais avec un adaptateur spécifique"],
+          "answer": 1,
+          "explain": "L'E-ATX est plus large que l'ATX standard ; il faut vérifier la compatibilité du boîtier, généralement un full-tower ou un boîtier explicitement E-ATX."
+        },
+        {
+          "q": "Quel form factor domine les ordinateurs portables (laptops) ?",
+          "options": ["Micro-ATX", "Mini-ITX", "Des formats propriétaires non standardisés", "E-ATX"],
+          "answer": 2,
+          "explain": "Les laptops utilisent des cartes mères aux dimensions propriétaires, sans norme ATX/ITX, conçues spécifiquement pour chaque modèle."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Quelle organisation a créé et maintient le standard ATX ?",
+          "options": ["AMD", "Intel", "ASUS", "VIA Technologies"],
+          "answer": 1,
+          "explain": "Le standard ATX a été introduit par Intel en 1995 pour remplacer le format Baby-AT et normaliser la conception des PC de bureau."
+        },
+        {
+          "q": "Quel est l'emplacement du connecteur d'alimentation 24 broches standardisé sur une carte ATX ?",
+          "options": ["En bas à gauche", "En haut à droite du PCB", "Au centre de la carte", "Sur le panneau arrière"],
+          "answer": 1,
+          "explain": "La spécification ATX positionne le connecteur d'alimentation 24 broches en haut à droite de la carte mère pour faciliter le câblage."
+        },
+        {
+          "q": "Que signifie «BTX» et pourquoi a-t-il échoué à remplacer l'ATX ?",
+          "options": ["Budget Technology eXtended, trop cher à produire", "Balanced Technology eXtended, abandonné car l'ATX s'est amélioré et le marché n'a pas suivi", "Backplane Transfer eXchange, incompatible avec les processeurs AMD", "Basic Tower eXtended, limité à 2 slots PCIe"],
+          "answer": 1,
+          "explain": "Le BTX (Balanced Technology Extended) d'Intel visait une meilleure gestion thermique, mais il a été abandonné car l'ATX a évolué et les fabricants ne l'ont pas adopté."
+        },
+        {
+          "q": "Quelle est la différence entre un boîtier «mid-tower» et un «full-tower» ?",
+          "options": ["Le mid-tower accepte uniquement le mATX, le full-tower uniquement l'ATX", "Le full-tower est plus grand, offrant plus d'emplacements pour les disques et de meilleurs options d'airflow", "Ils sont identiques, seule la marque change", "Le mid-tower a plus de slots PCIe que le full-tower"],
+          "answer": 1,
+          "explain": "Un full-tower est plus grand et offre plus d'espace pour les radiateurs, les disques et l'airflow, au prix d'un encombrement plus important."
+        },
+        {
+          "q": "Quel format de carte mère grand public l'ATX a-t-il directement remplacé à partir de 1995 ?",
+          "options": ["Micro-ATX", "Baby-AT", "Mini-ITX", "E-ATX"],
+          "answer": 1,
+          "explain": "Le format Baby-AT (et son ancêtre AT) équipait les PC grand public avant l'introduction de l'ATX en 1995, avec une disposition différente de la carte mère."
+        },
+        {
+          "q": "Pourquoi le Mini-ITX n'accepte-t-il généralement qu'un seul slot PCIe x16 ?",
+          "options": ["Par choix du fabricant pour économiser les coûts", "En raison des contraintes de surface du PCB 170 x 170 mm qui ne laissent pas de place pour d'autres slots", "Car les processeurs compatibles ne supportent qu'une seule lane PCIe", "Pour des raisons de certification électromagnétique"],
+          "answer": 1,
+          "explain": "Le PCB de 170 x 170 mm est tellement contraint en espace que placer un second slot PCIe x16 nécessiterait de supprimer d'autres composants essentiels."
+        },
+        {
+          "q": "Qu'est-ce que le format «Thin Mini-ITX» ?",
+          "options": ["Un Mini-ITX avec des composants soudés directement", "Une variante basse hauteur du Mini-ITX pour systèmes très plats (AIO, borne)", "Un Mini-ITX avec connecteur PCIe réduit", "Un format exclusif aux NAS"],
+          "answer": 1,
+          "explain": "Le Thin Mini-ITX est conçu pour les boîtiers très plats comme les tout-en-un (AIO) ou les bornes interactives, avec des contraintes de hauteur sévères."
+        },
+        {
+          "q": "Comment les fabricants de boîtiers indiquent-ils la compatibilité avec plusieurs form factors ?",
+          "options": ["Uniquement par la couleur du boîtier", "En listant les form factors supportés (ex: ATX / mATX / Mini-ITX) dans les spécifications", "Par un code de couleur sur les entretoises", "Via la puissance de l'alimentation incluse"],
+          "answer": 1,
+          "explain": "Les fabricants listent explicitement dans les spécifications les form factors compatibles, car les emplacements de vis diffèrent selon le format."
+        },
+        {
+          "q": "Un boîtier «rack» serveur utilise généralement quel type de form factor de carte mère ?",
+          "options": ["ATX", "Mini-ITX", "EEB (Server Board) ou SSI CEB/EEB", "E-ATX grand public"],
+          "answer": 2,
+          "explain": "Les serveurs en rack utilisent des normes spécifiques comme SSI EEB ou CEB, plus adaptées aux contraintes de densité et de redondance des serveurs."
+        },
+        {
+          "q": "Quel est l'inconvénient principal d'un build Mini-ITX comparé à un ATX en termes de refroidissement ?",
+          "options": ["Le Mini-ITX ne supporte pas les ventirads à caloducs", "L'espace réduit limite la taille du ventirad CPU et le nombre de ventilateurs de boîtier", "Le Mini-ITX n'a pas de connecteur pour les ventilateurs", "Le Mini-ITX chauffe plus car il n'a pas de ventilateur dédié"],
+          "answer": 1,
+          "explain": "Dans un boîtier Mini-ITX, la hauteur maximale du ventirad CPU est souvent limitée, et peu de ventilateurs peuvent être installés, réduisant les capacités thermiques."
+        },
+        {
+          "q": "Que représente le nombre de «baies» (bays) dans la description d'un boîtier ?",
+          "options": ["Le nombre de slots PCIe disponibles", "Le nombre d'emplacements pour installer des disques durs ou SSD", "Le nombre de ports USB en façade", "Le nombre de ventilateurs inclus"],
+          "answer": 1,
+          "explain": "Les baies de boîtier sont les emplacements prévus pour les disques de stockage : baies 3,5 pouces (HDD) et 2,5 pouces (SSD)."
+        },
+        {
+          "q": "Pourquoi l'E-ATX n'a-t-il pas de spécification dimensionnelle unique ?",
+          "options": ["Car Intel n'a jamais finalisé le standard", "Car plusieurs sous-formats existent (305 x 330 mm, 305 x 272 mm...) sans norme stricte commune", "Car il est uniquement destiné aux OEM", "Car les dimensions varient selon la génération de socket"],
+          "answer": 1,
+          "explain": "L'E-ATX manque d'une norme stricte unique ; les dimensions varient selon les fabricants, ce qui rend la compatibilité avec les boîtiers plus complexe à vérifier."
+        },
+        {
+          "q": "Qu'est-ce que le panneau I/O shield fourni avec une carte mère ?",
+          "options": ["Un protecteur pour les ports PCIe", "Une plaque métallique découpée selon les ports arrière de la carte mère, s'insérant dans l'ouverture du boîtier", "Un cache pour les slots DIMM inutilisés", "Un adaptateur pour convertir l'ATX en mATX"],
+          "answer": 1,
+          "explain": "Le I/O shield est une plaque métallique fournie avec la carte mère qui s'enclenche dans l'ouverture arrière du boîtier pour masquer et protéger les ports inutilisés."
+        },
+        {
+          "q": "Pourquoi un build Mini-ITX peut-il coûter plus cher qu'un build ATX équivalent ?",
+          "options": ["Les composants Mini-ITX sont toujours de meilleure qualité", "La conception miniaturisée entraîne des coûts de fabrication plus élevés pour les cartes et les boîtiers SFF", "Les processeurs sont différents et plus chers", "Car les SSD NVMe coûtent plus cher en format Mini-ITX"],
+          "answer": 1,
+          "explain": "L'ingénierie nécessaire pour miniaturiser les composants dans le format Mini-ITX et les boîtiers SFF se traduit souvent par un coût plus élevé."
+        },
+        {
+          "q": "Quelle est la compatibilité d'un boîtier «ATX mid-tower» avec les form factors suivants : ATX, mATX, Mini-ITX ?",
+          "options": ["Uniquement ATX", "ATX et mATX seulement", "ATX, mATX et Mini-ITX (les trois)", "Uniquement mATX et Mini-ITX"],
+          "answer": 2,
+          "explain": "Un boîtier mid-tower ATX dispose des emplacements de vis pour les trois formats, offrant une grande flexibilité de configuration."
+        }
+      ]
+    }
+  ]
+}

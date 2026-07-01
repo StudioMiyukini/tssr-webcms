@@ -1,0 +1,291 @@
+{
+  "slug": "tcp-et-udp",
+  "title": "TCP & UDP",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "À quelle couche du modèle OSI appartiennent TCP et UDP ?",
+          "options": ["Couche 3 — Réseau", "Couche 4 — Transport", "Couche 5 — Session", "Couche 2 — Liaison"],
+          "answer": 1,
+          "explain": "TCP et UDP sont des protocoles de la couche 4 (Transport) du modèle OSI."
+        },
+        {
+          "q": "Quelle est la principale différence entre TCP et UDP ?",
+          "options": ["TCP est plus rapide qu'UDP", "TCP garantit la livraison des données, UDP non", "UDP chiffre les données, TCP non", "TCP fonctionne uniquement en Wi-Fi"],
+          "answer": 1,
+          "explain": "TCP est un protocole fiable avec accusés de réception, UDP envoie les données sans garantie de livraison."
+        },
+        {
+          "q": "Quelle analogie illustre le mieux TCP ?",
+          "options": ["Une carte postale envoyée sans suivi", "Un SMS collectif", "Une lettre recommandée avec accusé de réception", "Un courriel sans objet"],
+          "answer": 2,
+          "explain": "TCP ressemble à une lettre recommandée : on sait que le destinataire a bien reçu le message."
+        },
+        {
+          "q": "Quelle analogie illustre le mieux UDP ?",
+          "options": ["Un colis suivi Colissimo", "Une carte postale envoyée sans suivi", "Un fax avec confirmation", "Un courrier recommandé"],
+          "answer": 1,
+          "explain": "UDP ressemble à une carte postale : on envoie sans savoir si elle arrivera."
+        },
+        {
+          "q": "Que signifie l'acronyme TCP ?",
+          "options": ["Transfer Control Protocol", "Transmission Control Protocol", "Transport Communication Protocol", "Terminal Connection Protocol"],
+          "answer": 1,
+          "explain": "TCP signifie Transmission Control Protocol."
+        },
+        {
+          "q": "Que signifie l'acronyme UDP ?",
+          "options": ["Unified Data Protocol", "User Datagram Protocol", "Universal Device Protocol", "Upload Data Protocol"],
+          "answer": 1,
+          "explain": "UDP signifie User Datagram Protocol."
+        },
+        {
+          "q": "Quel protocole utilise une poignée de main en trois étapes pour établir une connexion ?",
+          "options": ["UDP", "ICMP", "TCP", "ARP"],
+          "answer": 2,
+          "explain": "TCP établit une connexion via le three-way handshake : SYN, SYN-ACK, ACK."
+        },
+        {
+          "q": "Quelles sont les trois étapes du three-way handshake TCP dans l'ordre ?",
+          "options": ["ACK → SYN → SYN-ACK", "SYN → SYN-ACK → ACK", "SYN-ACK → SYN → ACK", "ACK → SYN-ACK → SYN"],
+          "answer": 1,
+          "explain": "Le client envoie SYN, le serveur répond SYN-ACK, le client confirme avec ACK."
+        },
+        {
+          "q": "À quoi sert un numéro de port dans TCP/UDP ?",
+          "options": ["Identifier l'adresse IP de la machine", "Identifier le service ou l'application concernée", "Chiffrer la communication", "Mesurer la vitesse du réseau"],
+          "answer": 1,
+          "explain": "Le port identifie l'application ou le service sur la machine (ex. port 80 = HTTP)."
+        },
+        {
+          "q": "Sur combien de bits est codé un numéro de port TCP ou UDP ?",
+          "options": ["8 bits", "16 bits", "32 bits", "64 bits"],
+          "answer": 1,
+          "explain": "Les ports sont codés sur 16 bits, ce qui donne 65 536 valeurs possibles (0 à 65 535)."
+        },
+        {
+          "q": "Quel protocole de transport est utilisé par le web (HTTP/HTTPS) ?",
+          "options": ["UDP", "ICMP", "TCP", "FTP"],
+          "answer": 2,
+          "explain": "HTTP et HTTPS utilisent TCP car la fiabilité de la transmission est indispensable."
+        },
+        {
+          "q": "Quel protocole de transport est privilégié pour la VoIP et la visioconférence ?",
+          "options": ["TCP", "FTP", "UDP", "SSH"],
+          "answer": 2,
+          "explain": "UDP est préféré pour la VoIP car la rapidité prime sur la fiabilité ; un paquet perdu ne vaut pas une retransmission."
+        },
+        {
+          "q": "Qu'est-ce qu'un accusé de réception dans TCP ?",
+          "options": ["Un paquet qui annonce la fin de la connexion", "Un message confirmant que les données ont bien été reçues", "Un paquet qui chiffre les données", "Le premier paquet d'une connexion"],
+          "answer": 1,
+          "explain": "L'accusé de réception (ACK) indique à l'émetteur que le destinataire a bien reçu les données."
+        },
+        {
+          "q": "Que fait TCP si un paquet est perdu en route ?",
+          "options": ["Il ignore la perte et continue", "Il ferme la connexion immédiatement", "Il retransmet le paquet non acquitté", "Il envoie un message d'erreur à l'utilisateur"],
+          "answer": 2,
+          "explain": "TCP détecte la perte via l'absence d'ACK et retransmet automatiquement le paquet manquant."
+        },
+        {
+          "q": "Lequel de ces services utilise typiquement UDP ?",
+          "options": ["Transfert de fichier FTP", "Navigation web HTTPS", "Messagerie SMTP", "Streaming vidéo en direct"],
+          "answer": 3,
+          "explain": "Le streaming en direct utilise UDP pour minimiser la latence, quitte à perdre quelques paquets."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Quel est le port par défaut du protocole HTTP ?",
+          "options": ["21", "25", "80", "443"],
+          "answer": 2,
+          "explain": "HTTP utilise le port 80 par défaut (TCP)."
+        },
+        {
+          "q": "Quel est le port par défaut du protocole HTTPS ?",
+          "options": ["80", "443", "8080", "8443"],
+          "answer": 1,
+          "explain": "HTTPS utilise le port 443 par défaut (TCP)."
+        },
+        {
+          "q": "Quel est le port utilisé par le protocole DNS ?",
+          "options": ["110", "143", "53", "25"],
+          "answer": 2,
+          "explain": "DNS utilise le port 53, principalement en UDP pour les requêtes rapides."
+        },
+        {
+          "q": "Pourquoi DNS utilise-t-il UDP pour ses requêtes habituelles ?",
+          "options": ["Car UDP est plus sécurisé", "Car les requêtes DNS sont petites et la rapidité prime", "Car TCP est interdit sur les serveurs DNS", "Car UDP supporte plus d'adresses IP"],
+          "answer": 1,
+          "explain": "Les requêtes DNS sont courtes ; UDP évite la surcharge du three-way handshake de TCP."
+        },
+        {
+          "q": "TCP garantit que les paquets arrivent dans le bon ordre. Comment s'appelle ce mécanisme ?",
+          "options": ["Le contrôle de flux", "Le séquençage", "Le chiffrement", "La fragmentation"],
+          "answer": 1,
+          "explain": "TCP numérote chaque octet (numéro de séquence) pour reconstituer les données dans l'ordre d'émission."
+        },
+        {
+          "q": "Qu'appelle-t-on « ports bien connus » (well-known ports) ?",
+          "options": ["Les ports de 1024 à 49 151", "Les ports de 49 152 à 65 535", "Les ports de 0 à 1023 réservés aux services standards", "Les ports choisis aléatoirement par l'OS"],
+          "answer": 2,
+          "explain": "Les ports 0 à 1023 sont réservés aux services standards (HTTP, FTP, SSH…) et administrés par l'IANA."
+        },
+        {
+          "q": "Quel est le port par défaut de SSH ?",
+          "options": ["21", "22", "23", "25"],
+          "answer": 1,
+          "explain": "SSH (Secure Shell) utilise le port 22 en TCP par défaut."
+        },
+        {
+          "q": "Quel est le port par défaut de FTP (commandes) ?",
+          "options": ["20", "21", "22", "25"],
+          "answer": 1,
+          "explain": "FTP utilise le port 21 pour les commandes et le port 20 pour le transfert de données."
+        },
+        {
+          "q": "Dans un échange TCP, que signifie le flag FIN ?",
+          "options": ["Le début d'une connexion", "Une erreur réseau fatale", "La demande de fermeture propre de la connexion", "L'envoi d'un accusé de réception"],
+          "answer": 2,
+          "explain": "Le flag FIN indique qu'un côté souhaite mettre fin proprement à la connexion TCP."
+        },
+        {
+          "q": "Qu'est-ce que le contrôle de congestion dans TCP ?",
+          "options": ["Un mécanisme pour chiffrer les données", "Un mécanisme pour réduire le débit en cas de saturation du réseau", "Un mécanisme pour ouvrir plusieurs connexions simultanées", "Un mécanisme pour compresser les données"],
+          "answer": 1,
+          "explain": "TCP adapte son débit à la capacité du réseau pour éviter de le saturer davantage."
+        },
+        {
+          "q": "Quel protocole utilise le port 25 ?",
+          "options": ["FTP", "DNS", "SMTP", "POP3"],
+          "answer": 2,
+          "explain": "SMTP (Simple Mail Transfer Protocol) utilise le port 25 pour l'envoi de courriels."
+        },
+        {
+          "q": "Un jeu en ligne multijoueur préférera généralement quel protocole de transport ?",
+          "options": ["TCP uniquement", "UDP, parfois TCP selon les données", "ICMP", "ARP"],
+          "answer": 1,
+          "explain": "Les jeux en ligne utilisent souvent UDP pour minimiser la latence, avec TCP pour les données critiques."
+        },
+        {
+          "q": "Quelle est la taille maximale d'un numéro de port ?",
+          "options": ["255", "1023", "65 535", "4 294 967 295"],
+          "answer": 2,
+          "explain": "Sur 16 bits, la valeur maximale est 65 535 (2^16 - 1)."
+        },
+        {
+          "q": "Qu'est-ce qu'un socket réseau ?",
+          "options": ["Un câble réseau de type RJ45", "La combinaison d'une adresse IP et d'un numéro de port", "Un type de commutateur réseau", "Un protocole de la couche 3"],
+          "answer": 1,
+          "explain": "Un socket est l'association d'une adresse IP et d'un port, identifiant de façon unique un point de communication."
+        },
+        {
+          "q": "Quel protocole est utilisé par IMAP (réception de courriels) ?",
+          "options": ["UDP port 143", "TCP port 143", "TCP port 110", "UDP port 25"],
+          "answer": 1,
+          "explain": "IMAP utilise TCP port 143 (ou 993 en chiffré) pour la réception sécurisée des courriels."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Qu'est-ce que la fenêtre glissante (sliding window) dans TCP ?",
+          "options": ["Un mécanisme d'authentification", "Un mécanisme permettant d'envoyer plusieurs paquets avant d'attendre un ACK", "Un type de pare-feu applicatif", "Une technique de compression de données"],
+          "answer": 1,
+          "explain": "La fenêtre glissante permet d'envoyer un flux de paquets sans attendre un ACK pour chacun, améliorant le débit."
+        },
+        {
+          "q": "Pourquoi UDP est-il préféré au TCP pour le streaming vidéo en direct ?",
+          "options": ["UDP chiffre les données automatiquement", "UDP est plus fiable que TCP", "UDP a moins de surcharge et tolère les pertes ponctuelles", "UDP supporte des fichiers plus volumineux"],
+          "answer": 2,
+          "explain": "En streaming live, un paquet perdu vaut mieux qu'une retransmission qui introduirait un délai visible."
+        },
+        {
+          "q": "Que se passe-t-il si un segment TCP arrive hors ordre ?",
+          "options": ["Il est immédiatement rejeté", "Il est mis en attente et le destinataire envoie un ACK avec le numéro de séquence attendu", "TCP ferme la connexion", "Le paquet est retransmis en UDP"],
+          "answer": 1,
+          "explain": "TCP bufferise les segments hors ordre et signale le numéro de séquence manquant via l'ACK."
+        },
+        {
+          "q": "Dans quel cas DNS bascule-t-il de UDP vers TCP ?",
+          "options": ["Lorsque la réponse dépasse 512 octets ou lors des transferts de zone", "Lorsque le serveur DNS est hors ligne", "Lorsque l'adresse IP est en IPv6", "Lorsque le client est en Wi-Fi"],
+          "answer": 0,
+          "explain": "DNS utilise TCP pour les réponses volumineuses (>512 octets) et pour les transferts de zone entre serveurs."
+        },
+        {
+          "q": "Qu'est-ce que le MSS (Maximum Segment Size) dans TCP ?",
+          "options": ["La taille maximale d'une adresse MAC", "La taille maximale des données dans un segment TCP hors en-tête", "Le nombre maximum de connexions simultanées", "La durée maximale d'une session TCP"],
+          "answer": 1,
+          "explain": "Le MSS définit la quantité maximale de données applicatives dans un segment TCP, négociée lors du handshake."
+        },
+        {
+          "q": "Quel mécanisme TCP évite d'envoyer de nombreux petits paquets inefficaces ?",
+          "options": ["L'algorithme de Dijkstra", "L'algorithme de Nagle", "Le spanning tree", "Le protocole OSPF"],
+          "answer": 1,
+          "explain": "L'algorithme de Nagle regroupe les petits paquets pour réduire le nombre de segments envoyés."
+        },
+        {
+          "q": "Quelle est la différence entre un port source et un port destination ?",
+          "options": ["Le port source identifie la machine, le port destination identifie le service", "Le port source est choisi par l'application cliente, le port destination identifie le service sur le serveur", "Le port source est toujours inférieur à 1024", "Il n'y a aucune différence"],
+          "answer": 1,
+          "explain": "Le port source est éphémère (choisi par l'OS client), le port destination cible le service sur le serveur."
+        },
+        {
+          "q": "Qu'est-ce qu'un port éphémère ?",
+          "options": ["Un port réservé aux administrateurs", "Un port attribué temporairement par l'OS pour une connexion cliente", "Un port utilisé uniquement par UDP", "Un port inférieur à 1024"],
+          "answer": 1,
+          "explain": "Les ports éphémères (généralement 49152-65535) sont attribués dynamiquement par l'OS pour identifier la connexion côté client."
+        },
+        {
+          "q": "Combien de connexions TCP simultanées peut-on théoriquement établir depuis une même IP vers un même serveur (même port) ?",
+          "options": ["256", "1024", "Environ 16 000 (ports éphémères disponibles)", "Illimité"],
+          "answer": 2,
+          "explain": "Le nombre de connexions est limité par les ports éphémères disponibles, soit environ 16 000 par paire IP:port serveur."
+        },
+        {
+          "q": "Le protocole RTP (Real-time Transport Protocol) utilisé en VoIP s'appuie généralement sur quel protocole de transport ?",
+          "options": ["TCP", "ICMP", "UDP", "IPSec"],
+          "answer": 2,
+          "explain": "RTP utilise UDP pour minimiser la latence, essentielle à la qualité des appels VoIP."
+        },
+        {
+          "q": "Qu'est-ce que le TIME_WAIT dans une connexion TCP ?",
+          "options": ["Le délai avant le premier SYN", "L'état dans lequel une connexion reste après fermeture pour absorber les paquets retardés", "Le timeout d'un paquet non acquitté", "Le délai de chiffrement TLS"],
+          "answer": 1,
+          "explain": "TIME_WAIT permet d'attendre les éventuels paquets retardés du réseau avant de libérer définitivement le socket."
+        },
+        {
+          "q": "Quel protocole de couche transport utilise QUIC (la base de HTTP/3) ?",
+          "options": ["TCP", "UDP", "SCTP", "DCCP"],
+          "answer": 1,
+          "explain": "QUIC est un protocole multiplexé construit sur UDP, conçu pour remplacer TCP+TLS pour HTTP/3."
+        },
+        {
+          "q": "Que signifie le flag RST dans un segment TCP ?",
+          "options": ["Réinitialisation brutale de la connexion", "Demande de retransmission", "Réduction de la taille de fenêtre", "Requête de synchronisation"],
+          "answer": 0,
+          "explain": "RST (Reset) provoque la fermeture immédiate et brutale d'une connexion TCP, sans échange FIN/ACK."
+        },
+        {
+          "q": "Dans un pare-feu, filtrer par port TCP/UDP permet de faire quoi ?",
+          "options": ["Chiffrer le trafic réseau", "Autoriser ou bloquer des services applicatifs spécifiques", "Attribuer des adresses IP dynamiquement", "Segmenter le réseau en VLAN"],
+          "answer": 1,
+          "explain": "Filtrer par port permet d'autoriser HTTP (80) et bloquer Telnet (23) par exemple, contrôlant l'accès aux services."
+        },
+        {
+          "q": "Pourquoi le protocole TFTP utilise-t-il UDP plutôt que TCP ?",
+          "options": ["Car TFTP nécessite un chiffrement intégré", "Car TFTP est conçu pour des transferts simples en réseau local où la fiabilité n'est pas critique", "Car TCP ne supporte pas les transferts de fichiers", "Car UDP est plus rapide pour les gros fichiers"],
+          "answer": 1,
+          "explain": "TFTP (Trivial FTP) est un protocole minimaliste utilisé en LAN (ex. boot PXE) où UDP suffit."
+        }
+      ]
+    }
+  ]
+}

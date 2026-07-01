@@ -1,0 +1,209 @@
+{
+  "n": 6,
+  "layer": "6 · Presentation",
+  "diff": 6,
+  "title": "Cadenas rouge sur le site HTTPS",
+  "setup": "Les utilisateurs signalent un avertissement de securite dans leur navigateur quand ils accedent au site interne heberge sur IIS. Tu es sur un poste client.",
+  "start": "n1",
+  "nodes": {
+    "n1": {
+      "kind": "step",
+      "text": "Tu es devant le poste client. Le premier reflexe en depannage reseau : verifier la couche physique avant tout le reste.",
+      "question": "Que fais-tu en premier ?",
+      "choices": [
+        { "t": "Je regarde le voyant reseau de la carte ethernet et l'etat du cable RJ45", "to": "n2" },
+        { "t": "J'ouvre directement le site dans le navigateur pour voir l'erreur", "to": "f_osi_skip" },
+        { "t": "Je contacte l'admin IIS pour qu'il regarde le certificat", "to": "f_osi_skip" }
+      ]
+    },
+    "n2": {
+      "kind": "step",
+      "text": "Le voyant de la carte reseau est vert, le cable est bien branche des deux cotes. La couche 1 (physique) ne pose pas de probleme. On passe a la couche 2/3 : est-ce que le poste a bien une adresse IP et peut joindre le reseau ?",
+      "question": "Comment verifies-tu l'adressage du poste ?",
+      "choices": [
+        { "t": "J'ouvre un terminal et je tape ipconfig pour voir l'adresse IP et la passerelle", "to": "n3" },
+        { "t": "Je suppose que l'IP est correcte et je passe directement au ping", "to": "n3_detour" },
+        { "t": "Je verifie le pare-feu Windows du poste", "to": "f_fw" }
+      ]
+    },
+    "n3": {
+      "kind": "step",
+      "text": "ipconfig affiche une adresse IP coherente avec le sous-reseau, un masque et une passerelle. La couche 3 semble OK. Tu lances un ping vers l'adresse IP du serveur IIS.",
+      "question": "Quel resultat obtiens-tu ?",
+      "choices": [
+        { "t": "Le ping repond : la machine serveur est bien joignable en couche 3", "to": "n4" },
+        { "t": "Le ping ne repond pas du tout", "to": "n3_ping_fail" },
+        { "t": "J'obtiens une adresse APIPA (169.254.x.x) dans ipconfig : pas d'IP correcte", "to": "f_ip" }
+      ]
+    },
+    "n3_detour": {
+      "kind": "step",
+      "text": "Detour : tu sautes la verification ipconfig. Si le poste avait une adresse APIPA ou pas de passerelle, tu aurais cherche au mauvais endroit pendant de longues minutes. Bonne habitude : toujours verifier ipconfig avant le ping.",
+      "question": "Tu decides quand meme de faire ipconfig rapidement. Que vois-tu ?",
+      "choices": [
+        { "t": "Adresse IP correcte et passerelle presente : OK, je fais maintenant le ping", "to": "n3" },
+        { "t": "Adresse APIPA (169.254.x.x) : le poste n'a pas d'IP, c'est la le probleme", "to": "f_ip" }
+      ]
+    },
+    "n3_ping_fail": {
+      "kind": "step",
+      "text": "Le ping ne repond pas. Avant de conclure, il faut savoir si c'est le pare-feu du serveur qui bloque l'ICMP, ou si le serveur est vraiment injoignable.",
+      "question": "Que fais-tu pour creuser ?",
+      "choices": [
+        { "t": "Je tente quand meme Test-NetConnection sur le port 443 pour voir si le service repond", "to": "n4_pingbloque" },
+        { "t": "Je desactive le pare-feu du poste et je retente", "to": "f_fw" }
+      ]
+    },
+    "n4": {
+      "kind": "step",
+      "text": "Le serveur repond au ping, couches 1 a 3 validees. Place a la couche 4 (transport) : est-ce que le port 443 est ouvert et le service HTTPS repond bien ?",
+      "question": "Comment testes-tu le port 443 ?",
+      "choices": [
+        { "t": "Test-NetConnection -ComputerName <serveur> -Port 443 dans PowerShell", "to": "n5" },
+        { "t": "J'ouvre directement le navigateur sans verifier le port", "to": "n4_detour" },
+        { "t": "Je desactive le pare-feu et je re-essaie de toute facon", "to": "f_fw" }
+      ]
+    },
+    "n4_pingbloque": {
+      "kind": "step",
+      "text": "Test-NetConnection sur le port 443 retourne TcpTestSucceeded : True. Le service HTTPS repond bien. Le ping etait bloque par le pare-feu du serveur mais la connexion TCP fonctionne. Couches 1 a 4 validees.",
+      "question": "Le port 443 est accessible. Tu ouvres le navigateur. Que vois-tu ?",
+      "choices": [
+        { "t": "Un avertissement de certificat (cadenas rouge ou page d'alerte)", "to": "n6" }
+      ]
+    },
+    "n4_detour": {
+      "kind": "step",
+      "text": "Detour : tu ouvres le navigateur directement. L'avertissement de certificat apparait. C'est utile mais tu aurais pu confirmer methodiquement que le port 443 repond avec Test-NetConnection avant d'impliquer le navigateur.",
+      "question": "L'avertissement est la. Que lis-tu exactement dans le navigateur ?",
+      "choices": [
+        { "t": "NET::ERR_CERT_DATE_INVALID ou similaire : le certificat est expire", "to": "n6" },
+        { "t": "ERR_CERT_COMMON_NAME_INVALID : le nom ne correspond pas", "to": "n6_nom" }
+      ]
+    },
+    "n5": {
+      "kind": "step",
+      "text": "TcpTestSucceeded : True. Le port 443 repond, le service HTTPS est accessible. Couches 1 a 4 validees. Tu ouvres maintenant le navigateur pour lire l'erreur exacte de la couche 6.",
+      "question": "Que vois-tu dans la barre d'adresse et sur la page ?",
+      "choices": [
+        { "t": "Cadenas rouge ou page d'alerte avec une erreur de certificat (date, nom ou autorite)", "to": "n6" },
+        { "t": "Cadenas rouge avec ERR_CERT_COMMON_NAME_INVALID : le nom ne correspond pas", "to": "n6_nom" },
+        { "t": "La page charge normalement avec un cadenas vert : aucun probleme visible", "to": "f_osi_win" }
+      ]
+    },
+    "n6": {
+      "kind": "step",
+      "text": "Le navigateur indique une erreur de certificat. Les couches 1 a 4 sont saines : c'est bien un probleme de couche 6 (presentation / chiffrement). Tu te connectes sur le serveur et tu ouvres le gestionnaire IIS. Tu vas dans Certificats de serveur et tu inspectes le certificat associe au site.",
+      "question": "Que constates-tu en examinant le certificat dans IIS ?",
+      "choices": [
+        { "t": "La date d'expiration est depassee : le certificat est expire", "to": "n7" },
+        { "t": "Le certificat est valide en date mais emis par une AC interne non presente dans les postes clients", "to": "n7_ac" },
+        { "t": "Je redemarre IIS sans lire les details du certificat", "to": "f_osi_skip" }
+      ]
+    },
+    "n6_nom": {
+      "kind": "step",
+      "text": "L'erreur ERR_CERT_COMMON_NAME_INVALID signifie que le nom inscrit dans le certificat ne correspond pas au nom de domaine demande dans le navigateur. Cela peut venir d'un mauvais certificat assigne dans IIS ou d'un certificat emis pour le mauvais domaine.",
+      "question": "Tu verifies le binding HTTPS dans IIS. Que trouves-tu ?",
+      "choices": [
+        { "t": "Le binding HTTPS pointe sur un certificat emis pour un autre nom de domaine : il faut le corriger", "to": "n7_nom" },
+        { "t": "Le certificat est bien pour le bon domaine mais il est expire en plus", "to": "n7" }
+      ]
+    },
+    "n7": {
+      "kind": "step",
+      "text": "Le certificat est expire. Tu dois en obtenir un nouveau valide : soit via ton autorite de certification interne, soit via un service externe. Un certificat de remplacement valide est disponible en format .pfx.",
+      "question": "Que fais-tu avec ce nouveau certificat ?",
+      "choices": [
+        { "t": "Je l'importe dans IIS via Certificats de serveur, puis je mets a jour le binding HTTPS du site", "to": "n8" },
+        { "t": "Je redemarre le serveur Windows en esperant que ca renouvelle le certificat tout seul", "to": "f_osi_skip" },
+        { "t": "Je l'importe mais j'oublie de mettre a jour le binding : je teste directement", "to": "n7_oubli" }
+      ]
+    },
+    "n7_ac": {
+      "kind": "step",
+      "text": "Le certificat est techniquement valide mais l'autorite de certification (AC) qui l'a signe n'est pas dans le magasin de confiance des postes clients. Le navigateur rejette donc le certificat meme s'il n'est pas expire.",
+      "question": "Comment resous-tu ce probleme d'AC non approuvee ?",
+      "choices": [
+        { "t": "J'importe le certificat racine de l'AC dans le magasin des Autorites de confiance du poste (ou via GPO)", "to": "n8_ac" },
+        { "t": "Je change le certificat du serveur pour un certificat signe par une AC publique reconnue", "to": "n8_ac" }
+      ]
+    },
+    "n7_nom": {
+      "kind": "step",
+      "text": "Tu modifies le binding HTTPS dans IIS pour associer le bon certificat (celui emis pour le bon nom de domaine). Le binding est mis a jour.",
+      "question": "Tu testes a nouveau dans le navigateur. Que se passe-t-il ?",
+      "choices": [
+        { "t": "Cadenas vert, la page charge sans avertissement", "to": "win" },
+        { "t": "Nouvelle erreur : ce certificat est aussi expire", "to": "n7" }
+      ]
+    },
+    "n7_oubli": {
+      "kind": "step",
+      "text": "Detour : tu importes le certificat mais le binding HTTPS du site dans IIS pointe toujours sur l'ancien certificat expire. Le navigateur affiche encore l'avertissement. Un import seul ne suffit pas, il faut aussi mettre a jour le binding.",
+      "question": "Tu comprends l'oubli. Que fais-tu maintenant ?",
+      "choices": [
+        { "t": "Je vais dans les Liaisons du site IIS, je modifie le binding HTTPS et je selectionne le nouveau certificat", "to": "n8" }
+      ]
+    },
+    "n8": {
+      "kind": "step",
+      "text": "Tu importes le certificat .pfx dans IIS (Certificats de serveur > Importer). Puis tu vas dans les Liaisons (Bindings) du site, tu selectionnes le binding HTTPS port 443, tu cliques sur Modifier et tu choisis le nouveau certificat dans la liste. Tu valides.",
+      "question": "Tu retournes sur le poste client et tu rouvres le navigateur. Que vois-tu ?",
+      "choices": [
+        { "t": "Cadenas vert, le site charge normalement sans aucun avertissement", "to": "win" },
+        { "t": "L'avertissement persiste encore : je vide le cache du navigateur et je retente", "to": "n8_cache" }
+      ]
+    },
+    "n8_ac": {
+      "kind": "step",
+      "text": "Le certificat racine de l'AC est maintenant connu du poste client. Tu recharges le site dans le navigateur.",
+      "question": "Que vois-tu ?",
+      "choices": [
+        { "t": "Cadenas vert : le navigateur fait confiance a l'AC et le certificat est valide", "to": "win" },
+        { "t": "L'erreur change : maintenant c'est une erreur de date, le certificat est aussi expire", "to": "n7" }
+      ]
+    },
+    "n8_cache": {
+      "kind": "step",
+      "text": "Tu vides le cache du navigateur (Ctrl+Shift+Del). Tu recharges la page.",
+      "question": "Resultat apres vidage du cache ?",
+      "choices": [
+        { "t": "Cadenas vert, plus aucun avertissement : le probleme est resolu", "to": "win" },
+        { "t": "L'avertissement persiste encore : je verifie que le bon certificat est bien selectionne dans le binding IIS", "to": "n8" }
+      ]
+    },
+    "f_osi_skip": {
+      "kind": "fail",
+      "text": "Tu as saute des etapes ou pris un raccourci sans remonter methodiquement les couches OSI. En depannage reseau, on part toujours de la couche 1 vers le haut : physique, liaison, reseau, transport, puis seulement presentation. Sauter des couches fait perdre du temps et risque de passer a cote du vrai probleme.",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n1"
+    },
+    "f_osi_win": {
+      "kind": "fail",
+      "text": "Si le cadenas est vert et qu'il n'y a aucun avertissement, le probleme est deja resolu ou tu n'es peut-etre pas sur le bon poste ou le bon site. En depannage, on ne peut pas conclure a une panne si le symptome est absent. Verifie que tu interroges bien le bon serveur et le bon URL.",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n5"
+    },
+    "f_fw": {
+      "kind": "fail",
+      "text": "Modifier ou desactiver le pare-feu sans avoir verifie les couches inferieures est risque et souvent inutile. Un avertissement de certificat HTTPS dans le navigateur signifie que la connexion TCP est etablie (le pare-feu laisse passer), sinon tu aurais une erreur de connexion refusee, pas un avertissement de certificat.",
+      "course": "le-pare-feu",
+      "courseLabel": "Le pare-feu",
+      "retryTo": "n2"
+    },
+    "f_ip": {
+      "kind": "fail",
+      "text": "Une adresse APIPA (169.254.x.x) signifie que le poste n'a pas recu d'adresse IP via DHCP et ne peut pas joindre le reseau. C'est un probleme de couche 3 a regler d'abord (verifier le serveur DHCP, la connexion au switch, ou configurer une IP statique) avant de penser au certificat.",
+      "course": "adresses-ip",
+      "courseLabel": "Les adresses IP",
+      "retryTo": "n2"
+    },
+    "win": {
+      "kind": "win",
+      "text": "Bravo ! Tu as remonte methodiquement les couches OSI : physique (voyant + cable OK), reseau (ipconfig + ping OK), transport (port 443 accessible), puis presentation (certificat expire dans IIS). Tu as renouvele le certificat, mis a jour le binding HTTPS et le cadenas est maintenant vert sur tous les navigateurs. C'est exactement la bonne methode de depannage !"
+    }
+  }
+}

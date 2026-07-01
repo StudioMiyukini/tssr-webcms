@@ -1,0 +1,291 @@
+{
+  "slug": "windows-server",
+  "title": "Windows Server",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Quelle est la principale différence entre un «rôle» et une «fonctionnalité» dans Windows Server ?",
+          "options": ["Un rôle est un service principal (ex. AD, DNS), une fonctionnalité est un composant d'appoint", "Un rôle s'installe en ligne de commande, une fonctionnalité via l'interface graphique", "Un rôle ne peut être installé qu'une seule fois par forêt", "Une fonctionnalité nécessite toujours un redémarrage, pas un rôle"],
+          "answer": 0,
+          "explain": "Un rôle définit une fonction principale du serveur ; une fonctionnalité ajoute des capacités supplémentaires à ces rôles."
+        },
+        {
+          "q": "À quoi sert principalement un serveur informatique en entreprise ?",
+          "options": ["Centraliser et partager des ressources (fichiers, imprimantes, authentification) pour les clients", "Servir de poste de travail aux employés", "Remplacer les routeurs du réseau", "Stocker uniquement les sauvegardes automatiques"],
+          "answer": 0,
+          "explain": "Un serveur centralise les services et ressources pour que les postes clients puissent y accéder de façon organisée."
+        },
+        {
+          "q": "Quelle édition de Windows Server est conçue pour les environnements virtualisés avec un nombre illimité de VMs ?",
+          "options": ["Windows Server Datacenter", "Windows Server Standard", "Windows Server Essentials", "Windows Server Foundation"],
+          "answer": 0,
+          "explain": "L'édition Datacenter autorise un nombre illimité de machines virtuelles Hyper-V sur un hôte licencié."
+        },
+        {
+          "q": "Combien de machines virtuelles l'édition Windows Server Standard autorise-t-elle par licence (à partir de 2016) ?",
+          "options": ["2 VMs", "Illimitées", "4 VMs", "1 VM"],
+          "answer": 0,
+          "explain": "Windows Server Standard inclut les droits pour 2 machines virtuelles Hyper-V par licence serveur."
+        },
+        {
+          "q": "Quel outil graphique est l'interface principale pour gérer les rôles et fonctionnalités d'un Windows Server ?",
+          "options": ["Gestionnaire de serveur (Server Manager)", "Gestionnaire des tâches", "Panneau de configuration", "Gestion de l'ordinateur (compmgmt.msc)"],
+          "answer": 0,
+          "explain": "Server Manager est le tableau de bord central de Windows Server pour ajouter des rôles, surveiller et gérer le serveur."
+        },
+        {
+          "q": "Quel rôle Windows Server permet de gérer les comptes utilisateurs, ordinateurs et stratégies d'un domaine ?",
+          "options": ["Active Directory Domain Services (AD DS)", "DNS Server", "DHCP Server", "File Server"],
+          "answer": 0,
+          "explain": "AD DS est le rôle qui transforme un serveur en contrôleur de domaine, gérant authentification et autorisation."
+        },
+        {
+          "q": "Quelle est la principale différence entre Windows 10/11 et Windows Server en termes d'usage ?",
+          "options": ["Windows client est optimisé pour l'utilisateur individuel ; Windows Server pour les services réseau partagés", "Windows Server ne peut pas accéder à Internet", "Windows client ne supporte pas le multitâche", "Windows Server n'a pas d'interface graphique"],
+          "answer": 0,
+          "explain": "Windows client cible la productivité individuelle ; Windows Server est conçu pour fournir des services stables 24h/24."
+        },
+        {
+          "q": "Que signifie l'option «Core» dans Windows Server (ex. Windows Server Core) ?",
+          "options": ["Une installation sans interface graphique complète, gérée en ligne de commande", "Une version pour les petits serveurs de moins de 4 Go de RAM", "Une version sans rôle Active Directory disponible", "Une version destinée uniquement aux machines virtuelles"],
+          "answer": 0,
+          "explain": "Server Core est une installation minimale sans GUI complète, ce qui réduit la surface d'attaque et la consommation de ressources."
+        },
+        {
+          "q": "Quel rôle Windows Server attribue automatiquement des adresses IP aux postes clients du réseau ?",
+          "options": ["DHCP Server", "DNS Server", "Active Directory", "Web Server (IIS)"],
+          "answer": 0,
+          "explain": "Le rôle DHCP Server distribue automatiquement des adresses IP, masques, passerelles et DNS aux clients."
+        },
+        {
+          "q": "Quel rôle Windows Server traduit les noms de domaine (ex. www.example.com) en adresses IP ?",
+          "options": ["DNS Server", "DHCP Server", "Print Server", "File Server"],
+          "answer": 0,
+          "explain": "Le DNS (Domain Name System) résout les noms en adresses IP, indispensable au fonctionnement d'Active Directory."
+        },
+        {
+          "q": "Quelle édition de Windows Server est limitée à 25 utilisateurs et 50 appareils, adaptée aux petites entreprises ?",
+          "options": ["Windows Server Essentials", "Windows Server Standard", "Windows Server Datacenter", "Windows Server Foundation"],
+          "answer": 0,
+          "explain": "Essentials est conçu pour les TPE/PME avec un maximum de 25 utilisateurs et sans licence d'accès client (CAL) séparée."
+        },
+        {
+          "q": "Qu'est-ce qu'une CAL dans le contexte de Windows Server ?",
+          "options": ["Une licence d'accès client permettant à un utilisateur ou appareil de se connecter au serveur", "Un certificat d'authentification SSL", "Un composant logiciel d'Active Directory", "Une version allégée de Windows Server"],
+          "answer": 0,
+          "explain": "CAL (Client Access License) est obligatoire pour chaque utilisateur ou appareil qui accède légalement à Windows Server."
+        },
+        {
+          "q": "Quel rôle transforme un Windows Server en serveur web capable d'héberger des sites ?",
+          "options": ["Web Server (IIS)", "File Server", "DNS Server", "Remote Desktop Services"],
+          "answer": 0,
+          "explain": "IIS (Internet Information Services) est le rôle de serveur web intégré à Windows Server."
+        },
+        {
+          "q": "Quelle commande PowerShell permet d'installer un rôle Windows Server, par exemple AD DS ?",
+          "options": ["Install-WindowsFeature AD-Domain-Services", "Add-Role AD-DS", "Enable-Role ActiveDirectory", "Setup-Role AD-Domain-Services"],
+          "answer": 0,
+          "explain": "Install-WindowsFeature est la cmdlet pour ajouter des rôles et fonctionnalités en ligne de commande sur Windows Server."
+        },
+        {
+          "q": "Quel service Windows Server permet aux utilisateurs de se connecter à distance à un bureau Windows hébergé sur le serveur ?",
+          "options": ["Remote Desktop Services (RDS)", "VPN Server", "File Server", "Print Server"],
+          "answer": 0,
+          "explain": "RDS (anciennement Terminal Services) permet de diffuser des bureaux ou applications Windows aux utilisateurs distants."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Que représente le concept de «gestion centralisée» apporté par Windows Server ?",
+          "options": ["Administrer tous les postes, utilisateurs et stratégies depuis un seul point de contrôle", "Forcer tous les PC à avoir le même fond d'écran", "Centraliser uniquement les impressions réseau", "Regrouper tous les disques durs en RAID"],
+          "answer": 0,
+          "explain": "La gestion centralisée via AD DS et GPO permet à l'administrateur de contrôler tout le parc depuis le contrôleur de domaine."
+        },
+        {
+          "q": "Quelle est la différence entre un groupe de travail (Workgroup) et un domaine Windows ?",
+          "options": ["Un domaine centralise l'authentification via un serveur AD ; un workgroup gère chaque PC indépendamment", "Un workgroup peut contenir plus de postes qu'un domaine", "Dans un domaine, il n'y a pas de mot de passe", "Un workgroup nécessite un serveur dédié"],
+          "answer": 0,
+          "explain": "Dans un workgroup, chaque PC a sa propre base de comptes ; le domaine centralise tout via Active Directory."
+        },
+        {
+          "q": "Que signifie «haute disponibilité» dans le contexte d'un service serveur ?",
+          "options": ["Le service reste accessible même en cas de panne d'un composant grâce à la redondance", "Le serveur fonctionne uniquement pendant les heures de bureau", "Le serveur dispose d'une connexion Internet très rapide", "Le service est disponible uniquement pour les administrateurs"],
+          "answer": 0,
+          "explain": "La haute disponibilité garantit la continuité de service via des mécanismes de basculement (failover, clustering)."
+        },
+        {
+          "q": "Quel rôle Windows Server permet de partager des imprimantes sur le réseau et de gérer les files d'attente ?",
+          "options": ["Print Server", "File Server", "Web Server (IIS)", "DHCP Server"],
+          "answer": 0,
+          "explain": "Le rôle Print Server centralise les pilotes d'imprimante et gère les files d'attente pour tous les clients."
+        },
+        {
+          "q": "Qu'est-ce qu'un contrôleur de domaine (Domain Controller) ?",
+          "options": ["Un serveur qui héberge Active Directory et authentifie les utilisateurs du domaine", "Un routeur qui contrôle l'accès à Internet", "Un switch qui segmente le réseau en domaines de diffusion", "Un serveur dédié uniquement aux sauvegardes"],
+          "answer": 0,
+          "explain": "Le contrôleur de domaine exécute AD DS, gère les comptes et valide les connexions des utilisateurs du domaine."
+        },
+        {
+          "q": "Quel outil Windows Server permet d'appliquer des paramètres de sécurité et de configuration à tous les postes d'un domaine ?",
+          "options": ["Stratégies de groupe (GPO)", "Gestionnaire de serveur", "Remote Desktop Services", "Windows Update"],
+          "answer": 0,
+          "explain": "Les GPO (Group Policy Objects) permettent de déployer des configurations et restrictions sur tous les postes du domaine."
+        },
+        {
+          "q": "Quelle cmdlet PowerShell liste tous les rôles et fonctionnalités installés sur un Windows Server ?",
+          "options": ["Get-WindowsFeature", "List-Roles", "Get-Role", "Show-Features"],
+          "answer": 0,
+          "explain": "Get-WindowsFeature retourne l'état (installé/disponible) de tous les rôles et fonctionnalités du serveur."
+        },
+        {
+          "q": "Pourquoi installe-t-on généralement au moins deux contrôleurs de domaine dans une entreprise ?",
+          "options": ["Pour assurer la redondance en cas de panne et répartir la charge d'authentification", "Pour respecter la loi sur les données personnelles", "Pour pouvoir utiliser deux versions de Windows Server différentes", "Pour connecter deux réseaux physiques distincts"],
+          "answer": 0,
+          "explain": "Un second contrôleur de domaine prend le relais si le premier tombe en panne, évitant toute interruption du service."
+        },
+        {
+          "q": "Que permet le rôle «Hyper-V» dans Windows Server ?",
+          "options": ["Créer et gérer des machines virtuelles directement sur le serveur", "Accélérer les performances réseau", "Gérer les certificats SSL", "Distribuer des adresses IP"],
+          "answer": 0,
+          "explain": "Hyper-V est le rôle de virtualisation intégré à Windows Server permettant de faire tourner plusieurs OS sur un même matériel."
+        },
+        {
+          "q": "Quelle est la version minimale requise de Windows Server pour utiliser Active Directory ?",
+          "options": ["Windows Server 2000 et suivants", "Windows Server 2019 uniquement", "Windows Server 2016 et suivants", "Toutes les éditions depuis Windows NT 4.0"],
+          "answer": 0,
+          "explain": "Active Directory a été introduit avec Windows 2000 Server ; toutes les versions suivantes le prennent en charge."
+        },
+        {
+          "q": "Qu'est-ce qu'une OU (Organizational Unit) dans Active Directory ?",
+          "options": ["Un conteneur logique pour organiser utilisateurs, ordinateurs et groupes dans l'annuaire", "Un groupe de sécurité global", "Une unité de mesure de la licence CAL", "Un serveur secondaire Active Directory"],
+          "answer": 0,
+          "explain": "Les OU permettent de structurer l'annuaire et d'appliquer des GPO différenciées selon les départements."
+        },
+        {
+          "q": "Quelle commande cmd vérifie que le poste est bien joint au domaine et affiche son nom DNS ?",
+          "options": ["systeminfo | findstr Domain", "ipconfig /all", "net user /domain", "nltest /dclist"],
+          "answer": 0,
+          "explain": "systeminfo filtré sur «Domain» affiche le nom du domaine auquel appartient la machine."
+        },
+        {
+          "q": "Quel rôle Windows Server permet de centraliser les mises à jour Windows pour tous les postes du parc ?",
+          "options": ["WSUS (Windows Server Update Services)", "SCCM uniquement", "Windows Update pour Entreprise", "DNS Server"],
+          "answer": 0,
+          "explain": "WSUS télécharge les mises à jour Microsoft une seule fois sur le serveur puis les distribue aux postes du réseau."
+        },
+        {
+          "q": "Quelle fonctionnalité Windows Server permet la tolérance aux pannes disque en dupliquant les données ?",
+          "options": ["RAID via Gestion des disques ou Espaces de stockage", "BitLocker", "NTFS quotas", "DFS Replication"],
+          "answer": 0,
+          "explain": "Le RAID 1 (miroir) ou les Espaces de stockage avec redondance permettent de continuer à fonctionner en cas de panne disque."
+        },
+        {
+          "q": "Dans Windows Server, que signifie «rôle sans interface graphique» (Server Core) en termes de sécurité ?",
+          "options": ["Moins de composants installés réduisent la surface d'attaque et les mises à jour nécessaires", "Il est impossible de se connecter au serveur Core depuis l'extérieur", "Core ne supporte pas les mises à jour de sécurité", "Core désactive automatiquement le pare-feu"],
+          "answer": 0,
+          "explain": "Moins de code = moins de vulnérabilités potentielles et moins de redémarrages liés aux mises à jour."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Qu'est-ce qu'un «niveau fonctionnel de domaine» dans Active Directory ?",
+          "options": ["Il définit les fonctionnalités AD disponibles selon la version minimale des contrôleurs de domaine", "Il mesure les performances du contrôleur de domaine", "Il fixe le nombre maximum d'utilisateurs dans le domaine", "Il détermine le nombre de GPO applicables"],
+          "answer": 0,
+          "explain": "Le niveau fonctionnel conditionne les fonctionnalités AD disponibles ; il dépend de la version la plus ancienne des DC présents."
+        },
+        {
+          "q": "Quelle est la différence entre un serveur membre et un contrôleur de domaine ?",
+          "options": ["Un serveur membre joint un domaine sans héberger AD DS ; un DC héberge et exécute Active Directory", "Un serveur membre ne peut pas avoir de rôle installé", "Un DC ne peut pas être serveur de fichiers", "Un serveur membre est toujours sous Windows Server Core"],
+          "answer": 0,
+          "explain": "Un serveur membre profite du domaine (GPO, authentification) sans être lui-même contrôleur de domaine."
+        },
+        {
+          "q": "Que permet la réplication entre contrôleurs de domaine dans AD DS ?",
+          "options": ["Synchroniser les modifications de l'annuaire entre tous les DC pour assurer la cohérence", "Partager les fichiers entre serveurs membres", "Distribuer les adresses IP aux postes clients", "Mettre à jour Windows automatiquement sur tous les DC"],
+          "answer": 0,
+          "explain": "La réplication AD garantit que toute modification (nouveau compte, mot de passe…) est propagée à tous les contrôleurs."
+        },
+        {
+          "q": "Qu'est-ce qu'un rôle FSMO (Flexible Single Master Operation) dans Active Directory ?",
+          "options": ["Un rôle unique attribué à un seul DC pour des opérations qui ne peuvent pas être distribuées", "Un rôle qui peut être partagé entre tous les DC", "Le rôle principal de messagerie Exchange", "Un rôle de sauvegarde automatique de l'annuaire"],
+          "answer": 0,
+          "explain": "Les rôles FSMO (PDC, RID Master, Infrastructure Master…) sont uniques dans le domaine pour éviter les conflits."
+        },
+        {
+          "q": "Quelle commande PowerShell joint un ordinateur à un domaine nommé «mondomaine.local» ?",
+          "options": ["Add-Computer -DomainName mondomaine.local -Credential (Get-Credential)", "Join-Domain mondomaine.local", "Set-Computer -Domain mondomaine.local", "Connect-Domain -Name mondomaine.local"],
+          "answer": 0,
+          "explain": "Add-Computer avec -DomainName et -Credential joint la machine au domaine et demande les informations d'authentification."
+        },
+        {
+          "q": "Qu'est-ce que le catalogue global (Global Catalog) dans Active Directory ?",
+          "options": ["Un contrôleur de domaine contenant une copie partielle de tous les objets de la forêt", "La liste complète des GPO du domaine", "L'index des fichiers partagés sur le serveur", "La base de données des licences CAL"],
+          "answer": 0,
+          "explain": "Le catalogue global accélère les recherches dans des environnements multi-domaines en contenant un sous-ensemble de tous les attributs."
+        },
+        {
+          "q": "Quel protocole est utilisé par les clients Windows pour s'authentifier auprès d'Active Directory ?",
+          "options": ["Kerberos (et NTLM en fallback)", "LDAP uniquement", "RADIUS", "SSH"],
+          "answer": 0,
+          "explain": "Kerberos est le protocole d'authentification principal d'AD depuis Windows 2000 ; NTLM reste utilisé comme repli."
+        },
+        {
+          "q": "Quel outil en ligne de commande permet de diagnostiquer l'état d'Active Directory et la réplication ?",
+          "options": ["dcdiag.exe", "netdiag.exe", "repadmin.exe", "nltest.exe"],
+          "answer": 0,
+          "explain": "dcdiag effectue une série de tests sur le contrôleur de domaine pour détecter les anomalies AD."
+        },
+        {
+          "q": "Que signifie «Site AD» (Active Directory Site) ?",
+          "options": ["Un regroupement logique de sous-réseaux IP pour optimiser la réplication et l'authentification", "Un serveur web hébergeant l'interface AD", "Un groupe de sécurité dédié aux réseaux distants", "Une unité organisationnelle réservée aux succursales"],
+          "answer": 0,
+          "explain": "Les sites AD reflètent la topologie physique du réseau pour que les clients s'authentifient auprès du DC le plus proche."
+        },
+        {
+          "q": "Quelle différence existe entre une GPO liée au domaine et une GPO liée à une OU ?",
+          "options": ["La GPO domaine s'applique à tous les objets ; la GPO OU ne s'applique qu'aux objets de cette OU", "La GPO OU s'applique à tout le domaine", "La GPO domaine ne peut contenir que des paramètres de sécurité", "Il n'y a aucune différence fonctionnelle"],
+          "answer": 0,
+          "explain": "La portée d'une GPO dépend de l'objet AD auquel elle est liée ; une OU permet des paramètres ciblés par département."
+        },
+        {
+          "q": "Quel rôle Windows Server fournit un accès VPN sécurisé aux utilisateurs distants ?",
+          "options": ["Remote Access (RRAS)", "Web Server (IIS)", "File Server", "WSUS"],
+          "answer": 0,
+          "explain": "RRAS (Routing and Remote Access Service) implémente les fonctions VPN et routage dans Windows Server."
+        },
+        {
+          "q": "Qu'est-ce qu'un «instantané» (snapshot) dans Hyper-V ?",
+          "options": ["Une capture de l'état d'une VM à un instant T, permettant de revenir en arrière", "Une copie complète du disque virtuel sur bande magnétique", "Une sauvegarde chiffrée de la configuration du serveur", "Un rapport de performance de la machine virtuelle"],
+          "answer": 0,
+          "explain": "Un checkpoint Hyper-V sauvegarde l'état complet de la VM ; on peut y revenir si une mise à jour pose problème."
+        },
+        {
+          "q": "Quelle fonctionnalité Windows Server permet de distribuer un même espace de noms DFS sur plusieurs serveurs de fichiers ?",
+          "options": ["DFS (Distributed File System)", "Print Server", "WSUS", "Remote Desktop Services"],
+          "answer": 0,
+          "explain": "DFS crée un espace de noms unifié cachant l'emplacement physique réel des dossiers partagés sur plusieurs serveurs."
+        },
+        {
+          "q": "Pourquoi un administrateur préfère-t-il Windows Admin Center à Server Manager pour gérer plusieurs serveurs ?",
+          "options": ["Windows Admin Center est une interface web moderne capable de gérer plusieurs serveurs depuis un navigateur", "Server Manager ne supporte pas les serveurs distants", "Windows Admin Center remplace PowerShell", "Server Manager est uniquement disponible sur Windows 10"],
+          "answer": 0,
+          "explain": "Windows Admin Center est une console web centralisée, plus moderne et extensible que le Server Manager classique."
+        },
+        {
+          "q": "Que désigne le terme «forêt» (forest) dans Active Directory ?",
+          "options": ["L'ensemble des domaines AD partageant un schéma commun et une relation d'approbation implicite", "Un regroupement de serveurs physiques dans une même baie", "Un ensemble de GPO appliquées à l'entreprise entière", "La liste des contrôleurs de domaine d'une entreprise"],
+          "answer": 0,
+          "explain": "Une forêt AD est la limite de sécurité maximale ; elle contient un ou plusieurs domaines partageant le même schéma."
+        }
+      ]
+    }
+  ]
+}

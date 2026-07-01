@@ -1,0 +1,291 @@
+{
+  "slug": "cmd-et-powershell",
+  "title": "Invite de commandes & PowerShell",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Quelle commande affiche la configuration IP de toutes les interfaces réseau ?",
+          "options": ["ipconfig", "netstat", "ping", "tracert"],
+          "answer": 0,
+          "explain": "ipconfig affiche l'adresse IP, le masque et la passerelle de chaque interface réseau."
+        },
+        {
+          "q": "Quelle commande permet de tester la connectivité réseau vers une adresse IP ou un nom de domaine ?",
+          "options": ["ping", "ipconfig", "netstat", "nslookup"],
+          "answer": 0,
+          "explain": "ping envoie des paquets ICMP Echo Request et attend une réponse pour vérifier l'accessibilité de la cible."
+        },
+        {
+          "q": "Dans l'invite de commandes (cmd), quelle commande affiche le contenu d'un répertoire ?",
+          "options": ["dir", "ls", "list", "show"],
+          "answer": 0,
+          "explain": "dir est l'équivalent Windows de la commande ls sous Linux ; elle liste les fichiers et dossiers."
+        },
+        {
+          "q": "Quelle commande permet de changer le répertoire courant dans cmd ou PowerShell ?",
+          "options": ["cd", "chdir", "move", "go"],
+          "answer": 0,
+          "explain": "cd (Change Directory) permet de naviguer d'un dossier à un autre dans les deux environnements."
+        },
+        {
+          "q": "Quel est le format standard d'une cmdlet PowerShell ?",
+          "options": ["Verbe-Nom", "Nom-Verbe", "Verbe_Nom", "nom.verbe"],
+          "answer": 0,
+          "explain": "Les cmdlets PowerShell suivent la convention Verbe-Nom, par exemple Get-Process ou Stop-Service."
+        },
+        {
+          "q": "Quelle cmdlet PowerShell liste les processus en cours d'exécution ?",
+          "options": ["Get-Process", "List-Process", "Show-Process", "Get-Task"],
+          "answer": 0,
+          "explain": "Get-Process retourne la liste de tous les processus actifs, similaire au Gestionnaire des tâches."
+        },
+        {
+          "q": "Quelle cmdlet PowerShell liste les services Windows ?",
+          "options": ["Get-Service", "Get-Process", "Show-Service", "List-Service"],
+          "answer": 0,
+          "explain": "Get-Service retourne l'état (démarré/arrêté) et le nom de chaque service Windows."
+        },
+        {
+          "q": "Comment passer en mode administrateur dans l'invite de commandes ou PowerShell ?",
+          "options": ["Lancer la console avec «Exécuter en tant qu'administrateur»", "Taper «admin» dans la console", "Utiliser la commande «sudo»", "Taper «elevate» dans la console"],
+          "answer": 0,
+          "explain": "Il faut cliquer droit sur le raccourci et choisir «Exécuter en tant qu'administrateur» pour obtenir les droits élevés."
+        },
+        {
+          "q": "Que signifie le symbole «|» (pipe) dans PowerShell ?",
+          "options": ["Il passe la sortie d'une commande en entrée de la suivante", "Il écrit le résultat dans un fichier", "Il lance deux commandes en parallèle", "Il commente le reste de la ligne"],
+          "answer": 0,
+          "explain": "Le pipeline transmet les objets produits par une commande directement à la commande suivante."
+        },
+        {
+          "q": "Quelle commande cmd affiche l'adresse IP ainsi que l'adresse MAC de toutes les interfaces ?",
+          "options": ["ipconfig /all", "ipconfig /release", "netstat -a", "arp -a"],
+          "answer": 0,
+          "explain": "ipconfig /all affiche des informations complètes : IP, masque, passerelle, DNS, MAC, DHCP…"
+        },
+        {
+          "q": "Dans cmd, quelle commande crée un nouveau répertoire ?",
+          "options": ["mkdir", "newdir", "adddir", "create"],
+          "answer": 0,
+          "explain": "mkdir (ou son abréviation md) crée un nouveau répertoire au chemin spécifié."
+        },
+        {
+          "q": "Quelle différence fondamentale existe entre cmd et PowerShell concernant les objets ?",
+          "options": ["PowerShell manipule des objets .NET, cmd manipule du texte brut", "cmd est plus puissant que PowerShell", "PowerShell ne peut pas appeler les commandes cmd", "cmd supporte les scripts .ps1"],
+          "answer": 0,
+          "explain": "PowerShell traite des objets structurés (avec propriétés et méthodes), ce qui le rend bien plus puissant que le texte brut de cmd."
+        },
+        {
+          "q": "Quelle commande PowerShell arrête un processus par son nom ?",
+          "options": ["Stop-Process -Name <nom>", "Kill-Process -Name <nom>", "End-Process -Name <nom>", "Remove-Process -Name <nom>"],
+          "answer": 0,
+          "explain": "Stop-Process avec le paramètre -Name arrête tous les processus portant ce nom."
+        },
+        {
+          "q": "Quelle extension de fichier est propre aux scripts PowerShell ?",
+          "options": [".ps1", ".bat", ".cmd", ".sh"],
+          "answer": 0,
+          "explain": "Les scripts PowerShell portent l'extension .ps1 ; .bat et .cmd sont des scripts cmd."
+        },
+        {
+          "q": "Quelle commande cmd efface le contenu affiché dans la fenêtre de la console ?",
+          "options": ["cls", "clear", "reset", "clr"],
+          "answer": 0,
+          "explain": "cls (CLear Screen) efface l'affichage de la console cmd ; PowerShell accepte aussi «clear»."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Que fait la commande «ipconfig /release» ?",
+          "options": ["Elle libère le bail DHCP de l'interface réseau", "Elle affiche les informations IP détaillées", "Elle renouvelle l'adresse IP via DHCP", "Elle réinitialise le cache DNS"],
+          "answer": 0,
+          "explain": "ipconfig /release libère le bail DHCP, supprimant l'adresse IP attribuée par le serveur DHCP."
+        },
+        {
+          "q": "Quelle commande renouvelle l'adresse IP obtenue par DHCP ?",
+          "options": ["ipconfig /renew", "ipconfig /release", "ipconfig /flushdns", "ipconfig /registerdns"],
+          "answer": 0,
+          "explain": "ipconfig /renew demande au serveur DHCP d'attribuer une nouvelle adresse IP à l'interface."
+        },
+        {
+          "q": "Que fait la commande «ipconfig /flushdns» ?",
+          "options": ["Elle vide le cache DNS local du PC", "Elle renouvelle le bail DHCP", "Elle affiche les entrées DNS actives", "Elle enregistre le PC dans le DNS"],
+          "answer": 0,
+          "explain": "flushdns supprime toutes les entrées du cache DNS de Windows, forçant de nouvelles résolutions."
+        },
+        {
+          "q": "Dans PowerShell, quel caractère commence un commentaire sur une seule ligne ?",
+          "options": ["#", "//", "--", "/*"],
+          "answer": 0,
+          "explain": "En PowerShell, le dièse # commence un commentaire de ligne, similaire à bash."
+        },
+        {
+          "q": "Quelle cmdlet PowerShell permet de filtrer les objets d'un pipeline selon une condition ?",
+          "options": ["Where-Object", "Select-Object", "Sort-Object", "Filter-Object"],
+          "answer": 0,
+          "explain": "Where-Object (alias «where» ou «?») filtre les objets selon une condition booléenne."
+        },
+        {
+          "q": "Quelle cmdlet PowerShell sélectionne uniquement certaines propriétés d'un objet ?",
+          "options": ["Select-Object", "Where-Object", "Format-List", "Get-Member"],
+          "answer": 0,
+          "explain": "Select-Object permet de ne garder que les propriétés souhaitées d'un objet ou d'un ensemble d'objets."
+        },
+        {
+          "q": "Comment exécuter un script PowerShell nommé «monscript.ps1» dans le dossier courant ?",
+          "options": [".\\monscript.ps1", "run monscript.ps1", "exec monscript.ps1", "start monscript.ps1"],
+          "answer": 0,
+          "explain": "Le préfixe .\\  indique que le script se trouve dans le répertoire courant et force son exécution."
+        },
+        {
+          "q": "Quelle politique d'exécution PowerShell permet de lancer des scripts locaux non signés ?",
+          "options": ["RemoteSigned", "Restricted", "AllSigned", "Unrestricted"],
+          "answer": 0,
+          "explain": "RemoteSigned autorise les scripts locaux non signés mais exige une signature pour les scripts téléchargés."
+        },
+        {
+          "q": "Quelle commande cmd affiche les connexions réseau actives et les ports en écoute ?",
+          "options": ["netstat -an", "ipconfig /all", "ping 127.0.0.1", "tracert"],
+          "answer": 0,
+          "explain": "netstat -an affiche toutes les connexions TCP/UDP actives avec les adresses et ports numériques."
+        },
+        {
+          "q": "Que fait la commande «tracert google.com» dans cmd ?",
+          "options": ["Elle affiche le chemin réseau (sauts) jusqu'à google.com", "Elle résout le nom google.com en IP", "Elle envoie 100 pings à google.com", "Elle ouvre google.com dans le navigateur"],
+          "answer": 0,
+          "explain": "tracert (traceroute) identifie chaque routeur intermédiaire entre votre PC et la destination."
+        },
+        {
+          "q": "Quelle cmdlet PowerShell change la politique d'exécution des scripts ?",
+          "options": ["Set-ExecutionPolicy", "Get-ExecutionPolicy", "Enable-Script", "Set-Policy"],
+          "answer": 0,
+          "explain": "Set-ExecutionPolicy permet de modifier la politique d'exécution (Restricted, RemoteSigned, AllSigned…)."
+        },
+        {
+          "q": "Dans cmd, quelle commande copie un fichier vers un autre emplacement ?",
+          "options": ["copy", "cp", "xcopy", "move"],
+          "answer": 0,
+          "explain": "copy est la commande cmd basique pour copier un ou plusieurs fichiers ; xcopy est plus avancé."
+        },
+        {
+          "q": "Comment PowerShell affiche-t-il l'aide d'une cmdlet, par exemple Get-Service ?",
+          "options": ["Get-Help Get-Service", "help Get-Service", "Get-Service --help", "man Get-Service"],
+          "answer": 0,
+          "explain": "Get-Help est la cmdlet dédiée à l'aide ; elle affiche la syntaxe, les paramètres et des exemples."
+        },
+        {
+          "q": "Quelle variable automatique PowerShell représente l'objet courant dans un pipeline ?",
+          "options": ["$_", "$this", "$current", "$obj"],
+          "answer": 0,
+          "explain": "$_ (dollar underscore) ou $PSItem représente l'objet en cours de traitement dans un pipeline ou un bloc script."
+        },
+        {
+          "q": "Quelle commande cmd permet de connaître le nom de l'ordinateur local ?",
+          "options": ["hostname", "whoami", "netstat", "nslookup"],
+          "answer": 0,
+          "explain": "hostname affiche le nom NetBIOS/DNS de l'ordinateur local."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Quelle cmdlet PowerShell exporte les résultats dans un fichier CSV ?",
+          "options": ["Export-Csv", "Out-File", "Save-Csv", "Write-Csv"],
+          "answer": 0,
+          "explain": "Export-Csv convertit les objets du pipeline en lignes CSV et les écrit dans le fichier spécifié."
+        },
+        {
+          "q": "Dans PowerShell, comment déclare-t-on une variable contenant le texte «Bonjour» ?",
+          "options": ["$ma_var = «Bonjour»", "var ma_var = «Bonjour»", "SET ma_var=Bonjour", "let ma_var = «Bonjour»"],
+          "answer": 0,
+          "explain": "En PowerShell, les variables commencent par $ et l'assignation se fait avec le signe =."
+        },
+        {
+          "q": "Quelle commande PowerShell permet de tester la connectivité réseau de manière plus riche que ping ?",
+          "options": ["Test-NetConnection", "Test-Connection", "Ping-Host", "Check-Network"],
+          "answer": 0,
+          "explain": "Test-NetConnection offre plus de détails (port TCP, latence, route) et retourne un objet manipulable."
+        },
+        {
+          "q": "Quelle cmdlet PowerShell permet de lire le contenu d'un fichier texte ?",
+          "options": ["Get-Content", "Read-File", "Open-File", "Show-Content"],
+          "answer": 0,
+          "explain": "Get-Content lit un fichier ligne par ligne et retourne un tableau de chaînes de caractères."
+        },
+        {
+          "q": "Que fait l'opérateur «-eq» dans PowerShell ?",
+          "options": ["Il teste l'égalité entre deux valeurs", "Il teste si une valeur est supérieure", "Il affecte une valeur à une variable", "Il concatène deux chaînes"],
+          "answer": 0,
+          "explain": "-eq est l'opérateur d'égalité PowerShell ; pour les chaînes, il est insensible à la casse par défaut."
+        },
+        {
+          "q": "Dans cmd, quelle commande affiche l'identité de l'utilisateur actuellement connecté ?",
+          "options": ["whoami", "hostname", "net user", "id"],
+          "answer": 0,
+          "explain": "whoami affiche le domaine et le nom de l'utilisateur connecté (ex. DOMAINE\\utilisateur)."
+        },
+        {
+          "q": "Quelle commande PowerShell crée un nouveau dossier ?",
+          "options": ["New-Item -ItemType Directory", "mkdir uniquement", "Create-Folder", "Add-Directory"],
+          "answer": 0,
+          "explain": "New-Item avec -ItemType Directory crée un dossier ; mkdir est également disponible comme alias."
+        },
+        {
+          "q": "Comment envoyer la sortie d'une commande PowerShell dans un fichier texte ?",
+          "options": ["Get-Process | Out-File process.txt", "Get-Process > process.txt uniquement en cmd", "Get-Process >> process.txt", "Save-Output -File process.txt"],
+          "answer": 0,
+          "explain": "Out-File est la cmdlet native PowerShell pour écrire dans un fichier ; l'opérateur > fonctionne aussi."
+        },
+        {
+          "q": "Quelle commande cmd permet de mapper un lecteur réseau (par exemple Z:) sur un partage \\\\serveur\\partage ?",
+          "options": ["net use Z: \\\\serveur\\partage", "map Z: \\\\serveur\\partage", "mount \\\\serveur\\partage Z:", "netsh map Z:"],
+          "answer": 0,
+          "explain": "net use permet de connecter ou déconnecter des lecteurs réseau depuis la ligne de commande."
+        },
+        {
+          "q": "Quelle cmdlet PowerShell permet de redémarrer un service ?",
+          "options": ["Restart-Service", "Reset-Service", "Reload-Service", "Start-Service -Force"],
+          "answer": 0,
+          "explain": "Restart-Service arrête puis redémarre le service spécifié en une seule commande."
+        },
+        {
+          "q": "Que fait la commande «nslookup google.com» ?",
+          "options": ["Elle résout le nom de domaine google.com en adresse IP via DNS", "Elle teste la connectivité vers google.com", "Elle affiche le chemin réseau vers google.com", "Elle vide le cache DNS"],
+          "answer": 0,
+          "explain": "nslookup interroge le serveur DNS configuré et retourne l'adresse IP correspondant au nom de domaine."
+        },
+        {
+          "q": "Quelle structure PowerShell permet de répéter une action pour chaque élément d'une collection ?",
+          "options": ["ForEach-Object (ou foreach)", "For-Each-Item", "Loop-Object", "Repeat-Action"],
+          "answer": 0,
+          "explain": "ForEach-Object (alias foreach ou %) itère sur chaque objet du pipeline ou d'une collection."
+        },
+        {
+          "q": "Comment PowerShell exécute-t-il une commande sur plusieurs machines distantes simultanément ?",
+          "options": ["Invoke-Command -ComputerName PC1,PC2 -ScriptBlock {...}", "Remote-Command -Hosts PC1,PC2", "Run-Remote PC1,PC2 {...}", "Execute-Remote -Targets PC1,PC2"],
+          "answer": 0,
+          "explain": "Invoke-Command avec -ComputerName et -ScriptBlock utilise WinRM pour exécuter du code sur des machines distantes."
+        },
+        {
+          "q": "Quelle commande cmd envoie 10 pings au lieu des 4 par défaut ?",
+          "options": ["ping -n 10 <cible>", "ping -c 10 <cible>", "ping -t 10 <cible>", "ping -r 10 <cible>"],
+          "answer": 0,
+          "explain": "Le paramètre -n définit le nombre de requêtes Echo à envoyer sous Windows (sous Linux c'est -c)."
+        },
+        {
+          "q": "Dans PowerShell, quelle cmdlet permet de récupérer les propriétés et méthodes d'un objet ?",
+          "options": ["Get-Member", "Show-Object", "Get-Property", "Inspect-Object"],
+          "answer": 0,
+          "explain": "Get-Member (alias gm) affiche les propriétés, méthodes et événements disponibles sur un objet .NET."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+// PM2 ecosystem (exemple) — copier en "ecosystem.config.cjs" et renseigner les secrets.
+// pm2 start ecosystem.config.cjs
+module.exports = {
+  apps: [
+    {
+      name: 'webcms',
+      script: 'node_modules/tsx/dist/cli.mjs',
+      args: 'server/index.ts',
+      cwd: __dirname,
+      env: {
+        NODE_ENV: 'production',
+        PORT: '3470',
+        // ⚠️ Secrets requis en production — mets des valeurs uniques et privées :
+        SESSION_SECRET: 'REMPLACE-MOI-PAR-UNE-CHAINE-ALEATOIRE',
+        CMS_ADMIN_USER: 'admin',
+        CMS_ADMIN_PASSWORD: 'REMPLACE-MOI',
+      },
+      max_memory_restart: '512M',
+      autorestart: true,
+      watch: false,
+      out_file: 'logs/cms-out.log',
+      error_file: 'logs/cms-err.log',
+      merge_logs: true,
+      time: true,
+    },
+  ],
+};

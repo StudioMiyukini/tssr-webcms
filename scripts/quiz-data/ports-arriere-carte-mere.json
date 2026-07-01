@@ -1,0 +1,291 @@
+{
+  "slug": "ports-arriere-carte-mere",
+  "title": "Les ports arrière de la carte mère",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Que désigne le «panneau arrière» (rear I/O) d'une carte mère ?",
+          "options": ["L'ensemble des slots PCIe", "L'ensemble des connecteurs externes accessibles depuis l'arrière du boîtier", "Le connecteur d'alimentation 24 broches", "Les ports SATA internes"],
+          "answer": 1,
+          "explain": "Le panneau arrière (rear I/O) regroupe tous les ports externes de la carte mère : USB, vidéo, audio, réseau, etc."
+        },
+        {
+          "q": "À quoi reconnaît-on un port USB 3.0 sur le panneau arrière ?",
+          "options": ["Il est de couleur rouge", "Il est de couleur bleue", "Il est de couleur noire", "Il est de couleur verte"],
+          "answer": 1,
+          "explain": "Par convention, les ports USB 3.0 (et versions supérieures) sont de couleur bleue pour les distinguer des ports USB 2.0 (noirs ou blancs)."
+        },
+        {
+          "q": "Quel port est utilisé pour connecter un câble réseau Ethernet ?",
+          "options": ["Le port USB-A", "Le port jack audio", "Le port RJ45", "Le port HDMI"],
+          "answer": 2,
+          "explain": "Le port RJ45 est le connecteur standard pour les câbles Ethernet (réseau filaire), permettant la connexion à un switch, une box ou un routeur."
+        },
+        {
+          "q": "Que permet un port HDMI sur la carte mère ?",
+          "options": ["Connecter un clavier et une souris", "Transmettre un signal vidéo (et audio) vers un écran", "Connecter un disque dur externe", "Brancher un casque audio"],
+          "answer": 1,
+          "explain": "HDMI (High-Definition Multimedia Interface) transmet à la fois le signal vidéo numérique et l'audio en haute définition vers un écran ou un téléviseur."
+        },
+        {
+          "q": "Que représente le port PS/2 violet sur une carte mère ?",
+          "options": ["Un port audio surround", "Un ancien port pour clavier (violet) ou souris (vert)", "Un port réseau propriétaire", "Un port pour manette de jeu"],
+          "answer": 1,
+          "explain": "Le port PS/2 (mini-DIN 6 broches) est un connecteur historique pour les périphériques ; violet = clavier, vert = souris."
+        },
+        {
+          "q": "À quoi sert le port jack 3,5 mm vert sur le panneau arrière ?",
+          "options": ["À brancher un microphone", "À connecter des haut-parleurs ou un casque (sortie audio)", "À connecter un subwoofer uniquement", "À alimenter un périphérique USB"],
+          "answer": 1,
+          "explain": "Le jack 3,5 mm vert est la sortie audio principale (line-out) pour brancher des enceintes ou un casque."
+        },
+        {
+          "q": "Qu'est-ce qu'un port VGA ?",
+          "options": ["Un port audio numérique", "Un connecteur vidéo analogique 15 broches (DB15), ancien standard pour les écrans", "Un port réseau très haut débit", "Un port USB de première génération"],
+          "answer": 1,
+          "explain": "Le VGA (Video Graphics Array) est un connecteur vidéo analogique à 15 broches, standard dans les années 1990-2000, encore présent sur certains écrans anciens."
+        },
+        {
+          "q": "Que permet un port DisplayPort sur la carte mère ?",
+          "options": ["De connecter un écran via un signal numérique haute performance", "D'alimenter un périphérique USB-C", "De connecter une imprimante", "De transférer des fichiers vers un SSD externe"],
+          "answer": 0,
+          "explain": "DisplayPort est un connecteur vidéo numérique haute performance, souvent préféré au HDMI pour les moniteurs gaming haute fréquence."
+        },
+        {
+          "q": "Quelle est la couleur conventionnelle d'un port USB 2.0 ?",
+          "options": ["Bleu", "Rouge", "Noir ou blanc", "Vert"],
+          "answer": 2,
+          "explain": "Les ports USB 2.0 sont généralement de couleur noire ou blanche, tandis que le bleu est réservé à l'USB 3.0 et supérieur."
+        },
+        {
+          "q": "Quel port permet de connecter un casque ou des enceintes sur un PC sans carte son dédiée ?",
+          "options": ["Le port RJ45", "Le port jack 3,5 mm (audio analogique)", "Le port HDMI uniquement", "Le port USB-A"],
+          "answer": 1,
+          "explain": "Les jacks audio 3,5 mm intégrés au panneau arrière permettent de connecter des enceintes ou un casque grâce à la puce audio intégrée à la carte mère."
+        },
+        {
+          "q": "Quelle est la différence principale entre USB-A et USB-C ?",
+          "options": ["USB-A est plus rapide que USB-C", "USB-C est rectangulaire, USB-A est ovale et réversible", "USB-A est rectangulaire et non réversible, USB-C est ovale et réversible", "Ils sont identiques physiquement"],
+          "answer": 2,
+          "explain": "USB-A est le connecteur rectangulaire classique à insérer dans un seul sens ; USB-C est un connecteur ovale symétrique qui s'insère dans les deux sens."
+        },
+        {
+          "q": "À quoi sert le port jack 3,5 mm rose (ou rouge) sur le panneau arrière ?",
+          "options": ["À brancher des enceintes", "À connecter un microphone (entrée audio)", "À brancher des haut-parleurs surround arrière", "À connecter une guitare électrique"],
+          "answer": 1,
+          "explain": "Le jack rose est l'entrée microphone (mic-in) de la carte mère, destinée à brancher un microphone externe."
+        },
+        {
+          "q": "Combien de pins possède un port RJ45 ?",
+          "options": ["4 pins", "6 pins", "8 pins", "12 pins"],
+          "answer": 2,
+          "explain": "Un connecteur RJ45 possède 8 contacts (pins), tous utilisés pour le Gigabit Ethernet (4 paires de fils)."
+        },
+        {
+          "q": "Quel port vidéo est le plus ancien parmi ces choix ?",
+          "options": ["DisplayPort", "HDMI", "VGA", "USB-C vidéo"],
+          "answer": 2,
+          "explain": "Le VGA date de 1987 (IBM), bien avant le HDMI (2002) et le DisplayPort (2006), ce qui en fait la norme vidéo la plus ancienne encore parfois rencontrée."
+        },
+        {
+          "q": "Les ports du panneau arrière sont-ils directement soudés sur la carte mère ?",
+          "options": ["Non, ils sont sur une carte fille séparée", "Oui, ils font partie intégrante du PCB de la carte mère", "Non, ils sont connectés via un câble ruban", "Oui, mais uniquement les ports USB"],
+          "answer": 1,
+          "explain": "Les connecteurs du panneau arrière sont directement soudés sur le PCB de la carte mère, ce qui fixe leur emplacement et leur nombre dès la fabrication."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Quelle est la vitesse maximale théorique de l'USB 3.2 Gen 2 ?",
+          "options": ["480 Mb/s", "5 Gb/s", "10 Gb/s", "40 Gb/s"],
+          "answer": 2,
+          "explain": "L'USB 3.2 Gen 2 (anciennement USB 3.1 Gen 2) atteint 10 Gb/s, soit le double de l'USB 3.2 Gen 1 (5 Gb/s)."
+        },
+        {
+          "q": "Quelle est la vitesse de l'USB 2.0 ?",
+          "options": ["1,5 Mb/s", "12 Mb/s", "480 Mb/s", "5 Gb/s"],
+          "answer": 2,
+          "explain": "L'USB 2.0 Hi-Speed offre une bande passante de 480 Mb/s, nettement inférieure aux versions USB 3.x."
+        },
+        {
+          "q": "Que permet le port USB-C avec la fonctionnalité «Power Delivery» (USB PD) ?",
+          "options": ["De transférer des données à 40 Gb/s", "De charger des appareils (laptop, téléphone) via le câble USB-C, jusqu'à 240 W", "D'afficher une image sur un écran HDMI", "De créer un réseau entre deux PC"],
+          "answer": 1,
+          "explain": "USB Power Delivery permet au port USB-C de fournir une alimentation pouvant atteindre 240 W (USB PD 3.1), suffisante pour charger un ordinateur portable."
+        },
+        {
+          "q": "Quelle couleur identifie les ports USB 3.2 Gen 2x2 (20 Gb/s) sur certaines cartes mères ?",
+          "options": ["Bleue", "Rouge", "Verte", "Orange"],
+          "answer": 1,
+          "explain": "Les ports USB 3.2 Gen 2x2 et parfois les ports USB à charge rapide sont souvent identifiés par une couleur rouge ou orange par les fabricants."
+        },
+        {
+          "q": "Quelle est la différence entre HDMI 1.4 et HDMI 2.1 ?",
+          "options": ["HDMI 1.4 supporte le 4K, HDMI 2.1 est limité au 1080p", "HDMI 2.1 supporte des résolutions et fréquences d'image bien plus élevées (4K 120Hz, 8K)", "Ils sont identiques en termes de débit", "HDMI 1.4 supporte l'audio, HDMI 2.1 non"],
+          "answer": 1,
+          "explain": "HDMI 2.1 offre une bande passante de 48 Gb/s contre 10,2 Gb/s pour le 1.4, permettant le 4K à 120 Hz ou le 8K à 60 Hz."
+        },
+        {
+          "q": "Un port DisplayPort peut-il transmettre de l'audio comme HDMI ?",
+          "options": ["Non, DisplayPort est uniquement vidéo", "Oui, DisplayPort supporte également la transmission audio numérique", "Oui, mais uniquement sur les versions 1.4 et supérieures", "Non, sauf avec un adaptateur actif"],
+          "answer": 1,
+          "explain": "DisplayPort supporte nativement l'audio numérique multi-canal, comme HDMI, depuis ses premières versions."
+        },
+        {
+          "q": "Que signifie la couleur des LEDs du port RJ45 ?",
+          "options": ["LED verte = connexion OK ; LED orange/jaune = activité réseau (trafic en cours)", "LED rouge = connexion OK ; LED verte = erreur réseau", "LED clignotante = erreur ; LED fixe = trafic", "Les LEDs RJ45 n'ont pas de signification standardisée"],
+          "answer": 0,
+          "explain": "Sur la plupart des cartes mères, la LED verte indique une liaison établie et la LED orange/jaune signale une activité de transfert de données."
+        },
+        {
+          "q": "Un port DisplayPort 1.4 peut-il connecter plusieurs moniteurs via «daisy-chain» ?",
+          "options": ["Non, le daisy-chain est uniquement possible avec HDMI", "Oui, via la technologie MST (Multi-Stream Transport) de DisplayPort", "Oui, mais uniquement avec des moniteurs 1080p", "Non, il faut un splitter DisplayPort actif"],
+          "answer": 1,
+          "explain": "DisplayPort 1.2 et supérieur supporte le MST (Multi-Stream Transport) permettant de chaîner plusieurs écrans en série sur un seul port DP."
+        },
+        {
+          "q": "Quel jack audio correspond à l'entrée «Line-in» sur une carte audio ?",
+          "options": ["Le jack vert", "Le jack rose", "Le jack bleu", "Le jack noir"],
+          "answer": 2,
+          "explain": "Le jack bleu est l'entrée ligne (line-in), utilisée pour connecter une source audio externe comme un lecteur CD ou une platine vinyle."
+        },
+        {
+          "q": "Que signifie «USB 3.2 Gen 2x2» ?",
+          "options": ["USB 3.2 avec deux ports physiques fusionnés à 10 Gb/s chacun", "USB 3.2 utilisant deux lanes à 10 Gb/s chacune pour atteindre 20 Gb/s", "USB 3.2 compatible avec deux générations de câbles", "USB 3.2 avec tension double pour la charge rapide"],
+          "answer": 1,
+          "explain": "USB 3.2 Gen 2x2 utilise deux canaux (lanes) de 10 Gb/s en parallèle pour atteindre 20 Gb/s de bande passante totale."
+        },
+        {
+          "q": "Peut-on utiliser un adaptateur VGA vers HDMI pour connecter un écran HDMI à un port VGA ?",
+          "options": ["Non, VGA analogique et HDMI numérique nécessitent un convertisseur actif, pas un simple adaptateur passif", "Oui, un simple câble adaptateur passif suffit", "Oui, mais la qualité sera réduite à 720p", "Non, les deux normes sont totalement incompatibles même avec un convertisseur"],
+          "answer": 0,
+          "explain": "VGA est analogique et HDMI est numérique ; la conversion nécessite un convertisseur actif avec électronique interne, pas un simple adaptateur mécanique."
+        },
+        {
+          "q": "Qu'est-ce que le port Thunderbolt 4 en termes de débit ?",
+          "options": ["5 Gb/s", "10 Gb/s", "20 Gb/s", "40 Gb/s"],
+          "answer": 3,
+          "explain": "Thunderbolt 4 offre un débit bidirectionnel de 40 Gb/s, identique au TB3, avec des garanties supplémentaires de certification."
+        },
+        {
+          "q": "Quelle est la résolution maximale supportée par le VGA ?",
+          "options": ["640 x 480 uniquement", "Le VGA peut théoriquement supporter jusqu'au 2048 x 1536, mais se dégrade au-delà du 1080p", "1920 x 1080 maximum strict", "Uniquement 800 x 600"],
+          "answer": 1,
+          "explain": "Bien que conçu à l'origine pour le 640x480, le VGA peut supporter de plus hautes résolutions, mais la qualité analogique se dégrade nettement au-delà du 1080p."
+        },
+        {
+          "q": "Pourquoi le PS/2 persiste-t-il sur certaines cartes mères professionnelles ?",
+          "options": ["Car il est plus rapide que l'USB pour les claviers", "Car il fonctionne indépendamment du système d'exploitation (utile pour le BIOS/KVM) et ne subit pas les problèmes d'énumération USB", "Car il consomme moins d'énergie que l'USB", "Car les claviers gaming l'utilisent encore massivement"],
+          "answer": 1,
+          "explain": "Le PS/2 est reconnu par le BIOS dès le POST sans pilote, ce qui le rend fiable pour déboguer un serveur ou utiliser un KVM ; l'USB nécessite une initialisation logicielle."
+        },
+        {
+          "q": "Qu'est-ce que l'USB «Always On» ou «Charging» signalé par une icône éclair sur certains ports ?",
+          "options": ["Un port USB 3.0 standard", "Un port qui reste alimenté même PC éteint pour charger les appareils (smartphone, tablette)", "Un port USB réservé au clavier et à la souris", "Un port USB avec protection contre les surtensions uniquement"],
+          "answer": 1,
+          "explain": "Les ports USB avec icône éclair restent alimentés même quand le PC est en veille ou éteint (selon le paramètre BIOS), permettant de charger des appareils mobiles."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Qu'est-ce que l'USB4 (version 2.0) et quel est son débit maximum ?",
+          "options": ["USB4 v2.0 = 20 Gb/s", "USB4 v2.0 = 40 Gb/s", "USB4 v2.0 = 80 Gb/s", "USB4 v2.0 = 120 Gb/s"],
+          "answer": 2,
+          "explain": "USB4 Version 2.0, annoncé en 2022, atteint jusqu'à 80 Gb/s grâce à une modulation PAM-2 sur le câble, doublant la vitesse de l'USB4 Gen 3 (40 Gb/s)."
+        },
+        {
+          "q": "Que signifie «Alt Mode» sur un port USB-C ?",
+          "options": ["Un mode de charge ultra-rapide", "La capacité du port USB-C à transmettre d'autres protocoles (DisplayPort, Thunderbolt, HDMI) en plus de l'USB", "Un mode de débogage réservé aux fabricants", "Un mode économie d'énergie automatique"],
+          "answer": 1,
+          "explain": "L'Alt Mode (Alternate Mode) permet au port USB-C de transporter d'autres protocoles comme DisplayPort ou Thunderbolt, via les mêmes broches physiques."
+        },
+        {
+          "q": "Quelle est la différence entre le Gigabit Ethernet (1 GbE) et le 2,5 GbE présent sur certaines cartes mères récentes ?",
+          "options": ["Le 2,5 GbE nécessite un câble spécial Cat8", "Le 2,5 GbE offre 2,5 fois la bande passante du Gigabit sur un câble Cat5e ou Cat6 standard", "Le 2,5 GbE est uniquement pour les serveurs", "Ils sont identiques, seul le nom marketing change"],
+          "answer": 1,
+          "explain": "Le 2,5 GbE (2 500 Mb/s) fonctionne sur les câbles Cat5e ou Cat6 existants et offre une bande passante 2,5 fois supérieure au Gigabit standard."
+        },
+        {
+          "q": "Qu'est-ce que le «DisplayPort over USB-C» (DP Alt Mode) ?",
+          "options": ["Un adaptateur externe requis pour le DisplayPort", "La transmission du signal DisplayPort via les broches d'un connecteur USB-C, sans matériel supplémentaire", "Un convertisseur actif DisplayPort vers USB-C", "Un protocole uniquement disponible sur Thunderbolt 4"],
+          "answer": 1,
+          "explain": "Le DP Alt Mode permet à un port USB-C de transporter nativement le signal DisplayPort, évitant le besoin d'un port DP dédié pour connecter un écran."
+        },
+        {
+          "q": "Comment distinguer un port USB4 d'un port USB 3.2 Gen 2 physiquement ?",
+          "options": ["Le port USB4 est toujours noir, le 3.2 toujours bleu", "On ne peut pas les distinguer visuellement car tous deux utilisent le connecteur USB-C ; il faut lire les spécifications", "Le port USB4 a une icône distinctive standardisée par tous les fabricants", "Le port USB4 est un connecteur rectangulaire spécial"],
+          "answer": 1,
+          "explain": "USB4 et USB 3.2 Gen 2 peuvent tous deux utiliser le connecteur USB-C ; seules les spécifications techniques ou les pictogrammes du fabricant permettent de les distinguer."
+        },
+        {
+          "q": "Qu'est-ce que le «HDCP» en lien avec les ports vidéo HDMI et DisplayPort ?",
+          "options": ["High-Definition Cable Protection : une norme de câble blindé", "High-bandwidth Digital Content Protection : une protection anti-copie des contenus numériques", "High Definition Color Profile : un profil de couleur pour l'affichage HDR", "Hard Drive Control Protocol : un protocole de transfert vidéo"],
+          "answer": 1,
+          "explain": "HDCP (High-bandwidth Digital Content Protection) est un système de protection anti-copie qui s'active lors de la lecture de contenus protégés (Blu-ray, streaming) via HDMI ou DP."
+        },
+        {
+          "q": "Un port VGA intégré à la carte mère fonctionne-t-il si une carte graphique dédiée est installée ?",
+          "options": ["Oui, toujours automatiquement", "Cela dépend : il peut être désactivé automatiquement dans le BIOS quand un GPU dédié est détecté", "Non, il est définitivement désactivé dès l'installation d'un GPU", "Oui, mais uniquement pour un second moniteur"],
+          "answer": 1,
+          "explain": "Beaucoup de BIOS désactivent les sorties vidéo intégrées quand un GPU dédié est présent, mais ce comportement est souvent configurable dans les paramètres UEFI."
+        },
+        {
+          "q": "Que mesure le «taux de rafraîchissement» maximal d'un port HDMI ou DisplayPort ?",
+          "options": ["La vitesse de transfert des données USB", "Le nombre d'images par seconde (Hz) que le port peut transmettre à une résolution donnée", "La luminosité maximale supportée par le signal", "Le nombre d'écrans pouvant être connectés en chaîne"],
+          "answer": 1,
+          "explain": "Le taux de rafraîchissement maximal (Hz) dépend de la version du port et de la résolution : par exemple, HDMI 2.0 supporte le 4K à 60 Hz mais pas à 120 Hz."
+        },
+        {
+          "q": "Que signifie le terme «USB OTG» (On-The-Go) ?",
+          "options": ["Un port USB qui fonctionne sans câble (sans fil)", "Une fonctionnalité permettant à un appareil mobile d'agir comme hôte USB (ex: connecter une clé USB à un smartphone)", "Un port USB haute vitesse pour les SSD portables", "Un mode de charge rapide pour les smartphones"],
+          "answer": 1,
+          "explain": "USB OTG permet à un appareil normalement esclave (smartphone, tablette) d'agir comme contrôleur hôte pour gérer des périphériques USB (clés USB, claviers, etc.)."
+        },
+        {
+          "q": "Quelle est la principale limite du VGA par rapport au HDMI pour un écran 4K ?",
+          "options": ["Le VGA ne supporte pas les résolutions supérieures à 1080p en pratique sur les écrans modernes", "Le VGA ne peut pas transmettre l'audio", "Le VGA n'est pas reconnu par Windows 10", "Le VGA consomme plus d'énergie que le HDMI"],
+          "answer": 0,
+          "explain": "Étant analogique, le VGA souffre de dégradation du signal et de limitations pratiques qui le rendent inadapté au 4K ; le HDMI et le DisplayPort numériques gèrent cela nativement."
+        },
+        {
+          "q": "Qu'est-ce que le protocole «LLDP» utilisé par le port RJ45 en entreprise ?",
+          "options": ["Low Latency Data Protocol : un protocole d'optimisation réseau", "Link Layer Discovery Protocol : un protocole de découverte des équipements voisins sur le réseau", "Local LAN Detection Protocol : détection automatique du débit du réseau", "Light Load Data Provisioning : alimentation PoE des équipements"],
+          "answer": 1,
+          "explain": "LLDP (Link Layer Discovery Protocol) est un standard IEEE 802.1AB permettant aux équipements réseau de s'annoncer et de partager des informations avec leurs voisins directs."
+        },
+        {
+          "q": "Qu'est-ce que le PoE (Power over Ethernet) et est-il disponible sur le port RJ45 d'une carte mère standard ?",
+          "options": ["C'est le Gigabit Ethernet, disponible sur toutes les cartes mères", "PoE alimente des appareils via le câble RJ45 ; il n'est pas disponible sur les cartes mères standard (nécessite un switch PoE)", "C'est la détection automatique de la vitesse réseau, disponible partout", "PoE est un chiffrement réseau disponible sur les cartes haut de gamme"],
+          "answer": 1,
+          "explain": "Le PoE injecte de l'électricité dans le câble RJ45 pour alimenter des équipements (caméras IP, bornes Wi-Fi) ; cette fonction est réservée aux switches et injecteurs PoE, pas aux cartes mères."
+        },
+        {
+          "q": "Combien de moniteurs peut-on connecter simultanément via les ports arrière d'une carte mère avec iGPU (sans GPU dédié) ?",
+          "options": ["Toujours un seul", "Cela dépend du nombre et du type de ports vidéo sur la carte mère (souvent 2 à 3)", "Toujours deux moniteurs maximum", "Autant que de ports USB disponibles"],
+          "answer": 1,
+          "explain": "Le nombre d'écrans simultanés via l'iGPU dépend des ports vidéo présents sur la carte mère (HDMI, DP, VGA) et des capacités du processeur ; souvent 2 à 3 écrans."
+        },
+        {
+          "q": "Que signifie «Thunderbolt 4» par rapport à USB4 en matière de garanties ?",
+          "options": ["Thunderbolt 4 et USB4 sont des noms interchangeables", "Thunderbolt 4 certifie des garanties minimales (40 Gb/s, 2 écrans 4K, 100 W PD) que USB4 ne requiert pas tous obligatoirement", "Thunderbolt 4 est plus lent que USB4 Gen3", "Thunderbolt 4 est uniquement disponible sur Mac"],
+          "answer": 1,
+          "explain": "Thunderbolt 4 est une certification stricte garantissant 40 Gb/s, support de deux écrans 4K, 100 W PD et PCIe ; l'USB4 Gen3 atteint aussi 40 Gb/s mais avec des exigences moins strictes."
+        },
+        {
+          "q": "Quel avantage offre un port RJ45 2,5 GbE par rapport au Gigabit classique pour un NAS domestique ?",
+          "options": ["Il réduit la consommation électrique du NAS", "Il permet des transferts jusqu'à 2,5 fois plus rapides (312 Mo/s contre 125 Mo/s) sur le réseau local", "Il est indispensable pour le Wi-Fi 6", "Il permet de connecter deux appareils sur un seul câble"],
+          "answer": 1,
+          "explain": "Un port 2,5 GbE offre un débit théorique de ~312 Mo/s, suffisant pour dépasser les vitesses des SSD réseau et exploiter pleinement un NAS rapide en local."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,291 @@
+{
+  "slug": "reseau-entreprise",
+  "title": "Réseau d'entreprise",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Un projet réseau d'entreprise se déroule généralement en combien de grandes phases ?",
+          "options": ["2 phases", "3 phases", "5 phases", "1 seule phase"],
+          "answer": 1,
+          "explain": "Un projet réseau se découpe classiquement en 3 phases : conception, installation, déploiement."
+        },
+        {
+          "q": "Qu'est-ce qu'un VLAN ?",
+          "options": ["Un câble réseau de type fibre optique", "Un réseau local virtuel permettant de segmenter logiquement un réseau physique", "Un type de pare-feu", "Un protocole de routage inter-sites"],
+          "answer": 1,
+          "explain": "Un VLAN (Virtual LAN) segmente logiquement le réseau : des machines sur le même switch peuvent appartenir à des réseaux distincts."
+        },
+        {
+          "q": "Pourquoi segmenter le réseau en VLAN par service (comptabilité, RH, production…) ?",
+          "options": ["Pour augmenter la vitesse du réseau uniquement", "Pour isoler les flux, limiter la propagation des incidents et renforcer la sécurité", "Pour réduire le nombre de câbles", "Car c'est une obligation légale"],
+          "answer": 1,
+          "explain": "La segmentation en VLAN cloisonne les services, limitant les risques de propagation d'une infection ou d'un accès non autorisé."
+        },
+        {
+          "q": "Qu'est-ce qu'un serveur AD (Active Directory) ?",
+          "options": ["Un serveur de stockage de fichiers", "Un annuaire centralisé Microsoft gérant les utilisateurs, ordinateurs et droits d'accès du domaine", "Un serveur web Apache", "Un serveur de messagerie"],
+          "answer": 1,
+          "explain": "Active Directory est l'annuaire centralisé Microsoft qui gère l'authentification et les autorisations sur le domaine Windows."
+        },
+        {
+          "q": "Quel est le rôle d'un serveur DHCP dans un réseau d'entreprise ?",
+          "options": ["Résoudre les noms de domaine en adresses IP", "Attribuer automatiquement une adresse IP aux équipements qui se connectent", "Stocker les fichiers partagés", "Filtrer le trafic réseau entrant"],
+          "answer": 1,
+          "explain": "Le serveur DHCP distribue automatiquement les adresses IP, masques, passerelle et DNS aux clients du réseau."
+        },
+        {
+          "q": "Quel est le rôle d'un serveur DNS dans un réseau d'entreprise ?",
+          "options": ["Attribuer des adresses IP automatiquement", "Traduire les noms de domaine en adresses IP et inversement", "Gérer les droits NTFS sur les partages", "Synchroniser les horloges des serveurs"],
+          "answer": 1,
+          "explain": "Le DNS (Domain Name System) traduit les noms (ex. serveur.entreprise.local) en adresses IP compréhensibles par les machines."
+        },
+        {
+          "q": "Qu'est-ce que la DMZ dans un réseau d'entreprise ?",
+          "options": ["Un VLAN réservé à la direction", "Une zone réseau isolée hébergeant les services accessibles depuis Internet", "Le réseau Wi-Fi des employés", "Un sous-réseau réservé aux sauvegardes"],
+          "answer": 1,
+          "explain": "La DMZ protège le LAN interne en isolant les serveurs exposés à Internet (web, mail, reverse proxy)."
+        },
+        {
+          "q": "Qu'est-ce qu'une GPO (Group Policy Object) ?",
+          "options": ["Un type de pare-feu applicatif", "Un objet de stratégie de groupe permettant de configurer centralement les postes et utilisateurs du domaine", "Un protocole de routage dynamique", "Un type de VLAN dédié aux serveurs"],
+          "answer": 1,
+          "explain": "Les GPO permettent d'appliquer des configurations (fonds d'écran, restrictions, logiciels) à des groupes d'utilisateurs ou d'ordinateurs."
+        },
+        {
+          "q": "Qu'est-ce que la « jonction au domaine » d'un poste Windows ?",
+          "options": ["Le raccordement physique du câble réseau", "L'opération d'intégrer un poste dans le domaine Active Directory pour qu'il soit géré centralement", "L'installation du système d'exploitation", "La mise à jour du BIOS du poste"],
+          "answer": 1,
+          "explain": "Joindre un poste au domaine permet à l'AD de le gérer, d'appliquer des GPO et d'authentifier les utilisateurs du domaine."
+        },
+        {
+          "q": "Quel équipement constitue le « cœur de réseau » (core switch) dans une infrastructure d'entreprise ?",
+          "options": ["Le modem ADSL", "Le switch principal de haute performance auquel tous les autres switchs sont connectés", "Le serveur de fichiers", "Le point d'accès Wi-Fi principal"],
+          "answer": 1,
+          "explain": "Le cœur de réseau centralise les connexions des switchs d'accès et assure un routage inter-VLAN à haute performance."
+        },
+        {
+          "q": "Qu'est-ce qu'un switch d'accès dans la hiérarchie réseau ?",
+          "options": ["Le switch situé entre Internet et le pare-feu", "Le switch auquel se connectent directement les postes utilisateurs et périphériques", "Le switch central reliant tous les VLAN", "Un switch réservé aux serveurs"],
+          "answer": 1,
+          "explain": "Le switch d'accès est la couche basse : il accueille les connexions des postes, imprimantes et téléphones IP."
+        },
+        {
+          "q": "Qu'est-ce que le plan d'adressage IP ?",
+          "options": ["La liste des adresses MAC de tous les équipements", "Le document définissant les sous-réseaux, plages d'adresses et attributions par service ou VLAN", "Le schéma du câblage physique", "La liste des ports ouverts sur le pare-feu"],
+          "answer": 1,
+          "explain": "Le plan d'adressage recense chaque sous-réseau et plage d'adresses pour éviter les conflits et documenter l'infrastructure."
+        },
+        {
+          "q": "Qu'est-ce qu'un partage réseau NTFS ?",
+          "options": ["Un dossier accessible via le réseau avec des droits d'accès gérés par Windows", "Un protocole de synchronisation de fichiers", "Un type de formatage de disque dur", "Un service cloud Microsoft"],
+          "answer": 0,
+          "explain": "Un partage réseau NTFS est un dossier mis en partage sur lequel on applique des droits d'accès (lecture, écriture…) via Windows."
+        },
+        {
+          "q": "Quels sont les deux niveaux de droits à combiner pour sécuriser un partage réseau sous Windows ?",
+          "options": ["Les droits TCP et UDP", "Les droits de partage réseau et les permissions NTFS sur les fichiers", "Les droits Active Directory et les droits FTP", "Les droits SSH et les droits RDP"],
+          "answer": 1,
+          "explain": "Sous Windows, les droits de partage réseau et les permissions NTFS s'appliquent conjointement ; c'est le plus restrictif qui prime."
+        },
+        {
+          "q": "Qu'est-ce que le cloisonnement réseau dans le contexte de la sécurité ?",
+          "options": ["La mise en place de câbles blindés", "La séparation des zones réseau par des équipements de filtrage pour limiter la propagation des menaces", "L'utilisation d'un seul switch pour tout le réseau", "Le chiffrement de tous les fichiers du serveur"],
+          "answer": 1,
+          "explain": "Le cloisonnement isole les zones (LAN, DMZ, VLAN) par des pare-feux ou ACL pour qu'une compromission reste confinée."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Quelle est la plage d'adresses IP privées de classe C la plus courante en entreprise ?",
+          "options": ["10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "169.254.0.0/16"],
+          "answer": 2,
+          "explain": "La plage 192.168.0.0/16 est très utilisée en PME, bien que 10.0.0.0/8 soit préférable pour les grandes entreprises."
+        },
+        {
+          "q": "Que signifie /24 dans la notation CIDR 192.168.10.0/24 ?",
+          "options": ["24 machines maximum dans le sous-réseau", "24 bits de masque de réseau, soit 254 adresses d'hôtes disponibles", "24 VLAN possibles", "24 routeurs dans le réseau"],
+          "answer": 1,
+          "explain": "Le /24 signifie un masque de 255.255.255.0, laissant 8 bits pour les hôtes, soit 254 adresses utilisables."
+        },
+        {
+          "q": "Comment un switch managé gère-t-il plusieurs VLAN sur un même port ?",
+          "options": ["En créant plusieurs connexions physiques", "Via la configuration de ports en mode trunk (802.1Q) véhiculant plusieurs VLAN étiquetés", "Via le protocole DHCP", "En utilisant deux câbles différents"],
+          "answer": 1,
+          "explain": "Un port trunk (802.1Q) transporte plusieurs VLAN en ajoutant un tag VLAN sur chaque trame Ethernet."
+        },
+        {
+          "q": "Que fait le routage inter-VLAN ?",
+          "options": ["Il connecte le réseau à Internet", "Il permet aux machines de VLAN différents de communiquer entre elles via un routeur ou un switch de niveau 3", "Il attribue des adresses IP aux VLAN", "Il filtre le trafic entre les VLAN et Internet"],
+          "answer": 1,
+          "explain": "Sans routage inter-VLAN, deux VLAN sont totalement isolés ; le routage permet une communication contrôlée entre eux."
+        },
+        {
+          "q": "Quelle est la différence entre un switch de niveau 2 et un switch de niveau 3 ?",
+          "options": ["Le switch de niveau 3 est plus rapide physiquement", "Le switch de niveau 3 peut router des paquets IP en plus de commuter des trames, évitant un routeur séparé", "Le switch de niveau 2 gère les VLAN, le niveau 3 non", "Il n'y a aucune différence fonctionnelle"],
+          "answer": 1,
+          "explain": "Le switch de niveau 3 intègre des fonctions de routage IP, idéal pour le routage inter-VLAN sans routeur dédié."
+        },
+        {
+          "q": "Qu'est-ce qu'une ACL (Access Control List) dans un réseau d'entreprise ?",
+          "options": ["La liste des utilisateurs Active Directory", "Un ensemble de règles filtrant le trafic réseau selon des critères (IP, port, protocole)", "Un journal des connexions réseau", "Un type de câblage structuré"],
+          "answer": 1,
+          "explain": "Les ACL sont des règles appliquées sur les routeurs ou switches pour autoriser ou refuser des flux réseau spécifiques."
+        },
+        {
+          "q": "Où place-t-on généralement les serveurs AD, DNS et DHCP dans l'infrastructure ?",
+          "options": ["En DMZ pour un accès facile depuis Internet", "Dans le LAN interne, sur un réseau serveurs dédié (VLAN serveurs)", "Directement sur Internet", "Sur le pare-feu lui-même"],
+          "answer": 1,
+          "explain": "Les serveurs internes (AD, DNS, DHCP) se trouvent dans le LAN sur un VLAN serveurs protégé, jamais exposés directement à Internet."
+        },
+        {
+          "q": "Qu'est-ce que la redondance du cœur de réseau et pourquoi est-elle importante ?",
+          "options": ["Avoir deux fois plus d'utilisateurs connectés", "Disposer d'un équipement de secours pour assurer la continuité en cas de panne du switch principal", "Doubler la bande passante Internet", "Sauvegarder les configurations des switches"],
+          "answer": 1,
+          "explain": "Un cœur de réseau redondant (ex. paire de switches en haute disponibilité) garantit la continuité de service en cas de panne."
+        },
+        {
+          "q": "Comment appliquer une GPO uniquement aux postes du service comptabilité ?",
+          "options": ["En modifiant le pare-feu", "En plaçant les postes comptabilité dans une Unité d'Organisation (OU) dédiée et en liant la GPO à cette OU", "En changeant les adresses IP des postes", "En créant un VLAN dédié uniquement"],
+          "answer": 1,
+          "explain": "Les GPO s'appliquent aux objets (utilisateurs, ordinateurs) via les Unités d'Organisation (OU) dans l'Active Directory."
+        },
+        {
+          "q": "Qu'est-ce que le protocole STP (Spanning Tree Protocol) ?",
+          "options": ["Un protocole de transfert de fichiers", "Un protocole évitant les boucles réseau dans les infrastructures avec des chemins redondants", "Un protocole d'authentification", "Un protocole de gestion Wi-Fi"],
+          "answer": 1,
+          "explain": "STP détecte et désactive les boucles réseau créées par la redondance physique, évitant les tempêtes de broadcast."
+        },
+        {
+          "q": "Qu'est-ce qu'un serveur de fichiers dans une infrastructure d'entreprise ?",
+          "options": ["Un serveur hébergeant le site web de l'entreprise", "Un serveur centralisant le stockage des fichiers partagés avec des droits d'accès contrôlés", "Un serveur gérant les e-mails", "Un serveur hébergeant Active Directory"],
+          "answer": 1,
+          "explain": "Le serveur de fichiers centralise les documents partagés et applique des droits d'accès NTFS par groupe ou utilisateur."
+        },
+        {
+          "q": "Quel protocole permet à un poste de rejoindre automatiquement un VLAN en fonction de son port de switch ?",
+          "options": ["DHCP", "802.1Q avec affectation statique des ports", "STP", "NAT"],
+          "answer": 1,
+          "explain": "L'affectation de VLAN par port (port-based VLAN) configure chaque port du switch dans un VLAN précis de façon statique."
+        },
+        {
+          "q": "Quelle est la phase de « déploiement » dans un projet réseau d'entreprise ?",
+          "options": ["La rédaction du cahier des charges", "Le déploiement des postes, la jonction au domaine, l'installation des logiciels et la formation des utilisateurs", "La commande du matériel", "La conception du plan d'adressage"],
+          "answer": 1,
+          "explain": "La phase de déploiement finalise le projet : postes joints au domaine, GPO appliquées, partages configurés, utilisateurs formés."
+        },
+        {
+          "q": "Quel est le principe du moindre privilège appliqué aux droits NTFS ?",
+          "options": ["Accorder tous les droits à tous les utilisateurs par défaut", "N'accorder à chaque utilisateur ou groupe que les droits strictement nécessaires à son travail", "Donner les droits administrateur à tous les techniciens", "Bloquer l'accès à tous les partages sauf pour l'administrateur"],
+          "answer": 1,
+          "explain": "Le principe du moindre privilège limite les risques : chaque personne n'a accès qu'à ce dont elle a besoin."
+        },
+        {
+          "q": "Pourquoi la direction d'une entreprise est-elle souvent dans un VLAN séparé des autres services ?",
+          "options": ["Car la direction utilise des équipements différents", "Pour protéger des informations sensibles (stratégie, données financières) d'accès par d'autres services", "Car le VLAN direction est plus rapide", "Pour faciliter le câblage"],
+          "answer": 1,
+          "explain": "Isoler la direction dans son propre VLAN protège les données stratégiques et confidentielles d'accès non autorisés."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Qu'est-ce que le protocole RADIUS dans un réseau d'entreprise ?",
+          "options": ["Un protocole de routage dynamique", "Un protocole d'authentification centralisé pour les accès réseau (Wi-Fi, VPN, 802.1X)", "Un protocole de transfert de fichiers sécurisé", "Un protocole de synchronisation d'annuaire"],
+          "answer": 1,
+          "explain": "RADIUS centralise l'authentification des accès réseau, souvent couplé à Active Directory via NPS sous Windows Server."
+        },
+        {
+          "q": "Qu'est-ce que le 802.1X dans le contexte d'un réseau d'entreprise ?",
+          "options": ["Une norme de câblage Ethernet", "Un standard d'authentification des équipements avant leur accès au réseau (NAC)", "Un protocole de VLAN tagging", "Une norme Wi-Fi 6"],
+          "answer": 1,
+          "explain": "802.1X impose une authentification de l'équipement ou de l'utilisateur avant d'autoriser l'accès au port réseau ou au Wi-Fi."
+        },
+        {
+          "q": "Dans Active Directory, qu'est-ce qu'un groupe de sécurité ?",
+          "options": ["Un antivirus centralisé", "Un objet AD regroupant des utilisateurs ou ordinateurs pour faciliter l'attribution de droits d'accès", "Un pare-feu logiciel", "Un type de GPO"],
+          "answer": 1,
+          "explain": "Les groupes de sécurité permettent d'attribuer des droits à un ensemble d'utilisateurs d'un coup, simplifiant la gestion."
+        },
+        {
+          "q": "Qu'est-ce que le protocole NTP et pourquoi est-il crucial dans un domaine AD ?",
+          "options": ["Un protocole de transfert de fichiers", "Un protocole de synchronisation de l'heure, indispensable car Kerberos rejette les authentifications avec plus de 5 minutes d'écart", "Un protocole de surveillance réseau", "Un protocole de sauvegarde"],
+          "answer": 1,
+          "explain": "Kerberos (authentification AD) est très sensible à la dérive horaire : NTP synchronise tous les équipements pour éviter les rejets d'authentification."
+        },
+        {
+          "q": "Quelle est la différence entre un pare-feu stateful et un pare-feu applicatif (WAF) ?",
+          "options": ["Le pare-feu stateful est plus récent que le WAF", "Le pare-feu stateful filtre par IP/port/état de connexion, le WAF analyse le contenu applicatif (HTTP, SQL…)", "Le WAF filtre uniquement le trafic UDP", "Il n'y a aucune différence fonctionnelle"],
+          "answer": 1,
+          "explain": "Le pare-feu stateful travaille au niveau réseau/transport, le WAF inspecte le contenu applicatif pour bloquer injections SQL, XSS, etc."
+        },
+        {
+          "q": "Qu'est-ce qu'un serveur proxy dans un réseau d'entreprise ?",
+          "options": ["Un serveur de sauvegarde automatique", "Un intermédiaire filtrant et loggant les requêtes web des utilisateurs vers Internet", "Un serveur DNS secondaire", "Un routeur de cœur de réseau"],
+          "answer": 1,
+          "explain": "Le proxy filtre les accès web (liste noire de sites), met en cache les contenus et journalise la navigation des utilisateurs."
+        },
+        {
+          "q": "Qu'est-ce que la réplication AD entre contrôleurs de domaine ?",
+          "options": ["La copie des fichiers utilisateurs entre serveurs de fichiers", "La synchronisation automatique de la base Active Directory entre plusieurs contrôleurs pour la redondance", "La sauvegarde nocturne d'Active Directory", "La mise à jour des GPO sur les postes clients"],
+          "answer": 1,
+          "explain": "La réplication AD garantit que tous les contrôleurs de domaine ont une base identique, assurant la continuité de service."
+        },
+        {
+          "q": "Dans un réseau d'entreprise, qu'est-ce qu'un VPN site-à-site ?",
+          "options": ["Un accès distant sécurisé pour un utilisateur nomade", "Un tunnel chiffré permanent reliant deux sites distants de l'entreprise via Internet", "Un réseau Wi-Fi étendu entre deux bâtiments proches", "Un protocole de routage entre deux routeurs"],
+          "answer": 1,
+          "explain": "Le VPN site-à-site crée un tunnel chiffré transparent entre deux sites, permettant aux utilisateurs de communiquer comme en LAN."
+        },
+        {
+          "q": "Quelle est la différence entre héritage de droits NTFS et droits explicites ?",
+          "options": ["Les droits hérités viennent du dossier parent, les droits explicites sont définis directement sur le dossier ou fichier", "Les droits hérités sont plus restrictifs que les droits explicites", "Il n'y a aucune différence", "Les droits explicites ne s'appliquent qu'aux administrateurs"],
+          "answer": 0,
+          "explain": "Les droits NTFS s'héritent du dossier parent par défaut ; les droits explicites peuvent compléter ou remplacer cet héritage."
+        },
+        {
+          "q": "Qu'est-ce que le protocole LDAP et son lien avec Active Directory ?",
+          "options": ["Un protocole réseau de couche 4 basé sur UDP", "Un protocole d'accès aux annuaires, utilisé par les applications pour interroger Active Directory", "Un protocole de chiffrement de fichiers", "Un protocole de sauvegarde des GPO"],
+          "answer": 1,
+          "explain": "LDAP (Lightweight Directory Access Protocol) est le protocole standard qu'Active Directory expose pour les requêtes d'annuaire."
+        },
+        {
+          "q": "Qu'est-ce que le protocole Kerberos dans un domaine Windows ?",
+          "options": ["Un antivirus intégré à Windows Server", "Le protocole d'authentification par tickets utilisé par Active Directory", "Un protocole de partage de fichiers", "Un protocole de chiffrement des GPO"],
+          "answer": 1,
+          "explain": "Kerberos émet des tickets d'authentification permettant aux utilisateurs d'accéder aux ressources sans retransmettre leur mot de passe."
+        },
+        {
+          "q": "Qu'est-ce que le VLAN natif sur un port trunk 802.1Q ?",
+          "options": ["Le VLAN par défaut des ports d'accès", "Le VLAN dont les trames transitent sans tag sur un port trunk", "Le VLAN réservé aux serveurs", "Le premier VLAN créé sur le switch"],
+          "answer": 1,
+          "explain": "Le VLAN natif est le seul VLAN dont les trames ne sont pas étiquetées sur un trunk 802.1Q, à configurer avec soin pour éviter les failles."
+        },
+        {
+          "q": "Dans la conception réseau, qu'est-ce que la règle du « zéro trust » ?",
+          "options": ["Ne jamais utiliser de pare-feu", "Ne faire confiance à aucun utilisateur ou équipement par défaut, même s'il est dans le réseau interne", "Interdire tout trafic réseau sortant", "Faire confiance uniquement au VLAN serveurs"],
+          "answer": 1,
+          "explain": "Le modèle zéro trust vérifie systématiquement l'identité et les droits de chaque accès, même depuis l'intérieur du réseau."
+        },
+        {
+          "q": "Qu'est-ce que la journalisation (logging) dans un réseau d'entreprise et pourquoi est-elle importante ?",
+          "options": ["La procédure d'enregistrement des nouveaux employés", "L'enregistrement des événements réseau et système pour détecter les incidents et remplir les obligations légales", "La sauvegarde des fichiers utilisateurs", "La mise à jour automatique des équipements"],
+          "answer": 1,
+          "explain": "Les journaux (logs) permettent de détecter les intrusions, diagnostiquer les pannes et répondre aux exigences légales de traçabilité."
+        },
+        {
+          "q": "Dans la phase d'installation d'un projet réseau, qu'est-ce que le recettage ?",
+          "options": ["La commande du matériel auprès du fournisseur", "La vérification que l'installation est conforme au cahier des charges, avec tests formalisés", "La formation des utilisateurs finaux", "La rédaction du plan d'adressage"],
+          "answer": 1,
+          "explain": "Le recettage valide que chaque élément installé fonctionne conformément au cahier des charges, avant la mise en production."
+        }
+      ]
+    }
+  ]
+}

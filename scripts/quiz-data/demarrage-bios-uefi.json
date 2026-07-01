@@ -1,0 +1,291 @@
+{
+  "slug": "demarrage-bios-uefi",
+  "title": "Le démarrage : BIOS & UEFI",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Que signifie BIOS ?",
+          "options": ["Basic Input Output System", "Binary Integrated OS System", "Boot Interface Operating Software", "Basic Internal Operating System"],
+          "answer": 0,
+          "explain": "BIOS signifie Basic Input/Output System, le micrologiciel historique qui démarre le PC."
+        },
+        {
+          "q": "Où est stocké le BIOS/UEFI sur un ordinateur ?",
+          "options": ["Sur le disque dur", "Sur la RAM", "Sur une puce flash sur la carte mère", "Sur le processeur"],
+          "answer": 2,
+          "explain": "Le BIOS/UEFI est stocké sur une puce mémoire flash soudée sur la carte mère."
+        },
+        {
+          "q": "Que signifie POST dans le processus de démarrage ?",
+          "options": ["Power On Self Test", "Primary OS Start Test", "Processor Output Scan Test", "Pre-OS System Transfer"],
+          "answer": 0,
+          "explain": "Le POST (Power On Self Test) vérifie le bon fonctionnement du matériel juste après la mise sous tension."
+        },
+        {
+          "q": "Quelle est la première chose que fait le PC après l'appui sur le bouton Power ?",
+          "options": ["Il charge Windows", "Il effectue le POST pour vérifier le matériel", "Il affiche le bureau", "Il se connecte à Internet"],
+          "answer": 1,
+          "explain": "Après la mise sous tension, le POST est la première étape : il vérifie RAM, CPU, stockage, etc."
+        },
+        {
+          "q": "Que signifie UEFI ?",
+          "options": ["Unified Extensible Firmware Interface", "Universal External Firmware Integration", "Unified External File Interface", "Universal Extensible Firmware Install"],
+          "answer": 0,
+          "explain": "UEFI signifie Unified Extensible Firmware Interface, le successeur moderne du BIOS."
+        },
+        {
+          "q": "Qu'est-ce que l'ordre de démarrage (boot order) dans le BIOS/UEFI ?",
+          "options": ["L'ordre dans lequel Windows charge ses services", "L'ordre dans lequel le firmware cherche un OS sur les périphériques", "L'ordre de démarrage des ventilateurs", "La séquence de couleurs de l'écran au démarrage"],
+          "answer": 1,
+          "explain": "Le boot order définit la priorité des périphériques (disque, USB, réseau...) où le firmware cherche un OS."
+        },
+        {
+          "q": "Qu'est-ce que le MBR ?",
+          "options": ["Master Boot Record, les premiers 512 octets du disque contenant le code de démarrage", "Main BIOS Register", "Master Binary Runtime", "Memory Boot Reference"],
+          "answer": 0,
+          "explain": "Le MBR (Master Boot Record) est le premier secteur du disque ; il contient le code de démarrage et la table des partitions."
+        },
+        {
+          "q": "Quelle touche permet généralement d'accéder à l'interface BIOS/UEFI au démarrage ?",
+          "options": ["F1 ou Suppr (Del)", "F12 seulement", "Alt+F4", "Ctrl+Alt+Suppr"],
+          "answer": 0,
+          "explain": "Les touches F1, F2, F10, F12 ou Suppr (selon le fabricant) ouvrent l'interface BIOS/UEFI au démarrage."
+        },
+        {
+          "q": "Quel est l'avantage principal de l'UEFI par rapport au BIOS traditionnel ?",
+          "options": ["Il est plus ancien et donc plus stable", "Il supporte les disques de plus de 2 To et offre une interface graphique", "Il n'a pas besoin d'électricité pour fonctionner", "Il remplace le système d'exploitation"],
+          "answer": 1,
+          "explain": "L'UEFI supporte les disques GPT (donc plus de 2 To), dispose d'une interface graphique et démarre plus rapidement."
+        },
+        {
+          "q": "Quelle pile (batterie) maintient les paramètres BIOS et l'horloge quand le PC est éteint ?",
+          "options": ["La batterie principale du PC portable", "La pile CMOS (pile bouton sur la carte mère)", "L'alimentation ATX en veille", "Un condensateur sur le CPU"],
+          "answer": 1,
+          "explain": "La pile CMOS (généralement CR2032) alimente l'horloge temps réel et maintient les paramètres BIOS/UEFI."
+        },
+        {
+          "q": "Qu'arrive-t-il si le POST détecte une erreur matérielle grave ?",
+          "options": ["L'ordinateur démarre quand même en mode dégradé", "L'ordinateur émet des bips (beep codes) et refuse de démarrer", "Windows affiche un message d'erreur", "La carte mère se répare automatiquement"],
+          "answer": 1,
+          "explain": "En cas d'erreur grave au POST, le BIOS émet des bips codés indiquant le type de problème détecté."
+        },
+        {
+          "q": "Que charge le BIOS/UEFI après avoir trouvé un disque amorçable ?",
+          "options": ["Directement le bureau Windows", "Le chargeur d'amorçage (bootloader)", "Le pilote de la carte graphique", "L'antivirus"],
+          "answer": 1,
+          "explain": "Le BIOS/UEFI passe la main au bootloader (comme GRUB ou le bootmgr Windows) qui charge ensuite l'OS."
+        },
+        {
+          "q": "Quel est le nom du chargeur d'amorçage de Windows ?",
+          "options": ["GRUB", "LILO", "bootmgr (Windows Boot Manager)", "Syslinux"],
+          "answer": 2,
+          "explain": "bootmgr (Windows Boot Manager) est le chargeur d'amorçage utilisé par les versions modernes de Windows."
+        },
+        {
+          "q": "Quel type de partitionnement est utilisé avec le BIOS traditionnel ?",
+          "options": ["GPT", "APM", "MBR", "ext4"],
+          "answer": 2,
+          "explain": "Le BIOS traditionnel utilise le partitionnement MBR, limité à 4 partitions primaires et des disques de 2 To maximum."
+        },
+        {
+          "q": "Quelle fonctionnalité UEFI permet de vérifier l'intégrité du bootloader avant de le lancer ?",
+          "options": ["Fast Boot", "Secure Boot", "TPM Check", "RAID Boot"],
+          "answer": 1,
+          "explain": "Le Secure Boot vérifie la signature numérique du bootloader pour bloquer les logiciels malveillants au démarrage."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Quelle est la limite de taille de disque imposée par le partitionnement MBR ?",
+          "options": ["500 Go", "1 To", "2 To", "4 To"],
+          "answer": 2,
+          "explain": "Le MBR ne peut adresser que des disques jusqu'à 2 To (2^32 secteurs de 512 octets)."
+        },
+        {
+          "q": "Combien de partitions primaires maximum le MBR peut-il gérer ?",
+          "options": ["2", "4", "8", "128"],
+          "answer": 1,
+          "explain": "Le MBR supporte au maximum 4 partitions primaires (dont une peut être étendue pour contenir des partitions logiques)."
+        },
+        {
+          "q": "Quel est le successeur du MBR comme schéma de partitionnement, utilisé avec l'UEFI ?",
+          "options": ["EFI Partition Table", "GPT (GUID Partition Table)", "APM (Apple Partition Map)", "LVM"],
+          "answer": 1,
+          "explain": "GPT (GUID Partition Table) est le schéma de partitionnement moderne associé à l'UEFI."
+        },
+        {
+          "q": "Combien de partitions GPT peut-il gérer sur Windows ?",
+          "options": ["4", "26", "128", "256"],
+          "answer": 2,
+          "explain": "GPT supporte jusqu'à 128 partitions sur Windows (et théoriquement beaucoup plus selon la spécification)."
+        },
+        {
+          "q": "Où l'UEFI stocke-t-il le bootloader sur un disque GPT ?",
+          "options": ["Dans le MBR", "Dans la partition EFI System Partition (ESP)", "Dans la première partition de données", "Dans le CMOS"],
+          "answer": 1,
+          "explain": "L'UEFI lit le bootloader depuis l'EFI System Partition (ESP), une partition FAT32 dédiée."
+        },
+        {
+          "q": "Que fait le Secure Boot quand il détecte un bootloader non signé ?",
+          "options": ["Il le lance quand même en affichant un avertissement", "Il bloque le démarrage et affiche une erreur", "Il le signe automatiquement", "Il démarre en mode sans échec"],
+          "answer": 1,
+          "explain": "Le Secure Boot refuse de lancer tout bootloader dont la signature numérique n'est pas reconnue par l'UEFI."
+        },
+        {
+          "q": "Quelle est la différence entre le mode UEFI pur et le mode Legacy (CSM) ?",
+          "options": ["Il n'y a aucune différence fonctionnelle", "Le mode Legacy émule le BIOS traditionnel pour les anciens OS, l'UEFI pur ne le fait pas", "Le mode UEFI pur est plus lent", "Le Legacy ne supporte pas le Secure Boot, et vice-versa"],
+          "answer": 1,
+          "explain": "Le mode CSM/Legacy émule le BIOS pour des OS anciens ; l'UEFI pur utilise uniquement les bootloaders EFI signés."
+        },
+        {
+          "q": "Quel outil en ligne de commande Windows permet de gérer les partitions GPT et le BCD (Boot Configuration Data) ?",
+          "options": ["diskpart et bcdedit", "msconfig et regedit", "fdisk et grub-install", "gparted et bootmgr"],
+          "answer": 0,
+          "explain": "diskpart gère les partitions et bcdedit gère le magasin de données de configuration de démarrage Windows."
+        },
+        {
+          "q": "Qu'est-ce que le BCD (Boot Configuration Data) dans Windows ?",
+          "options": ["Un type de partition disque", "La base de données qui liste les OS et options de démarrage disponibles", "Un pilote de démarrage", "Un format de fichier UEFI"],
+          "answer": 1,
+          "explain": "Le BCD remplace le fichier boot.ini ; il stocke la configuration du menu de démarrage Windows."
+        },
+        {
+          "q": "Quelle fonctionnalité UEFI permet un démarrage plus rapide en ignorant certains tests matériels ?",
+          "options": ["Secure Boot", "Fast Boot (démarrage rapide)", "TPM Boot", "PXE Boot"],
+          "answer": 1,
+          "explain": "Le Fast Boot réduit le temps de démarrage en sautant certains tests POST et en mémorisant la configuration matérielle."
+        },
+        {
+          "q": "Qu'est-ce que le démarrage PXE (Preboot eXecution Environment) ?",
+          "options": ["Un démarrage depuis un DVD", "Un démarrage depuis le réseau pour installer un OS à distance", "Un démarrage en mode sécurisé", "Un démarrage depuis une clé USB"],
+          "answer": 1,
+          "explain": "Le PXE Boot permet de démarrer un ordinateur depuis le réseau, utilisé pour les déploiements OS en entreprise."
+        },
+        {
+          "q": "Quel type de programme malveillant s'installe dans le MBR pour s'exécuter avant l'OS ?",
+          "options": ["Un ransomware classique", "Un bootkit (ou rootkit de démarrage)", "Un adware", "Un keylogger"],
+          "answer": 1,
+          "explain": "Un bootkit infecte le MBR ou le VBR pour se charger avant l'OS et échapper aux antivirus traditionnels."
+        },
+        {
+          "q": "Comment le Secure Boot protège-t-il contre les bootkits ?",
+          "options": ["En chiffrant le disque dur", "En vérifiant la signature du bootloader avant son exécution", "En désactivant les ports USB", "En bloquant les connexions réseau au démarrage"],
+          "answer": 1,
+          "explain": "Le Secure Boot vérifie que seuls des bootloaders avec une signature reconnue par l'UEFI peuvent s'exécuter."
+        },
+        {
+          "q": "Que signifie flasher le BIOS/UEFI ?",
+          "options": ["Allumer et éteindre rapidement le PC", "Mettre à jour le micrologiciel de la carte mère", "Effacer le disque dur", "Activer l'éclairage LED de la carte mère"],
+          "answer": 1,
+          "explain": "Flasher le BIOS/UEFI consiste à mettre à jour le micrologiciel stocké sur la puce flash de la carte mère."
+        },
+        {
+          "q": "Après le POST et le bootloader, quelle est l'étape suivante dans le démarrage de Windows ?",
+          "options": ["Le chargement du bureau directement", "Le chargement du noyau Windows (ntoskrnl.exe)", "La connexion au serveur Microsoft", "Le démarrage de l'antivirus"],
+          "answer": 1,
+          "explain": "Après le bootloader, c'est le noyau Windows (ntoskrnl.exe) qui est chargé en mémoire."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Quelle application Windows permet de réparer le démarrage depuis le disque d'installation ?",
+          "options": ["msconfig.exe", "L'environnement de récupération Windows (WinRE)", "regedit.exe", "diskcleanup.exe"],
+          "answer": 1,
+          "explain": "WinRE (Windows Recovery Environment) offre des outils de réparation du démarrage accessibles hors de Windows."
+        },
+        {
+          "q": "Quel fichier Windows est l'équivalent moderne du fichier boot.ini de Windows XP ?",
+          "options": ["bootmgr", "ntldr", "Le BCD (Boot Configuration Data)", "hiberfil.sys"],
+          "answer": 2,
+          "explain": "Le BCD a remplacé boot.ini depuis Windows Vista pour stocker la configuration de démarrage."
+        },
+        {
+          "q": "Que stocke l'EFI System Partition (ESP) en plus du bootloader Windows ?",
+          "options": ["Les fichiers personnels de l'utilisateur", "Les bootloaders de tous les OS installés et les pilotes EFI", "Les sauvegardes système", "Les mises à jour Windows en attente"],
+          "answer": 1,
+          "explain": "L'ESP contient les bootloaders de tous les OS présents (Windows, Linux...) ainsi que les pilotes UEFI."
+        },
+        {
+          "q": "Quelle commande bcdedit permet d'afficher toutes les entrées du menu de démarrage ?",
+          "options": ["bcdedit /list", "bcdedit /enum all", "bcdedit /show", "bcdedit /display"],
+          "answer": 1,
+          "explain": "La commande bcdedit /enum all affiche toutes les entrées du BCD, incluant les options de démarrage."
+        },
+        {
+          "q": "Dans quel ordre précis se déroule le démarrage UEFI d'un PC sous Windows (simplifié) ?",
+          "options": ["POST → UEFI → EFI bootloader → noyau Windows → winlogon.exe", "UEFI → POST → bootloader → bureau", "POST → MBR → NTLDR → noyau", "CMOS → BIOS → bootmgr → POST → noyau"],
+          "answer": 0,
+          "explain": "L'ordre UEFI est : POST, puis UEFI lit l'ESP, lance le bootloader EFI, qui charge ntoskrnl.exe, puis winlogon.exe."
+        },
+        {
+          "q": "Qu'est-ce que le TPM (Trusted Platform Module) et quel rôle joue-t-il au démarrage ?",
+          "options": ["Un pilote réseau pour les connexions VPN", "Une puce de sécurité qui stocke des clés cryptographiques et vérifie l'intégrité du démarrage", "Un composant qui accélère le POST", "Un module de gestion de l'alimentation"],
+          "answer": 1,
+          "explain": "Le TPM stocke des clés de chiffrement (BitLocker) et peut vérifier l'intégrité de la chaîne de démarrage."
+        },
+        {
+          "q": "Quelle est la différence entre hiberfil.sys et pagefile.sys dans le contexte du démarrage ?",
+          "options": ["Ce sont deux noms du même fichier", "hiberfil.sys stocke l'état du PC en veille prolongée ; pagefile.sys est le fichier d'échange", "pagefile.sys est utilisé pour l'hibernation, hiberfil.sys pour le swap", "Les deux sont des fichiers de mise à jour"],
+          "answer": 1,
+          "explain": "hiberfil.sys stocke le contenu RAM lors de l'hibernation ; pagefile.sys est la mémoire virtuelle utilisée en fonctionnement normal."
+        },
+        {
+          "q": "Qu'est-ce que le démarrage sécurisé Measured Boot de Windows ?",
+          "options": ["Un démarrage chronométré pour mesurer les performances", "Un mécanisme qui mesure et enregistre chaque étape du démarrage dans le TPM pour détecter des modifications", "Un démarrage sans réseau pour la sécurité", "Le mode sans échec de Windows"],
+          "answer": 1,
+          "explain": "Measured Boot enregistre une empreinte de chaque composant du démarrage dans le TPM pour détecter toute altération."
+        },
+        {
+          "q": "Que se passe-t-il si la pile CMOS est à plat ?",
+          "options": ["Le PC ne s'allume plus du tout", "Le BIOS perd ses paramètres et l'horloge se remet à zéro à chaque démarrage", "Le disque dur devient illisible", "L'écran ne s'affiche plus"],
+          "answer": 1,
+          "explain": "Sans pile CMOS, les paramètres BIOS/UEFI et l'heure/date sont perdus à chaque coupure de courant."
+        },
+        {
+          "q": "Quel protocole permet à l'UEFI de démarrer depuis le réseau sans configuration préalable sur le client ?",
+          "options": ["TFTP uniquement", "DHCP + TFTP dans le cadre du PXE", "HTTP Boot", "NetBIOS"],
+          "answer": 1,
+          "explain": "Le PXE utilise DHCP pour obtenir une adresse IP et l'adresse du serveur TFTP d'où le bootloader réseau est téléchargé."
+        },
+        {
+          "q": "Qu'est-ce que le VBR (Volume Boot Record) dans le contexte MBR ?",
+          "options": ["Le premier secteur du disque entier", "Le premier secteur d'une partition, contenant le code de démarrage de cette partition", "Un type de RAID", "Un format de partition spécial"],
+          "answer": 1,
+          "explain": "Le VBR est le premier secteur d'une partition ; il contient le code qui lance le bootloader de cette partition."
+        },
+        {
+          "q": "Pourquoi est-il risqué de flasher le BIOS/UEFI en cas de coupure de courant pendant la mise à jour ?",
+          "options": ["Cela efface le disque dur", "La puce flash peut être corrompue, rendant la carte mère inutilisable (brick)", "Le PC redémarre juste une fois de plus", "Les pilotes Windows sont effacés"],
+          "answer": 1,
+          "explain": "Une interruption pendant le flash BIOS peut corrompre le micrologiciel et rendre la carte mère non fonctionnelle."
+        },
+        {
+          "q": "Quel utilitaire Windows en ligne de commande permet de reconstruire le BCD corrompu ?",
+          "options": ["sfc /scannow", "bootrec /rebuildbcd", "dism /restorehealth", "chkdsk /f"],
+          "answer": 1,
+          "explain": "La commande bootrec /rebuildbcd scanne les disques à la recherche d'OS et reconstruit le BCD endommagé."
+        },
+        {
+          "q": "Qu'est-ce que le mode UEFI « Shell » ou « EFI Shell » ?",
+          "options": ["Un environnement de ligne de commande intégré à l'UEFI permettant de gérer le firmware et les fichiers EFI", "Le bureau de l'UEFI pour les paramètres graphiques", "Un mode de récupération équivalent à WinRE", "Un terminal pour taper des commandes Windows avant le démarrage"],
+          "answer": 0,
+          "explain": "L'EFI Shell est un interpréteur de commandes de l'UEFI permettant de gérer les fichiers EFI, les variables firmware et le boot."
+        },
+        {
+          "q": "Quel registre CPU le BIOS/UEFI configure-t-il en premier au moment du POST avant de passer en mode protégé ?",
+          "options": ["Il démarre directement en mode 64 bits", "Il démarre en mode réel 16 bits (real mode) et bascule ensuite en mode protégé", "Il démarre en mode 32 bits directement", "Il utilise le mode superviseur ARM"],
+          "answer": 1,
+          "explain": "Le BIOS/UEFI legacy démarre le CPU en mode réel 16 bits (héritage du 8086) avant de basculer en mode protégé 32/64 bits."
+        }
+      ]
+    }
+  ]
+}

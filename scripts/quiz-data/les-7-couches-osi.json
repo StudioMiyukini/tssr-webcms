@@ -1,0 +1,291 @@
+{
+  "slug": "les-7-couches-osi",
+  "title": "Les 7 couches OSI",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Combien de couches comporte le modèle OSI ?",
+          "options": ["4", "5", "7", "9"],
+          "answer": 2,
+          "explain": "Le modèle OSI (Open Systems Interconnection) est composé exactement de 7 couches, numérotées de 1 (Physique) à 7 (Application)."
+        },
+        {
+          "q": "Quelle est la couche 1 du modèle OSI ?",
+          "options": ["Liaison de données", "Réseau", "Physique", "Transport"],
+          "answer": 2,
+          "explain": "La couche 1 est la couche Physique ; elle gère la transmission des bits bruts sur le support physique (câble, fibre, ondes radio)."
+        },
+        {
+          "q": "Quelle est la couche 7 du modèle OSI ?",
+          "options": ["Présentation", "Session", "Transport", "Application"],
+          "answer": 3,
+          "explain": "La couche 7 est la couche Application ; c'est l'interface entre les logiciels utilisateurs et le réseau (HTTP, DNS, FTP...)."
+        },
+        {
+          "q": "À quelle couche OSI le protocole IP est-il associé ?",
+          "options": ["Couche 2 — Liaison", "Couche 3 — Réseau", "Couche 4 — Transport", "Couche 5 — Session"],
+          "answer": 1,
+          "explain": "IP (Internet Protocol) est un protocole de couche 3 (Réseau) ; il gère l'adressage et le routage des paquets."
+        },
+        {
+          "q": "À quelle couche OSI appartiennent les protocoles TCP et UDP ?",
+          "options": ["Couche 3 — Réseau", "Couche 4 — Transport", "Couche 5 — Session", "Couche 6 — Présentation"],
+          "answer": 1,
+          "explain": "TCP et UDP sont des protocoles de couche 4 (Transport) ; ils gèrent la communication de bout en bout entre applications."
+        },
+        {
+          "q": "À quelle couche OSI fonctionne le protocole Ethernet (adresses MAC) ?",
+          "options": ["Couche 1 — Physique", "Couche 2 — Liaison de données", "Couche 3 — Réseau", "Couche 4 — Transport"],
+          "answer": 1,
+          "explain": "Ethernet et les adresses MAC opèrent à la couche 2 (Liaison de données) ; c'est à ce niveau que travaille le switch."
+        },
+        {
+          "q": "Quel est le rôle de la couche 3 (Réseau) du modèle OSI ?",
+          "options": ["Établir et terminer les sessions de communication", "Assurer le routage des paquets d'un réseau à l'autre via les adresses IP", "Chiffrer les données avant leur transmission", "Transmettre les bits sur le support physique"],
+          "answer": 1,
+          "explain": "La couche 3 (Réseau) est responsable de l'adressage logique (IP) et du routage des paquets entre réseaux différents."
+        },
+        {
+          "q": "Comment appelle-t-on l'unité de données échangée à la couche 4 (Transport) du modèle OSI ?",
+          "options": ["Trame", "Paquet", "Segment", "Bit"],
+          "answer": 2,
+          "explain": "À la couche 4 (Transport), l'unité de données est le segment (TCP) ou le datagramme (UDP)."
+        },
+        {
+          "q": "Comment appelle-t-on l'unité de données échangée à la couche 2 (Liaison) du modèle OSI ?",
+          "options": ["Paquet", "Trame (frame)", "Segment", "Octet"],
+          "answer": 1,
+          "explain": "La couche 2 (Liaison) utilise des trames (frames) qui encapsulent les paquets et incluent les adresses MAC."
+        },
+        {
+          "q": "Quel protocole de la couche 7 (Application) est utilisé pour la navigation web sécurisée ?",
+          "options": ["FTP", "SMTP", "HTTPS", "SNMP"],
+          "answer": 2,
+          "explain": "HTTPS (HTTP over TLS) est le protocole de couche 7 utilisé pour la navigation web chiffrée et sécurisée."
+        },
+        {
+          "q": "Quelle couche OSI un hub (concentrateur) utilise-t-il ?",
+          "options": ["Couche 1 — Physique uniquement", "Couche 2 — Liaison", "Couche 3 — Réseau", "Couche 4 — Transport"],
+          "answer": 0,
+          "explain": "Un hub est un équipement de couche 1 ; il répète simplement le signal électrique sur tous ses ports sans intelligence."
+        },
+        {
+          "q": "Quelle couche OSI est responsable de l'établissement, du maintien et de la fermeture des sessions de communication ?",
+          "options": ["Couche 4 — Transport", "Couche 5 — Session", "Couche 6 — Présentation", "Couche 7 — Application"],
+          "answer": 1,
+          "explain": "La couche 5 (Session) gère l'ouverture, la synchronisation et la fermeture des sessions de communication entre applications."
+        },
+        {
+          "q": "Quel protocole DNS opère à la couche 7 du modèle OSI ?",
+          "options": ["DNS est à la couche 3 car il utilise des adresses IP", "DNS est à la couche 4 car il utilise UDP", "DNS est à la couche 7 (Application) car c'est un service réseau utilisé par les applications", "DNS est à la couche 2 car il utilise des noms d'hôtes"],
+          "answer": 2,
+          "explain": "DNS est un protocole applicatif (couche 7) ; même s'il repose sur UDP (couche 4), il fournit un service réseau aux applications."
+        },
+        {
+          "q": "Dans quel ordre les couches OSI sont-elles traversées lors de l'envoi d'un message (de l'application vers le réseau) ?",
+          "options": ["De la couche 1 (Physique) vers la couche 7 (Application)", "De la couche 7 (Application) vers la couche 1 (Physique)", "Dans n'importe quel ordre selon le protocole", "De la couche 4 (Transport) vers les extrémités"],
+          "answer": 1,
+          "explain": "À l'envoi, les données descendent de la couche 7 (Application) vers la couche 1 (Physique) en s'encapsulant à chaque couche."
+        },
+        {
+          "q": "Quel équipement réseau opère principalement aux couches 1 et 2 du modèle OSI ?",
+          "options": ["Le routeur", "Le pare-feu", "Le switch (commutateur)", "Le serveur DNS"],
+          "answer": 2,
+          "explain": "Un switch classique opère en couche 2 (adresses MAC) en s'appuyant sur la couche 1 (connexions physiques Ethernet)."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Quel est le rôle de la couche 6 (Présentation) du modèle OSI ?",
+          "options": ["Gérer le routage des paquets", "Gérer la mise en forme, le chiffrement et la compression des données pour les rendre compréhensibles par la couche Application", "Établir les sessions entre applications", "Transmettre les bits sur le réseau physique"],
+          "answer": 1,
+          "explain": "La couche 6 (Présentation) formate les données (encodage, chiffrement TLS, compression) pour qu'elles soient interprétables par l'application."
+        },
+        {
+          "q": "Qu'est-ce que l'encapsulation dans le modèle OSI ?",
+          "options": ["Le processus de chiffrement des données sensibles", "L'ajout d'un en-tête (et parfois d'une queue) à chaque couche lors de la descente du modèle OSI", "La compression des données pour réduire leur taille", "La conversion des bits en signal électrique"],
+          "answer": 1,
+          "explain": "Chaque couche encapsule les données en ajoutant ses propres en-têtes, créant une structure en poupée russe (PDU)."
+        },
+        {
+          "q": "Quelle est la différence principale entre TCP (couche 4) et UDP (couche 4) ?",
+          "options": ["TCP est sans connexion et sans garantie de livraison ; UDP est orienté connexion avec accusé de réception", "TCP est orienté connexion avec garantie de livraison ; UDP est sans connexion et sans garantie", "TCP est plus rapide qu'UDP dans tous les cas", "UDP est uniquement utilisé pour le chiffrement"],
+          "answer": 1,
+          "explain": "TCP établit une connexion (handshake 3 voies) et garantit la livraison ordonnée des données ; UDP est plus rapide mais non fiable."
+        },
+        {
+          "q": "Lors d'un dépannage réseau, si un ping entre deux machines échoue, quelle couche OSI doit-on inspecter en premier ?",
+          "options": ["Couche 7 — Application (vérifier les logiciels)", "Couche 1 — Physique (câble, connexion, voyants)", "Couche 4 — Transport (ports TCP/UDP)", "Couche 6 — Présentation (chiffrement)"],
+          "answer": 1,
+          "explain": "On dépanne toujours en remontant de la couche 1 (physique) vers le haut : vérifier d'abord les câbles, les voyants et la couche physique."
+        },
+        {
+          "q": "Quel protocole est utilisé pour résoudre une adresse IP en adresse MAC sur un réseau local ?",
+          "options": ["DNS", "DHCP", "ARP (Address Resolution Protocol)", "ICMP"],
+          "answer": 2,
+          "explain": "ARP fait le lien entre les couches 2 et 3 : il permet d'obtenir l'adresse MAC correspondant à une adresse IP connue sur le même réseau local."
+        },
+        {
+          "q": "Quel est le rôle du « three-way handshake » TCP (couche 4) ?",
+          "options": ["Chiffrer la connexion entre deux hôtes", "Établir une connexion fiable entre deux hôtes via l'échange SYN, SYN-ACK, ACK", "Définir l'adresse IP et le port de destination", "Fragmenter les segments trop grands pour la MTU"],
+          "answer": 1,
+          "explain": "Le three-way handshake (SYN → SYN-ACK → ACK) initialise une connexion TCP fiable entre un client et un serveur."
+        },
+        {
+          "q": "À quelle couche OSI les protocoles de chiffrement comme TLS/SSL sont-ils associés ?",
+          "options": ["Couche 3 — Réseau", "Couche 4 — Transport", "Couche 5/6 — Session/Présentation", "Couche 7 — Application uniquement"],
+          "answer": 2,
+          "explain": "TLS/SSL est généralement associé aux couches 5 (Session) et 6 (Présentation) car il gère la négociation de session sécurisée et le chiffrement des données."
+        },
+        {
+          "q": "Qu'est-ce qu'une PDU (Protocol Data Unit) ?",
+          "options": ["Un équipement réseau multifonction", "Le nom générique donné à l'unité de données à chaque couche OSI (bit, trame, paquet, segment...)", "Un protocole de routage avancé", "Un type d'adresse IP spéciale"],
+          "answer": 1,
+          "explain": "PDU désigne l'unité de données propre à chaque couche : bit (C1), trame (C2), paquet (C3), segment (C4), données (C5-C7)."
+        },
+        {
+          "q": "Si un navigateur web ne peut pas accéder à un site mais que le ping vers son adresse IP fonctionne, quelle couche est probablement en cause ?",
+          "options": ["Couche 1 — Physique", "Couche 2 — Liaison", "Couche 3 — Réseau", "Couche 7 — Application (ou couche 4 — Transport)"],
+          "answer": 3,
+          "explain": "Si le ping (couche 3) fonctionne mais que HTTP/HTTPS (couche 7) échoue, le problème est applicatif ou de transport (port bloqué, service arrêté...)."
+        },
+        {
+          "q": "Quel protocole de la couche 7 est utilisé pour le transfert de fichiers ?",
+          "options": ["ICMP", "ARP", "FTP (File Transfer Protocol)", "STP"],
+          "answer": 2,
+          "explain": "FTP est un protocole applicatif (couche 7) dédié au transfert de fichiers entre un client et un serveur."
+        },
+        {
+          "q": "Quel outil réseau permet de capturer et d'analyser les trames à la couche 2 (et au-delà) ?",
+          "options": ["ping", "tracert", "Wireshark", "ipconfig"],
+          "answer": 2,
+          "explain": "Wireshark est un analyseur réseau (sniffer) qui capture les trames et affiche le contenu de chaque couche OSI de manière détaillée."
+        },
+        {
+          "q": "Quelle couche OSI est responsable du contrôle de flux et de la correction d'erreurs de bout en bout ?",
+          "options": ["Couche 2 — Liaison (correction sur le lien local)", "Couche 3 — Réseau", "Couche 4 — Transport (TCP gère le contrôle de flux et la retransmission)", "Couche 6 — Présentation"],
+          "answer": 2,
+          "explain": "TCP (couche 4) assure le contrôle de flux (fenêtrage), la détection d'erreurs et la retransmission des segments perdus de bout en bout."
+        },
+        {
+          "q": "Qu'est-ce que la MTU (Maximum Transmission Unit) en lien avec la couche 3 OSI ?",
+          "options": ["La vitesse maximale d'un port réseau", "La taille maximale d'un paquet IP qui peut transiter sans fragmentation sur un lien réseau", "Le nombre maximum de connexions TCP simultanées", "La distance maximale d'un câble Ethernet"],
+          "answer": 1,
+          "explain": "La MTU définit la taille maximale d'un paquet IP (1500 octets sur Ethernet) ; si un paquet est plus grand, il est fragmenté à la couche 3."
+        },
+        {
+          "q": "Dans le modèle OSI, quelle couche un routeur inspecte-t-il principalement pour prendre ses décisions de commutation ?",
+          "options": ["Couche 1 — Physique", "Couche 2 — Liaison", "Couche 3 — Réseau (adresses IP)", "Couche 7 — Application"],
+          "answer": 2,
+          "explain": "Le routeur lit les adresses IP de couche 3 pour consulter sa table de routage et décider de la sortie du paquet."
+        },
+        {
+          "q": "Quel protocole de couche 7 est utilisé pour l'envoi de courriers électroniques entre serveurs ?",
+          "options": ["POP3", "IMAP", "SMTP", "HTTP"],
+          "answer": 2,
+          "explain": "SMTP (Simple Mail Transfer Protocol) est le protocole de couche 7 utilisé pour l'envoi et le relais d'e-mails entre serveurs de messagerie."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Quelle est la principale critique du modèle OSI par rapport au modèle TCP/IP utilisé en pratique ?",
+          "options": ["Le modèle OSI est trop simple et manque de détails", "Le modèle OSI est théorique et n'a jamais été entièrement implémenté ; TCP/IP, plus simple (4 couches), est le modèle réellement déployé sur Internet", "Le modèle TCP/IP a plus de couches que le modèle OSI", "Le modèle OSI ne supporte pas le Wi-Fi"],
+          "answer": 1,
+          "explain": "OSI est un modèle de référence conceptuel ; en pratique, l'Internet fonctionne selon le modèle TCP/IP à 4 couches (Accès réseau, Internet, Transport, Application)."
+        },
+        {
+          "q": "Quelles couches du modèle OSI sont fusionnées dans la couche « Accès réseau » du modèle TCP/IP ?",
+          "options": ["Couches 1 et 2 (Physique et Liaison)", "Couches 2 et 3 (Liaison et Réseau)", "Couches 3 et 4 (Réseau et Transport)", "Couches 5, 6 et 7 (Session, Présentation, Application)"],
+          "answer": 0,
+          "explain": "La couche « Accès réseau » du modèle TCP/IP regroupe les couches 1 (Physique) et 2 (Liaison) du modèle OSI."
+        },
+        {
+          "q": "Qu'est-ce que la « désencapsulation » dans le modèle OSI ?",
+          "options": ["Le chiffrement des données lors de l'envoi", "Le processus inverse de l'encapsulation : chaque couche retire son en-tête lors de la réception pour transmettre les données à la couche supérieure", "La compression des données à la couche Présentation", "Le routage des paquets à la couche Réseau"],
+          "answer": 1,
+          "explain": "À la réception, chaque couche retire ses propres en-têtes et transmet le contenu à la couche supérieure jusqu'à atteindre l'application."
+        },
+        {
+          "q": "Qu'est-ce que le « tunneling » dans le contexte du modèle OSI ?",
+          "options": ["Le passage physique des câbles dans les murs", "L'encapsulation d'un protocole d'une couche dans un autre protocole, souvent pour traverser un réseau intermédiaire (ex. VPN)", "Une technique d'optimisation de la couche Transport", "Un type d'adressage MAC spécial"],
+          "answer": 1,
+          "explain": "Le tunneling encapsule un protocole dans un autre (ex. IPSec encapsule IP dans IP) pour créer des liens privés sécurisés sur des réseaux publics (VPN)."
+        },
+        {
+          "q": "Lors du dépannage OSI, quelle approche « bottom-up » recommande-t-on et pourquoi ?",
+          "options": ["Commencer par la couche 7 (Application) car c'est là que l'utilisateur voit le problème", "Commencer par la couche 1 (Physique) et remonter vers la couche 7, car les couches supérieures dépendent des couches inférieures", "Commencer par la couche 4 (Transport) car TCP/IP est le plus commun", "Commencer par la couche 3 (Réseau) car IP est universel"],
+          "answer": 1,
+          "explain": "L'approche bottom-up part de la couche 1 (câble branché ? voyant allumé ?) car une défaillance bas niveau bloque automatiquement toutes les couches supérieures."
+        },
+        {
+          "q": "Quel protocole de couche 2 prévient les boucles de commutation dans un réseau Ethernet commuté ?",
+          "options": ["ARP", "VLAN", "STP (Spanning Tree Protocol)", "CDP (Cisco Discovery Protocol)"],
+          "answer": 2,
+          "explain": "STP opère à la couche 2 pour désactiver logiquement les liens redondants et éviter les boucles dans les réseaux Ethernet commutés."
+        },
+        {
+          "q": "Comment le protocole ICMP (utilisé par ping) se situe-t-il dans le modèle OSI ?",
+          "options": ["ICMP est de la couche 2 car il utilise des adresses MAC", "ICMP est de la couche 3 car il s'appuie sur IP et transporte des messages de contrôle réseau", "ICMP est de la couche 4 car il utilise des ports", "ICMP est de la couche 7 car c'est un outil de diagnostic"],
+          "answer": 1,
+          "explain": "ICMP est encapsulé dans IP et travaille en couche 3 ; il transporte des messages de diagnostic et d'erreur réseau (ping, TTL expiré...)."
+        },
+        {
+          "q": "Qu'est-ce que la QoS (Quality of Service) dans le contexte du modèle OSI ?",
+          "options": ["Un protocole exclusif de la couche 7 Application", "Un ensemble de mécanismes opérant sur plusieurs couches (2, 3, 4) pour prioriser certains types de trafic", "Une fonctionnalité uniquement de la couche 1 Physique", "Un protocole de sécurité de la couche 6 Présentation"],
+          "answer": 1,
+          "explain": "La QoS s'applique à plusieurs niveaux : marquage DSCP (couche 3), 802.1p (couche 2), ou gestion de files d'attente (couche 4 et plus)."
+        },
+        {
+          "q": "Quelle est la signification du champ « numéro de séquence » dans TCP (couche 4) ?",
+          "options": ["Il identifie le port de destination", "Il numérote les octets envoyés pour permettre le réassemblage ordonné et la détection des segments manquants", "Il indique la priorité du segment dans la file d'attente", "Il identifie l'adresse IP de l'émetteur"],
+          "answer": 1,
+          "explain": "Le numéro de séquence TCP permet au récepteur de réordonner les segments arrivés dans le désordre et de détecter les segments manquants."
+        },
+        {
+          "q": "Qu'est-ce que le protocole OSPF dans le contexte du modèle OSI ?",
+          "options": ["Un protocole de couche 2 pour la gestion des adresses MAC", "Un protocole de couche 3 (Réseau) pour le routage dynamique entre routeurs", "Un protocole de couche 4 utilisé à la place de TCP pour les petits réseaux", "Un protocole de couche 7 pour la supervision réseau"],
+          "answer": 1,
+          "explain": "OSPF (Open Shortest Path First) est un protocole de routage dynamique de couche 3 qui permet aux routeurs d'échanger leurs tables de routage."
+        },
+        {
+          "q": "Dans un échange HTTP entre un navigateur et un serveur web, à quelle couche OSI le chiffrement TLS intervient-il ?",
+          "options": ["Couche 3 — Réseau (IP)", "Couche 4 — Transport (TCP)", "Couche 5/6 — Session/Présentation", "Couche 7 — Application (HTTP)"],
+          "answer": 2,
+          "explain": "TLS s'insère entre la couche Transport (TCP) et la couche Application (HTTP), correspondant aux couches 5 (Session) et 6 (Présentation) du modèle OSI."
+        },
+        {
+          "q": "Qu'est-ce que la fragmentation IP et à quelle couche OSI se produit-elle ?",
+          "options": ["La division d'un segment TCP trop grand, à la couche 4 (Transport)", "La division d'un paquet IP trop grand pour la MTU d'un lien, à la couche 3 (Réseau)", "La division d'une trame Ethernet, à la couche 2 (Liaison)", "La compression des données à la couche 6 (Présentation)"],
+          "answer": 1,
+          "explain": "La fragmentation IP (couche 3) découpe un paquet trop grand pour la MTU d'un réseau intermédiaire ; les fragments sont réassemblés à destination."
+        },
+        {
+          "q": "Qu'est-ce que le protocole 802.11 (Wi-Fi) dans le modèle OSI ?",
+          "options": ["Un protocole de couche 3 pour le routage sans fil", "Un protocole qui intervient aux couches 1 (Physique) et 2 (Liaison) pour les réseaux sans fil", "Un protocole de couche 4 pour les connexions mobiles", "Un protocole de couche 7 pour les applications mobiles"],
+          "answer": 1,
+          "explain": "Le Wi-Fi (IEEE 802.11) définit les couches 1 (modulation radio) et 2 (accès au média, adresses MAC) pour les réseaux sans fil."
+        },
+        {
+          "q": "Un technicien TSSR constate que deux machines du même VLAN ne se pinguent pas. La couche 1 est OK. Quelle couche OSI doit-il inspecter ensuite ?",
+          "options": ["Couche 7 — vérifier les pare-feux applicatifs", "Couche 4 — vérifier les ports TCP/UDP", "Couche 2 — vérifier la table MAC du switch, les VLAN et les adresses MAC", "Couche 6 — vérifier le chiffrement"],
+          "answer": 2,
+          "explain": "Si la couche 1 est OK mais que deux machines du même VLAN ne communiquent pas, il faut inspecter la couche 2 : table MAC, configuration VLAN, conflit d'adresses MAC."
+        },
+        {
+          "q": "Qu'est-ce que le modèle OSI apporte concrètement au technicien réseau par rapport à une approche sans modèle ?",
+          "options": ["Il oblige à utiliser uniquement des équipements de la même marque", "Il fournit un cadre commun de référence pour comprendre, documenter et dépanner les communications réseau couche par couche", "Il remplace tous les protocoles réseau propriétaires", "Il garantit la compatibilité entre tous les équipements réseau du marché"],
+          "answer": 1,
+          "explain": "Le modèle OSI offre un langage commun et une méthode de dépannage structurée, permettant d'isoler les problèmes couche par couche quel que soit le fabricant."
+        }
+      ]
+    }
+  ]
+}

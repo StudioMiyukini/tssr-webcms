@@ -1,0 +1,291 @@
+{
+  "slug": "tp1-presentation-cybercafe",
+  "title": "TP1 — Présentation cybercafé eSport",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Quel est l'objectif principal d'une présentation de projet TSSR ?",
+          "options": ["Montrer le plus de diapositives possible", "Répondre précisément au cahier des charges en justifiant ses choix techniques et économiques", "Utiliser uniquement des termes techniques avancés", "Présenter uniquement le matériel choisi sans justification"],
+          "answer": 1,
+          "explain": "La présentation doit prouver que le projet répond au besoin exprimé dans le cahier des charges, avec des justifications claires."
+        },
+        {
+          "q": "Qu'est-ce qu'un devis dans le cadre d'un projet informatique ?",
+          "options": ["Un schéma réseau détaillé", "Un document chiffré listant le matériel, les logiciels et les services avec leur coût", "Le plan d'adressage IP du projet", "Le procès-verbal de recettage"],
+          "answer": 1,
+          "explain": "Le devis liste tous les éléments nécessaires au projet avec leur prix unitaire et total, permettant au client d'évaluer le budget."
+        },
+        {
+          "q": "Pour un cybercafé eSport, quel type de réseau local est privilégié pour les postes de jeu ?",
+          "options": ["Wi-Fi 2,4 GHz uniquement", "LAN Gigabit (câblé Ethernet) pour garantir latence minimale et stabilité", "Bluetooth", "Réseau 4G"],
+          "answer": 1,
+          "explain": "Le jeu compétitif exige une latence très faible et une connexion stable : le câblé Gigabit est indispensable."
+        },
+        {
+          "q": "Pourquoi un switch Gigabit est-il recommandé pour un cybercafé eSport ?",
+          "options": ["Car il est moins cher qu'un switch 100 Mbps", "Car il offre 1 000 Mbps par port, suffisant pour des jeux en réseau intensifs sans congestion", "Car il fonctionne sans câble", "Car il intègre un pare-feu"],
+          "answer": 1,
+          "explain": "Un switch Gigabit garantit que chaque poste dispose de 1 Gbps dédié, évitant les ralentissements lors des sessions multijoueurs."
+        },
+        {
+          "q": "Pourquoi proposer un réseau Wi-Fi séparé pour les clients du cybercafé (mobiles, tablettes) ?",
+          "options": ["Pour augmenter le débit des postes de jeu", "Pour isoler les clients des postes de jeu et sécuriser le réseau interne", "Car le Wi-Fi est plus rapide que l'Ethernet", "Pour éviter d'acheter un switch"],
+          "answer": 1,
+          "explain": "Un réseau Wi-Fi clients isolé évite que les appareils mobiles puissent accéder au réseau de jeu ou le perturber."
+        },
+        {
+          "q": "Qu'est-ce qu'un VPS (Virtual Private Server) pour l'hébergement web d'un cybercafé ?",
+          "options": ["Un ordinateur physique dédié dans le cybercafé", "Un serveur virtuel loué chez un hébergeur, accessible via Internet pour héberger le site web", "Un réseau Wi-Fi privé pour les serveurs", "Un type de pare-feu virtuel"],
+          "answer": 1,
+          "explain": "Un VPS est un serveur virtuel mutualisé offrant des ressources dédiées à un coût abordable pour héberger un site web."
+        },
+        {
+          "q": "Qu'est-ce que le RAID dans le contexte d'un serveur de cybercafé ?",
+          "options": ["Un type de connexion réseau rapide", "Une technologie combinant plusieurs disques pour améliorer la performance ou la tolérance aux pannes", "Un logiciel de gestion de parc informatique", "Un protocole de sauvegarde en nuage"],
+          "answer": 1,
+          "explain": "Le RAID (Redundant Array of Independent Disks) associe plusieurs disques pour la performance (RAID 0) ou la redondance (RAID 1, 5)."
+        },
+        {
+          "q": "Que signifie la règle de sauvegarde 3-2-1 ?",
+          "options": ["3 sauvegardes par semaine, 2 par mois, 1 par an", "3 copies des données, sur 2 supports différents, dont 1 hors site", "3 serveurs, 2 disques, 1 NAS", "3 incrémentales, 2 différentielles, 1 complète"],
+          "answer": 1,
+          "explain": "La règle 3-2-1 : 3 copies des données, sur au moins 2 types de supports différents, dont 1 copie stockée hors site."
+        },
+        {
+          "q": "Qu'est-ce qu'un gestionnaire de parc informatique ?",
+          "options": ["Un logiciel de jeu réseau", "Un logiciel ou service centralisant l'inventaire et la gestion des équipements informatiques d'une structure", "Un type de switch managé", "Un protocole de surveillance réseau"],
+          "answer": 1,
+          "explain": "Un gestionnaire de parc (GLPI, OCS Inventory…) centralise l'inventaire matériel/logiciel, les tickets et la maintenance du parc."
+        },
+        {
+          "q": "Dans une présentation orale TSSR, pourquoi est-il important de vulgariser une notion technique ?",
+          "options": ["Pour éviter de répondre aux questions du jury", "Pour prouver qu'on comprend suffisamment un sujet pour l'expliquer simplement à un non-technicien", "Car les termes techniques sont interdits", "Pour raccourcir la durée de la présentation"],
+          "answer": 1,
+          "explain": "Expliquer simplement démontre une maîtrise réelle du sujet et la capacité à communiquer avec des clients non spécialistes."
+        },
+        {
+          "q": "Qu'est-ce qu'un VPN inter-sites dans le contexte d'un cybercafé avec plusieurs salles ?",
+          "options": ["Un Wi-Fi longue portée reliant deux salles", "Un tunnel chiffré reliant deux sites distants du cybercafé via Internet", "Un câble Ethernet entre deux bâtiments", "Un protocole de jeu en réseau"],
+          "answer": 1,
+          "explain": "Un VPN inter-sites relie les deux salles de façon sécurisée via Internet, comme si elles étaient sur le même réseau local."
+        },
+        {
+          "q": "Quel critère est évalué en priorité dans une présentation de projet TSSR ?",
+          "options": ["La beauté graphique des diapositives", "La pertinence des choix techniques répondant au cahier des charges, leur justification et la clarté de l'exposé", "Le nombre de diapositives", "La vitesse de débit"],
+          "answer": 1,
+          "explain": "Le jury évalue avant tout la cohérence technique, la réponse au cahier des charges, les justifications et la qualité de communication."
+        },
+        {
+          "q": "Combien de diapos maximum est-il généralement conseillé pour une présentation technique de 15 à 20 minutes ?",
+          "options": ["1 à 3 diapos", "5 à 10 diapos bien structurées", "30 à 40 diapos", "Pas de limite"],
+          "answer": 1,
+          "explain": "Entre 5 et 10 diapositives claires suffisent pour une présentation de 15-20 min ; trop de diapos nuit à la lisibilité et au timing."
+        },
+        {
+          "q": "Pourquoi justifier le choix d'un matériel (ex. switch Gigabit) dans le devis ?",
+          "options": ["Pour allonger la présentation", "Pour montrer que le choix est adapté au besoin et non arbitraire, renforçant la crédibilité du devis", "Car le client doit valider chaque composant", "Pour respecter une obligation légale"],
+          "answer": 1,
+          "explain": "Justifier chaque choix matériel prouve la compréhension du besoin et rassure le client sur la pertinence du devis."
+        },
+        {
+          "q": "Qu'est-ce qu'un cahier des charges dans un projet informatique ?",
+          "options": ["La liste des câbles nécessaires", "Le document décrivant les besoins, contraintes et objectifs du projet auxquels le prestataire doit répondre", "Le devis définitif du projet", "Le plan de formation des utilisateurs"],
+          "answer": 1,
+          "explain": "Le cahier des charges définit ce que le client attend ; le technicien doit y répondre point par point dans sa proposition."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Dans un devis pour cybercafé eSport, quel poste budgétaire est souvent le plus important ?",
+          "options": ["La connexion Internet", "Le matériel (postes gaming, écrans, périphériques, réseau)", "Le logiciel antivirus", "Le mobilier"],
+          "answer": 1,
+          "explain": "Les postes de jeu gaming (processeur, RAM, GPU, écrans haute fréquence) représentent généralement la majeure partie du budget matériel."
+        },
+        {
+          "q": "Quelle est la différence entre un devis réaliste et un devis sous-estimé ?",
+          "options": ["Aucune différence", "Un devis réaliste couvre tous les coûts (matériel, installation, licences, maintenance) ; un devis sous-estimé risque un dépassement de budget", "Un devis réaliste est toujours plus cher", "Un devis sous-estimé est interdit légalement"],
+          "answer": 1,
+          "explain": "Un devis sous-estimé peut compromettre la viabilité du projet ; il faut inclure tous les coûts, y compris installation et maintenance."
+        },
+        {
+          "q": "Dans quel VLAN placer les postes de jeu dans un cybercafé multi-VLAN ?",
+          "options": ["Dans le même VLAN que le Wi-Fi clients", "Dans un VLAN dédié gaming, isolé du Wi-Fi clients et du réseau administration", "Dans le VLAN administration", "Dans le VLAN serveurs"],
+          "answer": 1,
+          "explain": "Isoler les postes gaming dans leur propre VLAN garantit performance et sécurité, sans interférence avec les autres zones."
+        },
+        {
+          "q": "Pourquoi utiliser un RAID 1 pour le serveur d'un cybercafé ?",
+          "options": ["Pour doubler les performances en lecture et écriture", "Pour avoir une copie miroir du disque, garantissant la continuité si un disque tombe en panne", "Pour augmenter la capacité de stockage totale", "Car RAID 1 est moins cher que RAID 0"],
+          "answer": 1,
+          "explain": "RAID 1 (miroir) duplique les données sur deux disques : si l'un tombe en panne, le second prend le relais sans perte de données."
+        },
+        {
+          "q": "Qu'est-ce que le RAID 0 et pourquoi est-il risqué en production ?",
+          "options": ["Miroir de deux disques, très sûr", "Agrégat de deux disques pour la performance, mais sans redondance : la panne d'un disque détruit toutes les données", "Sauvegarde automatique sur un NAS", "Chiffrement des données du serveur"],
+          "answer": 1,
+          "explain": "RAID 0 répartit les données sur deux disques pour la vitesse, mais la panne d'un seul disque entraîne la perte totale des données."
+        },
+        {
+          "q": "Comment vulgariser la notion d'hébergement VPS à un client non-technicien ?",
+          "options": ["Expliquer en détail les hyperviseurs et la virtualisation", "Comparer à la location d'un appartement dans un immeuble : on a son espace privé sans gérer le bâtiment", "Parler de cloud public et de SaaS", "Expliquer les protocoles TCP/IP utilisés"],
+          "answer": 1,
+          "explain": "La métaphore de l'appartement en location est accessible à tous : espace privatif, maintenance par le propriétaire, coût mensuel fixe."
+        },
+        {
+          "q": "Lors d'une présentation orale, que faire si on ne connaît pas la réponse à une question du jury ?",
+          "options": ["Inventer une réponse plausible", "Admettre honnêtement qu'on ne sait pas et proposer de faire des recherches", "Changer de sujet rapidement", "Redemander la question pour gagner du temps"],
+          "answer": 1,
+          "explain": "Admettre une lacune et proposer de se renseigner est apprécié du jury : c'est une preuve d'honnêteté professionnelle."
+        },
+        {
+          "q": "Qu'est-ce qu'un switch non managé et est-il adapté à un cybercafé eSport professionnel ?",
+          "options": ["Un switch sans câble, parfait pour un cybercafé", "Un switch sans interface de configuration (Plug & Play), insuffisant pour la segmentation VLAN d'un cybercafé pro", "Un switch de très haute performance recommandé", "Un switch de couche 3 avec routage intégré"],
+          "answer": 1,
+          "explain": "Un switch non managé ne permet pas de configurer des VLAN ni de superviser le trafic, inadapté à une infra cybercafé pro."
+        },
+        {
+          "q": "Dans le cadre d'un VPN inter-sites pour cybercafé, quel protocole VPN est couramment utilisé ?",
+          "options": ["FTP", "OpenVPN ou WireGuard", "HTTP", "DNS"],
+          "answer": 1,
+          "explain": "OpenVPN et WireGuard sont des solutions VPN site-à-site populaires, robustes et compatibles avec la plupart des routeurs."
+        },
+        {
+          "q": "Qu'est-ce qu'un UPS (onduleur) et pourquoi l'inclure dans le devis d'un cybercafé ?",
+          "options": ["Un type de disque SSD haute performance", "Un dispositif d'alimentation de secours protégeant les équipements contre les coupures de courant", "Un protocole de mise à jour logicielle", "Un système de refroidissement serveur"],
+          "answer": 1,
+          "explain": "L'onduleur (UPS) maintient l'alimentation lors d'une coupure, évitant pertes de données et pannes matérielles sur les équipements critiques."
+        },
+        {
+          "q": "Quelle est la bonne pratique pour les titres de diapositives dans une présentation technique ?",
+          "options": ["Des titres très longs et détaillés", "Des titres courts et explicites résumant en un coup d'oeil le contenu de la diapo", "Pas de titres pour aller à l'essentiel", "Des titres en anglais uniquement"],
+          "answer": 1,
+          "explain": "Un titre court et clair permet au jury de suivre le plan sans avoir à lire tout le contenu de la diapositive."
+        },
+        {
+          "q": "Pourquoi inclure un schéma réseau dans une présentation de projet cybercafé ?",
+          "options": ["Pour remplir les pages de la présentation", "Pour donner une vision immédiate de l'architecture proposée et faciliter la compréhension du jury", "Car le jury n'aura pas le temps de lire le devis", "Pour remplacer le plan d'adressage"],
+          "answer": 1,
+          "explain": "Le schéma réseau communique l'architecture en un coup d'oeil, rendant la proposition concrète et professionnelle."
+        },
+        {
+          "q": "Comment calculer le débit Internet nécessaire pour un cybercafé de 20 postes de jeu ?",
+          "options": ["20 × 1 Mbps = 20 Mbps minimum", "Estimer la consommation par poste (ex. 5-10 Mbps en jeu) × nombre de postes + marge, soit 150-250 Mbps", "1 Gbps est toujours obligatoire", "La connexion Internet ne compte pas pour le jeu en LAN"],
+          "answer": 1,
+          "explain": "Pour 20 postes à 5-10 Mbps + marge de confort, une connexion de 150 à 250 Mbps est un calcul réaliste à présenter au jury."
+        },
+        {
+          "q": "Dans un devis, comment présenter le coût total de façon professionnelle ?",
+          "options": ["Donner uniquement le prix final sans détail", "Décomposer par poste (matériel, installation, licences, maintenance) avec sous-totaux et total HT/TTC", "Arrondir à la centaine d'euros sans préciser les articles", "Ne pas indiquer les prix pour ne pas effrayer le client"],
+          "answer": 1,
+          "explain": "Un devis détaillé par poste permet au client de comparer et négocier, et témoigne du sérieux et de la transparence du prestataire."
+        },
+        {
+          "q": "Pourquoi prévoir une marge dans le devis d'un projet cybercafé eSport ?",
+          "options": ["Pour augmenter le bénéfice du prestataire uniquement", "Pour absorber les imprévus (câblage supplémentaire, licences oubliées, heures d'intervention non prévues)", "Car le client négociera toujours à la baisse", "Car le matériel informatique est toujours plus cher qu'annoncé"],
+          "answer": 1,
+          "explain": "Une marge de 10-15 % est bonne pratique pour couvrir les imprévus techniques sans rogner sur la qualité de la réalisation."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Comment choisir entre un hébergement mutualisé, un VPS et un serveur dédié pour le site web d'un cybercafé ?",
+          "options": ["Toujours choisir le serveur dédié, c'est le plus performant", "Selon le trafic attendu et le budget : mutualisé pour un petit site, VPS pour un site dynamique, dédié pour un fort trafic", "Toujours choisir le mutualisé, c'est le moins cher", "Le type d'hébergement n'a aucune importance"],
+          "answer": 1,
+          "explain": "Le choix dépend du trafic et du budget : mutualisé suffit pour une vitrine simple, VPS pour un site actif, dédié pour une forte charge."
+        },
+        {
+          "q": "Dans le cadre de la sauvegarde 3-2-1, quel est l'intérêt du support hors site ?",
+          "options": ["Réduire le coût de stockage", "Protéger les données contre les sinistres locaux (incendie, vol, inondation)", "Accélérer la restauration des données", "Permettre plusieurs restaurations simultanées"],
+          "answer": 1,
+          "explain": "Le support hors site (cloud ou site distant) garantit la récupération des données même si le site principal est détruit."
+        },
+        {
+          "q": "Qu'est-ce que le RTO (Recovery Time Objective) dans le plan de continuité d'un cybercafé ?",
+          "options": ["La durée maximale tolérée d'interruption de service avant reprise", "La quantité maximale de données perdues tolérée", "Le temps de sauvegarde d'un disque", "Le délai de livraison du matériel de remplacement"],
+          "answer": 0,
+          "explain": "Le RTO définit combien de temps maximum le service peut être interrompu : capital pour un cybercafé dont le CA dépend de l'uptime."
+        },
+        {
+          "q": "Qu'est-ce que le RPO (Recovery Point Objective) ?",
+          "options": ["La durée maximale d'interruption acceptable", "La perte de données maximale acceptable en cas d'incident, exprimée en durée", "Le nombre de points d'accès Wi-Fi nécessaires", "Le débit minimum garanti par la connexion Internet"],
+          "answer": 1,
+          "explain": "Le RPO fixe la perte de données maximale tolérable : un RPO de 1 heure signifie qu'on sauvegarde au moins toutes les heures."
+        },
+        {
+          "q": "Pourquoi mettre en place un réseau guest Wi-Fi avec un portail captif dans un cybercafé ?",
+          "options": ["Pour augmenter la vitesse Wi-Fi des clients", "Pour identifier les utilisateurs, afficher les CGU et limiter la bande passante par utilisateur", "Pour bloquer l'accès à Internet aux clients", "Pour remplacer le pare-feu"],
+          "answer": 1,
+          "explain": "Le portail captif permet l'identification des clients, l'acceptation des CGU et la gestion de la bande passante, exigences légales incluses."
+        },
+        {
+          "q": "Dans un cybercafé, pourquoi segmenter le réseau en VLAN gaming, VLAN administration et VLAN guest ?",
+          "options": ["Pour réduire le nombre de switchs nécessaires", "Pour isoler les flux, protéger le réseau admin des clients et garantir la QoS sur les postes de jeu", "Car la loi l'impose dans les ERP", "Pour pouvoir utiliser un switch non managé"],
+          "answer": 1,
+          "explain": "La segmentation VLAN protège le réseau admin, évite les interférences entre clients et postes de jeu, et permet la QoS."
+        },
+        {
+          "q": "Qu'est-ce que la QoS (Quality of Service) et pourquoi est-elle utile dans un cybercafé ?",
+          "options": ["Un type de câble réseau haute performance", "Un mécanisme priorisant certains types de trafic (ex. jeu) pour garantir une faible latence même en cas de congestion", "Un logiciel de surveillance des postes", "Un protocole de sécurité Wi-Fi"],
+          "answer": 1,
+          "explain": "La QoS priorise le trafic de jeu sur le trafic moins critique (mises à jour, streaming client), maintenant une faible latence pour les gamers."
+        },
+        {
+          "q": "Comment vulgariser la notion de RAID à un client non-technicien lors d'une présentation ?",
+          "options": ["Expliquer les algorithmes de parité du RAID 5", "Comparer à une photocopie automatique : si un document est détruit, on dispose toujours de la copie", "Utiliser uniquement des termes techniques", "Montrer les spécifications du contrôleur RAID"],
+          "answer": 1,
+          "explain": "La métaphore de la photocopie automatique est simple et mémorable pour expliquer la redondance RAID à un client."
+        },
+        {
+          "q": "Quelles informations indispensables doit contenir le plan d'adressage IP d'un cybercafé multi-VLAN ?",
+          "options": ["Uniquement l'adresse IP du routeur", "Chaque VLAN avec son sous-réseau, sa plage DHCP, sa passerelle et le nombre de postes prévu", "Les adresses MAC de chaque poste de jeu", "Le numéro de série des switchs"],
+          "answer": 1,
+          "explain": "Le plan d'adressage doit documenter chaque VLAN : sous-réseau, plage DHCP, passerelle, nombre d'hôtes — pour éviter tout conflit."
+        },
+        {
+          "q": "Lors d'une présentation, comment gérer le temps efficacement ?",
+          "options": ["Parler aussi vite que possible pour tout couvrir", "Répéter la présentation au préalable pour respecter le timing, et prévoir quoi sacrifier si on dépasse", "Lire mot à mot les diapositives", "Ignorer les questions du jury pour gagner du temps"],
+          "answer": 1,
+          "explain": "La répétition préalable est essentielle : elle permet de respecter le timing, d'identifier les points à éclaircir et de gagner en fluidité."
+        },
+        {
+          "q": "Qu'est-ce qu'un logiciel de supervision réseau et serait-il utile dans un cybercafé ?",
+          "options": ["Un logiciel de jeu multijoueur", "Un outil surveillant en temps réel l'état des équipements et alertant en cas de panne (ex. Zabbix, PRTG)", "Un logiciel de facturation clients", "Un système de contrôle parental"],
+          "answer": 1,
+          "explain": "Un outil de supervision (Zabbix, PRTG, Nagios) alertera immédiatement en cas de panne switch ou serveur, réduisant le temps d'indisponibilité."
+        },
+        {
+          "q": "Dans le contexte d'un cybercafé eSport, qu'est-ce qu'un écran haute fréquence (144 Hz ou plus) et pourquoi le justifier dans le devis ?",
+          "options": ["Un écran affichant 144 couleurs différentes", "Un écran rafraîchissant l'image 144 fois par seconde, réduisant le flou et améliorant la réactivité perçue en jeu", "Un écran avec une résolution 4K obligatoire", "Un écran économisant 144 watts d'électricité"],
+          "answer": 1,
+          "explain": "Un écran 144 Hz ou plus réduit le flou de mouvement et le temps de latence d'affichage, avantage compétitif clé pour les gamers."
+        },
+        {
+          "q": "Qu'est-ce qu'un NAS et pourquoi l'inclure dans l'infrastructure d'un cybercafé ?",
+          "options": ["Un type de switch de couche 3", "Un dispositif de stockage réseau centralisé pour les sauvegardes et partages de fichiers", "Un protocole de jeu en réseau", "Un onduleur de secours"],
+          "answer": 1,
+          "explain": "Un NAS centralise les sauvegardes et peut stocker les images système des postes pour faciliter le redéploiement rapide en cas de panne."
+        },
+        {
+          "q": "Comment justifier le choix d'un pare-feu physique plutôt que du pare-feu logiciel Windows dans un cybercafé pro ?",
+          "options": ["Le pare-feu Windows est interdit en ERP", "Le pare-feu physique offre de meilleures performances, une gestion centralisée, des fonctions avancées (IPS, filtrage applicatif) et ne dépend pas d'un OS", "Le pare-feu physique est toujours moins cher", "Le pare-feu Windows ne peut pas filtrer le trafic web"],
+          "answer": 1,
+          "explain": "Un pare-feu physique dédié (pfSense, Fortinet…) offre des fonctionnalités avancées et des performances constantes, indépendantes du poste."
+        },
+        {
+          "q": "Quelle est la bonne posture pendant une présentation orale devant le jury ?",
+          "options": ["Regarder ses notes ou l'écran en permanence", "Maintenir le contact visuel avec le jury, adopter un ton assuré et montrer l'intérêt pour les questions", "Parler uniquement à son binôme", "Rester immobile et lire ses diapositives"],
+          "answer": 1,
+          "explain": "Le contact visuel et l'aisance à l'oral démontrent la maîtrise du sujet et instaurent la confiance du jury dans les choix proposés."
+        }
+      ]
+    }
+  ]
+}

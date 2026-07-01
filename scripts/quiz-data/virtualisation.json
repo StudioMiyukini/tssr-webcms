@@ -1,0 +1,291 @@
+{
+  "slug": "virtualisation",
+  "title": "La virtualisation avec Hyper-V",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Qu'est-ce qu'une machine virtuelle (VM) ?",
+          "options": ["Un ordinateur physique dédié à une seule tâche", "Un logiciel qui émule un ordinateur complet, avec ses propres processeur virtuel, mémoire, disque et carte réseau", "Un système d'exploitation installé en dual-boot", "Un conteneur applicatif léger sans OS dédié"],
+          "answer": 1,
+          "explain": "Une machine virtuelle est un ordinateur logiciel qui s'exécute à l'intérieur d'un ordinateur physique, simulant tous les composants matériels (CPU, RAM, disque, réseau)."
+        },
+        {
+          "q": "Quelle est la différence entre un hyperviseur de type 1 et un hyperviseur de type 2 ?",
+          "options": ["Le type 1 gère plus de VM que le type 2", "Le type 1 s'exécute directement sur le matériel (bare-metal), le type 2 s'exécute au-dessus d'un OS hôte", "Le type 2 est plus performant car il a accès direct au matériel", "Il n'y a pas de différence fonctionnelle, seul le nom change"],
+          "answer": 1,
+          "explain": "L'hyperviseur de type 1 (bare-metal) s'installe directement sur le matériel, comme Hyper-V ou VMware ESXi. Le type 2 (hébergé) s'installe sur un OS existant, comme VirtualBox ou VMware Workstation."
+        },
+        {
+          "q": "Hyper-V est un hyperviseur de quel type ?",
+          "options": ["Type 2 (hébergé), comme VirtualBox", "Type 1 (bare-metal), s'exécutant directement sur le matériel", "Type 3 (cloud)", "Un émulateur, pas un hyperviseur"],
+          "answer": 1,
+          "explain": "Hyper-V est un hyperviseur de type 1 : bien qu'il s'installe comme un rôle Windows Server, il prend le contrôle direct du matériel, reléguant Windows Server au rang de VM privilégiée."
+        },
+        {
+          "q": "Comment installer le rôle Hyper-V sur Windows Server ?",
+          "options": ["En téléchargeant Hyper-V sur le site Microsoft séparément", "Via le Gestionnaire de serveurs, menu « Ajouter des rôles et des fonctionnalités »", "En modifiant le BIOS du serveur", "Via Windows Update uniquement"],
+          "answer": 1,
+          "explain": "Hyper-V est un rôle Windows Server qui s'installe via le Gestionnaire de serveurs (ou la cmdlet PowerShell Install-WindowsFeature -Name Hyper-V)."
+        },
+        {
+          "q": "Quel est le format de disque dur virtuel natif de Hyper-V pour les nouvelles machines virtuelles ?",
+          "options": ["VHD (Virtual Hard Disk)", "VMDK (VMware Disk)", "VHDX (Virtual Hard Disk eXtended)", "ISO (Image disque)"],
+          "answer": 2,
+          "explain": "VHDX est le format de disque virtuel moderne de Hyper-V, supportant des disques jusqu'à 64 To et offrant une meilleure résistance aux corruptions que l'ancien format VHD."
+        },
+        {
+          "q": "Qu'est-ce qu'un « commutateur virtuel » (virtual switch) dans Hyper-V ?",
+          "options": ["Un équipement réseau physique géré par Hyper-V", "Un composant logiciel simulant un switch réseau pour connecter les VM entre elles et au réseau physique", "Un protocole de communication entre les VM", "Un type de disque virtuel partagé"],
+          "answer": 1,
+          "explain": "Le commutateur virtuel dans Hyper-V est l'équivalent logiciel d'un switch réseau physique, permettant aux VM de communiquer entre elles et/ou avec le réseau externe."
+        },
+        {
+          "q": "Citer un exemple connu de logiciel de virtualisation de type 2 (hyperviseur hébergé) :",
+          "options": ["Hyper-V", "VMware ESXi", "VirtualBox", "Proxmox VE"],
+          "answer": 2,
+          "explain": "VirtualBox (Oracle) est un hyperviseur de type 2 : il s'installe comme une application sur Windows, macOS ou Linux et crée des VM par-dessus l'OS hôte."
+        },
+        {
+          "q": "Qu'est-ce qu'un « point de contrôle » (checkpoint) dans Hyper-V ?",
+          "options": ["Un fichier de configuration réseau de la VM", "Une sauvegarde de l'état complet de la VM à un instant T, permettant d'y revenir si nécessaire", "Un rapport de performance de la VM", "Un certificat de sécurité de la VM"],
+          "answer": 1,
+          "explain": "Un point de contrôle (anciennement snapshot) capture l'état d'une VM (mémoire, disque, configuration) pour pouvoir restaurer cet état ultérieurement en cas de problème."
+        },
+        {
+          "q": "Quel est le principal avantage de la virtualisation en termes d'infrastructure ?",
+          "options": ["Elle permet de n'avoir qu'un seul OS sur tout le parc", "Elle permet d'exécuter plusieurs serveurs virtuels sur un seul serveur physique, optimisant l'utilisation des ressources matérielles", "Elle supprime la nécessité d'un réseau", "Elle remplace les sauvegardes traditionnelles"],
+          "answer": 1,
+          "explain": "La virtualisation permet la consolidation des serveurs : plusieurs serveurs virtuels coexistent sur un seul serveur physique, réduisant les coûts matériels, énergétiques et la complexité de l'infrastructure."
+        },
+        {
+          "q": "La « génération 1 » d'une VM Hyper-V utilise quel type de firmware ?",
+          "options": ["UEFI (Unified Extensible Firmware Interface)", "BIOS (Basic Input/Output System) classique", "OpenFirmware", "ARM firmware"],
+          "answer": 1,
+          "explain": "Les VM de génération 1 utilisent un BIOS classique (legacy BIOS), comme les anciens ordinateurs physiques, avec un disque de démarrage IDE et un contrôleur SCSI virtuel."
+        },
+        {
+          "q": "Qu'apporte la « génération 2 » d'une VM Hyper-V par rapport à la génération 1 ?",
+          "options": ["Plus de mémoire RAM virtuelle uniquement", "L'utilisation de UEFI à la place du BIOS, le démarrage sécurisé (Secure Boot), de meilleures performances et des contrôleurs modernes", "La possibilité de lancer des applications Android", "Un mode graphique 3D accéléré"],
+          "answer": 1,
+          "explain": "La génération 2 utilise UEFI, prend en charge le démarrage sécurisé, le démarrage réseau PXE IPv4 et IPv6, et utilise des contrôleurs de stockage et réseau SCSI synthétiques uniquement, offrant de meilleures performances."
+        },
+        {
+          "q": "Qu'est-ce que la « consolidation de serveurs » dans le contexte de la virtualisation ?",
+          "options": ["Fusionner deux serveurs physiques en un seul serveur plus puissant", "Regrouper plusieurs serveurs physiques sous-utilisés en machines virtuelles sur un nombre réduit de serveurs physiques", "Connecter plusieurs serveurs en cluster de basculement", "Synchroniser les données de plusieurs serveurs"],
+          "answer": 1,
+          "explain": "La consolidation consiste à migrer des serveurs physiques (souvent sous-utilisés) en machines virtuelles sur moins de serveurs physiques, améliorant le taux d'utilisation des ressources et réduisant les coûts."
+        },
+        {
+          "q": "Quel outil graphique Windows permet de gérer les machines virtuelles Hyper-V ?",
+          "options": ["L'Explorateur de fichiers", "Le Gestionnaire Hyper-V (Hyper-V Manager, virtmgmt.msc)", "Le Gestionnaire de tâches", "L'Observateur d'événements"],
+          "answer": 1,
+          "explain": "Le Gestionnaire Hyper-V (virtmgmt.msc) est la console graphique dédiée à la création, configuration et gestion des machines virtuelles sur un hôte Hyper-V."
+        },
+        {
+          "q": "Pour créer une VM avec Hyper-V, quelle condition matérielle est indispensable sur le serveur physique ?",
+          "options": ["Une carte graphique dédiée", "La prise en charge de la virtualisation matérielle (Intel VT-x ou AMD-V) activée dans le BIOS/UEFI", "Un processeur avec au moins 8 cœurs", "Un disque dur de type SSD uniquement"],
+          "answer": 1,
+          "explain": "La virtualisation matérielle (Intel VT-x ou AMD-V) doit être supportée par le processeur et activée dans le BIOS/UEFI pour que Hyper-V puisse fonctionner."
+        },
+        {
+          "q": "Quel est l'intérêt de la virtualisation pour les laboratoires de test (labs) en environnement de formation TSSR ?",
+          "options": ["Elle permet d'économiser de la bande passante Internet", "Elle permet de créer des environnements de test isolés et réinitialisables rapidement sans matériel physique supplémentaire", "Elle remplace la nécessité d'apprendre les configurations réseau", "Elle permet de passer les certifications Microsoft plus rapidement"],
+          "answer": 1,
+          "explain": "Pour les labs, la virtualisation permet de créer des réseaux et serveurs complets dans un environnement isolé, de tester des configurations risquées, et de restaurer rapidement un état propre grâce aux points de contrôle."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Quelle est la différence entre un commutateur virtuel « externe » et un commutateur « interne » dans Hyper-V ?",
+          "options": ["Le commutateur externe est plus rapide que l'interne", "Le commutateur externe connecte les VM au réseau physique (et à Internet) ; le commutateur interne permet aux VM de communiquer entre elles et avec l'hôte, sans accès réseau physique", "Le commutateur interne est réservé aux VM de génération 2", "Il n'y a pas de différence, les deux donnent accès à Internet"],
+          "answer": 1,
+          "explain": "Un commutateur externe mappe une carte réseau physique de l'hôte, donnant aux VM un accès au réseau physique. Un commutateur interne permet la communication VM-VM et VM-hôte sans liaison réseau physique externe."
+        },
+        {
+          "q": "Un commutateur virtuel « privé » dans Hyper-V permet :",
+          "options": ["Un accès à Internet avec chiffrement", "La communication uniquement entre les VM, sans accès à l'hôte ni au réseau physique", "Un accès à Internet via l'hôte par NAT", "La connexion de plusieurs hôtes Hyper-V entre eux"],
+          "answer": 1,
+          "explain": "Un commutateur privé isole complètement les VM : elles ne peuvent communiquer qu'entre elles, sans aucun accès à l'hôte Hyper-V ni au réseau physique, idéal pour des labs totalement isolés."
+        },
+        {
+          "q": "Quelle est la différence entre un disque VHDX « fixe » et un disque VHDX « dynamique » ?",
+          "options": ["Le disque fixe ne peut pas être redimensionné, le dynamique peut être agrandi", "Le disque fixe alloue immédiatement tout l'espace sur le disque physique, le dynamique ne croît que selon les besoins et n'occupe que l'espace réellement utilisé", "Le disque dynamique est plus fiable que le disque fixe", "Le disque fixe est uniquement compatible avec la génération 1"],
+          "answer": 1,
+          "explain": "Un disque fixe alloue tout l'espace dès la création (meilleures performances, espace garanti), tandis qu'un disque dynamique commence petit et croît jusqu'à la taille maximale selon les besoins (moins d'espace utilisé initialement)."
+        },
+        {
+          "q": "Qu'est-ce que la « migration dynamique » (Live Migration) dans Hyper-V ?",
+          "options": ["La sauvegarde automatique d'une VM en cours d'exécution", "Le déplacement d'une VM en cours d'exécution d'un hôte Hyper-V vers un autre sans interruption de service", "La migration automatique des données VHDX vers le cloud", "La conversion d'une VM de génération 1 en génération 2 à chaud"],
+          "answer": 1,
+          "explain": "La migration dynamique (Live Migration) permet de déplacer une VM en fonctionnement d'un serveur Hyper-V à un autre sans interruption de service, utile pour la maintenance ou l'équilibrage de charge."
+        },
+        {
+          "q": "Qu'est-ce que les « Services d'intégration » (Integration Services) dans une VM Hyper-V ?",
+          "options": ["Des logiciels de sécurité obligatoires dans les VM", "Des pilotes et services installés dans la VM pour améliorer les performances et permettre la communication avec l'hôte Hyper-V (synchronisation d'heure, arrêt propre, etc.)", "Des outils de surveillance réseau pour Hyper-V", "Des modules PowerShell pour administrer Hyper-V"],
+          "answer": 1,
+          "explain": "Les services d'intégration Hyper-V sont des pilotes optimisés installés dans la VM invitée qui améliorent les performances d'E/S, permettent la synchronisation de l'heure avec l'hôte, les arrêts propres à distance, etc."
+        },
+        {
+          "q": "Quel est le rôle du « Cluster de basculement » (Failover Cluster) associé à Hyper-V ?",
+          "options": ["Il améliore les performances graphiques des VM", "Il permet la haute disponibilité des VM : si un hôte Hyper-V tombe en panne, les VM redémarrent automatiquement sur un autre hôte du cluster", "Il synchronise les points de contrôle entre plusieurs hôtes", "Il remplace le commutateur virtuel en cas de panne réseau"],
+          "answer": 1,
+          "explain": "Un cluster de basculement Hyper-V regroupe plusieurs hôtes physiques : si l'un tombe en panne, les VM sont automatiquement redémarrées sur un autre nœud, assurant la continuité de service."
+        },
+        {
+          "q": "Quelle cmdlet PowerShell permet de créer une nouvelle VM sur un hôte Hyper-V ?",
+          "options": ["Add-VM", "New-VM", "Create-VirtualMachine", "New-HyperVGuest"],
+          "answer": 1,
+          "explain": "La cmdlet « New-VM » du module Hyper-V PowerShell permet de créer une nouvelle machine virtuelle en spécifiant son nom, sa mémoire, son disque virtuel et son commutateur réseau."
+        },
+        {
+          "q": "Qu'est-ce qu'un « disque de différenciation » (differencing disk) dans Hyper-V ?",
+          "options": ["Un disque qui mesure les différences de performance entre deux VM", "Un disque VHDX enfant qui stocke uniquement les modifications par rapport à un disque parent, permettant de créer des VM partageant une base commune", "Un outil de comparaison entre deux snapshots", "Un disque de sauvegarde incrémentale"],
+          "answer": 1,
+          "explain": "Un disque de différenciation est lié à un disque parent et ne stocke que les blocs modifiés. Cela permet de créer rapidement plusieurs VM partageant la même image de base, économisant l'espace disque."
+        },
+        {
+          "q": "Pourquoi faut-il faire attention lors de l'utilisation intensive des points de contrôle (checkpoints) en production ?",
+          "options": ["Car les checkpoints font planter Windows Server", "Car une chaîne trop longue de checkpoints dégrade les performances d'E/S disque et complexifie la gestion, car chaque écriture doit être référencée dans la chaîne de fichiers différenciels", "Car les checkpoints ne sont pas supportés par Windows Server", "Car les checkpoints chiffrent les données de la VM"],
+          "answer": 1,
+          "explain": "Multiplier les checkpoints crée une chaîne de fichiers différenciels : chaque opération d'écriture doit traverser cette chaîne, dégradant les performances. Il est recommandé de supprimer les checkpoints après usage en production."
+        },
+        {
+          "q": "Qu'est-ce que la « mémoire dynamique » (Dynamic Memory) dans Hyper-V ?",
+          "options": ["Un type de RAM physique spécifique aux serveurs Hyper-V", "Une fonctionnalité qui alloue la RAM à la VM en fonction de ses besoins réels, entre un minimum et un maximum configurés", "Un module de mémoire partagée entre plusieurs VM simultanément", "Un algorithme d'optimisation du disque virtuel VHDX"],
+          "answer": 1,
+          "explain": "La mémoire dynamique Hyper-V ajuste automatiquement la quantité de RAM allouée à une VM entre un minimum et un maximum définis, optimisant l'utilisation de la RAM physique de l'hôte."
+        },
+        {
+          "q": "Comment accède-t-on à la console d'une VM Hyper-V sans passer par le réseau (accès console directe) ?",
+          "options": ["Via une connexion Telnet vers l'adresse IP de la VM", "Via la connexion Enhanced Session ou la connexion console VMConnect dans le Gestionnaire Hyper-V", "Via RDP sur le port 3389 en spécifiant l'IP de la VM", "Via un accès SSH sur le port 22"],
+          "answer": 1,
+          "explain": "VMConnect est l'outil intégré à Hyper-V permettant d'accéder à la console d'une VM directement (sans réseau), utile notamment au démarrage, lors d'une configuration réseau incorrecte ou en mode de récupération."
+        },
+        {
+          "q": "Quelle est la condition réseau requise pour utiliser la migration dynamique (Live Migration) entre deux hôtes Hyper-V ?",
+          "options": ["Une connexion réseau d'au moins 1 Gbps et un réseau de stockage partagé (SAN/SMB) accessible par les deux hôtes", "Une connexion Wi-Fi entre les deux hôtes", "Une adresse IP publique sur les deux hôtes", "Un commutateur virtuel privé partagé entre les hôtes"],
+          "answer": 0,
+          "explain": "La migration dynamique nécessite que les deux hôtes aient accès au même stockage (SAN, SAN iSCSI ou partage SMB) pour les disques VHDX des VM, et un réseau à faible latence pour transférer la mémoire à chaud."
+        },
+        {
+          "q": "Qu'est-ce que Hyper-V Replica et à quel besoin répond-il ?",
+          "options": ["C'est un clone de VM créé pour les tests", "C'est une fonctionnalité de réplication asynchrone d'une VM vers un site secondaire pour la reprise d'activité après sinistre (PRA)", "C'est un système de sauvegarde temps réel de tous les VHDX", "C'est un outil de migration de VM entre versions d'Hyper-V"],
+          "answer": 1,
+          "explain": "Hyper-V Replica réplique une VM vers un hôte Hyper-V distant (site de DR) en envoyant les modifications régulièrement. En cas de sinistre, la VM répliquée peut être démarrée sur le site secondaire."
+        },
+        {
+          "q": "Dans quel cas choisit-on une VM de génération 2 plutôt qu'une VM de génération 1 ?",
+          "options": ["Uniquement pour les VM Linux", "Pour les systèmes d'exploitation 64 bits modernes (Windows 8/2012 et +) qui supportent UEFI et le démarrage sécurisé, bénéficiant de meilleures performances", "Uniquement pour les VM avec plus de 8 Go de RAM", "La génération 2 est uniquement disponible sur Hyper-V en mode Server Core"],
+          "answer": 1,
+          "explain": "La génération 2 est recommandée pour les OS modernes 64 bits (Windows Server 2012+, certaines distributions Linux) car elle offre UEFI, Secure Boot, de meilleures performances réseau et stockage."
+        },
+        {
+          "q": "Qu'est-ce que la virtualisation imbriquée (Nested Virtualization) dans Hyper-V ?",
+          "options": ["La création d'une VM à l'intérieur d'une autre VM, permettant d'exécuter Hyper-V à l'intérieur d'une VM Hyper-V", "La réplication d'une VM dans plusieurs datacenters en même temps", "La fusion de plusieurs VM en une seule VM plus puissante", "Un mode de débogage pour les VM en production"],
+          "answer": 0,
+          "explain": "La virtualisation imbriquée (Nested Virtualization) permet à une VM Hyper-V de faire elle-même tourner des VM (l'hyperviseur est activé dans la VM). Très utile pour les labs de formation sans matériel physique supplémentaire."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Quelle est la différence architecturale fondamentale entre Hyper-V et VMware ESXi en tant qu'hyperviseurs de type 1 ?",
+          "options": ["ESXi est de type 2, pas de type 1", "Hyper-V utilise une architecture de partition (partition parente Windows + partitions enfants VM), tandis qu'ESXi est un hyperviseur monolithique sans OS hôte ; les deux sont de type 1", "Hyper-V ne supporte pas Linux comme VM invitée, contrairement à ESXi", "ESXi ne peut pas faire de migration dynamique contrairement à Hyper-V"],
+          "answer": 1,
+          "explain": "Hyper-V utilise une architecture de micro-noyau avec une partition parente (Windows Server) et des partitions enfants (VM). ESXi est un hyperviseur nu monolithique. Les deux sont de type 1 mais architecturalement différents."
+        },
+        {
+          "q": "Qu'est-ce que le « stockage en cluster » (Cluster Shared Volumes - CSV) dans le contexte Hyper-V ?",
+          "options": ["Un type de fichier CSV (tableur) pour configurer les VM en masse", "Un volume de stockage partagé accessible simultanément par tous les nœuds d'un cluster Hyper-V, permettant à toutes les VM du cluster d'utiliser le même stockage", "Un protocole de réplication entre commutateurs virtuels", "Un système de fichiers spécial pour les disques VHDX"],
+          "answer": 1,
+          "explain": "Les CSV (Cluster Shared Volumes) permettent à plusieurs nœuds d'un cluster Hyper-V d'accéder simultanément aux mêmes volumes de stockage, facilitant la migration dynamique et la haute disponibilité des VM."
+        },
+        {
+          "q": "Qu'est-ce que le « Secure Boot » (démarrage sécurisé) dans une VM Hyper-V de génération 2 et pourquoi peut-il poser problème avec certains OS Linux ?",
+          "options": ["Secure Boot chiffre le disque VHDX de la VM", "Secure Boot vérifie la signature cryptographique du chargeur de démarrage. Certaines distributions Linux plus anciennes n'ont pas de chargeur signé reconnu par Hyper-V, nécessitant la désactivation du Secure Boot pour ces VM", "Secure Boot empêche l'accès réseau pendant le démarrage de la VM", "Secure Boot est obligatoire et ne peut pas être désactivé sur les VM de génération 2"],
+          "answer": 1,
+          "explain": "Le Secure Boot vérifie les signatures des bootloaders. Les distributions Linux modernes (Ubuntu, CentOS 8+, RHEL 8+) ont des shims signés compatibles avec Hyper-V, mais les distros plus anciennes peuvent nécessiter la désactivation du Secure Boot."
+        },
+        {
+          "q": "Dans un environnement de production Hyper-V, quelle est la bonne pratique concernant les points de contrôle de production ?",
+          "options": ["Les utiliser le plus souvent possible pour maximiser la protection", "Utiliser les checkpoints de production (Production Checkpoints) plutôt que les checkpoints standard, car ils utilisent les services de clichés instantanés (VSS) pour des captures cohérentes des applications", "Désactiver complètement les checkpoints en production", "Créer un checkpoint avant chaque démarrage de VM"],
+          "answer": 1,
+          "explain": "Les checkpoints de production utilisent VSS pour capturer l'état des applications de manière cohérente (sans données en transit), contrairement aux checkpoints standard qui capturent l'état mémoire brut et peuvent créer des incohérences applicatives."
+        },
+        {
+          "q": "Qu'est-ce que le « QoS réseau » (Network Quality of Service) dans Hyper-V et pourquoi est-il utile ?",
+          "options": ["C'est un protocole d'authentification réseau pour les VM", "C'est une fonctionnalité permettant de limiter la bande passante réseau d'une VM (en entrée ou sortie) pour éviter qu'une VM monopolise le réseau au détriment des autres", "C'est un système de diagnostic réseau automatique entre VM", "C'est le nom du commutateur virtuel externe dans les versions récentes d'Hyper-V"],
+          "answer": 1,
+          "explain": "Le QoS réseau Hyper-V permet de définir des minimums et maximums de bande passante par VM ou par adaptateur réseau virtuel, garantissant une répartition équitable des ressources réseau entre toutes les VM de l'hôte."
+        },
+        {
+          "q": "Comment fonctionne la « déduplication de données » combinée à Hyper-V sur le volume de stockage des VHDX ?",
+          "options": ["Elle compresse chaque fichier VHDX individuellement", "Elle identifie et supprime les blocs de données identiques entre plusieurs fichiers VHDX, réduisant significativement l'espace disque utilisé sur le volume hôte", "Elle synchronise les VHDX entre deux hôtes Hyper-V", "Elle chiffre les blocs de données dans les fichiers VHDX"],
+          "answer": 1,
+          "explain": "La déduplication (Data Deduplication) sur le volume de stockage identifie les blocs identiques entre plusieurs VHDX (ex : blocs du système d'exploitation communs à plusieurs VM) et ne les stocke qu'une fois, réduisant drastiquement l'espace utilisé."
+        },
+        {
+          "q": "Qu'est-ce que le « SR-IOV » (Single Root I/O Virtualization) dans le contexte de la virtualisation réseau Hyper-V ?",
+          "options": ["Un protocole de sécurité pour les VM", "Une technologie matérielle permettant à une carte réseau physique de présenter plusieurs fonctions virtuelles directement aux VM, contournant le commutateur virtuel pour des performances maximales", "Un type de commutateur virtuel privé haute performance", "Un mode de réplication réseau pour Hyper-V Replica"],
+          "answer": 1,
+          "explain": "SR-IOV permet à la carte réseau physique de s'exposer directement aux VM via des fonctions virtuelles PCIe, bypassant le commutateur virtuel logiciel et réduisant la latence réseau et la charge du processeur de l'hôte."
+        },
+        {
+          "q": "Dans une stratégie de reprise d'activité après sinistre (PRA), comment Hyper-V Replica détermine-t-il la fréquence de réplication ?",
+          "options": ["La réplication est toujours continue et instantanée", "On peut configurer des intervalles de réplication de 30 secondes, 5 minutes ou 15 minutes, définissant le RPO (Recovery Point Objective) de la VM", "La réplication se fait uniquement une fois par jour la nuit", "La fréquence est fixée automatiquement selon la charge de l'hôte"],
+          "answer": 1,
+          "explain": "Hyper-V Replica offre des intervalles de réplication configurables (30s, 5min, 15min), qui définissent le RPO : la perte maximale de données acceptable en cas de sinistre (ex : avec 5min, on peut perdre au plus 5 minutes de données)."
+        },
+        {
+          "q": "Qu'est-ce que le « Virtual Machine Queue » (VMQ) dans Hyper-V et quel avantage procure-t-il ?",
+          "options": ["C'est la liste d'attente des VM en cours de démarrage", "C'est une fonctionnalité des cartes réseau physiques qui assigne des files d'attente matérielles dédiées à chaque VM, réduisant la charge CPU de l'hôte pour le traitement réseau", "C'est un système de priorisation des points de contrôle", "C'est l'outil de gestion des disques virtuels en file d'attente"],
+          "answer": 1,
+          "explain": "VMQ (Virtual Machine Queue) permet aux cartes réseau compatibles d'assigner des files matérielles à chaque VM, répartissant le traitement des paquets réseau sur plusieurs cœurs et réduisant la charge CPU due aux interruptions réseau."
+        },
+        {
+          "q": "Quels sont les impacts de l'activation de Hyper-V sur le serveur hôte Windows en termes de performances pour le système hôte lui-même ?",
+          "options": ["Hyper-V n'a aucun impact sur les performances de l'hôte", "L'activation de Hyper-V déplace Windows Server dans une partition parente, l'ajoutant à la couche hyperviseur : cela peut légèrement augmenter la latence des opérations d'E/S de l'hôte", "Hyper-V améliore les performances de l'hôte en libérant des ressources CPU", "Hyper-V rend l'hôte plus lent uniquement pour les applications 32 bits"],
+          "answer": 1,
+          "explain": "En activant Hyper-V, Windows Server devient la partition parente (partition de management) qui s'exécute au-dessus de l'hyperviseur. Cela ajoute une couche d'abstraction qui peut augmenter légèrement la latence des accès matériels directs sur l'hôte."
+        },
+        {
+          "q": "Comment réaliser une conversion d'une machine physique en machine virtuelle Hyper-V (P2V - Physical to Virtual) ?",
+          "options": ["En copiant manuellement les fichiers Windows d'un disque physique vers un VHDX", "En utilisant des outils spécialisés comme Microsoft Virtual Machine Converter (MVMC) ou Disk2VHD qui capturent le disque physique et le convertissent en VHDX", "Via l'assistant du Gestionnaire Hyper-V directement", "En réinstallant Windows depuis zéro dans une VM"],
+          "answer": 1,
+          "explain": "Des outils comme Disk2VHD (Sysinternals) ou MVMC permettent de capturer un disque physique en cours d'exécution (ou arrêté) et de le convertir en fichier VHDX utilisable directement par Hyper-V."
+        },
+        {
+          "q": "Quelle est la limite théorique de RAM pour une VM Hyper-V sous Windows Server 2019 ?",
+          "options": ["64 Go par VM", "128 Go par VM", "12 To par VM", "1 To par VM"],
+          "answer": 2,
+          "explain": "Windows Server 2019 Hyper-V supporte théoriquement jusqu'à 12 To de RAM par machine virtuelle, bien que la limite pratique soit déterminée par la RAM physique disponible sur l'hôte."
+        },
+        {
+          "q": "Qu'est-ce que le « Shielded VM » (VM protégée) dans Hyper-V et quel problème de sécurité résout-il ?",
+          "options": ["Une VM dont le VHDX est compressé pour économiser de l'espace", "Une VM dont le disque est chiffré avec BitLocker et protégée par un module TPM virtuel, empêchant les administrateurs Hyper-V de l'hôte d'accéder aux données de la VM", "Une VM isolée sur un commutateur réseau privé", "Une VM dont les snapshots sont automatiquement chiffrés"],
+          "answer": 1,
+          "explain": "Les Shielded VMs protègent les données des VM contre les administrateurs de l'infrastructure Hyper-V malveillants : le chiffrement BitLocker et le TPM virtuel empêchent l'accès aux données même en copiant le VHDX."
+        },
+        {
+          "q": "Dans un cluster Hyper-V, qu'est-ce que le « Quick Migration » par opposition au « Live Migration » ?",
+          "options": ["Quick Migration est plus rapide car il ne migre pas la mémoire RAM", "Quick Migration met la VM en pause, migre l'état (mémoire sur le disque partagé), puis la reprend sur l'autre nœud — entraînant une brève interruption ; Live Migration transfert la mémoire en direct sans interruption", "Quick Migration est uniquement disponible avec Windows Server Datacenter", "Il n'y a pas de différence, Quick Migration est l'ancien nom de Live Migration"],
+          "answer": 1,
+          "explain": "Quick Migration suspend la VM, enregistre son état mémoire sur le stockage partagé et la reprend sur un autre nœud (interruption de quelques secondes). Live Migration transfère la mémoire pendant que la VM tourne, sans interruption visible."
+        },
+        {
+          "q": "Pour un lab TSSR avec Hyper-V sur un seul PC Windows 10/11, quelle version de Hyper-V peut-on utiliser et quelle est sa limitation principale ?",
+          "options": ["On ne peut pas installer Hyper-V sur Windows 10/11", "Hyper-V pour Windows 10/11 est disponible (Client Hyper-V) mais ne supporte pas la migration dynamique ni le clustering, contrairement à la version Windows Server", "Client Hyper-V supporte la migration dynamique mais pas les VM de génération 2", "Client Hyper-V est identique à la version Server, sans limitation"],
+          "answer": 1,
+          "explain": "Client Hyper-V est disponible sur Windows 10/11 Pro et Enterprise mais n'inclut pas les fonctionnalités avancées de Windows Server Hyper-V (pas de Live Migration, pas de clustering, pas de Hyper-V Replica native), suffisant pour les labs de formation."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,291 @@
+{
+  "slug": "le-ticketing",
+  "title": "Le ticketing",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Qu'est-ce qu'un « ticket » dans un système de ticketing informatique ?",
+          "options": ["Un bon de réduction pour acheter du matériel informatique", "Un enregistrement qui documente un incident ou une demande d'un utilisateur, avec son suivi jusqu'à sa résolution", "Un message e-mail envoyé à l'équipe informatique", "Un rapport mensuel des pannes informatiques"],
+          "answer": 1,
+          "explain": "Un ticket est l'unité de base du ticketing : il trace toute la vie d'un incident ou d'une demande, depuis sa création jusqu'à sa clôture."
+        },
+        {
+          "q": "Quelle est la différence entre un « incident » et une « demande de service » dans le ticketing ?",
+          "options": ["Ce sont des synonymes, les deux termes désignent la même chose", "Un incident est une interruption non planifiée d'un service (ex : panne) ; une demande de service est une demande prévue et standard (ex : installation d'un logiciel)", "Une demande de service est toujours plus urgente qu'un incident", "Un incident concerne le matériel, une demande concerne les logiciels"],
+          "answer": 1,
+          "explain": "L'incident rompt la continuité de service (ex : serveur inaccessible), tandis que la demande de service est une requête planifiable (ex : créer un compte utilisateur, commander un équipement)."
+        },
+        {
+          "q": "Quel est le premier statut d'un ticket à sa création dans la plupart des outils de ticketing ?",
+          "options": ["En cours", "Résolu", "Nouveau (ou Ouvert)", "En attente"],
+          "answer": 2,
+          "explain": "À sa création, un ticket prend généralement le statut « Nouveau » ou « Ouvert », indiquant qu'il vient d'être enregistré et n'a pas encore été pris en charge."
+        },
+        {
+          "q": "Qu'est-ce qu'un SLA (Service Level Agreement) dans le contexte du ticketing ?",
+          "options": ["Un logiciel de ticketing open source", "Un engagement contractuel définissant les délais maximum de prise en charge et de résolution des tickets", "Une procédure d'escalade des incidents critiques", "Un rapport statistique sur les performances du support"],
+          "answer": 1,
+          "explain": "Le SLA (Accord de Niveau de Service) définit les engagements de délai : par exemple, un incident critique doit être pris en charge sous 15 minutes et résolu sous 4 heures."
+        },
+        {
+          "q": "Quel logiciel de ticketing open source est très utilisé dans les environnements TSSR et enseigné en formation ?",
+          "options": ["Jira Service Management", "ServiceNow", "GLPI", "Freshdesk"],
+          "answer": 2,
+          "explain": "GLPI (Gestionnaire Libre de Parc Informatique) est un logiciel open source français très utilisé dans les DSI et les lycées professionnels, couvrant le ticketing et la gestion de parc."
+        },
+        {
+          "q": "Que signifie « escalade » dans le processus de gestion des tickets ?",
+          "options": ["Augmenter la priorité d'un ticket sans le transférer", "Transférer le ticket vers un niveau de support supérieur (N2, N3) lorsque le niveau courant ne peut pas le résoudre", "Clore un ticket sans l'avoir résolu", "Envoyer une notification automatique à l'utilisateur"],
+          "answer": 1,
+          "explain": "L'escalade consiste à passer le ticket à un niveau de support plus expert (N1 vers N2, N2 vers N3) quand le niveau actuel ne dispose pas des compétences ou droits nécessaires pour résoudre le problème."
+        },
+        {
+          "q": "Dans le cycle de vie d'un ticket, que signifie le statut « En attente » ?",
+          "options": ["Le ticket attend d'être assigné à un technicien", "Le ticket est bloqué en attente d'une information ou d'une action externe (réponse utilisateur, livraison de pièce, validation tierce)", "Le ticket a été résolu mais pas encore fermé", "Le ticket a été rejeté comme non pertinent"],
+          "answer": 1,
+          "explain": "Le statut « En attente » suspend le décompte SLA et indique que la résolution attend un élément externe : retour de l'utilisateur, réponse d'un fournisseur, livraison de matériel, etc."
+        },
+        {
+          "q": "Quelle est la différence entre un ticket « Résolu » et un ticket « Fermé » ?",
+          "options": ["Il n'y a aucune différence, ce sont deux termes pour le même statut final", "« Résolu » signifie que la solution technique a été appliquée mais l'utilisateur n'a pas encore confirmé ; « Fermé » signifie que l'utilisateur a validé la solution et le ticket est archivé", "« Fermé » peut être rouvert, « Résolu » ne le peut pas", "« Résolu » est pour les incidents, « Fermé » est pour les demandes"],
+          "answer": 1,
+          "explain": "Résolu indique que la solution a été mise en place par le technicien ; Fermé intervient après validation par l'utilisateur (ou après un délai sans retour), marquant la fin définitive du ticket."
+        },
+        {
+          "q": "Que représente le niveau N1 dans l'organisation du support informatique ?",
+          "options": ["Le niveau le plus technique, gérant les problèmes d'infrastructure serveur", "Le premier niveau de support, généralement le helpdesk, qui traite les incidents simples et courants", "Le niveau réservé aux prestataires externes", "Le niveau de management qui valide les tickets"],
+          "answer": 1,
+          "explain": "Le N1 est le premier niveau de contact (helpdesk, service desk) : il gère les incidents connus et simples (réinitialisation de mot de passe, problème de connexion courant) et escalade ce qu'il ne peut pas résoudre."
+        },
+        {
+          "q": "Quel est le référentiel de bonnes pratiques ITIL le plus utilisé en gestion des services informatiques, dont s'inspire le ticketing ?",
+          "options": ["COBIT (Control Objectives for Information Technologies)", "ITIL (Information Technology Infrastructure Library)", "ISO 27001", "CMMI (Capability Maturity Model Integration)"],
+          "answer": 1,
+          "explain": "ITIL (Information Technology Infrastructure Library) est le référentiel de bonnes pratiques IT le plus répandu, définissant notamment les processus de gestion des incidents, des demandes et des problèmes qui structurent le ticketing."
+        },
+        {
+          "q": "La « priorité » d'un ticket est généralement calculée à partir de :",
+          "options": ["La date de création du ticket uniquement", "L'humeur du technicien qui prend en charge le ticket", "La combinaison de l'urgence (rapidité requise) et de l'impact (nombre d'utilisateurs ou services affectés)", "Le type de matériel concerné par l'incident"],
+          "answer": 2,
+          "explain": "La priorité = Urgence x Impact. Un incident affectant 100 utilisateurs (impact fort) nécessitant une résolution immédiate (urgence haute) obtiendra une priorité critique."
+        },
+        {
+          "q": "Qu'est-ce qu'une « base de connaissances » (knowledge base) dans un outil de ticketing ?",
+          "options": ["La base de données SQL qui stocke les tickets", "Un référentiel de solutions documentées pour les incidents récurrents, permettant aux techniciens et utilisateurs de résoudre eux-mêmes des problèmes connus", "La liste de tous les utilisateurs enregistrés dans le système", "Le catalogue des services informatiques disponibles"],
+          "answer": 1,
+          "explain": "La base de connaissances recense les solutions aux problèmes récurrents (FAQ, procédures, tutoriels), accélérant la résolution et permettant l'auto-assistance des utilisateurs."
+        },
+        {
+          "q": "Dans GLPI, que signifie l'acronyme GLPI ?",
+          "options": ["Gestionnaire Local de Parc Informatique", "Gestionnaire Libre de Parc Informatique", "Gestion Logicielle des Postes Informatiques", "Grand Logiciel de Parc et d'Inventaire"],
+          "answer": 1,
+          "explain": "GLPI signifie « Gestionnaire Libre de Parc Informatique » - « Libre » faisant référence à son caractère open source, disponible gratuitement sous licence GPL."
+        },
+        {
+          "q": "Pourquoi est-il important d'enregistrer tous les incidents dans un outil de ticketing plutôt que de les résoudre directement sans traçabilité ?",
+          "options": ["Par obligation légale, tous les incidents doivent être notariés", "Pour assurer la traçabilité, analyser les tendances, respecter les SLA, identifier les problèmes récurrents et mesurer l'activité du support", "Uniquement pour justifier les effectifs du service informatique", "Car GLPI le rend obligatoire techniquement"],
+          "answer": 1,
+          "explain": "La traçabilité permet l'analyse statistique (incidents récurrents = problème sous-jacent), le suivi des SLA, la mesure de la charge de travail, et fournit une base pour améliorer continuellement la qualité de service."
+        },
+        {
+          "q": "Comment un utilisateur peut-il généralement ouvrir un ticket dans un système de ticketing moderne ?",
+          "options": ["Uniquement par téléphone au helpdesk", "Par plusieurs canaux : portail web self-service, e-mail, téléphone, chat ou application mobile", "Uniquement en personne au bureau de l'informatique", "Uniquement via le système de messagerie de l'entreprise"],
+          "answer": 1,
+          "explain": "Les outils de ticketing modernes proposent plusieurs canaux de création de tickets (multicanal) : portail utilisateur, e-mail automatiquement converti en ticket, téléphone saisi par un technicien, chat, etc."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Dans ITIL, quelle est la différence entre un « incident » et un « problème » ?",
+          "options": ["Ce sont des synonymes dans ITIL", "Un incident est une interruption non planifiée unique ; un problème est la cause racine d'un ou plusieurs incidents récurrents, faisant l'objet d'une investigation approfondie", "Un problème est moins grave qu'un incident", "Un incident est géré par le N3, un problème par le N1"],
+          "answer": 1,
+          "explain": "ITIL distingue la gestion des incidents (rétablir le service le plus vite possible) de la gestion des problèmes (identifier et éliminer la cause racine pour éviter la récurrence)."
+        },
+        {
+          "q": "Que signifie le SLA « temps de première réponse » (First Response Time) ?",
+          "options": ["Le délai maximum pour résoudre complètement l'incident", "Le délai maximum entre la création du ticket et la prise de contact initiale du technicien avec l'utilisateur", "Le temps moyen de traitement de tous les tickets du mois", "Le délai de fermeture du ticket après résolution"],
+          "answer": 1,
+          "explain": "Le temps de première réponse est le délai SLA entre l'ouverture du ticket et le premier contact du technicien avec l'utilisateur, signalant que le ticket a été pris en charge."
+        },
+        {
+          "q": "Dans GLPI, qu'est-ce qu'un « technicien assigné » à un ticket ?",
+          "options": ["L'utilisateur qui a ouvert le ticket", "Le technicien informatique responsable du traitement et de la résolution du ticket", "Le manager qui valide la clôture du ticket", "Le fournisseur externe contacté pour ce ticket"],
+          "answer": 1,
+          "explain": "Dans GLPI, le technicien assigné est le membre de l'équipe IT responsable du traitement du ticket. L'assignation peut être manuelle (chef d'équipe) ou automatique selon des règles de routage."
+        },
+        {
+          "q": "Qu'est-ce qu'une « matrice de priorité » dans le contexte du ticketing ?",
+          "options": ["Un tableau de bord des tickets en cours", "Un tableau croisé Urgence x Impact définissant la priorité resultante (critique, haute, moyenne, basse) pour chaque combinaison", "La liste des techniciens par niveau de compétence", "Un rapport mensuel des SLA respectés/non respectés"],
+          "answer": 1,
+          "explain": "La matrice de priorité est un tableau à double entrée (Urgence x Impact) qui donne automatiquement la priorité d'un ticket. Ex : Urgence haute + Impact fort = Priorité critique."
+        },
+        {
+          "q": "Dans GLPI, qu'est-ce qu'un « groupe » au sens du ticketing ?",
+          "options": ["Un groupe d'utilisateurs partageant le même ordinateur", "Un ensemble de techniciens pouvant être assignés collectivement à des tickets (ex : groupe Réseau, groupe Helpdesk)", "Un regroupement de tickets par catégorie", "Une liste de distribution e-mail"],
+          "answer": 1,
+          "explain": "Dans GLPI, les groupes permettent d'assigner des tickets à une équipe entière (ex : groupe « Support N2 Réseau ») plutôt qu'à un technicien individuel, pour que n'importe quel membre du groupe puisse le prendre en charge."
+        },
+        {
+          "q": "Que désigne le terme « workaround » (contournement) dans la gestion des incidents ?",
+          "options": ["La solution définitive qui élimine la cause racine de l'incident", "Une solution temporaire qui rétablit le service sans résoudre la cause racine, permettant de respecter le SLA en attendant la vraie correction", "Le processus d'escalade vers le N3", "La procédure de clôture d'un ticket non résolu"],
+          "answer": 1,
+          "explain": "Le workaround rétablit rapidement le service (ex : redémarrer un service planté) sans traiter la vraie cause. Il est documenté dans le ticket et un problème est ouvert pour investigation de fond."
+        },
+        {
+          "q": "Dans ITIL, qu'est-ce qu'un « catalogue de services » et quel lien a-t-il avec le ticketing ?",
+          "options": ["La liste des logiciels installés sur les postes", "Le référentiel de tous les services IT disponibles, leurs conditions et délais, qui sert de base pour qualifier les demandes de service dans les tickets", "Le planning des maintenances programmées", "La liste des SLA négociés avec les différents clients"],
+          "answer": 1,
+          "explain": "Le catalogue de services liste tous les services IT que les utilisateurs peuvent demander (ex : création de compte, installation logiciel, accès VPN). Il permet de qualifier et router automatiquement les demandes dans l'outil de ticketing."
+        },
+        {
+          "q": "Qu'est-ce que le « taux de résolution au premier appel » (First Call Resolution - FCR) ?",
+          "options": ["Le nombre de tickets ouverts par appel téléphonique", "Le pourcentage d'incidents résolus dès le premier contact avec l'utilisateur, sans escalade ni rappel", "Le délai moyen de résolution des tickets par téléphone", "Le nombre d'escalades vers le N2 en un mois"],
+          "answer": 1,
+          "explain": "Le FCR est un indicateur clé (KPI) du helpdesk : plus il est élevé (80-85% est un bon objectif), plus le N1 est efficace et résout les problèmes sans avoir besoin d'escalader."
+        },
+        {
+          "q": "Dans GLPI, qu'est-ce qu'une « règle de gestion des tickets » (business rule) ?",
+          "options": ["Une règle comptable pour facturer les interventions", "Une automatisation qui déclenche des actions sur un ticket selon des conditions définies (ex : si catégorie = réseau, assigner au groupe Réseau)", "Un filtre d'affichage de la liste des tickets", "Une alerte envoyée quand un SLA est dépassé"],
+          "answer": 1,
+          "explain": "Les règles métier GLPI permettent d'automatiser le routage des tickets : selon la catégorie, le type, l'urgence ou d'autres critères, le ticket peut être automatiquement assigné, priorisé ou tagué."
+        },
+        {
+          "q": "Qu'est-ce que la « gestion des changements » (Change Management) dans ITIL et quel est son lien avec le ticketing ?",
+          "options": ["C'est la gestion des changements de personnel informatique", "C'est le processus qui encadre toute modification de l'infrastructure IT pour limiter les risques, représentée par des tickets de type « changement » soumis à validation", "C'est la mise à jour automatique de Windows sur les postes", "C'est la migration des anciens tickets vers un nouvel outil"],
+          "answer": 1,
+          "explain": "Dans ITIL, un changement est toute modification de l'infrastructure IT (déploiement, migration, mise à jour). Un ticket de changement (RFC - Request For Change) est créé, évalué et validé par un comité (CAB) avant application."
+        },
+        {
+          "q": "Dans GLPI, à quoi sert la fonctionnalité « Lier des tickets » ?",
+          "options": ["À fusionner deux tickets en un seul", "À créer une association logique entre des tickets liés (ex : un ticket problème lié à plusieurs tickets incidents) pour le suivi", "À transférer un ticket vers un autre outil de ticketing", "À envoyer une copie du ticket par e-mail"],
+          "answer": 1,
+          "explain": "La liaison de tickets permet de relier des incidents similaires à un ticket problème parent, ou d'indiquer des dépendances entre tickets, facilitant l'analyse des tendances et la gestion des causes racines."
+        },
+        {
+          "q": "Qu'est-ce qu'un « accord de niveau de service opérationnel » (OLA - Operational Level Agreement) ?",
+          "options": ["Un SLA signé avec le client final", "Un accord interne entre équipes IT définissant leurs engagements mutuels pour atteindre les SLA clients (ex : le N1 s'engage à escalader en 30 min au N2)", "Un contrat avec un fournisseur externe de support", "Le délai légal de conservation des tickets"],
+          "answer": 1,
+          "explain": "L'OLA est l'accord interne entre équipes IT (N1, N2, N3, infrastructure...) qui définit leurs engagements mutuels pour permettre d'atteindre les SLA convenus avec les utilisateurs ou clients finaux."
+        },
+        {
+          "q": "Comment le statut « En attente » impacte-t-il généralement le décompte du SLA dans un outil de ticketing ?",
+          "options": ["Il accélère le décompte SLA pour signaler l'urgence", "Il suspend le décompte du SLA pendant la durée du statut « En attente », car le délai de résolution ne dépend plus du technicien", "Il réinitialise le compteur SLA à zéro", "Il n'a aucun impact sur le SLA, le compteur continue"],
+          "answer": 1,
+          "explain": "Quand un ticket passe en attente (d'un retour utilisateur ou d'un tiers), le timer SLA est généralement suspendu, car le technicien ne peut pas avancer sans l'information ou l'action attendue."
+        },
+        {
+          "q": "Que désigne le « niveau 3 » (N3) dans la hiérarchie du support informatique ?",
+          "options": ["Le premier niveau de contact téléphonique", "L'équipe des experts techniques ou des éditeurs/constructeurs, traitant les problèmes complexes non résolus par N1 et N2", "L'équipe de management qui valide les achats", "Le niveau de support réservé aux VIP de l'entreprise"],
+          "answer": 1,
+          "explain": "Le N3 représente les experts les plus pointus : administrateurs système/réseau/base de données seniors, développeurs applicatifs, ou directement les éditeurs logiciels et constructeurs matériels pour les problèmes les plus complexes."
+        },
+        {
+          "q": "Dans GLPI, qu'est-ce qu'un « technicien observateur » sur un ticket ?",
+          "options": ["Un technicien qui peut seulement lire le ticket sans y contribuer", "Une personne ajoutée en copie du ticket pour être informée de son évolution sans en être le responsable principal", "Le manager qui supervise la résolution", "Un technicien en formation qui suit le ticket pour apprendre"],
+          "answer": 1,
+          "explain": "Dans GLPI, les observateurs (techniciens ou utilisateurs) reçoivent les notifications du ticket et peuvent le commenter, sans en être l'assigné principal. C'est utile pour les tickets impliquant plusieurs équipes."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Dans ITIL v4, qu'est-ce que le « système de valeur des services » (SVS - Service Value System) et comment le ticketing s'y inscrit-il ?",
+          "options": ["C'est un outil logiciel de ticketing développé par ITIL", "C'est le cadre global ITIL v4 décrivant comment les composants et activités d'une organisation créent de la valeur ; le ticketing opérationnalise les pratiques de gestion des incidents, demandes et problèmes dans ce SVS", "C'est uniquement la chaîne de valeur des services matériels", "C'est le catalogue de tous les services payants proposés par le département IT"],
+          "answer": 1,
+          "explain": "Le SVS ITIL v4 décrit comment les activités IT créent de la valeur pour les parties prenantes. Le ticketing est l'outil opérationnel des pratiques ITIL comme la gestion des incidents, des demandes de service, des problèmes et des changements."
+        },
+        {
+          "q": "Comment calculer le « temps de résolution moyen » (MTTR - Mean Time To Repair) d'une période et pourquoi est-ce un indicateur clé ?",
+          "options": ["MTTR = nombre total d'incidents / heures travaillées", "MTTR = somme des durées de résolution de tous les incidents / nombre d'incidents résolus ; il mesure l'efficacité globale du support et sert de base pour améliorer les processus", "MTTR = durée du ticket le plus long de la période", "MTTR = nombre d'incidents non résolus / nombre d'incidents totaux"],
+          "answer": 1,
+          "explain": "Le MTTR est la moyenne des durées de résolution. Un MTTR en baisse indique une amélioration de l'efficacité du support. Il se mesure par type d'incident, par équipe ou globalement pour piloter les axes d'amélioration."
+        },
+        {
+          "q": "Dans une organisation ITIL mature, comment articule-t-on la gestion des incidents et la gestion des problèmes ?",
+          "options": ["Les deux processus sont identiques et gérés par la même équipe avec les mêmes outils", "La gestion des incidents vise la restauration rapide du service (court terme) ; la gestion des problèmes identifie et élimine la cause racine (moyen terme) — un incident récurrent déclenche l'ouverture d'un ticket problème", "La gestion des problèmes remplace la gestion des incidents une fois l'organisation mature", "La gestion des incidents est gérée par le N1, la gestion des problèmes est externalisée"],
+          "answer": 1,
+          "explain": "Ces deux pratiques sont complémentaires : l'incident rétablit le service rapidement (workaround possible), le problème analyse la cause profonde pour prévenir la récurrence. Un ticket problème peut référencer plusieurs tickets incidents liés."
+        },
+        {
+          "q": "Qu'est-ce que la « gestion des connaissances » (Knowledge Management) dans ITIL et comment s'intègre-t-elle dans GLPI ?",
+          "options": ["C'est la formation continue des techniciens IT", "C'est le processus de capture, organisation et partage des connaissances (solutions, procédures) ; dans GLPI, cela se traduit par la base de connaissances où les techniciens documentent les solutions des tickets résolus", "C'est uniquement la gestion des licences logicielles", "C'est l'archivage automatique de tous les e-mails reçus par le support"],
+          "answer": 1,
+          "explain": "ITIL Knowledge Management vise à capitaliser sur l'expérience acquise. Dans GLPI, les techniciens peuvent créer des articles de base de connaissances directement depuis un ticket résolu, enrichissant le savoir collectif de l'équipe."
+        },
+        {
+          "q": "Qu'est-ce qu'un « UC » (Underpinning Contract) dans ITIL et en quoi diffère-t-il d'un OLA ?",
+          "options": ["UC et OLA sont des synonymes dans ITIL v4", "Un OLA est un accord entre équipes internes ; un UC (Contrat de sous-traitance) est un contrat avec un fournisseur externe (ex : constructeur, opérateur télécom) qui soutient la fourniture du service IT", "Un UC concerne uniquement les licences logicielles", "Un UC est un accord moins contraignant qu'un OLA"],
+          "answer": 1,
+          "explain": "L'OLA régit les engagements internes entre équipes IT, tandis que l'UC est le contrat passé avec des fournisseurs tiers (maintenance matérielle, opérateur, éditeur) dont les engagements sont nécessaires pour respecter les SLA clients."
+        },
+        {
+          "q": "Comment GLPI gère-t-il l'inventaire matériel et logiciel en lien avec les tickets ?",
+          "options": ["GLPI ne gère pas l'inventaire, c'est une fonction séparée", "GLPI intègre nativement la gestion de parc : les assets (PC, serveurs, périphériques) sont inventoriés et liés aux tickets, permettant d'identifier rapidement le matériel concerné et son historique d'incidents", "L'inventaire dans GLPI est uniquement manuel et non lié aux tickets", "GLPI importe automatiquement l'inventaire depuis Active Directory uniquement"],
+          "answer": 1,
+          "explain": "GLPI est à la fois un outil de ticketing et de gestion de parc (CMDB simplifiée). Les assets peuvent être associés aux tickets, et un plugin comme FusionInventory ou l'agent GLPI permet l'inventaire automatisé."
+        },
+        {
+          "q": "Dans le cadre d'une amélioration continue des services IT, quels sont les indicateurs clés (KPI) typiquement suivis dans le ticketing ?",
+          "options": ["Uniquement le nombre de tickets ouverts et fermés", "MTTR, FCR, taux de respect des SLA, volume de tickets par catégorie, satisfaction utilisateur (CSAT), taux d'escalade, temps moyen de prise en charge", "Uniquement la satisfaction des techniciens et le nombre de congés", "Uniquement le coût par ticket résolu"],
+          "answer": 1,
+          "explain": "Un tableau de bord de support performant suit de multiples KPI : délais (MTTR, temps de prise en charge), qualité (FCR, CSAT), volume (incidents par catégorie), conformité SLA et tendances dans le temps pour piloter l'amélioration continue."
+        },
+        {
+          "q": "Qu'est-ce qu'une « CMDB » (Configuration Management Database) et quel est son lien avec le ticketing ?",
+          "options": ["C'est la base de données SQL de GLPI", "C'est le référentiel qui inventorie tous les éléments de configuration (CI) de l'infrastructure IT et leurs interdépendances ; liée au ticketing, elle permet d'identifier rapidement l'impact d'un incident sur les services", "C'est uniquement la liste des postes de travail de l'entreprise", "C'est un outil de monitoring réseau complémentaire au ticketing"],
+          "answer": 1,
+          "explain": "La CMDB référence tous les composants IT (serveurs, applications, réseaux) et leurs liens. Quand un incident est signalé, la CMDB permet d'évaluer rapidement les services et utilisateurs impactés, aidant à qualifier l'impact et la priorité."
+        },
+        {
+          "q": "Comment implémenter une stratégie de « self-service » efficace dans un outil de ticketing pour réduire le volume d'appels au helpdesk ?",
+          "options": ["En rendant le helpdesk téléphonique inaccessible", "En combinant un portail utilisateur intuitif, une base de connaissances enrichie, des chatbots et des procédures automatisées (ex : réinitialisation de mot de passe en libre-service)", "En externalisant totalement le support N1", "En augmentant les délais SLA pour décourager les utilisateurs d'ouvrir des tickets"],
+          "answer": 1,
+          "explain": "Le self-service réduit la charge du N1 en donnant aux utilisateurs les outils pour se dépanner eux-mêmes : portail, base de connaissances riche, automatisation (reset password, demandes standards), et chatbots pour les questions fréquentes."
+        },
+        {
+          "q": "Dans GLPI, qu'est-ce que le plugin « FusionInventory » ou l'agent natif GLPI apporte à la gestion du ticketing ?",
+          "options": ["Il permet d'envoyer automatiquement des tickets par e-mail", "Il déploie des agents sur les postes et serveurs pour remonter automatiquement l'inventaire matériel et logiciel dans GLPI, enrichissant les informations disponibles lors du traitement d'un ticket", "Il automatise la clôture des tickets résolus", "Il génère les rapports SLA automatiquement"],
+          "answer": 1,
+          "explain": "FusionInventory (ou l'agent GLPI natif) collecte automatiquement l'inventaire des équipements (matériel, logiciels installés, réseau) et l'envoie à GLPI, enrichissant la CMDB et les tickets avec des informations contextuelles précises."
+        },
+        {
+          "q": "Qu'est-ce que le « modèle de ticket » dans GLPI et pourquoi est-il utile ?",
+          "options": ["Un exemple de ticket archivé pour la formation", "Un ticket pré-configuré avec des valeurs par défaut (catégorie, technicien, SLA, champs obligatoires) pour accélérer la création de tickets récurrents et standardiser les informations collectées", "Un rapport de ticket au format PDF", "Un template d'e-mail de réponse aux utilisateurs"],
+          "answer": 1,
+          "explain": "Les modèles de tickets dans GLPI pré-remplissent les champs courants pour des demandes ou incidents types (ex : modèle « Création de compte » avec tous les champs nécessaires), réduisant les erreurs et accélérant le traitement."
+        },
+        {
+          "q": "Comment une organisation mesure-t-elle la « satisfaction utilisateur » (CSAT) dans le processus de ticketing ?",
+          "options": ["En comptant le nombre de réclamations reçues par courrier", "En envoyant automatiquement un sondage de satisfaction à la clôture de chaque ticket, permettant de recueillir un score et des commentaires sur la qualité du support", "En analysant le nombre de tickets rouverts", "En consultant le sentiment des techniciens sur leur propre travail"],
+          "answer": 1,
+          "explain": "Le CSAT (Customer Satisfaction Score) est mesuré via des enquêtes de satisfaction automatiques envoyées à la clôture du ticket. Le score et les commentaires permettent d'identifier les axes d'amélioration du support."
+        },
+        {
+          "q": "Dans le contexte ITIL, qu'est-ce qu'un « événement » (event) et comment se distingue-t-il d'un incident ?",
+          "options": ["Un événement est un terme plus grave qu'un incident", "Un événement est tout changement d'état significatif dans l'infrastructure IT (détecté automatiquement par des outils de monitoring) ; un incident est une interruption impactant l'utilisateur — un événement peut déclencher un incident", "Les deux termes sont identiques dans ITIL", "Un événement concerne uniquement les changements planifiés"],
+          "answer": 1,
+          "explain": "ITIL distingue l'événement (tout signal de monitoring : CPU élevé, espace disque faible) qui peut ne pas encore impacter les utilisateurs, de l'incident qui est une dégradation ou interruption effective du service. Un événement non traité peut devenir un incident."
+        },
+        {
+          "q": "Qu'est-ce qu'une « escalade fonctionnelle » par opposition à une « escalade hiérarchique » dans le ticketing ?",
+          "options": ["L'escalade fonctionnelle concerne les incidents réseau, l'hiérarchique concerne les serveurs", "L'escalade fonctionnelle transfère le ticket vers un technicien plus expert du même niveau (ou un spécialiste) ; l'escalade hiérarchique informe le management pour décision ou déblocage de ressources", "L'escalade hiérarchique est plus rapide que l'escalade fonctionnelle", "Il n'y a pas de distinction dans les outils modernes de ticketing"],
+          "answer": 1,
+          "explain": "L'escalade fonctionnelle = transfert vers quelqu'un de plus compétent techniquement (ex : N1 vers N2, ou vers un spécialiste réseau). L'escalade hiérarchique = remontée au management pour arbitrage, déblocage de ressources ou communication de crise."
+        },
+        {
+          "q": "Dans une démarche d'amélioration continue ITIL (CSI - Continual Service Improvement), comment utilise-t-on les données du ticketing ?",
+          "options": ["Uniquement pour calculer les primes des techniciens", "On analyse les tendances (incidents récurrents, catégories les plus fréquentes, SLA non respectés, MTTR élevé) pour identifier des axes d'amélioration des services, des processus ou de la formation", "On archive les données ticketing après 30 jours sans les analyser", "On utilise uniquement les tickets critiques pour l'amélioration continue"],
+          "answer": 1,
+          "explain": "Le CSI ITIL exploite les données statistiques du ticketing (rapports, tableaux de bord, tendances) pour identifier des opportunités d'amélioration des services, des processus support et des compétences des équipes."
+        }
+      ]
+    }
+  ]
+}

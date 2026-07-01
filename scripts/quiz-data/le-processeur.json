@@ -1,0 +1,291 @@
+{
+  "slug": "le-processeur",
+  "title": "Le processeur (CPU)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Que signifie l'acronyme CPU ?",
+          "options": ["Central Processing Unit", "Core Power Unit", "Computer Processing Utility", "Central Program Uploader"],
+          "answer": 0,
+          "explain": "CPU signifie Central Processing Unit, soit l'unité centrale de traitement, autrement dit le processeur."
+        },
+        {
+          "q": "Quels sont les deux principaux fabricants de processeurs pour PC grand public ?",
+          "options": ["Qualcomm et NVIDIA", "Intel et AMD", "Samsung et Apple", "ARM et MediaTek"],
+          "answer": 1,
+          "explain": "Intel et AMD dominent le marché des processeurs x86 pour PC de bureau et ordinateurs portables grand public."
+        },
+        {
+          "q": "Qu'est-ce que la fréquence d'un processeur, exprimée en GHz ?",
+          "options": ["Le nombre de cœurs du processeur", "Le nombre de cycles d'horloge par seconde que le processeur peut exécuter", "La quantité de mémoire cache", "La consommation électrique du processeur"],
+          "answer": 1,
+          "explain": "La fréquence en GHz indique combien de milliards de cycles d'horloge le processeur effectue par seconde."
+        },
+        {
+          "q": "Qu'est-ce qu'un «cœur» (core) dans un processeur ?",
+          "options": ["Un module de refroidissement interne", "Une unité de calcul indépendante capable de traiter des instructions", "Un emplacement de mémoire cache", "Un connecteur entre le CPU et la carte mère"],
+          "answer": 1,
+          "explain": "Un cœur est une unité de calcul autonome ; un processeur multi-cœurs peut traiter plusieurs tâches en parallèle."
+        },
+        {
+          "q": "À quoi sert la mémoire cache d'un processeur ?",
+          "options": ["À stocker les fichiers de l'utilisateur", "À conserver temporairement les données fréquemment utilisées pour accélérer les accès", "À alimenter le processeur en électricité", "À refroidir le processeur"],
+          "answer": 1,
+          "explain": "Le cache est une mémoire ultra-rapide intégrée au CPU qui stocke les données fréquentes pour éviter des accès lents à la RAM."
+        },
+        {
+          "q": "Qu'est-ce que le TDP d'un processeur ?",
+          "options": ["Le nombre total de transistors du processeur", "La puissance thermique maximale que le système de refroidissement doit dissiper", "La fréquence maximale en mode Turbo", "La taille du cache L3"],
+          "answer": 1,
+          "explain": "Le TDP (Thermal Design Power) exprime la chaleur maximale générée par le CPU que le refroidisseur doit être capable d'évacuer."
+        },
+        {
+          "q": "Qu'est-ce qu'un socket de processeur ?",
+          "options": ["Un logiciel de gestion du processeur", "Le connecteur physique sur la carte mère qui accueille le CPU", "Un type de mémoire cache", "Un protocole de communication du CPU"],
+          "answer": 1,
+          "explain": "Le socket est l'emplacement mécanique sur la carte mère dans lequel se branche physiquement le processeur."
+        },
+        {
+          "q": "Qu'est-ce que la «finesse de gravure» d'un processeur (exprimée en nm) ?",
+          "options": ["La taille physique du boîtier du CPU en millimètres", "La taille approximative des transistors gravés sur la puce", "La longueur des broches du socket", "La résolution maximale d'affichage gérée par le CPU"],
+          "answer": 1,
+          "explain": "La finesse de gravure en nanomètres indique la taille approximative des transistors ; plus elle est faible, plus la puce est dense et efficace."
+        },
+        {
+          "q": "Qu'est-ce qu'un «thread» en rapport avec un processeur ?",
+          "options": ["Un câble interne du processeur", "Un fil d'exécution logique qu'un cœur peut traiter", "Un connecteur PCIe", "Un niveau de mémoire cache"],
+          "answer": 1,
+          "explain": "Un thread est un fil d'exécution logique ; grâce au Hyper-Threading ou SMT, un cœur peut gérer deux threads simultanément."
+        },
+        {
+          "q": "Un processeur cadencé à 3,6 GHz effectue combien de cycles par seconde ?",
+          "options": ["3 600 cycles", "3 600 000 cycles", "3 600 000 000 cycles", "360 000 cycles"],
+          "answer": 2,
+          "explain": "3,6 GHz = 3,6 milliards de cycles par seconde, soit 3 600 000 000 cycles."
+        },
+        {
+          "q": "Pourquoi un processeur avec plus de cœurs est-il avantageux pour le multitâche ?",
+          "options": ["Car il consomme moins d'électricité", "Car chaque cœur peut traiter une tâche indépendante en parallèle", "Car il possède automatiquement plus de mémoire cache", "Car il fonctionne toujours à une fréquence plus élevée"],
+          "answer": 1,
+          "explain": "Plusieurs cœurs permettent de traiter simultanément plusieurs applications ou tâches, améliorant la fluidité du multitâche."
+        },
+        {
+          "q": "Un processeur avec un TDP de 65 W consomme-t-il forcément exactement 65 W en permanence ?",
+          "options": ["Oui, sa consommation est toujours fixe à 65 W", "Non, 65 W est la valeur maximale de conception ; la consommation réelle varie selon la charge", "Non, il consomme toujours moins de 10 W", "Oui, mais uniquement sous Windows"],
+          "answer": 1,
+          "explain": "Le TDP est une valeur de conception maximale ; en charge légère le CPU consomme bien moins, et en mode Turbo il peut dépasser brièvement cette limite."
+        },
+        {
+          "q": "Quel est l'avantage principal d'une finesse de gravure plus fine (ex. 5 nm vs 14 nm) ?",
+          "options": ["La puce devient physiquement plus grande", "Plus de transistors dans le même espace, meilleure efficacité énergétique", "La fréquence est forcément divisée par deux", "Le processeur devient incompatible avec les RAM existantes"],
+          "answer": 1,
+          "explain": "Une gravure plus fine permet d'intégrer plus de transistors sur une même surface tout en réduisant la consommation et la chaleur dégagée."
+        },
+        {
+          "q": "Comment s'appelle la technologie Intel permettant à un cœur de gérer deux threads simultanément ?",
+          "options": ["Turbo Boost", "Hyper-Threading", "Quick Sync", "SpeedStep"],
+          "answer": 1,
+          "explain": "L'Hyper-Threading (HT) d'Intel permet à chaque cœur physique de traiter deux threads logiques en parallèle, doublant le nombre de threads visibles."
+        },
+        {
+          "q": "Quel socket Intel est utilisé pour les processeurs de 12e et 13e génération (Alder Lake / Raptor Lake) ?",
+          "options": ["LGA1151", "LGA1200", "LGA1700", "AM5"],
+          "answer": 2,
+          "explain": "Les processeurs Intel des 12e et 13e générations utilisent le socket LGA1700, incompatible avec les sockets précédents."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Quelle est la différence entre le cache L1, L2 et L3 d'un processeur ?",
+          "options": ["L1 est le plus grand et le plus lent, L3 est le plus petit et le plus rapide", "L1 est le plus petit et le plus rapide, L3 est le plus grand et partagé entre les cœurs", "Il n'y a aucune différence fonctionnelle entre ces niveaux", "L2 est intégré à la carte mère, L1 et L3 sont dans le CPU"],
+          "answer": 1,
+          "explain": "L1 est le cache le plus rapide et le plus petit, propre à chaque cœur ; L3 est plus grand, plus lent et souvent partagé entre tous les cœurs."
+        },
+        {
+          "q": "Qu'est-ce que le «Turbo Boost» chez Intel (ou «Precision Boost» chez AMD) ?",
+          "options": ["Un mécanisme qui augmente temporairement la fréquence au-delà de la fréquence de base quand les conditions le permettent", "Un mode d'économie d'énergie qui réduit la fréquence", "Un système de refroidissement intégré au CPU", "Un protocole de communication entre cœurs"],
+          "answer": 0,
+          "explain": "Turbo Boost / Precision Boost augmente automatiquement la fréquence au-delà du nominal lorsque la thermique et l'alimentation le permettent."
+        },
+        {
+          "q": "Que signifie SMT dans le contexte des processeurs AMD ?",
+          "options": ["Symmetric Multi-Threading : équivalent AMD de l'Hyper-Threading Intel", "Static Memory Tuning : optimisation de la RAM", "Secure Multi-Task : mécanisme de sécurité", "Shared Memory Transfer : transfert mémoire partagé"],
+          "answer": 0,
+          "explain": "SMT (Simultaneous Multi-Threading) est la technologie AMD équivalente à l'Hyper-Threading, permettant deux threads par cœur."
+        },
+        {
+          "q": "Un processeur Intel Core i7-13700K a 16 cœurs (8P + 8E). Que signifient les cœurs «P» et «E» ?",
+          "options": ["P = Performance (cœurs puissants), E = Efficient (cœurs économes)", "P = Primaire, E = Étendu", "P = PCIe, E = Ethernet", "P = Principal, E = Externe"],
+          "answer": 0,
+          "explain": "Intel a introduit une architecture hybride avec des cœurs P (Performance, rapides) et des cœurs E (Efficient, économes en énergie)."
+        },
+        {
+          "q": "Qu'est-ce que l'overclocking d'un processeur ?",
+          "options": ["Réduire la fréquence pour économiser de l'énergie", "Augmenter la fréquence au-delà des spécifications constructeur pour gagner en performances", "Mettre à jour le microcode du processeur", "Activer le mode économie d'énergie"],
+          "answer": 1,
+          "explain": "L'overclocking consiste à dépasser la fréquence officielle du CPU pour obtenir de meilleures performances, au prix d'une chaleur et d'une conso accrues."
+        },
+        {
+          "q": "Quel socket AMD est utilisé pour les Ryzen 5000 (Zen 3) ?",
+          "options": ["AM3+", "AM4", "AM5", "sTRX4"],
+          "answer": 1,
+          "explain": "Les processeurs AMD Ryzen série 5000 (Zen 3) utilisent le socket AM4, compatible avec les cartes mères des générations précédentes."
+        },
+        {
+          "q": "Qu'est-ce que le «IPC» (Instructions Per Clock) d'un processeur ?",
+          "options": ["Le nombre d'instructions traitées par cycle d'horloge, reflet de l'efficacité architecturale", "Le nombre de cœurs physiques", "La fréquence maximale en Turbo", "La consommation en veille"],
+          "answer": 0,
+          "explain": "L'IPC mesure combien d'instructions le CPU exécute en un seul cycle ; un IPC élevé améliore les performances même à fréquence égale."
+        },
+        {
+          "q": "Pourquoi deux processeurs à 3,5 GHz peuvent-ils offrir des performances très différentes ?",
+          "options": ["Car la marque influe seule sur les performances", "Car l'IPC, le nombre de cœurs, la taille du cache et l'architecture diffèrent", "Car la fréquence est le seul facteur de performance", "Car seul le TDP détermine les performances"],
+          "answer": 1,
+          "explain": "La fréquence seule ne suffit pas : l'IPC, le nombre de cœurs, la quantité de cache et l'architecture déterminent ensemble les performances réelles."
+        },
+        {
+          "q": "Qu'est-ce que le «TDP configurable» ou PL1/PL2 dans les processeurs Intel modernes ?",
+          "options": ["PL1 est la puissance soutenue à long terme, PL2 est la puissance maximale tolérée en rafale courte", "PL1 est la puissance minimale, PL2 est la tension maximale", "PL1 concerne les cœurs P, PL2 les cœurs E", "Ce sont deux niveaux de tension d'alimentation fixe"],
+          "answer": 0,
+          "explain": "PL1 définit la limite de puissance soutenue (long terme) et PL2 la limite de puissance en pic (court terme, typiquement pendant le Turbo Boost)."
+        },
+        {
+          "q": "Qu'est-ce que le «contrôleur mémoire intégré» (IMC) dans un processeur moderne ?",
+          "options": ["Un circuit intégré dans le CPU qui gère directement la communication avec la RAM", "Un module externe ajouté à la carte mère", "Une partie du chipset dédiée à la mémoire", "Un type de mémoire cache interne"],
+          "answer": 0,
+          "explain": "L'IMC (Integrated Memory Controller) intégré au CPU gère les échanges directs avec la RAM, réduisant la latence par rapport à l'ancienne solution via chipset."
+        },
+        {
+          "q": "Qu'est-ce que «XFR» chez AMD (Extended Frequency Range) ?",
+          "options": ["Une extension du Precision Boost qui monte encore plus haut si la thermique est excellente", "Un mode de sous-alimentation du CPU", "Un type de cache L4 externe", "Un format de socket étendu"],
+          "answer": 0,
+          "explain": "XFR est une extension du Precision Boost qui permet au CPU AMD d'atteindre des fréquences encore plus élevées lorsque le refroidissement est très efficace."
+        },
+        {
+          "q": "Combien de threads logiques expose un processeur 8 cœurs avec Hyper-Threading/SMT activé ?",
+          "options": ["8 threads", "12 threads", "16 threads", "4 threads"],
+          "answer": 2,
+          "explain": "Avec Hyper-Threading ou SMT, chaque cœur gère 2 threads : 8 cœurs × 2 = 16 threads logiques."
+        },
+        {
+          "q": "Quel est l'avantage d'un grand cache L3 pour les jeux vidéo ?",
+          "options": ["Il réduit directement la consommation électrique du GPU", "Il permet de garder plus de données de jeu en mémoire rapide, réduisant les accès à la RAM plus lente", "Il augmente la résolution affichée", "Il remplace la mémoire VRAM de la carte graphique"],
+          "answer": 1,
+          "explain": "Un grand L3 (comme le 3D V-Cache d'AMD) garde plus de données de jeu près du CPU, réduisant les latences et améliorant les performances en jeu."
+        },
+        {
+          "q": "Qu'est-ce que le «microcode» d'un processeur ?",
+          "options": ["Le système d'exploitation intégré au CPU", "Des instructions bas niveau qui traduisent les instructions complexes en opérations élémentaires internes au CPU", "Le programme de gestion de la mémoire cache", "Le firmware de la carte mère"],
+          "answer": 1,
+          "explain": "Le microcode est une couche de programmation interne au CPU qui traduit les instructions x86 en micro-opérations compréhensibles par le matériel."
+        },
+        {
+          "q": "Quel socket AMD est introduit pour les Ryzen 7000 (Zen 4) ?",
+          "options": ["AM4", "AM5", "TR5", "SP5"],
+          "answer": 1,
+          "explain": "AMD a introduit le socket AM5 (LGA1718) pour les Ryzen 7000, abandonnant le PGA d'AM4 pour un format LGA comme Intel."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Qu'est-ce que l'architecture «chiplet» utilisée par AMD pour ses Ryzen ?",
+          "options": ["Un seul die monolithique optimisé pour la densité", "Une approche qui sépare les cœurs CPU (CCD) et l'I/O die (IOD) en plusieurs petites puces interconnectées", "Un type de refroidissement par petites ailettes", "Un protocole de communication entre cœurs"],
+          "answer": 1,
+          "explain": "L'architecture chiplet sépare les cœurs (CCD gravés en procédé fin) de la puce I/O moins critique, réduisant les coûts et améliorant les rendements."
+        },
+        {
+          "q": "Qu'est-ce que le «3D V-Cache» d'AMD (empilage vertical de cache) ?",
+          "options": ["Un nouveau type de mémoire DDR empilée verticalement sur la carte mère", "Une couche supplémentaire de cache SRAM empilée verticalement sur le die CPU pour augmenter massivement le L3", "Un système de refroidissement 3D breveté AMD", "Un protocole de virtualisation 3D"],
+          "answer": 1,
+          "explain": "Le 3D V-Cache empile une tranche de SRAM directement sur le die CPU via une connexion TSV, triplant ou plus la capacité de cache L3."
+        },
+        {
+          "q": "Qu'est-ce que la «tension Vcore» en rapport avec l'overclocking d'un processeur ?",
+          "options": ["La tension d'alimentation des cœurs CPU, augmentée lors de l'overclocking pour stabiliser des fréquences plus élevées", "La tension d'alimentation de la mémoire RAM", "La tension de référence du bus PCIe", "La tension du ventilateur CPU"],
+          "answer": 0,
+          "explain": "La tension Vcore alimente les cœurs du CPU ; l'augmenter permet de stabiliser des fréquences plus élevées en overclocking, au prix d'une chaleur accrue."
+        },
+        {
+          "q": "Qu'est-ce que la «branch prediction» dans un processeur moderne ?",
+          "options": ["Un mécanisme qui prédit le résultat d'une condition pour exécuter les instructions à l'avance, évitant les pauses", "Un algorithme de tri des données en cache", "Un système de prédiction de la consommation électrique", "Un protocole d'allocation des cœurs aux tâches"],
+          "answer": 0,
+          "explain": "La prédiction de branchement anticipe le résultat des instructions conditionnelles pour pré-exécuter les instructions suivantes sans attendre."
+        },
+        {
+          "q": "Qu'est-ce qu'un processeur «server grade» EPYC ou Xeon Scalable par rapport à un CPU grand public ?",
+          "options": ["Identique mais avec un étiquetage différent", "Conçu pour multi-socket, avec davantage de cœurs, de RAM ECC, de lanes PCIe et une fiabilité renforcée", "Moins performant mais moins cher", "Uniquement différent par la taille du socket"],
+          "answer": 1,
+          "explain": "Les CPU serveur (EPYC, Xeon) supportent le multi-socket, la RAM ECC, des dizaines de cœurs et plus de lanes PCIe, pour des charges critiques."
+        },
+        {
+          "q": "Qu'est-ce que la «fuite Spectre» et en quoi concerne-t-elle le processeur ?",
+          "options": ["Un bogue matériel qui permet à un programme malveillant d'exploiter l'exécution spéculative pour accéder à des données mémoire protégées", "Un virus ciblant le BIOS du processeur", "Une surchauffe due à un overclocking excessif", "Une fuite de courant dans les condensateurs de la carte mère"],
+          "answer": 0,
+          "explain": "Spectre est une vulnérabilité matérielle exploitant l'exécution spéculative des CPU pour lire des données mémoire normalement inaccessibles."
+        },
+        {
+          "q": "Qu'est-ce que le «pipeline d'exécution» d'un processeur ?",
+          "options": ["Un canal de refroidissement liquide interne au CPU", "Une série de stades qui décomposent l'exécution des instructions en étapes parallèles pour augmenter le débit", "Un bus de communication entre le CPU et la RAM", "Un protocole de démarrage du processeur"],
+          "answer": 1,
+          "explain": "Le pipeline découpe l'exécution des instructions en plusieurs étapes (fetch, decode, execute…) traitées en parallèle pour augmenter le débit du CPU."
+        },
+        {
+          "q": "Qu'est-ce que l'«exécution dans le désordre» (out-of-order execution) ?",
+          "options": ["Un bogue qui exécute les instructions dans un ordre aléatoire", "Une technique CPU qui réorganise l'ordre d'exécution des instructions pour optimiser l'utilisation des unités de calcul", "L'exécution des processus sans ordonnanceur OS", "Un mode dégradé après une surchauffe"],
+          "answer": 1,
+          "explain": "L'OOO permet au CPU de réorganiser dynamiquement les instructions pour exécuter celles dont les données sont disponibles, évitant les attentes inutiles."
+        },
+        {
+          "q": "Qu'est-ce que «AVX-512» et quel type de workload en bénéficie ?",
+          "options": ["Un jeu d'instructions SIMD 512 bits qui accélère les calculs vectoriels (IA, encodage vidéo, calcul scientifique)", "Un protocole de communication entre cœurs", "Un type de mémoire cache vectorielle", "Une extension de socket pour les processeurs HEDT"],
+          "answer": 0,
+          "explain": "AVX-512 est un jeu d'instructions SIMD permettant de traiter des vecteurs de 512 bits en une opération, idéal pour l'IA, le calcul scientifique et l'encodage."
+        },
+        {
+          "q": "Pourquoi les processeurs modernes ont-ils des unités de calcul vectoriel (SIMD) ?",
+          "options": ["Pour gérer plusieurs valeurs identiques en une seule instruction, accélérant les calculs répétitifs (multimédia, IA)", "Pour remplacer la carte graphique", "Pour accélérer les accès disque", "Pour gérer l'alimentation électrique du CPU"],
+          "answer": 0,
+          "explain": "Les unités SIMD traitent plusieurs données simultanément en une instruction, ce qui accélère massivement les workloads parallèles comme le traitement d'image ou l'IA."
+        },
+        {
+          "q": "Qu'est-ce que le «thermal throttling» d'un processeur ?",
+          "options": ["Le système automatique qui réduit la fréquence du CPU quand la température dépasse un seuil critique pour éviter les dommages", "Un mode overclocking thermique", "Un algorithme de distribution des threads entre cœurs", "Un protocole d'initialisation à froid"],
+          "answer": 0,
+          "explain": "Le thermal throttling est un mécanisme de protection qui abaisse la fréquence du CPU pour réduire la chaleur lorsque la température maximale est atteinte."
+        },
+        {
+          "q": "Qu'est-ce que la «virtualisation matérielle» (Intel VT-x ou AMD-V) dans un CPU ?",
+          "options": ["Une technologie qui crée des processeurs virtuels logiciels", "Des instructions matérielles du CPU qui accélèrent l'exécution de machines virtuelles par l'hyperviseur", "Un mécanisme de partage de cache entre machines virtuelles", "Un type de sandbox pour les applications"],
+          "answer": 1,
+          "explain": "Intel VT-x et AMD-V sont des extensions matérielles qui permettent à l'hyperviseur de déléguer directement au CPU la gestion des machines virtuelles."
+        },
+        {
+          "q": "Qu'est-ce que le «TDP base» vs le «boost TDP» dans les spécifications processeur Intel ?",
+          "options": ["Le TDP base est la puissance nominale soutenue, le boost TDP est la puissance maximale autorisée en pic (PL2)", "Le TDP base concerne les cœurs E, le boost TDP les cœurs P", "Ce sont deux mesures identiques avec des noms différents", "Le boost TDP s'applique uniquement à la mémoire"],
+          "answer": 0,
+          "explain": "Le TDP de base (PL1) correspond à la puissance soutenue à long terme, et le boost (PL2) à la puissance de pic autorisée pendant le Turbo Boost."
+        },
+        {
+          "q": "Qu'est-ce que l'«interconnexion Infinity Fabric» chez AMD ?",
+          "options": ["Le bus qui relie les chiplets CCD entre eux et au die I/O dans les processeurs AMD", "Un type de RAM propriétaire AMD", "Un protocole réseau haute vitesse AMD", "Un système de refroidissement intégré"],
+          "answer": 0,
+          "explain": "L'Infinity Fabric est l'interconnexion propriétaire AMD qui relie les chiplets (CCD et IOD) entre eux à haute vitesse dans les Ryzen modernes."
+        },
+        {
+          "q": "Comment le procédé de gravure TSMC N3 (3 nm) diffère-t-il du N5 (5 nm) en termes de densité transistor ?",
+          "options": ["N3 offre environ 60-70 % de transistors supplémentaires par mm² par rapport à N5, avec une meilleure efficacité énergétique", "N3 réduit de moitié le nombre de transistors pour améliorer la stabilité", "N3 et N5 ont la même densité transistor", "N3 double la fréquence maximale automatiquement"],
+          "answer": 0,
+          "explain": "Le nœud N3 de TSMC augmente la densité de transistors d'environ 60-70 % par rapport au N5, améliorant performances et efficacité énergétique."
+        }
+      ]
+    }
+  ]
+}

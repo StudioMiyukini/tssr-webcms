@@ -1,0 +1,291 @@
+{
+  "slug": "roles-windows-server",
+  "title": "Les rôles de Windows Server",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Quel rôle de Windows Server permet de gérer un annuaire centralisé des utilisateurs et des ordinateurs d'un domaine ?",
+          "options": ["DNS", "DHCP", "AD DS", "IIS"],
+          "answer": 2,
+          "explain": "AD DS (Active Directory Domain Services) est le rôle qui fournit l'annuaire centralisé pour gérer les comptes et les ressources d'un domaine."
+        },
+        {
+          "q": "À quoi sert le rôle DHCP sur un serveur Windows ?",
+          "options": ["Héberger des sites web", "Distribuer automatiquement des adresses IP aux clients", "Résoudre des noms de domaine", "Gérer les droits d'accès aux fichiers"],
+          "answer": 1,
+          "explain": "DHCP (Dynamic Host Configuration Protocol) attribue automatiquement des adresses IP et d'autres paramètres réseau aux clients qui en font la demande."
+        },
+        {
+          "q": "Quel rôle Windows Server permet de traduire un nom comme « serveur.monentreprise.local » en adresse IP ?",
+          "options": ["AD DS", "Hyper-V", "DNS", "Serveur de fichiers"],
+          "answer": 2,
+          "explain": "Le rôle DNS (Domain Name System) assure la résolution de noms : il traduit les noms d'hôtes en adresses IP et inversement."
+        },
+        {
+          "q": "IIS est le rôle Windows Server qui permet de :",
+          "options": ["Créer des machines virtuelles", "Attribuer des adresses IP", "Héberger des sites et applications web", "Synchroniser les horloges réseau"],
+          "answer": 2,
+          "explain": "IIS (Internet Information Services) est le serveur web de Microsoft, qui permet d'héberger des sites web et des applications web sur Windows Server."
+        },
+        {
+          "q": "Hyper-V est un rôle Windows Server qui permet de :",
+          "options": ["Gérer les comptes utilisateurs du domaine", "Créer et exécuter des machines virtuelles", "Distribuer des adresses IP", "Résoudre les noms DNS"],
+          "answer": 1,
+          "explain": "Hyper-V est la solution de virtualisation de Microsoft intégrée à Windows Server, permettant de créer et d'exécuter des machines virtuelles."
+        },
+        {
+          "q": "Le rôle « Serveur de fichiers » dans Windows Server sert à :",
+          "options": ["Héberger des applications web", "Partager des dossiers et fichiers sur le réseau", "Créer des machines virtuelles", "Gérer les adresses IP"],
+          "answer": 1,
+          "explain": "Le rôle Serveur de fichiers permet de partager des ressources de stockage (dossiers, fichiers) avec les utilisateurs du réseau."
+        },
+        {
+          "q": "Quel est le nom complet de l'acronyme AD DS ?",
+          "options": ["Active Directory Domain Services", "Automatic Domain Distribution System", "Advanced Directory and Domain Services", "Active Data Domain System"],
+          "answer": 0,
+          "explain": "AD DS signifie Active Directory Domain Services, le service d'annuaire de Microsoft pour Windows Server."
+        },
+        {
+          "q": "Un client Windows joint à un domaine AD DS peut :",
+          "options": ["Uniquement naviguer sur Internet", "S'authentifier avec un compte centralisé et accéder aux ressources du domaine", "Attribuer des adresses IP aux autres machines", "Héberger des sites web publics"],
+          "answer": 1,
+          "explain": "Rejoindre un domaine AD DS permet à un client de s'authentifier de manière centralisée et d'accéder aux ressources partagées de l'organisation."
+        },
+        {
+          "q": "Quel rôle est indispensable au bon fonctionnement d'un domaine Active Directory ?",
+          "options": ["IIS", "Hyper-V", "DNS", "DHCP"],
+          "answer": 2,
+          "explain": "DNS est indispensable à AD DS car Active Directory repose entièrement sur DNS pour localiser les contrôleurs de domaine et les services."
+        },
+        {
+          "q": "Le rôle DHCP utilise des « étendues ». Qu'est-ce qu'une étendue ?",
+          "options": ["Un groupe d'utilisateurs AD", "Une plage d'adresses IP pouvant être attribuées aux clients", "Un type de disque virtuel Hyper-V", "Un enregistrement DNS particulier"],
+          "answer": 1,
+          "explain": "Une étendue DHCP est une plage d'adresses IP (par exemple 192.168.1.10–192.168.1.100) que le serveur peut distribuer aux clients du réseau."
+        },
+        {
+          "q": "Quel rôle Windows Server permet d'héberger un site intranet accessible uniquement en interne ?",
+          "options": ["DHCP", "AD DS", "DNS", "IIS"],
+          "answer": 3,
+          "explain": "IIS peut héberger aussi bien des sites publics que des sites intranet accessibles uniquement depuis le réseau interne de l'entreprise."
+        },
+        {
+          "q": "Sur Windows Server, les rôles s'installent principalement via :",
+          "options": ["L'Invite de commandes (cmd)", "Le Gestionnaire de serveurs (Server Manager)", "Le Panneau de configuration", "L'Explorateur de fichiers"],
+          "answer": 1,
+          "explain": "Le Gestionnaire de serveurs (Server Manager) est l'outil principal pour ajouter, supprimer et gérer les rôles sur Windows Server."
+        },
+        {
+          "q": "Quel rôle garantit qu'un poste reçoit automatiquement une passerelle par défaut en plus de son adresse IP ?",
+          "options": ["DNS", "AD DS", "IIS", "DHCP"],
+          "answer": 3,
+          "explain": "Le serveur DHCP distribue non seulement les adresses IP, mais aussi la passerelle par défaut, les serveurs DNS et d'autres options réseau."
+        },
+        {
+          "q": "Le rôle Serveur de fichiers de Windows Server s'appuie principalement sur quel protocole de partage ?",
+          "options": ["HTTP", "FTP", "SMB", "SMTP"],
+          "answer": 2,
+          "explain": "Le partage de fichiers Windows utilise le protocole SMB (Server Message Block) pour permettre l'accès aux dossiers partagés sur le réseau."
+        },
+        {
+          "q": "Combien de rôles peut-on installer simultanément sur un seul Windows Server ?",
+          "options": ["Un seul rôle à la fois", "Maximum deux rôles", "Plusieurs rôles peuvent coexister", "Cela dépend de la licence, un par licence"],
+          "answer": 2,
+          "explain": "Windows Server permet d'installer plusieurs rôles sur la même machine, par exemple AD DS + DNS + DHCP peuvent coexister sur le même serveur."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Quel type d'enregistrement DNS associe un nom d'hôte à une adresse IPv4 ?",
+          "options": ["Enregistrement MX", "Enregistrement CNAME", "Enregistrement A", "Enregistrement PTR"],
+          "answer": 2,
+          "explain": "L'enregistrement A (Address) fait le lien entre un nom de domaine et une adresse IPv4."
+        },
+        {
+          "q": "Dans AD DS, qu'est-ce qu'une « unité d'organisation » (OU) ?",
+          "options": ["Un serveur physique du domaine", "Un conteneur logique permettant d'organiser les objets AD et d'appliquer des GPO", "Un type de licence Windows Server", "Un protocole de réplication entre contrôleurs de domaine"],
+          "answer": 1,
+          "explain": "Une OU (Organizational Unit) est un conteneur AD permettant de regrouper des utilisateurs, ordinateurs ou groupes et d'y appliquer des stratégies de groupe (GPO)."
+        },
+        {
+          "q": "Qu'est-ce qu'un « bail » dans le contexte DHCP ?",
+          "options": ["Un contrat de location de serveur", "La durée pendant laquelle une adresse IP est attribuée à un client", "Un type de certificat SSL pour IIS", "Un snapshot Hyper-V"],
+          "answer": 1,
+          "explain": "Un bail DHCP est la durée de validité de l'adresse IP attribuée au client ; à l'expiration, le client doit renouveler sa demande."
+        },
+        {
+          "q": "Quel rôle Windows Server est nécessaire pour utiliser des stratégies de groupe (GPO) ?",
+          "options": ["IIS", "Hyper-V", "DHCP", "AD DS"],
+          "answer": 3,
+          "explain": "Les GPO (Group Policy Objects) sont une fonctionnalité d'AD DS, qui permet d'appliquer des paramètres de configuration à des utilisateurs et ordinateurs du domaine."
+        },
+        {
+          "q": "Un serveur DNS peut faire office de « redirecteur ». Que signifie ce terme ?",
+          "options": ["Il redirige les utilisateurs vers une autre page web", "Il transfère les requêtes DNS qu'il ne peut pas résoudre vers un autre serveur DNS", "Il copie les zones DNS vers un serveur secondaire", "Il convertit les adresses IPv6 en IPv4"],
+          "answer": 1,
+          "explain": "Un redirecteur DNS transmet les requêtes non résolues localement à un autre serveur DNS (par exemple vers le serveur DNS de l'opérateur Internet)."
+        },
+        {
+          "q": "Quelle fonctionnalité Hyper-V permet de sauvegarder l'état d'une VM à un instant T ?",
+          "options": ["Le commutateur virtuel", "Le disque VHDX", "Le point de contrôle (checkpoint)", "La génération de VM"],
+          "answer": 2,
+          "explain": "Les points de contrôle (anciennement snapshots) permettent de capturer l'état d'une VM pour pouvoir y revenir en cas de problème."
+        },
+        {
+          "q": "Dans IIS, qu'est-ce qu'un « pool d'applications » ?",
+          "options": ["Un regroupement de serveurs physiques", "Un processus isolé qui exécute une ou plusieurs applications web", "Une plage d'adresses IP réservées", "Un groupe de stratégies de sécurité AD"],
+          "answer": 1,
+          "explain": "Un pool d'applications (Application Pool) isole l'exécution des applications web dans IIS, améliorant la stabilité et la sécurité."
+        },
+        {
+          "q": "Quelle commande Windows permet de renouveler manuellement le bail DHCP d'une carte réseau ?",
+          "options": ["ipconfig /release puis ipconfig /renew", "netstat -a", "ping 127.0.0.1", "nslookup /renew"],
+          "answer": 0,
+          "explain": "La commande « ipconfig /release » libère l'adresse IP actuelle et « ipconfig /renew » en demande une nouvelle au serveur DHCP."
+        },
+        {
+          "q": "Dans AD DS, qu'est-ce qu'un « contrôleur de domaine » ?",
+          "options": ["Un ordinateur client membre du domaine", "Un serveur qui héberge la base de données AD DS et authentifie les utilisateurs", "Un routeur qui connecte deux domaines", "Un serveur web IIS sécurisé"],
+          "answer": 1,
+          "explain": "Le contrôleur de domaine (DC) est le serveur qui exécute AD DS, stocke l'annuaire et gère l'authentification des utilisateurs et ordinateurs du domaine."
+        },
+        {
+          "q": "Quel enregistrement DNS permet de définir le serveur de messagerie d'un domaine ?",
+          "options": ["Enregistrement A", "Enregistrement CNAME", "Enregistrement MX", "Enregistrement NS"],
+          "answer": 2,
+          "explain": "L'enregistrement MX (Mail Exchanger) indique quel serveur est responsable de la réception des e-mails pour un domaine."
+        },
+        {
+          "q": "Lors de l'installation du rôle AD DS, quelle étape suit directement l'installation du rôle ?",
+          "options": ["Redémarrer le serveur deux fois", "Promouvoir le serveur en contrôleur de domaine", "Installer le rôle IIS en complément", "Configurer une étendue DHCP"],
+          "answer": 1,
+          "explain": "Après l'installation du rôle AD DS, il faut promouvoir le serveur en contrôleur de domaine via l'assistant de configuration post-installation."
+        },
+        {
+          "q": "Quelle est la différence entre un groupe « Sécurité » et un groupe « Distribution » dans AD DS ?",
+          "options": ["Les groupes Distribution sont utilisés pour les droits d'accès, les groupes Sécurité pour les e-mails", "Les groupes Sécurité servent aux droits d'accès, les groupes Distribution servent aux listes de diffusion e-mail", "Il n'y a aucune différence fonctionnelle", "Les groupes Distribution ne peuvent contenir que des ordinateurs"],
+          "answer": 1,
+          "explain": "Les groupes de sécurité gèrent les autorisations d'accès aux ressources, tandis que les groupes de distribution servent uniquement aux listes de diffusion de messagerie."
+        },
+        {
+          "q": "Quel protocole utilise IIS par défaut pour les connexions sécurisées (HTTPS) ?",
+          "options": ["FTP", "TLS/SSL", "SMB", "RDP"],
+          "answer": 1,
+          "explain": "IIS utilise TLS (anciennement SSL) pour chiffrer les communications HTTPS entre le client et le serveur web."
+        },
+        {
+          "q": "Le rôle DHCP peut être installé sur le même serveur qu'AD DS. Cette configuration est :",
+          "options": ["Impossible, les deux rôles sont incompatibles", "Possible, c'est même une configuration courante dans les petits environnements", "Possible uniquement avec Windows Server Datacenter", "Déconseillée car DHCP requiert un serveur dédié par la loi"],
+          "answer": 1,
+          "explain": "Il est tout à fait possible et courant dans les PME d'installer AD DS, DNS et DHCP sur le même serveur, notamment le contrôleur de domaine."
+        },
+        {
+          "q": "Dans le contexte d'AD DS, que signifie « LDAP » ?",
+          "options": ["Local Domain Authentication Protocol", "Lightweight Directory Access Protocol", "Linux Data Access Platform", "Linked Directory Application Program"],
+          "answer": 1,
+          "explain": "LDAP (Lightweight Directory Access Protocol) est le protocole standard utilisé pour interroger et modifier les annuaires comme Active Directory."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Qu'est-ce que le rôle FSMO « PDC Emulator » dans AD DS ?",
+          "options": ["Un serveur qui émule un système UNIX", "Un contrôleur de domaine qui gère la synchronisation des mots de passe et l'heure du domaine", "Un serveur DNS secondaire", "Un serveur DHCP de secours"],
+          "answer": 1,
+          "explain": "Le PDC Emulator (Primary Domain Controller Emulator) est un rôle FSMO qui gère notamment la synchronisation des mots de passe, les verrouillages de comptes et la référence horaire du domaine."
+        },
+        {
+          "q": "Quelle est la différence entre une zone DNS « principale » et une zone « secondaire » ?",
+          "options": ["La zone principale est en lecture seule, la secondaire est modifiable", "La zone principale est la copie maître modifiable, la zone secondaire est une copie en lecture seule synchronisée depuis la principale", "Il n'y a aucune différence, les deux peuvent être modifiées", "La zone secondaire est utilisée uniquement pour les requêtes IPv6"],
+          "answer": 1,
+          "explain": "La zone DNS principale contient la copie maître et peut être modifiée ; la zone secondaire est une copie en lecture seule qui se synchronise depuis la principale pour la redondance."
+        },
+        {
+          "q": "Qu'est-ce qu'une « réservation DHCP » et pourquoi l'utiliser ?",
+          "options": ["Un mécanisme pour bloquer une adresse IP afin qu'elle ne soit jamais distribuée", "Une attribution d'adresse IP fixe à un client spécifique identifié par son adresse MAC, garantissant qu'il reçoit toujours la même IP", "Un type de bail dont la durée est illimitée", "Une plage d'adresses réservée aux serveurs dans l'étendue"],
+          "answer": 1,
+          "explain": "Une réservation DHCP lie une adresse IP à l'adresse MAC d'un appareil précis, lui garantissant de toujours recevoir la même adresse IP tout en restant dans la gestion DHCP."
+        },
+        {
+          "q": "Dans IIS, à quoi sert l'authentification Windows (authentification intégrée) ?",
+          "options": ["Elle permet aux utilisateurs de se connecter avec un compte Google", "Elle permet l'authentification transparente des utilisateurs via leur compte AD DS sans ressaisir leurs identifiants", "Elle chiffre toutes les communications HTTP en HTTPS", "Elle limite l'accès au site aux seules adresses IP internes"],
+          "answer": 1,
+          "explain": "L'authentification Windows dans IIS exploite Kerberos ou NTLM pour permettre aux utilisateurs du domaine d'accéder au site sans ressaisir leurs identifiants (SSO)."
+        },
+        {
+          "q": "Qu'est-ce que la « réplication AD » et pourquoi est-elle importante ?",
+          "options": ["C'est la sauvegarde automatique de la base AD vers un NAS", "C'est le mécanisme qui synchronise les modifications de l'annuaire entre plusieurs contrôleurs de domaine pour assurer la continuité de service", "C'est la copie des GPO vers les postes clients", "C'est la duplication automatique des partages SMB"],
+          "answer": 1,
+          "explain": "La réplication AD synchronise les modifications (nouveaux comptes, mots de passe, GPO...) entre tous les contrôleurs de domaine, garantissant la disponibilité de l'annuaire même si un DC tombe en panne."
+        },
+        {
+          "q": "Le rôle Hyper-V sur Windows Server correspond à quel type d'hyperviseur ?",
+          "options": ["Type 2 (hébergé), comme VirtualBox", "Type 1 (bare-metal), s'exécutant directement sur le matériel", "Type 3 (cloud uniquement)", "Type 0 (firmware UEFI)"],
+          "answer": 1,
+          "explain": "Hyper-V est un hyperviseur de Type 1 (bare-metal) : il s'exécute directement sur le matériel sans OS hôte intermédiaire, offrant de meilleures performances."
+        },
+        {
+          "q": "Dans AD DS, qu'est-ce qu'une « forêt » (forest) ?",
+          "options": ["Un groupe de serveurs physiques dans une même salle", "L'ensemble des domaines AD DS partageant un même schéma et un même catalogue global", "Un type de stratégie de groupe étendue", "Une zone de réplication DNS particulière"],
+          "answer": 1,
+          "explain": "Une forêt AD DS est l'ensemble le plus haut dans la hiérarchie AD ; elle regroupe un ou plusieurs domaines partageant le même schéma, la même configuration et un catalogue global."
+        },
+        {
+          "q": "Quel est le rôle du « catalogue global » (Global Catalog) dans AD DS ?",
+          "options": ["Il stocke uniquement les mots de passe des administrateurs", "Il contient une copie partielle de tous les objets de la forêt pour accélérer les recherches inter-domaines", "Il gère les licences des rôles Windows Server", "Il enregistre les logs de sécurité du domaine"],
+          "answer": 1,
+          "explain": "Le catalogue global contient une copie partielle de tous les objets de la forêt AD, permettant des recherches rapides sur l'ensemble de la forêt sans avoir à interroger chaque domaine individuellement."
+        },
+        {
+          "q": "Quelle option DHCP porte le numéro 003 et est essentielle à la connectivité Internet des clients ?",
+          "options": ["L'adresse du serveur DNS", "La passerelle par défaut (routeur)", "L'adresse du serveur WINS", "Le masque de sous-réseau"],
+          "answer": 1,
+          "explain": "L'option DHCP 003 (Router) fournit l'adresse de la passerelle par défaut aux clients, permettant aux paquets de sortir du réseau local vers Internet."
+        },
+        {
+          "q": "Pourquoi est-il recommandé d'avoir au moins deux contrôleurs de domaine dans un domaine AD DS ?",
+          "options": ["Pour respecter une obligation légale en France", "Pour assurer la redondance : si un DC tombe en panne, l'autre continue d'assurer l'authentification et les services AD", "Car Windows Server impose un minimum de deux DC à l'installation", "Pour doubler la vitesse de connexion Internet"],
+          "answer": 1,
+          "explain": "Avoir deux DC ou plus assure la haute disponibilité : en cas de panne d'un contrôleur de domaine, les utilisateurs peuvent toujours s'authentifier grâce à l'autre DC."
+        },
+        {
+          "q": "Qu'est-ce que DNSSEC et quel problème résout-il ?",
+          "options": ["C'est un protocole de chiffrement des partages SMB", "C'est une extension de DNS qui permet de signer cryptographiquement les enregistrements DNS pour prévenir les attaques d'empoisonnement du cache DNS", "C'est une version sécurisée de DHCP", "C'est un rôle Windows Server distinct du rôle DNS standard"],
+          "answer": 1,
+          "explain": "DNSSEC (DNS Security Extensions) ajoute des signatures cryptographiques aux enregistrements DNS, protégeant contre les attaques d'empoisonnement de cache (cache poisoning) qui redirigent les utilisateurs vers de faux serveurs."
+        },
+        {
+          "q": "Dans IIS, qu'est-ce qu'une « liaison » (binding) sur un site web ?",
+          "options": ["Un lien hypertexte entre deux pages du site", "La configuration qui associe un site web à une adresse IP, un port et/ou un nom d'hôte spécifique", "Un certificat SSL lié à un domaine", "Un groupe d'applications qui partagent le même pool"],
+          "answer": 1,
+          "explain": "La liaison (binding) dans IIS définit sur quelle adresse IP, quel port (80 pour HTTP, 443 pour HTTPS) et quel nom d'hôte le site doit répondre."
+        },
+        {
+          "q": "Qu'est-ce que le « Kerberos » dans le contexte d'AD DS ?",
+          "options": ["Un outil de sauvegarde automatique de l'annuaire", "Le protocole d'authentification par tickets utilisé par AD DS pour vérifier l'identité des utilisateurs et services", "Un type de pare-feu intégré à Windows Server", "Un algorithme de chiffrement des données sur disque"],
+          "answer": 1,
+          "explain": "Kerberos est le protocole d'authentification principal d'AD DS : il utilise des tickets chiffrés pour authentifier les utilisateurs et les services sans que les mots de passe ne transitent sur le réseau."
+        },
+        {
+          "q": "Un serveur DHCP « autorisé » dans AD DS, qu'est-ce que cela signifie ?",
+          "options": ["Le serveur DHCP a une licence commerciale valide", "Le serveur DHCP est enregistré dans AD DS, ce qui empêche les serveurs DHCP non autorisés (pirates) de distribuer des adresses sur le domaine", "Le serveur DHCP peut distribuer des adresses IPv6 en plus d'IPv4", "Le serveur DHCP est configuré avec une étendue d'au moins 254 adresses"],
+          "answer": 1,
+          "explain": "L'autorisation DHCP dans AD DS est un mécanisme de sécurité : seuls les serveurs DHCP enregistrés et autorisés dans AD peuvent distribuer des adresses IP, évitant les serveurs DHCP pirates."
+        },
+        {
+          "q": "Quelle commande PowerShell permet d'installer le rôle AD DS sur Windows Server ?",
+          "options": ["Add-Role -Name ADDS", "Install-WindowsFeature AD-Domain-Services", "Enable-Feature -Name ActiveDirectory", "New-ADRole -Type DomainServices"],
+          "answer": 1,
+          "explain": "La commande PowerShell « Install-WindowsFeature AD-Domain-Services » installe le rôle AD DS, équivalent à l'installation via le Gestionnaire de serveurs."
+        }
+      ]
+    }
+  ]
+}

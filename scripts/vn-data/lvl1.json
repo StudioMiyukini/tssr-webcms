@@ -1,0 +1,164 @@
+{
+  "n": 1,
+  "layer": "1 · Physique",
+  "diff": 1,
+  "title": "Plus de réseau !",
+  "setup": "Un utilisateur vous appelle : son poste Windows ne communique plus du tout sur le réseau depuis ce matin. Il ne peut ni accéder aux dossiers partagés ni naviguer sur internet. Vous vous rendez sur place.",
+  "start": "n1",
+  "nodes": {
+    "n1": {
+      "kind": "step",
+      "text": "Vous êtes devant le poste. Qu'est-ce que vous faites en premier ?",
+      "question": "Par où commencez-vous ?",
+      "choices": [
+        { "t": "Je regarde le voyant de la carte réseau à l'arrière du PC", "to": "n2" },
+        { "t": "Je lance un ping vers le serveur pour tester la connexion", "to": "fail_ping_trop_tot" },
+        { "t": "Je réinstalle la carte réseau depuis le gestionnaire de périphériques", "to": "fail_reinstall_trop_tot" }
+      ]
+    },
+    "n2": {
+      "kind": "step",
+      "text": "Vous regardez l'arrière du PC : le voyant de la carte réseau est éteint. Aucune activité, aucun lien détecté.",
+      "question": "Le voyant est éteint. Que faites-vous maintenant ?",
+      "choices": [
+        { "t": "Je vérifie le câble réseau : est-il bien branché des deux côtés ?", "to": "n3" },
+        { "t": "Je redémarre le PC directement, ça règle souvent ce genre de problème", "to": "detour_reboot" },
+        { "t": "Je cherche la panne dans les paramètres Windows", "to": "fail_windows_trop_tot" }
+      ]
+    },
+    "n3": {
+      "kind": "step",
+      "text": "Vous vérifiez le câble : il est bien clipsé côté PC. Vous suivez le câble jusqu'à la prise murale — il est également bien enfoncé dans la prise.",
+      "question": "Le câble semble en place. Que testez-vous ensuite ?",
+      "choices": [
+        { "t": "Je branche un autre câble réseau connu fonctionnel à la place", "to": "n4" },
+        { "t": "Je considère que le câble est OK et je passe aux paramètres logiciels", "to": "fail_saute_etape" },
+        { "t": "Je vais directement vérifier le port du switch en salle serveur", "to": "n5" }
+      ]
+    },
+    "n4": {
+      "kind": "step",
+      "text": "Vous remplacez le câble par un câble de test fonctionnel. Le voyant reste éteint. Le câble d'origine n'est donc pas en cause.",
+      "question": "Câble remplacé, toujours rien. Où cherchez-vous maintenant ?",
+      "choices": [
+        { "t": "Je vérifie la prise murale en branchant un autre poste dessus", "to": "n5" },
+        { "t": "Je regarde si la carte réseau est activée dans Windows", "to": "n6" },
+        { "t": "Je branche directement le PC sur un port libre du switch avec un câble", "to": "n5b" }
+      ]
+    },
+    "n5": {
+      "kind": "step",
+      "text": "Vous branchez un autre poste sur la même prise murale : ce second poste obtient le réseau sans problème. La prise est donc fonctionnelle. Vous jetez un oeil au port correspondant sur le switch : il clignote normalement pour les autres postes, mais le port de cet utilisateur est éteint.",
+      "question": "Prise murale et switch semblent OK. Le problème vient du PC lui-même. Que faites-vous ?",
+      "choices": [
+        { "t": "Je vérifie si la carte réseau est désactivée dans Windows", "to": "n6" },
+        { "t": "Je remplace le switch immédiatement", "to": "fail_remplace_switch" }
+      ]
+    },
+    "n5b": {
+      "kind": "step",
+      "text": "Vous branchez le PC directement sur un port libre du switch avec un câble court. Le voyant reste éteint. La prise murale et le câble ne sont pas en cause : le problème vient du PC lui-même.",
+      "question": "Toujours pas de lien. Le problème est sur le PC. Que faites-vous ?",
+      "choices": [
+        { "t": "Je vérifie si la carte réseau est désactivée dans Windows", "to": "n6" },
+        { "t": "Je remplace la carte réseau immédiatement", "to": "fail_remplace_carte" }
+      ]
+    },
+    "n6": {
+      "kind": "step",
+      "text": "Vous ouvrez le Gestionnaire de périphériques. La carte réseau apparaît avec une petite flèche vers le bas : elle est désactivée !",
+      "question": "La carte est désactivée dans Windows. Que faites-vous ?",
+      "choices": [
+        { "t": "Je fais clic droit > Activer le périphérique sur la carte réseau", "to": "n7" },
+        { "t": "Je désinstalle et réinstalle le pilote de la carte réseau", "to": "detour_pilote" },
+        { "t": "Je restaure Windows à un point de restauration antérieur", "to": "fail_restauration" }
+      ]
+    },
+    "n7": {
+      "kind": "step",
+      "text": "Vous activez la carte réseau. Le voyant à l'arrière du PC s'allume immédiatement. Windows obtient une adresse IP en quelques secondes.",
+      "question": "La carte est réactivée et le lien est établi. Que faites-vous avant de clore l'intervention ?",
+      "choices": [
+        { "t": "Je demande à l'utilisateur de tester : dossiers partagés et internet", "to": "win" },
+        { "t": "Je pars sans vérifier, c'est évident que ça marche", "to": "fail_pas_valide" }
+      ]
+    },
+    "detour_reboot": {
+      "kind": "step",
+      "text": "Vous redémarrez le PC. Au retour de Windows, le voyant est toujours éteint. Un redémarrage n'a rien changé : il faut investiguer la cause physique.",
+      "question": "Le redémarrage n'a rien résolu. On reprend la méthode : que vérifiez-vous maintenant ?",
+      "choices": [
+        { "t": "Je vérifie le câble réseau des deux côtés", "to": "n3" },
+        { "t": "Je passe directement aux paramètres Windows", "to": "fail_windows_trop_tot" }
+      ]
+    },
+    "detour_pilote": {
+      "kind": "step",
+      "text": "Vous désinstallez et réinstallez le pilote. Résultat : la carte réseau réapparaît toujours désactivée. Le pilote n'était pas le problème — la carte avait simplement été désactivée manuellement.",
+      "question": "Pilote réinstallé, la carte est toujours désactivée. Que faites-vous vraiment ?",
+      "choices": [
+        { "t": "Je fais clic droit > Activer le périphérique sur la carte réseau", "to": "n7" }
+      ]
+    },
+    "fail_ping_trop_tot": {
+      "kind": "fail",
+      "text": "Vous ouvrez un terminal et tentez un ping. Windows signale que la carte réseau est indisponible — impossible d'obtenir un résultat utile sans avoir vérifié d'abord la couche physique. On repart toujours de la couche 1 !",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n1"
+    },
+    "fail_reinstall_trop_tot": {
+      "kind": "fail",
+      "text": "Réinstaller un pilote sans avoir vérifié l'état physique, c'est brûler des étapes. La méthode OSI impose de commencer par la couche 1 : vérifiez d'abord les voyants et le câble.",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n1"
+    },
+    "fail_windows_trop_tot": {
+      "kind": "fail",
+      "text": "Plonger dans les paramètres Windows alors que le voyant physique est éteint, c'est ignorer la couche 1. Un problème de câble ou de port n'apparaît pas dans les réglages logiciels. Retour à la couche physique !",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n2"
+    },
+    "fail_saute_etape": {
+      "kind": "fail",
+      "text": "Supposer que le câble est bon sans l'avoir remplacé ou testé, c'est une erreur de méthode. Un câble peut sembler en place mais avoir une rupture interne. Testez toujours avec un câble connu fonctionnel.",
+      "course": "hardware",
+      "courseLabel": "Le hardware",
+      "retryTo": "n3"
+    },
+    "fail_remplace_switch": {
+      "kind": "fail",
+      "text": "Remplacer le switch alors que ses autres ports fonctionnent normalement, c'est une fausse piste. Le problème se situe clairement du côté du PC. Cherchez du côté de la carte réseau.",
+      "course": "bases-du-reseau",
+      "courseLabel": "Les bases du réseau",
+      "retryTo": "n5"
+    },
+    "fail_remplace_carte": {
+      "kind": "fail",
+      "text": "Remplacer une carte réseau sans avoir vérifié son état dans Windows, c'est prématuré et coûteux. Une carte désactivée dans le gestionnaire de périphériques peut sembler morte — vérifiez d'abord !",
+      "course": "hardware",
+      "courseLabel": "Le hardware",
+      "retryTo": "n5b"
+    },
+    "fail_restauration": {
+      "kind": "fail",
+      "text": "Une restauration système pour une carte réseau désactivée, c'est sortir la masse pour écraser une mouche. Cette action peut effacer des données ou des mises à jour importantes. La solution était un simple clic droit > Activer.",
+      "course": "gestion-ordinateur-windows",
+      "courseLabel": "La gestion de l'ordinateur",
+      "retryTo": "n6"
+    },
+    "fail_pas_valide": {
+      "kind": "fail",
+      "text": "Partir sans valider avec l'utilisateur, c'est une faute professionnelle. L'utilisateur doit confirmer que ses usages fonctionnent (dossiers partagés, internet, applications métier) avant de clore l'intervention.",
+      "course": "bases-du-reseau",
+      "courseLabel": "Les bases du réseau",
+      "retryTo": "n7"
+    },
+    "win": {
+      "kind": "win",
+      "text": "L'utilisateur accède aux dossiers partagés et navigue sur internet sans problème. Vous avez identifié la cause (carte réseau désactivée dans Windows) en remontant méthodiquement depuis la couche physique, et résolu la panne en un clic. Intervention clôturée !"
+    }
+  }
+}

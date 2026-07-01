@@ -1,0 +1,217 @@
+{
+  "n": 4,
+  "layer": "4 · Transport",
+  "diff": 4,
+  "title": "Le site intranet inaccessible",
+  "setup": "Un utilisateur t'appelle : depuis son poste, le navigateur affiche 'Impossible d'atteindre ce site - delai depasse' quand il essaie d'ouvrir le site intranet. Le site tourne sous IIS sur un Windows Server. Par ou commences-tu le diagnostic ?",
+  "start": "n1",
+  "nodes": {
+    "n1": {
+      "kind": "step",
+      "text": "Tu es devant le poste client. Il faut remonter les couches depuis le bas. La premiere chose a verifier, c'est la connexion physique.",
+      "question": "Que fais-tu en premier ?",
+      "choices": [
+        { "t": "Je regarde le voyant du port reseau sur le poste et sur le switch", "to": "n2" },
+        { "t": "Je lance un ping vers le serveur pour aller vite", "to": "f_saute_c1" },
+        { "t": "Je verifie le pare-feu du serveur directement", "to": "f_saute_haut" }
+      ]
+    },
+    "n2": {
+      "kind": "step",
+      "text": "Les voyants des deux cotes sont allumes et clignotent normalement. Le lien physique semble sain (couche 1 OK). Il faut maintenant valider la couche 2 : la carte reseau est-elle bien reconnue et le lien etabli ?",
+      "question": "Comment verifies-tu la couche liaison (couche 2) sur ce poste ?",
+      "choices": [
+        { "t": "Je verifie dans le Gestionnaire de peripheriques que la carte reseau est active sans point d'exclamation", "to": "n3" },
+        { "t": "Je passe directement a ipconfig pour voir l'adresse IP", "to": "f_saute_c2" },
+        { "t": "Je change le navigateur pour voir si ca change quelque chose", "to": "f_navigateur" }
+      ]
+    },
+    "n3": {
+      "kind": "step",
+      "text": "La carte reseau est active, pas d'erreur. Le lien est etabli (couche 2 OK). Maintenant la couche 3 : ce poste a-t-il bien une adresse IP valide et coherente avec le reseau ?",
+      "question": "Quelle commande utilises-tu pour verifier la configuration IP du poste ?",
+      "choices": [
+        { "t": "ipconfig /all dans l'invite de commandes", "to": "n4" },
+        { "t": "Je ping le serveur directement pour voir si ca repond", "to": "f_ping_direct" },
+        { "t": "Je reverифие le cable, on n'est jamais trop prudent", "to": "f_c1_deja_ok" }
+      ]
+    },
+    "n4": {
+      "kind": "step",
+      "text": "ipconfig /all affiche : IP 192.168.10.45, masque /24, passerelle 192.168.10.1. L'adresse est coherente avec le reseau de l'entreprise. Mais avoir une IP ne suffit pas : il faut confirmer que la couche 3 fonctionne de bout en bout.",
+      "question": "Quelle est la prochaine verification logique ?",
+      "choices": [
+        { "t": "Je ping la passerelle (192.168.10.1) pour tester la route locale", "to": "n5" },
+        { "t": "Je ping directement le serveur IIS", "to": "n5b" },
+        { "t": "Je teste le port 80 du serveur tout de suite", "to": "f_saute_c4" }
+      ]
+    },
+    "n5": {
+      "kind": "step",
+      "text": "Le ping vers la passerelle repond : la route locale est bonne. Couche 3 locale validee. Il reste a confirmer que le poste atteint bien le serveur au niveau IP.",
+      "question": "Que fais-tu maintenant ?",
+      "choices": [
+        { "t": "Je ping l'adresse IP du serveur IIS", "to": "n6" },
+        { "t": "Je rouvre le navigateur pour retenter", "to": "f_nav_trop_tot" },
+        { "t": "Je consulte les logs IIS sur le serveur", "to": "f_logs_trop_tot" }
+      ]
+    },
+    "n5b": {
+      "kind": "step",
+      "text": "Le ping vers le serveur repond - bon signe. Mais tu as saute la verification de la passerelle. Par rigueur methodologique, mieux vaut completer la validation couche 3.",
+      "question": "Tu valides quand meme la passerelle ?",
+      "choices": [
+        { "t": "Oui, je ping la passerelle pour completer la validation couche 3", "to": "n6" },
+        { "t": "Non, le serveur repond, j'essaie le navigateur directement", "to": "f_nav_trop_tot" }
+      ]
+    },
+    "n6": {
+      "kind": "step",
+      "text": "Le ping vers le serveur repond. Couches 1, 2 et 3 toutes validees : cable OK, lien OK, IP OK, routage OK. Pourtant le site reste inaccessible. La panne est donc au niveau transport (couche 4) ou au-dessus.",
+      "question": "Comment testes-tu la couche transport (connexion TCP sur le port 80) depuis le poste ?",
+      "choices": [
+        { "t": "Test-NetConnection -ComputerName serveur-iis -Port 80 dans PowerShell", "to": "n7" },
+        { "t": "telnet serveur-iis 80 dans l'invite de commandes", "to": "n7" },
+        { "t": "Je vais directement configurer IIS sur le serveur", "to": "f_iis_avant_port" }
+      ]
+    },
+    "n7": {
+      "kind": "step",
+      "text": "Test-NetConnection (ou telnet) confirme que la connexion TCP sur le port 80 expire - le port n'est pas joignable depuis le reseau. Pourtant, depuis le serveur lui-meme, le site s'ouvre parfaitement dans le navigateur local. C'est un blocage entrant cote serveur.",
+      "question": "Ou cherches-tu le blocage en priorite ?",
+      "choices": [
+        { "t": "Je verifie le Pare-feu Windows sur le serveur (regles entrantes)", "to": "n8" },
+        { "t": "Je verifie le pare-feu sur le poste client", "to": "f_parefeu_client" },
+        { "t": "Je redemarre le service IIS sur le serveur", "to": "f_restart_iis" }
+      ]
+    },
+    "n8": {
+      "kind": "step",
+      "text": "Dans le Pare-feu Windows avec fonctions avancees de securite sur le serveur, tu constates qu'il n'existe aucune regle entrante autorisant le port 80 (ni 443). IIS ecoute bien en local, mais le pare-feu bloque toutes les connexions entrantes sur ce port depuis le reseau.",
+      "question": "Que fais-tu pour corriger le tir ?",
+      "choices": [
+        { "t": "Je cree une regle entrante TCP port 80 (et 443) dans le Pare-feu Windows du serveur", "to": "n9" },
+        { "t": "Je desactive completement le Pare-feu Windows sur le serveur", "to": "f_desactive_fw" },
+        { "t": "Je change le port d'ecoute d'IIS pour contourner le blocage", "to": "f_changer_port" }
+      ]
+    },
+    "n9": {
+      "kind": "step",
+      "text": "La regle entrante TCP port 80 (et 443) est creee et activee dans le Pare-feu Windows du serveur. Il faut maintenant confirmer que la correction est bien effective depuis le poste client.",
+      "question": "Comment valides-tu que le probleme est resolu ?",
+      "choices": [
+        { "t": "Je relance Test-NetConnection -Port 80 depuis le poste, puis j'ouvre le navigateur", "to": "win" },
+        { "t": "Je redemarre le serveur pour etre vraiment sur", "to": "f_reboot_inutile" }
+      ]
+    },
+    "f_saute_c1": {
+      "kind": "fail",
+      "text": "Tester le ping sans verifier la couche physique d'abord, c'est bruler les etapes. Si le cable est debranche ou le voyant eteint, le ping ne dira rien d'utile sur le vrai probleme. On remonte toujours depuis la couche 1.",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n1"
+    },
+    "f_saute_haut": {
+      "kind": "fail",
+      "text": "Aller directement au pare-feu du serveur sans remonter les couches 1, 2 et 3, c'est du diagnostic a l'aveugle. Si le poste n'a meme pas d'IP valide, le pare-feu n'est pas en cause. Couche 1 d'abord.",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n1"
+    },
+    "f_navigateur": {
+      "kind": "fail",
+      "text": "Changer de navigateur ne verifie pas la couche 2. Le probleme n'est pas applicatif a ce stade - il faut d'abord confirmer que la carte reseau et le lien sont sains.",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n2"
+    },
+    "f_saute_c2": {
+      "kind": "fail",
+      "text": "Passer a ipconfig sans verifier la couche 2, c'est sauter une etape. Une carte reseau peut afficher une IP tout en etant sur le mauvais VLAN ou avec un lien degrade. Verifie d'abord que la liaison est saine.",
+      "course": "le-switch",
+      "courseLabel": "Le switch",
+      "retryTo": "n2"
+    },
+    "f_ping_direct": {
+      "kind": "fail",
+      "text": "Pinger le serveur sans avoir confirme que ce poste a une IP valide, c'est ignorer la couche 3. Si l'adresse est en 169.254.x.x (APIPA), tout ping echouera pour une raison sans rapport avec le serveur.",
+      "course": "adresses-ip",
+      "courseLabel": "Les adresses IP",
+      "retryTo": "n3"
+    },
+    "f_c1_deja_ok": {
+      "kind": "fail",
+      "text": "Tu as deja valide la couche 1 au debut. Reverifier le cable maintenant est une perte de temps - la progression logique, c'est de monter vers la couche 3 avec ipconfig.",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n3"
+    },
+    "f_saute_c4": {
+      "kind": "fail",
+      "text": "Tester le port TCP avant meme d'avoir confirme que le routage IP fonctionne, c'est mettre la charrue avant les boeufs. Un echec de connexion TCP peut simplement signifier que la couche 3 est cassee. Valide d'abord la passerelle.",
+      "course": "tcp-et-udp",
+      "courseLabel": "TCP & UDP",
+      "retryTo": "n4"
+    },
+    "f_nav_trop_tot": {
+      "kind": "fail",
+      "text": "Rouvrir le navigateur sans avoir teste le port TCP ne t'apprendra rien de nouveau - tu verras encore le meme message d'erreur. Il faut d'abord diagnostiquer la couche transport avant de retourner au navigateur.",
+      "course": "tcp-et-udp",
+      "courseLabel": "TCP & UDP",
+      "retryTo": "n5"
+    },
+    "f_logs_trop_tot": {
+      "kind": "fail",
+      "text": "Les logs IIS n'enregistrent que les requetes qui arrivent au serveur. Si la connexion TCP est bloquee avant d'atteindre IIS, les logs seront vides - et tu en deduiras a tort qu'IIS ne tourne pas. Teste d'abord le port.",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n5"
+    },
+    "f_iis_avant_port": {
+      "kind": "fail",
+      "text": "Aller configurer IIS avant d'avoir confirme que le port TCP est bloque, c'est supposer que le probleme vient d'IIS - alors qu'il ecoute peut-etre tres bien. Le test de port t'aurait donne la reponse immediatement.",
+      "course": "tcp-et-udp",
+      "courseLabel": "TCP & UDP",
+      "retryTo": "n6"
+    },
+    "f_parefeu_client": {
+      "kind": "fail",
+      "text": "Le pare-feu du poste client bloque tres rarement les connexions sortantes vers un site web. Or le serveur est joignable en ping mais pas sur le port 80 depuis le reseau - c'est clairement une regle entrante manquante cote serveur.",
+      "course": "le-pare-feu",
+      "courseLabel": "Le pare-feu",
+      "retryTo": "n7"
+    },
+    "f_restart_iis": {
+      "kind": "fail",
+      "text": "Redemarrer IIS n'ouvrira pas un port bloque par le pare-feu. IIS ecoute deja sur le port 80 en local - le probleme est que le pare-feu Windows ne laisse pas passer les connexions entrantes depuis le reseau.",
+      "course": "le-pare-feu",
+      "courseLabel": "Le pare-feu",
+      "retryTo": "n7"
+    },
+    "f_desactive_fw": {
+      "kind": "fail",
+      "text": "Desactiver completement le Pare-feu Windows est une tres mauvaise pratique en production : le serveur se retrouve expose sans aucune protection. La bonne solution est de creer une regle ciblee pour le port 80 seulement.",
+      "course": "le-pare-feu",
+      "courseLabel": "Le pare-feu",
+      "retryTo": "n8"
+    },
+    "f_changer_port": {
+      "kind": "fail",
+      "text": "Changer le port d'IIS ne resout pas le blocage pare-feu - il faudrait alors debloquer le nouveau port, et tous les clients devraient modifier leur URL. La solution propre est d'autoriser le port 80 dans le pare-feu.",
+      "course": "le-pare-feu",
+      "courseLabel": "Le pare-feu",
+      "retryTo": "n8"
+    },
+    "f_reboot_inutile": {
+      "kind": "fail",
+      "text": "Redemarrer le serveur en production sans raison technique valable, c'est couper le service pour tous les utilisateurs inutilement. La regle pare-feu est deja active - un simple test depuis le poste suffit a valider.",
+      "course": "le-pare-feu",
+      "courseLabel": "Le pare-feu",
+      "retryTo": "n9"
+    },
+    "win": {
+      "kind": "win",
+      "text": "Test-NetConnection confirme que le port 80 est maintenant accessible, et le navigateur affiche enfin le site intranet. Diagnostic complet et methodique : couches 1 (cable/voyant OK), 2 (lien reseau OK), 3 (IP valide, passerelle joignable, ping serveur OK), puis couche 4 (port TCP bloque) - panne resolue en creant une regle entrante dans le Pare-feu Windows du serveur IIS. Excellent travail !"
+    }
+  }
+}

@@ -1,0 +1,291 @@
+{
+  "slug": "gestion-ordinateur-windows",
+  "title": "La gestion de l'ordinateur",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Quelle commande permet d'ouvrir la console «Gestion de l'ordinateur» ?",
+          "options": ["compmgmt.msc", "devmgmt.msc", "services.msc", "mmc.exe"],
+          "answer": 0,
+          "explain": "compmgmt.msc est le raccourci MMC dédié à la gestion de l'ordinateur."
+        },
+        {
+          "q": "Que signifie MMC dans le contexte de Windows ?",
+          "options": ["Microsoft Management Console", "Main Menu Controller", "Memory Management Center", "Microsoft Module Config"],
+          "answer": 0,
+          "explain": "MMC (Microsoft Management Console) est le cadre qui héberge les consoles d'administration Windows."
+        },
+        {
+          "q": "Dans la console Gestion de l'ordinateur, quel outil permet de créer une partition sur un disque dur ?",
+          "options": ["Gestion des disques", "Services", "Observateur d'événements", "Planificateur de tâches"],
+          "answer": 0,
+          "explain": "La Gestion des disques est le module qui permet de partitionner et formater les disques."
+        },
+        {
+          "q": "Quel outil Windows permet de démarrer, arrêter ou désactiver un service système ?",
+          "options": ["Services", "Gestion des disques", "Observateur d'événements", "Groupes locaux"],
+          "answer": 0,
+          "explain": "Le composant «Services» liste tous les services et permet d'en contrôler l'état."
+        },
+        {
+          "q": "L'Observateur d'événements enregistre trois types de journaux principaux. Lequel N'en fait PAS partie ?",
+          "options": ["Journal de performance", "Journal d'application", "Journal système", "Journal de sécurité"],
+          "answer": 0,
+          "explain": "Les journaux principaux sont Application, Système et Sécurité ; il n'existe pas de «Journal de performance» dans cette liste."
+        },
+        {
+          "q": "Où se trouve l'outil «Utilisateurs et groupes locaux» dans la console Gestion de l'ordinateur ?",
+          "options": ["Sous «Outils système»", "Sous «Stockage»", "Sous «Services et applications»", "Dans le Panneau de configuration"],
+          "answer": 0,
+          "explain": "«Utilisateurs et groupes locaux» est rangé dans la section «Outils système» de la console."
+        },
+        {
+          "q": "Quel format de fichier possède une extension .msc ?",
+          "options": ["Un composant logiciel enfichable MMC", "Un script PowerShell", "Un fichier de configuration réseau", "Un certificat numérique"],
+          "answer": 0,
+          "explain": "Les fichiers .msc sont des consoles MMC préconfigurées que Windows peut ouvrir directement."
+        },
+        {
+          "q": "Quelle section de la Gestion de l'ordinateur contient «Services et applications» ?",
+          "options": ["Le volet gauche de l'arborescence", "Le volet central", "La barre de menus uniquement", "Le Panneau de configuration"],
+          "answer": 0,
+          "explain": "L'arborescence du volet gauche organise les trois grandes sections : Outils système, Stockage et Services et applications."
+        },
+        {
+          "q": "Dans la Gestion des disques, qu'est-ce qu'un volume «de base» ?",
+          "options": ["Un disque MBR ou GPT divisé en partitions simples", "Un disque réparti sur plusieurs disques physiques", "Un disque entièrement chiffré par BitLocker", "Un lecteur réseau mappé"],
+          "answer": 0,
+          "explain": "Un disque de base utilise des partitions classiques (primaires, étendues) sur un seul disque physique."
+        },
+        {
+          "q": "Quel type de démarrage d'un service garantit qu'il se lance automatiquement à chaque démarrage de Windows ?",
+          "options": ["Automatique", "Manuel", "Désactivé", "Automatique (début différé)"],
+          "answer": 0,
+          "explain": "Le type «Automatique» démarre le service dès que Windows charge les services système."
+        },
+        {
+          "q": "Dans l'Observateur d'événements, quel niveau indique qu'une opération s'est mal passée mais n'est pas critique ?",
+          "options": ["Avertissement", "Erreur", "Critique", "Information"],
+          "answer": 0,
+          "explain": "Un «Avertissement» signale un problème potentiel qui n'a pas encore empêché le fonctionnement du service."
+        },
+        {
+          "q": "Comment ouvre-t-on la MMC «vide» pour y ajouter ses propres composants ?",
+          "options": ["mmc.exe dans Exécuter", "compmgmt.msc", "services.msc", "taskschd.msc"],
+          "answer": 0,
+          "explain": "Taper mmc.exe ouvre une console vierge dans laquelle on ajoute manuellement des composants enfichables."
+        },
+        {
+          "q": "Quel outil Windows permet de programmer l'exécution automatique d'un script chaque lundi à 8 h ?",
+          "options": ["Planificateur de tâches", "Services", "Gestion des disques", "Observateur d'événements"],
+          "answer": 0,
+          "explain": "Le Planificateur de tâches (taskschd.msc) gère l'exécution automatique de programmes selon un calendrier."
+        },
+        {
+          "q": "Quel groupe local prédéfini donne à ses membres tous les droits d'administration sur la machine ?",
+          "options": ["Administrateurs", "Utilisateurs avec pouvoir", "Opérateurs de sauvegarde", "Utilisateurs"],
+          "answer": 0,
+          "explain": "Le groupe «Administrateurs» possède un contrôle total sur le système local."
+        },
+        {
+          "q": "Dans la Gestion des disques, que signifie l'état «Non alloué» pour une zone d'un disque ?",
+          "options": ["Espace libre non encore formaté ni partitionné", "Partition corrompue", "Partition chiffrée", "Disque en lecture seule"],
+          "answer": 0,
+          "explain": "«Non alloué» désigne de l'espace disque disponible sur lequel aucune partition n'a encore été créée."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Quelle action faut-il effectuer avant de réduire une partition dans la Gestion des disques ?",
+          "options": ["Défragmenter le volume", "Désactiver tous les services", "Chiffrer le disque", "Désactiver le Planificateur de tâches"],
+          "answer": 0,
+          "explain": "La défragmentation regroupe les données pour libérer de l'espace contigu au bout du volume et permettre la réduction."
+        },
+        {
+          "q": "Dans l'Observateur d'événements, à quoi sert l'ID d'événement ?",
+          "options": ["Identifier précisément le type d'événement pour faciliter le diagnostic", "Numéroter les utilisateurs connectés", "Classer les partitions disque", "Donner la priorité à un service"],
+          "answer": 0,
+          "explain": "L'ID d'événement est un code numérique qui identifie un type d'événement précis, utile pour les recherches sur Internet."
+        },
+        {
+          "q": "Quel compte est désactivé par défaut dans «Utilisateurs et groupes locaux» sur Windows 10 ?",
+          "options": ["Administrateur", "Utilisateur standard", "Invité", "Les deux : Administrateur et Invité"],
+          "answer": 3,
+          "explain": "Par défaut, les comptes prédéfinis «Administrateur» et «Invité» sont tous deux désactivés sur Windows 10."
+        },
+        {
+          "q": "Dans le Planificateur de tâches, quel est le «déclencheur» d'une tâche ?",
+          "options": ["La condition ou l'horaire qui provoque l'exécution de la tâche", "Le fichier exécuté par la tâche", "Le compte sous lequel la tâche s'exécute", "Le journal d'événements associé"],
+          "answer": 0,
+          "explain": "Le déclencheur définit quand (heure, événement, connexion…) la tâche sera lancée automatiquement."
+        },
+        {
+          "q": "Lequel de ces états de service signifie qu'il est en cours de fonctionnement ?",
+          "options": ["Démarré", "En pause", "Arrêté", "Désactivé"],
+          "answer": 0,
+          "explain": "Un service «Démarré» (Running) est actif et traite les requêtes en ce moment."
+        },
+        {
+          "q": "Quelle table de partition est recommandée pour les disques de plus de 2 To ?",
+          "options": ["GPT", "MBR", "FAT32", "NTFS"],
+          "answer": 0,
+          "explain": "GPT (GUID Partition Table) prend en charge des disques jusqu'à 9,4 Zo, contrairement à MBR limité à 2 To."
+        },
+        {
+          "q": "Dans la Gestion de l'ordinateur, où peut-on consulter les journaux d'erreurs Windows Update ?",
+          "options": ["Observateur d'événements > Journaux Windows > Système", "Services", "Gestion des disques", "Utilisateurs et groupes locaux"],
+          "answer": 0,
+          "explain": "Les erreurs Windows Update apparaissent généralement dans le journal Système de l'Observateur d'événements."
+        },
+        {
+          "q": "Quel système de fichiers Windows prend en charge les permissions NTFS et le chiffrement EFS ?",
+          "options": ["NTFS", "FAT32", "exFAT", "ReFS"],
+          "answer": 0,
+          "explain": "Seul NTFS supporte les listes d'accès (ACL), les quotas et le chiffrement EFS natif."
+        },
+        {
+          "q": "Une tâche planifiée peut s'exécuter sous quel type de compte pour ne pas nécessiter de session ouverte ?",
+          "options": ["SYSTEM ou un compte de service", "Uniquement le compte Administrateur connecté", "Uniquement le compte Invité", "Un compte Azure uniquement"],
+          "answer": 0,
+          "explain": "Les comptes SYSTEM ou de service permettent d'exécuter des tâches même sans utilisateur connecté."
+        },
+        {
+          "q": "Quel composant MMC permet de gérer les quotas de disque par utilisateur ?",
+          "options": ["Gestion des disques", "Services", "Observateur d'événements", "Utilisateurs et groupes locaux"],
+          "answer": 0,
+          "explain": "Les quotas de disque se configurent dans les propriétés du volume via la Gestion des disques."
+        },
+        {
+          "q": "Dans l'Observateur d'événements, que représente la source d'un événement ?",
+          "options": ["Le composant ou l'application qui a généré l'événement", "L'heure exacte de l'événement", "La catégorie du journal", "Le compte utilisateur concerné"],
+          "answer": 0,
+          "explain": "La «Source» identifie quel programme, pilote ou service a produit l'entrée dans le journal."
+        },
+        {
+          "q": "Comment appelle-t-on un groupe local qui contient d'autres groupes comme membres ?",
+          "options": ["Groupe imbriqué", "Groupe global", "Groupe universel", "Groupe de distribution"],
+          "answer": 0,
+          "explain": "L'imbrication de groupes consiste à ajouter un groupe comme membre d'un autre groupe local."
+        },
+        {
+          "q": "Quelle extension de fichier désigne un composant logiciel enfichable MMC ?",
+          "options": [".msc", ".msi", ".msp", ".mst"],
+          "answer": 0,
+          "explain": "Les fichiers .msc sont des consoles MMC ; .msi, .msp et .mst concernent les paquets d'installation Windows Installer."
+        },
+        {
+          "q": "Dans la Gestion des disques, qu'est-ce qu'un «volume dynamique» par rapport à un volume de base ?",
+          "options": ["Il peut s'étendre sur plusieurs disques physiques", "Il est obligatoirement chiffré", "Il ne peut contenir qu'une seule partition", "Il est réservé aux SSD uniquement"],
+          "answer": 0,
+          "explain": "Les disques dynamiques permettent des volumes fractionnés ou miroirs répartis sur plusieurs disques."
+        },
+        {
+          "q": "Quelle action dans le Planificateur de tâches permet de tester immédiatement une tâche sans attendre son déclencheur ?",
+          "options": ["Exécuter", "Activer", "Importer", "Exporter"],
+          "answer": 0,
+          "explain": "Le bouton «Exécuter» lance la tâche à la demande, indépendamment de son déclencheur programmé."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Quel fichier de journal Windows enregistre les tentatives de connexion réussies et échouées ?",
+          "options": ["Journal Sécurité", "Journal Système", "Journal Application", "Journal Installation"],
+          "answer": 0,
+          "explain": "Le journal Sécurité enregistre les audits d'ouverture de session, de privilege et d'accès aux objets."
+        },
+        {
+          "q": "Quelle commande PowerShell permet d'arrêter un service nommé «Spooler» ?",
+          "options": ["Stop-Service Spooler", "Set-Service Spooler -Status Stopped", "Disable-Service Spooler", "Remove-Service Spooler"],
+          "answer": 0,
+          "explain": "Stop-Service arrête immédiatement le service ; Set-Service modifie sa configuration, pas son état en temps réel."
+        },
+        {
+          "q": "Quel type de tâche planifiée s'exécute lorsqu'un événement précis apparaît dans l'Observateur d'événements ?",
+          "options": ["Tâche déclenchée par un événement", "Tâche déclenchée à l'heure fixe", "Tâche déclenchée au démarrage", "Tâche déclenchée à la connexion"],
+          "answer": 0,
+          "explain": "Windows permet de déclencher une tâche automatiquement quand un ID d'événement spécifique est journalisé."
+        },
+        {
+          "q": "Dans la MMC, comment s'appelle le mécanisme permettant d'administrer un ordinateur distant ?",
+          "options": ["Connexion à un autre ordinateur", "Bureau à distance", "PowerShell Remoting", "VPN site à site"],
+          "answer": 0,
+          "explain": "La MMC propose «Se connecter à un autre ordinateur» pour pointer les composants enfichables vers une machine distante."
+        },
+        {
+          "q": "Quel niveau d'événement indique une défaillance grave qui peut provoquer un arrêt du système ?",
+          "options": ["Critique", "Erreur", "Avertissement", "Information"],
+          "answer": 0,
+          "explain": "Le niveau «Critique» est le plus grave et signale une panne ayant causé ou pouvant causer un crash ou redémarrage."
+        },
+        {
+          "q": "Dans la Gestion des disques, que signifie l'état «En échec» pour un volume dynamique ?",
+          "options": ["Le volume est corrompu ou inaccessible", "Le volume est en cours de formatage", "Le volume est en lecture seule", "Le volume est chiffré"],
+          "answer": 0,
+          "explain": "L'état «En échec» indique que Windows ne peut plus accéder au volume, souvent à cause d'un problème matériel."
+        },
+        {
+          "q": "Comment exporter un journal de l'Observateur d'événements pour l'analyser sur un autre PC ?",
+          "options": ["Clic droit sur le journal > Enregistrer tous les événements sous (.evtx)", "Copier-coller les lignes dans un fichier texte", "Utiliser Gestion des disques > Exporter", "Imprimer le journal en PDF"],
+          "answer": 0,
+          "explain": "Le format .evtx est le format natif Windows ; il préserve toutes les métadonnées et peut être ouvert par l'Observateur d'événements."
+        },
+        {
+          "q": "Quel service Windows est responsable de la mise en file d'attente des travaux d'impression ?",
+          "options": ["Spouleur d'impression (Spooler)", "Windows Installer", "Windows Update", "DHCP Client"],
+          "answer": 0,
+          "explain": "Le service Spooler gère la file d'attente des impressions ; le redémarrer résout souvent les blocages d'imprimante."
+        },
+        {
+          "q": "Dans Utilisateurs et groupes locaux, comment forcer un utilisateur à changer son mot de passe à la prochaine connexion ?",
+          "options": ["Cocher «L'utilisateur doit changer le mot de passe à la prochaine ouverture de session»", "Désactiver son compte puis le réactiver", "Le supprimer et recréer le compte", "Modifier le groupe auquel il appartient"],
+          "answer": 0,
+          "explain": "Cette option dans les propriétés du compte force le changement de mot de passe dès la prochaine authentification."
+        },
+        {
+          "q": "Quelle est la différence entre un service en mode «Automatique» et «Automatique (début différé)» ?",
+          "options": ["Le début différé attend que les services critiques soient chargés avant de démarrer", "Le début différé ne démarre qu'après la connexion de l'utilisateur", "Le début différé est un service désactivé par défaut", "Il n'y a aucune différence fonctionnelle"],
+          "answer": 0,
+          "explain": "Le début différé améliore les performances au démarrage en retardant les services non critiques."
+        },
+        {
+          "q": "Dans la Gestion des disques, quelle lettre de lecteur est généralement réservée à la partition système EFI ?",
+          "options": ["Aucune lettre (partition cachée)", "C:", "D:", "Z:"],
+          "answer": 0,
+          "explain": "La partition EFI n'a pas de lettre attribuée par défaut sous Windows ; elle est masquée aux utilisateurs."
+        },
+        {
+          "q": "Quelle option du Planificateur de tâches permet de relancer automatiquement une tâche si elle échoue ?",
+          "options": ["Paramètre de répétition en cas d'échec (redémarrer si la tâche échoue)", "Déclencheur «Au démarrage»", "Action «Envoyer un e-mail»", "Condition «Réseau disponible»"],
+          "answer": 0,
+          "explain": "L'onglet «Paramètres» du Planificateur propose de relancer la tâche N fois en cas d'échec."
+        },
+        {
+          "q": "Dans la MMC, comment s'appelle le fichier qui sauvegarde une configuration de console personnalisée ?",
+          "options": ["Fichier .msc", "Fichier .bat", "Fichier .ps1", "Fichier .reg"],
+          "answer": 0,
+          "explain": "On sauvegarde une console MMC personnalisée sous forme de fichier .msc redistribuable."
+        },
+        {
+          "q": "Quel outil graphique Windows permet de voir en temps réel l'état CPU, mémoire et disque d'un service ?",
+          "options": ["Gestionnaire des tâches (onglet Services)", "Observateur d'événements", "Gestion des disques", "Planificateur de tâches"],
+          "answer": 0,
+          "explain": "Le Gestionnaire des tâches affiche les ressources consommées par chaque processus et service en temps réel."
+        },
+        {
+          "q": "Lorsqu'un service dépend d'un autre service, que se passe-t-il si le service «parent» est arrêté ?",
+          "options": ["Les services dépendants s'arrêtent également", "Les services dépendants continuent de fonctionner", "Windows redémarre automatiquement", "Une erreur critique est levée mais rien ne s'arrête"],
+          "answer": 0,
+          "explain": "Windows arrête en cascade tous les services qui dépendent du service parent avant d'arrêter celui-ci."
+        }
+      ]
+    }
+  ]
+}

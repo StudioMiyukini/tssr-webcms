@@ -1,0 +1,291 @@
+{
+  "slug": "le-chipset",
+  "title": "Le chipset",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Quel est le rôle principal du chipset sur une carte mère ?",
+          "options": ["Alimenter le processeur en électricité", "Coordonner les échanges entre le CPU, la RAM et les périphériques", "Stocker les données de l'utilisateur", "Afficher l'image sur l'écran"],
+          "answer": 1,
+          "explain": "Le chipset joue le rôle de chef d'orchestre : il gère la communication entre tous les composants de la carte mère."
+        },
+        {
+          "q": "Comment surnomme-t-on souvent le chipset dans une carte mère ?",
+          "options": ["Le cœur de la machine", "Le chef d'orchestre de la carte mère", "Le gardien du BIOS", "Le contrôleur d'affichage"],
+          "answer": 1,
+          "explain": "Le chipset est appelé chef d'orchestre car il synchronise les échanges entre tous les composants."
+        },
+        {
+          "q": "Dans l'ancienne architecture, quel composant gérait la liaison entre le CPU et la RAM ?",
+          "options": ["Le southbridge", "Le PCH", "Le northbridge", "Le contrôleur PCIe"],
+          "answer": 2,
+          "explain": "Le northbridge (pont nord) était chargé des communications rapides entre le CPU, la RAM et le GPU."
+        },
+        {
+          "q": "Dans l'ancienne architecture, quel composant gérait les périphériques lents (USB, SATA, audio) ?",
+          "options": ["Le northbridge", "Le PCH", "Le southbridge", "Le MCH"],
+          "answer": 2,
+          "explain": "Le southbridge (pont sud) gérait les entrées/sorties lentes comme l'USB, le SATA et le son."
+        },
+        {
+          "q": "Que signifie l'acronyme PCH ?",
+          "options": ["Platform Controller Hub", "Peripheral Connection Handler", "Processor Cache Handler", "Power Control Hub"],
+          "answer": 0,
+          "explain": "PCH signifie Platform Controller Hub, le chipset unique qui remplace les anciens northbridge et southbridge."
+        },
+        {
+          "q": "Quel bus est principalement géré par le chipset pour connecter les cartes d'extension ?",
+          "options": ["AGP", "ISA", "PCIe", "PCI classique"],
+          "answer": 2,
+          "explain": "Le chipset gère les lignes PCIe (PCI Express) utilisées pour les cartes graphiques, SSD NVMe et autres extensions."
+        },
+        {
+          "q": "Dans les architectures modernes, combien de puces chipset trouve-t-on généralement ?",
+          "options": ["Quatre puces distinctes", "Deux puces (northbridge + southbridge)", "Une seule puce (PCH)", "Trois puces spécialisées"],
+          "answer": 2,
+          "explain": "Depuis les années 2010, le chipset est regroupé en une seule puce appelée PCH, plus simple et moins énergivore."
+        },
+        {
+          "q": "Quel composant était appelé «northbridge» dans les anciennes architectures ?",
+          "options": ["Le pont nord, chargé des communications lentes", "Le pont nord, chargé des communications rapides (CPU, RAM, GPU)", "Le contrôleur de disque dur", "Le gestionnaire de l'alimentation"],
+          "answer": 1,
+          "explain": "Le northbridge gérait les échanges à haute vitesse entre le CPU, la mémoire RAM et le contrôleur graphique."
+        },
+        {
+          "q": "Qu'est-ce qu'une «ligne PCIe» gérée par le chipset ?",
+          "options": ["Un câble d'alimentation 12 V", "Une voie de communication série haut débit pour les cartes d'extension", "Un connecteur de ventilateur", "Un port USB interne"],
+          "answer": 1,
+          "explain": "Une ligne PCIe est une voie de transfert série permettant la communication rapide entre le chipset et les périphériques."
+        },
+        {
+          "q": "Quel composant est directement relié au chipset PCH sur une carte mère moderne ?",
+          "options": ["Le processeur uniquement", "Les ports USB, SATA, et les slots PCIe secondaires", "Uniquement la mémoire RAM", "Uniquement le GPU"],
+          "answer": 1,
+          "explain": "Le PCH gère les périphériques d'entrée/sortie comme l'USB, le SATA et les slots PCIe non directement reliés au CPU."
+        },
+        {
+          "q": "Pourquoi l'ancienne architecture à deux puces (northbridge + southbridge) a-t-elle été abandonnée ?",
+          "options": ["Elle était trop peu coûteuse", "Elle générait trop de chaleur et de latence entre les deux puces", "Elle ne supportait pas la mémoire RAM", "Elle était incompatible avec Windows"],
+          "answer": 1,
+          "explain": "La communication entre northbridge et southbridge introduisait de la latence et de la chaleur, d'où la fusion en un seul PCH."
+        },
+        {
+          "q": "Sur une carte mère moderne, le CPU communique directement avec quelle ressource sans passer par le chipset ?",
+          "options": ["Le disque dur SATA", "Les ports USB", "La mémoire RAM", "La carte son"],
+          "answer": 2,
+          "explain": "Dans les architectures modernes, le contrôleur mémoire est intégré au CPU, qui accède directement à la RAM sans passer par le chipset."
+        },
+        {
+          "q": "Quel sigle désignait le northbridge dans la terminologie Intel ?",
+          "options": ["ICH", "MCH", "PCH", "FSB"],
+          "answer": 1,
+          "explain": "Intel appelait le northbridge MCH (Memory Controller Hub), distinct du ICH (I/O Controller Hub) qui était le southbridge."
+        },
+        {
+          "q": "Quel est l'effet d'un chipset de bas de gamme sur les performances d'un PC ?",
+          "options": ["Aucun effet, le chipset n'influence pas les performances", "Il peut limiter le nombre de lignes PCIe et de ports disponibles", "Il améliore la fréquence du CPU", "Il augmente la capacité de la RAM"],
+          "answer": 1,
+          "explain": "Un chipset entrée de gamme propose moins de lignes PCIe et de ports, ce qui peut limiter les possibilités d'extension du système."
+        },
+        {
+          "q": "Quel composant de la carte mère stocke le firmware qui initialise le chipset au démarrage ?",
+          "options": ["Le CPU", "Le chipset lui-même", "La puce BIOS/UEFI", "La RAM"],
+          "answer": 2,
+          "explain": "La puce BIOS/UEFI contient le firmware de démarrage qui initialise le chipset et les autres composants avant le chargement de l'OS."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Qu'est-ce que le DMI (Direct Media Interface) dans une architecture Intel moderne ?",
+          "options": ["Le bus qui relie le CPU au chipset PCH", "Un type de mémoire cache", "Un connecteur d'alimentation", "Le protocole de communication USB"],
+          "answer": 0,
+          "explain": "Le DMI est le bus propriétaire Intel qui assure la liaison haut débit entre le processeur et le chipset PCH."
+        },
+        {
+          "q": "Dans une architecture AMD moderne, comment s'appelle le lien entre le CPU et le chipset ?",
+          "options": ["DMI", "HyperTransport ou PCIe", "QPI", "AGP"],
+          "answer": 1,
+          "explain": "AMD utilise HyperTransport (anciennes générations) ou des lignes PCIe pour relier le CPU au chipset dans ses plateformes modernes."
+        },
+        {
+          "q": "Que signifie «lanes PCIe» en parlant du chipset ?",
+          "options": ["Des ports réseau dédiés au chipset", "Des voies de données permettant un débit proportionnel au nombre de lanes", "Des canaux d'alimentation du chipset", "Des connecteurs SATA intégrés"],
+          "answer": 1,
+          "explain": "Chaque lane PCIe est une voie de données bidirectionnelle ; plus il y en a, plus la bande passante totale disponible est élevée."
+        },
+        {
+          "q": "Un slot PCIe x16 connecté au chipset a-t-il les mêmes performances qu'un slot x16 connecté directement au CPU ?",
+          "options": ["Oui, les performances sont identiques", "Non, passer par le chipset ajoute de la latence via le lien CPU-chipset", "Non, le chipset est plus rapide que le CPU", "Oui, car le chipset compense automatiquement"],
+          "answer": 1,
+          "explain": "Un slot PCIe relié au chipset subit la latence du lien entre CPU et chipset, ce qui peut réduire les performances par rapport à un lien direct CPU."
+        },
+        {
+          "q": "Quel est le rôle du chipset vis-à-vis des ports USB d'une carte mère ?",
+          "options": ["Il convertit USB en PCIe", "Il gère le contrôleur USB et distribue la bande passante entre les ports", "Il alimente directement les périphériques USB en 12 V", "Il chiffre les données USB"],
+          "answer": 1,
+          "explain": "Le chipset intègre les contrôleurs USB et gère la répartition de la bande passante disponible entre les différents ports."
+        },
+        {
+          "q": "Comment le chipset gère-t-il les disques durs SATA ?",
+          "options": ["Via un contrôleur SATA intégré dans le chipset", "Via un câble direct relié au CPU", "Via le bus AGP", "Via la RAM uniquement"],
+          "answer": 0,
+          "explain": "Le chipset intègre un contrôleur SATA qui prend en charge les disques durs et SSD SATA connectés à la carte mère."
+        },
+        {
+          "q": "Que gère principalement le chipset côté réseau sur une carte mère grand public ?",
+          "options": ["Il intègre un contrôleur Wi-Fi 5G", "Il fournit l'interface PCIe au contrôleur Ethernet et parfois Wi-Fi", "Il gère directement la fibre optique", "Il remplace le routeur local"],
+          "answer": 1,
+          "explain": "Le chipset fournit les interfaces PCIe ou PCI sur lesquelles sont branchés les contrôleurs réseau Ethernet et Wi-Fi."
+        },
+        {
+          "q": "Quelle est la différence principale entre un chipset Z-series et B-series chez Intel ?",
+          "options": ["Le Z-series supporte l'overclocking, le B-series est plus limité", "Le B-series est réservé aux serveurs", "Le Z-series ne supporte pas le PCIe 4.0", "Il n'y a aucune différence fonctionnelle"],
+          "answer": 0,
+          "explain": "Les chipsets Intel Z-series (ex. Z790) permettent l'overclocking du CPU et offrent plus de lanes PCIe, contrairement aux B-series."
+        },
+        {
+          "q": "Qu'est-ce que le «Thunderbolt» par rapport au chipset ?",
+          "options": ["Un standard de refroidissement du chipset", "Un protocole Intel haute vitesse qui s'appuie sur PCIe et DisplayPort, parfois intégré au chipset", "Un type de RAM géré par le chipset", "Un bus propriétaire AMD"],
+          "answer": 1,
+          "explain": "Thunderbolt est un protocole Intel combinant PCIe et DisplayPort, intégré dans les chipsets haut de gamme pour des transferts très rapides."
+        },
+        {
+          "q": "Pourquoi intégrer le contrôleur mémoire dans le CPU plutôt que dans le chipset améliore-t-il les performances ?",
+          "options": ["Cela réduit la consommation électrique uniquement", "Cela élimine la latence du passage par le chipset pour accéder à la RAM", "Cela augmente la fréquence de la RAM automatiquement", "Cela n'a aucun impact sur les performances"],
+          "answer": 1,
+          "explain": "Intégrer le contrôleur mémoire dans le CPU supprime le goulot d'étranglement du bus vers le chipset, réduisant la latence d'accès à la RAM."
+        },
+        {
+          "q": "Qu'est-ce que le «PLX chip» parfois présent sur des cartes graphiques haut de gamme ?",
+          "options": ["Un chipset secondaire qui multiplie les lanes PCIe disponibles", "Un processeur graphique auxiliaire", "Un module de mémoire GDDR supplémentaire", "Un contrôleur de ventilation"],
+          "answer": 0,
+          "explain": "Une puce PLX est un switch PCIe qui permet de multiplexer les lanes PCIe, offrant plus de connexions que les lanes disponibles."
+        },
+        {
+          "q": "Dans une architecture serveur Intel Xeon, quel composant remplace le chipset classique ?",
+          "options": ["Le FSB", "Le QPI/UPI et les contrôleurs intégrés dans le CPU", "Le northbridge dédié serveur", "Le PCH standard"],
+          "answer": 1,
+          "explain": "Dans les serveurs Xeon, les interconnexions QPI/UPI et les contrôleurs intégrés au CPU assurent des rôles équivalents au chipset."
+        },
+        {
+          "q": "Quel protocole le chipset PCH Intel utilise-t-il pour gérer le stockage NVMe rapide ?",
+          "options": ["AHCI sur SATA", "PCIe NVMe", "IDE", "SCSI"],
+          "answer": 1,
+          "explain": "Les SSD NVMe communiquent via le protocole NVMe sur des lanes PCIe, que le chipset (ou le CPU directement) met à disposition."
+        },
+        {
+          "q": "Que signifie «TDP» pour un chipset ?",
+          "options": ["Thermal Design Power : la chaleur maximale que le chipset peut dégager", "Transfer Data Protocol : le protocole de transfert de données", "Total Device Pins : le nombre de broches du chipset", "Turbo Dynamic Processing : la fréquence maximale du chipset"],
+          "answer": 0,
+          "explain": "Le TDP (Thermal Design Power) indique la puissance thermique maximale que le système de refroidissement doit pouvoir dissiper."
+        },
+        {
+          "q": "Quel chipset AMD gère la plateforme AM5 pour les processeurs Ryzen 7000 ?",
+          "options": ["X470", "B550", "X670/B650", "A320"],
+          "answer": 2,
+          "explain": "Les chipsets X670 et B650 sont conçus pour la plateforme AM5 d'AMD, compatible avec les processeurs Ryzen série 7000."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Dans une architecture Intel moderne (12e génération+), combien de générations de DMI le lien CPU-PCH utilise-t-il ?",
+          "options": ["DMI 2.0 (4 lanes)", "DMI 3.0 (4 lanes)", "DMI 4.0 (8 lanes)", "DMI 5.0 (16 lanes)"],
+          "answer": 2,
+          "explain": "À partir de la 12e génération Intel (Alder Lake), le lien DMI 4.0 x8 double la bande passante par rapport au DMI 3.0 x4 précédent."
+        },
+        {
+          "q": "Qu'est-ce que le «HSIO» dans un chipset Intel PCH ?",
+          "options": ["High Speed Input/Output : les voies polyvalentes assignables à PCIe, SATA, USB", "Hard Sector I/O : un type de cache disque", "Hyper Secure I/O : un module de sécurité", "Host System Interface Output : la connexion vers le CPU"],
+          "answer": 0,
+          "explain": "Les HSIO sont des voies polyvalentes du PCH configurables en PCIe, SATA ou USB 3.x selon les besoins de la carte mère."
+        },
+        {
+          "q": "Pourquoi un chipset haut de gamme offre-t-il plus de lanes PCIe qu'un chipset entrée de gamme ?",
+          "options": ["Car il utilise un procédé de gravure plus fin exclusivement", "Car il dispose de plus de voies HSIO multiplexées et d'un lien plus large vers le CPU", "Car il intègre une carte graphique dédiée", "Car il fonctionne à une tension plus élevée"],
+          "answer": 1,
+          "explain": "Les chipsets haut de gamme ont plus de voies HSIO et un lien CPU-chipset plus large, permettant d'exposer davantage de lanes PCIe aux composants."
+        },
+        {
+          "q": "Quel est l'intérêt du «bifurcation PCIe» configurée dans l'UEFI en lien avec le chipset ?",
+          "options": ["Diviser un slot PCIe x16 en plusieurs liens plus petits (ex. x8+x8 ou x4+x4+x4+x4)", "Doubler la fréquence des lanes PCIe", "Activer le Turbo Boost du CPU", "Fusionner deux chipsets en un seul"],
+          "answer": 0,
+          "explain": "La bifurcation PCIe permet de diviser les lanes d'un slot physique en plusieurs liens logiques indépendants pour connecter plusieurs périphériques."
+        },
+        {
+          "q": "Quel mécanisme de sécurité est souvent intégré dans le chipset PCH des plateformes modernes ?",
+          "options": ["Un antivirus matériel autonome", "Le moteur Intel ME (Management Engine) ou AMD PSP", "Un pare-feu réseau dédié", "Un chiffreur RAM en temps réel"],
+          "answer": 1,
+          "explain": "Intel ME (Management Engine) ou AMD PSP (Platform Security Processor) sont des sous-systèmes de sécurité intégrés dans le chipset/CPU."
+        },
+        {
+          "q": "Qu'est-ce que le «RAID on CPU» (RST) par opposition au RAID géré par le chipset ?",
+          "options": ["Un RAID logiciel géré par Windows uniquement", "Un RAID utilisant les lanes PCIe directes du CPU pour SSD NVMe, sans passer par le chipset", "Un type de RAID exclusif aux serveurs", "Un RAID qui exploite la mémoire cache du CPU"],
+          "answer": 1,
+          "explain": "Le RAID on CPU utilise les lanes PCIe directement connectées au processeur pour les SSD NVMe, offrant de meilleures performances que via le chipset."
+        },
+        {
+          "q": "Que se passe-t-il si le lien entre le CPU et le chipset PCH est saturé ?",
+          "options": ["Le CPU surchauffe immédiatement", "La bande passante est partagée entre tous les périphériques reliés au chipset, créant un goulot d'étranglement", "Le système redémarre automatiquement", "Le chipset bascule en mode veille"],
+          "answer": 1,
+          "explain": "Quand le lien CPU-PCH est saturé, tous les périphériques qui le traversent se retrouvent en concurrence pour la bande passante disponible."
+        },
+        {
+          "q": "Pourquoi certains SSD NVMe sont-ils branchés directement sur les lanes CPU plutôt que sur les lanes chipset ?",
+          "options": ["Pour des raisons de compatibilité avec les anciens BIOS uniquement", "Pour bénéficier d'une latence plus faible et d'une bande passante maximale sans transiter par le lien CPU-chipset", "Car le chipset ne supporte pas le NVMe", "Pour des raisons d'alimentation électrique"],
+          "answer": 1,
+          "explain": "Les lanes CPU offrent un accès direct sans la latence du lien DMI/PCIe vers le chipset, idéal pour les SSD NVMe hautes performances."
+        },
+        {
+          "q": "Qu'est-ce que le «Flex I/O» dans les chipsets Intel récents ?",
+          "options": ["Des voies HSIO reconfigurables permettant d'allouer dynamiquement les ressources entre PCIe, SATA et USB", "Un connecteur flexible pour les nappes de câbles", "Un mode basse consommation du chipset", "Un protocole de communication entre chipsets"],
+          "answer": 0,
+          "explain": "Le Flex I/O permet aux fabricants de cartes mères de choisir comment allouer les voies polyvalentes entre les différentes interfaces selon leurs besoins."
+        },
+        {
+          "q": "Dans le cadre d'une plateforme HEDT (High-End Desktop) Intel, comme le socket LGA4677, quel composant assume le plus de rôles du chipset traditionnel ?",
+          "options": ["Un chipset externe dédié HEDT", "Le CPU lui-même, avec ses nombreux lanes PCIe intégrés", "Un coprocesseur dédié sur la carte mère", "Le module VRM de la carte mère"],
+          "answer": 1,
+          "explain": "Sur les plateformes HEDT, le CPU intègre directement un très grand nombre de lanes PCIe et de contrôleurs, réduisant la dépendance au chipset."
+        },
+        {
+          "q": "Quel est le rôle de l'«eSPI» (Enhanced Serial Peripheral Interface) dans les architectures chipset modernes ?",
+          "options": ["Il relie le chipset aux périphériques de basse vitesse comme la puce BIOS, le contrôleur EC et les modules TPM", "Il accélère les transferts PCIe", "Il gère les ports USB 3.2", "Il connecte la RAM au chipset"],
+          "answer": 0,
+          "explain": "L'eSPI est une interface série qui relie le chipset aux composants bas débit comme la puce BIOS/UEFI, le contrôleur embarqué et le TPM."
+        },
+        {
+          "q": "Pourquoi la consommation thermique (TDP) du chipset a-t-elle globalement diminué entre l'ère northbridge/southbridge et les PCH modernes ?",
+          "options": ["Car les PCH modernes fonctionnent à des tensions bien inférieures et intègrent moins de fonctions", "Car les PCH modernes n'ont plus de fonctions à assurer", "Car la gravure plus fine et la consolidation des fonctions réduisent les pertes thermiques", "Car les PCH sont refroidis par eau de série"],
+          "answer": 2,
+          "explain": "La finesse de gravure accrue et la consolidation en une seule puce réduisent significativement les pertes par effet Joule du chipset moderne."
+        },
+        {
+          "q": "Qu'est-ce que le «PCIe retimer» parfois utilisé sur les cartes mères haut de gamme en lien avec le chipset ?",
+          "options": ["Un composant qui régénère et amplifie le signal PCIe pour maintenir l'intégrité sur de longues distances sur le PCB", "Un chipset secondaire dédié à l'audio PCIe", "Un module qui convertit PCIe en USB", "Un régulateur de tension pour les slots PCIe"],
+          "answer": 0,
+          "explain": "Un retimer PCIe régénère les signaux pour compenser l'atténuation sur les longues pistes du PCB, essentiel pour les hautes vitesses PCIe 5.0."
+        },
+        {
+          "q": "Sur une carte mère Intel Z790, combien de lanes PCIe 4.0 le chipset PCH peut-il typiquement exposer en sus des lanes CPU ?",
+          "options": ["4 lanes maximum", "8 lanes maximum", "Jusqu'à 20 lanes PCIe 4.0 depuis le PCH", "Aucune, toutes les lanes viennent du CPU"],
+          "answer": 2,
+          "explain": "Le PCH Z790 peut exposer jusqu'à 20 lanes PCIe 4.0 additionnelles pour les périphériques comme les SSD M.2 et les cartes d'extension."
+        },
+        {
+          "q": "Quelle technologie Intel permet de combiner les lanes CPU et les lanes chipset pour une gestion unifiée du stockage NVMe sur Z-series ?",
+          "options": ["Intel RST (Rapid Storage Technology)", "Intel XMP", "Intel VT-d", "Intel HT (Hyper-Threading)"],
+          "answer": 0,
+          "explain": "Intel RST (Rapid Storage Technology) permet de gérer de façon unifiée les SSD NVMe sur lanes CPU et chipset, y compris en configuration RAID."
+        }
+      ]
+    }
+  ]
+}

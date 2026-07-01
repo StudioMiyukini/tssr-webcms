@@ -1,0 +1,164 @@
+{
+  "n": 2,
+  "layer": "2 · Liaison",
+  "diff": 2,
+  "title": "Port muet",
+  "setup": "Tu es sur un poste client du labo. La machine est allumee, Windows est demarre, mais impossible d'acceder au reseau : plus d'internet, plus de partage de fichiers. Aucun message d'erreur clair, juste... rien.",
+  "start": "n1",
+  "nodes": {
+    "n1": {
+      "kind": "step",
+      "text": "Par ou commencer ?",
+      "question": "Quelle est ta premiere action face a ce symptome ?",
+      "choices": [
+        { "t": "Je verifie le voyant du port reseau sur la carte reseau du poste", "to": "n2" },
+        { "t": "Je lance directement un ping vers 8.8.8.8", "to": "f_osi" },
+        { "t": "Je reinitialise la carte reseau dans le gestionnaire de peripheriques", "to": "f_couche2_early" }
+      ]
+    },
+    "n2": {
+      "kind": "step",
+      "text": "Tu regardes l'arriere du PC : le voyant de la prise RJ45 est eteint. Pas de lumiere du tout. Ca peut venir du cable, de la carte, ou du switch.",
+      "question": "Qu'est-ce que tu fais ensuite pour isoler le probleme physique ?",
+      "choices": [
+        { "t": "Je suis le cable jusqu'au switch et je regarde l'etat du port cote switch", "to": "n3" },
+        { "t": "Je remplace le cable par un cable teste et fonctionnel", "to": "n2b" },
+        { "t": "Je passe directement en Wi-Fi pour contourner le probleme", "to": "f_contournement" }
+      ]
+    },
+    "n2b": {
+      "kind": "step",
+      "text": "Tu branches un cable neuf : le voyant du poste s'allume maintenant en orange fixe. Mais le reseau ne fonctionne toujours pas. Le cable n'etait pas en cause, ou alors c'etait un faux contact. Maintenant il faut regarder du cote du switch.",
+      "question": "Que regardes-tu sur le switch ?",
+      "choices": [
+        { "t": "Je verifie l'etat du port switch auquel le poste est connecte (voyant, show interface)", "to": "n3" },
+        { "t": "Je tente un ping depuis le poste vers la passerelle", "to": "f_osi" }
+      ]
+    },
+    "n3": {
+      "kind": "step",
+      "text": "Tu arrives devant le switch. Le voyant du port ou est branche le poste clignote en orange - signe que le lien est monte mais quelque chose cloche. Tu te connectes au switch en console.",
+      "question": "Quelle commande tapes-tu en premier pour diagnostiquer ce port ?",
+      "choices": [
+        { "t": "show interfaces FastEthernet0/X status", "to": "n4" },
+        { "t": "show mac address-table", "to": "n3b" },
+        { "t": "show running-config", "to": "n3c" }
+      ]
+    },
+    "n3b": {
+      "kind": "step",
+      "text": "La table MAC te montre des adresses sur plusieurs VLANs sur ce port - c'est bizarre pour un poste client. Ca suggere que le port serait peut-etre en trunk. Mais tu n'as pas encore confirme le statut du port lui-meme.",
+      "question": "Tu veux confirmer le statut du port avant d'aller plus loin. Quelle commande ?",
+      "choices": [
+        { "t": "show interfaces FastEthernet0/X status", "to": "n4" },
+        { "t": "Je configure directement switchport mode access sans verifier", "to": "f_precipite" }
+      ]
+    },
+    "n3c": {
+      "kind": "step",
+      "text": "La running-config est longue et tu dois chercher. Tu trouves la section du port en question : il est configure en mode trunk. Mais tu ne sais pas encore quel VLAN est attribue ni si le port est actif.",
+      "question": "Que fais-tu pour avoir un resume clair de l'etat du port ?",
+      "choices": [
+        { "t": "show interfaces FastEthernet0/X status", "to": "n4" },
+        { "t": "Je corrige tout de suite en tapant switchport mode access", "to": "f_precipite" }
+      ]
+    },
+    "n4": {
+      "kind": "step",
+      "text": "La commande affiche : Port Fa0/12 - connected - trunk - 100 - full. Le port est connecte, le lien est monte, mais il est en mode TRUNK. Un poste client ne devrait jamais etre sur un port trunk.",
+      "question": "Qu'est-ce que ca signifie concretement et que fais-tu ?",
+      "choices": [
+        { "t": "Un port trunk transporte plusieurs VLANs : le poste ne sait pas sur quel VLAN parler. Je dois passer ce port en mode access sur le bon VLAN.", "to": "n5" },
+        { "t": "Le trunk c'est mieux, ca donne acces a tout. Je laisse tel quel et je cherche ailleurs.", "to": "f_trunk" },
+        { "t": "Je redemarre le switch pour remettre les ports a zero.", "to": "f_reboot" }
+      ]
+    },
+    "n5": {
+      "kind": "step",
+      "text": "Tu sais que le port doit etre en access. Il faut maintenant savoir sur quel VLAN le mettre. Tu verifies la documentation du labo : le poste est dans le VLAN 10 (postes etudiants).",
+      "question": "Tu passes sur le port. Quelles commandes tapes-tu dans l'ordre ?",
+      "choices": [
+        { "t": "interface Fa0/12 puis switchport mode access puis switchport access vlan 10", "to": "n6" },
+        { "t": "interface Fa0/12 puis switchport access vlan 10 sans passer en mode access d'abord", "to": "f_ordre" },
+        { "t": "Je cree un nouveau VLAN pour ce poste plutot que d'utiliser le VLAN 10 existant", "to": "f_vlan_new" }
+      ]
+    },
+    "n6": {
+      "kind": "step",
+      "text": "Tu as applique les commandes. Le voyant du port passe au vert fixe. Maintenant tu valides depuis le poste client.",
+      "question": "Comment tu confirmes que la couche 2 est bien operationnelle maintenant ?",
+      "choices": [
+        { "t": "Je regarde l'icone reseau dans la barre Windows : elle affiche une connexion active, puis je tente un ping vers la passerelle.", "to": "win" },
+        { "t": "Je redemarre le poste avant toute verification.", "to": "n6b" }
+      ]
+    },
+    "n6b": {
+      "kind": "step",
+      "text": "Apres le redemarrage, le poste obtient bien une IP et le reseau fonctionne. C'est confirme mais tu as perdu du temps : un simple ping avant le reboot aurait suffi a valider.",
+      "question": "Bonne pratique : que retiens-tu pour la prochaine fois ?",
+      "choices": [
+        { "t": "Toujours tester sans redemarrer d'abord - ping, ipconfig... Le reboot est un dernier recours.", "to": "win" }
+      ]
+    },
+    "f_osi": {
+      "kind": "fail",
+      "text": "Tu lances un ping sans avoir verifie la couche physique. Si le cable n'est pas branche ou si le port est mort, le ping ne peut rien t'apprendre. On remonte toujours depuis la couche 1 : d'abord le physique, puis la liaison, puis les couches superieures.",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n1"
+    },
+    "f_couche2_early": {
+      "kind": "fail",
+      "text": "Reinitialiser la carte reseau peut parfois aider, mais tu sautes les etapes physiques et tu tates dans le vide. Si le port switch est mal configure, reinitialiser le pilote ne changera rien. Methodologie : couche 1 d'abord, puis couche 2.",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n1"
+    },
+    "f_contournement": {
+      "kind": "fail",
+      "text": "Basculer en Wi-Fi contourne le probleme sans le resoudre. Le poste filaire restera en panne pour le prochain utilisateur. Un technicien TSSR diagnostique et corrige, il ne fait pas que contourner.",
+      "course": "bases-du-reseau",
+      "courseLabel": "Les bases du reseau",
+      "retryTo": "n2"
+    },
+    "f_precipite": {
+      "kind": "fail",
+      "text": "Tu modifies la config sans avoir confirme l'etat complet du port. Et si le port etait aussi desactive (shutdown) ou sur le mauvais VLAN ? On verifie toujours avant de corriger pour ne pas introduire un nouveau probleme.",
+      "course": "le-switch",
+      "courseLabel": "Le switch",
+      "retryTo": "n3"
+    },
+    "f_trunk": {
+      "kind": "fail",
+      "text": "Le mode trunk n'est pas un avantage pour un poste client : la machine ne sait pas quel VLAN utiliser et les trames arrivent avec des tags 802.1Q que le poste ne comprend pas. Le trunk est reserve aux liens entre equipements reseau.",
+      "course": "le-switch",
+      "courseLabel": "Le switch",
+      "retryTo": "n4"
+    },
+    "f_reboot": {
+      "kind": "fail",
+      "text": "Redemarrer un switch de production pour un seul port, c'est couper tous les autres postes du reseau. On corrige le port a chaud via la CLI : c'est la bonne pratique.",
+      "course": "le-switch",
+      "courseLabel": "Le switch",
+      "retryTo": "n4"
+    },
+    "f_ordre": {
+      "kind": "fail",
+      "text": "Si tu attribues un VLAN access sans avoir d'abord bascule le port en mode access, le port peut rester en trunk ou le VLAN ne s'applique pas correctement selon l'IOS. L'ordre est important : mode access d'abord, VLAN ensuite.",
+      "course": "le-switch",
+      "courseLabel": "Le switch",
+      "retryTo": "n5"
+    },
+    "f_vlan_new": {
+      "kind": "fail",
+      "text": "Creer un VLAN pour un seul poste alors qu'un VLAN adapte existe deja, c'est une mauvaise pratique : ca fragmente le reseau et complique la gestion. On utilise les VLANs existants documentes par l'equipe reseau.",
+      "course": "reseau-entreprise",
+      "courseLabel": "Reseau d'entreprise",
+      "retryTo": "n5"
+    },
+    "win": {
+      "kind": "win",
+      "text": "Le poste obtient une IP via DHCP, le ping vers la passerelle repond, le reseau fonctionne. Tu as identifie que la panne etait a la couche 2 : le port switch etait configure en trunk au lieu d'access VLAN 10. En remontant methodiquement depuis la couche physique, tu as localise et corrige la cause racine sans toucher au reste du reseau."
+    }
+  }
+}

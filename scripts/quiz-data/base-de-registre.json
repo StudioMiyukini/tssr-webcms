@@ -1,0 +1,291 @@
+{
+  "slug": "base-de-registre",
+  "title": "La base de registre",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Quel outil Windows permet d'éditer manuellement la base de registre ?",
+          "options": ["regedit.exe", "regedt32.exe", "regsvr32.exe", "msconfig.exe"],
+          "answer": 0,
+          "explain": "regedit.exe est l'éditeur graphique intégré à Windows pour parcourir et modifier la base de registre."
+        },
+        {
+          "q": "Combien de ruches racines (hives) principales existent dans la base de registre Windows ?",
+          "options": ["5", "3", "7", "4"],
+          "answer": 0,
+          "explain": "La base de registre comporte 5 ruches racines : HKLM, HKCU, HKCR, HKU et HKCC."
+        },
+        {
+          "q": "Que contient principalement HKEY_LOCAL_MACHINE (HKLM) ?",
+          "options": ["La configuration matérielle et logicielle de l'ordinateur", "Les préférences du compte connecté", "Les associations de fichiers", "Les profils de tous les utilisateurs"],
+          "answer": 0,
+          "explain": "HKLM stocke les paramètres système globaux indépendants de l'utilisateur connecté."
+        },
+        {
+          "q": "Quelle ruche contient les paramètres propres à l'utilisateur actuellement connecté ?",
+          "options": ["HKEY_CURRENT_USER (HKCU)", "HKEY_LOCAL_MACHINE (HKLM)", "HKEY_USERS (HKU)", "HKEY_CURRENT_CONFIG (HKCC)"],
+          "answer": 0,
+          "explain": "HKCU est un alias dynamique qui pointe vers le profil de l'utilisateur en cours de session."
+        },
+        {
+          "q": "Quelle ruche gère les associations entre types de fichiers et programmes ?",
+          "options": ["HKEY_CLASSES_ROOT (HKCR)", "HKEY_CURRENT_USER (HKCU)", "HKEY_USERS (HKU)", "HKEY_LOCAL_MACHINE (HKLM)"],
+          "answer": 0,
+          "explain": "HKCR regroupe les associations d'extensions (.docx, .pdf…) et les informations COM/OLE."
+        },
+        {
+          "q": "Quelle ruche contient les profils de TOUS les utilisateurs du système, chargés ou non ?",
+          "options": ["HKEY_USERS (HKU)", "HKEY_CURRENT_USER (HKCU)", "HKEY_LOCAL_MACHINE (HKLM)", "HKEY_CLASSES_ROOT (HKCR)"],
+          "answer": 0,
+          "explain": "HKU contient un sous-dossier par utilisateur identifié par son SID, dont HKCU est une projection."
+        },
+        {
+          "q": "À quoi correspond HKEY_CURRENT_CONFIG (HKCC) ?",
+          "options": ["La configuration matérielle active (profil matériel courant)", "La liste des services en cours d'exécution", "Les préférences Internet de l'utilisateur", "Les pilotes installés"],
+          "answer": 0,
+          "explain": "HKCC est un alias vers HKLM\\SYSTEM\\CurrentControlSet\\Hardware Profiles\\Current."
+        },
+        {
+          "q": "Dans la base de registre, comment appelle-t-on le conteneur équivalent à un dossier ?",
+          "options": ["Une clé (Key)", "Une valeur (Value)", "Une ruche (Hive)", "Un type (Type)"],
+          "answer": 0,
+          "explain": "Une clé est le conteneur hiérarchique de la base de registre, similaire à un dossier dans l'explorateur."
+        },
+        {
+          "q": "Que représente une «valeur» dans la base de registre ?",
+          "options": ["Une donnée nommée stockée dans une clé", "Un sous-dossier de la ruche", "Un fichier de configuration système", "Un utilisateur du système"],
+          "answer": 0,
+          "explain": "Une valeur est l'unité de stockage de données dans la base de registre, comparable à un fichier dans un dossier."
+        },
+        {
+          "q": "Quel type de valeur REG stocke une chaîne de texte simple ?",
+          "options": ["REG_SZ", "REG_DWORD", "REG_BINARY", "REG_MULTI_SZ"],
+          "answer": 0,
+          "explain": "REG_SZ (String Zero) stocke une chaîne de caractères terminée par un caractère nul."
+        },
+        {
+          "q": "Quel type de valeur stocke un nombre entier 32 bits ?",
+          "options": ["REG_DWORD", "REG_SZ", "REG_EXPAND_SZ", "REG_QWORD"],
+          "answer": 0,
+          "explain": "REG_DWORD (Double Word) contient un entier non signé sur 32 bits, souvent utilisé pour des booléens (0/1)."
+        },
+        {
+          "q": "Avant toute modification de la base de registre, quelle action est vivement recommandée ?",
+          "options": ["Exporter une sauvegarde (.reg) de la clé concernée", "Redémarrer Windows en mode sans échec", "Désactiver l'antivirus", "Créer un nouvel utilisateur administrateur"],
+          "answer": 0,
+          "explain": "Exporter la clé en fichier .reg permet de restaurer rapidement les valeurs d'origine en cas de problème."
+        },
+        {
+          "q": "Comment exporter une clé de la base de registre dans regedit ?",
+          "options": ["Clic droit sur la clé > Exporter", "Fichier > Importer", "Édition > Copier la clé", "Affichage > Exporter"],
+          "answer": 0,
+          "explain": "Le clic droit sur une clé propose «Exporter» pour sauvegarder la clé et ses valeurs dans un fichier .reg."
+        },
+        {
+          "q": "Quel raccourci clavier permet de rechercher une valeur dans regedit ?",
+          "options": ["Ctrl+F", "Ctrl+H", "Ctrl+G", "Alt+F4"],
+          "answer": 0,
+          "explain": "Ctrl+F ouvre la boîte de recherche de regedit pour trouver clés, valeurs ou données."
+        },
+        {
+          "q": "Quel chemin de registre est classiquement utilisé pour les programmes qui démarrent avec Windows pour tous les utilisateurs ?",
+          "options": ["HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", "HKLM\\SYSTEM\\CurrentControlSet\\Services", "HKCR\\Applications"],
+          "answer": 0,
+          "explain": "La clé Run sous HKLM s'applique à tous les utilisateurs du PC, contrairement à celle sous HKCU qui est par utilisateur."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Quel type de valeur REG stocke des données binaires brutes (octets) ?",
+          "options": ["REG_BINARY", "REG_DWORD", "REG_SZ", "REG_MULTI_SZ"],
+          "answer": 0,
+          "explain": "REG_BINARY stocke des données arbitraires en hexadécimal, souvent utilisé pour les informations matérielles."
+        },
+        {
+          "q": "Quelle est la différence entre REG_SZ et REG_EXPAND_SZ ?",
+          "options": ["REG_EXPAND_SZ peut contenir des variables d'environnement comme %SystemRoot%", "REG_EXPAND_SZ est limité à 256 caractères", "REG_SZ supporte l'Unicode, REG_EXPAND_SZ non", "Il n'y a aucune différence"],
+          "answer": 0,
+          "explain": "REG_EXPAND_SZ est résolu dynamiquement : %SystemRoot% est remplacé par le chemin réel au moment de la lecture."
+        },
+        {
+          "q": "Comment s'appelle le fichier physique qui correspond à la ruche HKCU sur le disque ?",
+          "options": ["NTUSER.DAT", "SYSTEM", "SOFTWARE", "SAM"],
+          "answer": 0,
+          "explain": "NTUSER.DAT est le fichier de ruche stocké dans le profil utilisateur (C:\\Users\\<nom>\\NTUSER.DAT)."
+        },
+        {
+          "q": "Quel fichier physique correspond à la ruche HKLM\\SOFTWARE ?",
+          "options": ["C:\\Windows\\System32\\config\\SOFTWARE", "C:\\Users\\Default\\NTUSER.DAT", "C:\\Windows\\System32\\config\\SYSTEM", "C:\\Windows\\System32\\config\\SAM"],
+          "answer": 0,
+          "explain": "Les ruches HKLM sont stockées dans C:\\Windows\\System32\\config\\ ; SOFTWARE est l'une d'elles."
+        },
+        {
+          "q": "Quel type de valeur stocke plusieurs chaînes de texte dans une seule valeur ?",
+          "options": ["REG_MULTI_SZ", "REG_SZ", "REG_EXPAND_SZ", "REG_DWORD"],
+          "answer": 0,
+          "explain": "REG_MULTI_SZ permet de stocker une liste de chaînes séparées par des caractères nuls dans une seule valeur."
+        },
+        {
+          "q": "Quel chemin de registre contient la liste des services Windows ?",
+          "options": ["HKLM\\SYSTEM\\CurrentControlSet\\Services", "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", "HKCU\\Control Panel\\Desktop", "HKCR\\Applications"],
+          "answer": 0,
+          "explain": "Chaque service Windows possède une sous-clé dans HKLM\\SYSTEM\\CurrentControlSet\\Services."
+        },
+        {
+          "q": "Que fait la commande «reg export» dans l'invite de commandes ?",
+          "options": ["Elle sauvegarde une clé et ses sous-clés dans un fichier .reg", "Elle importe un fichier .reg dans la base de registre", "Elle supprime une clé du registre", "Elle liste les valeurs d'une clé"],
+          "answer": 0,
+          "explain": "reg export <clé> <fichier.reg> exporte la clé spécifiée ; l'équivalent de l'export graphique de regedit."
+        },
+        {
+          "q": "Quel risque principal court-on en supprimant une clé système dans la base de registre ?",
+          "options": ["Le système peut devenir instable ou ne plus démarrer", "Windows crée automatiquement une clé de remplacement", "Seul le compte Invité est affecté", "Le disque dur est formaté"],
+          "answer": 0,
+          "explain": "La suppression d'une clé système critique peut empêcher Windows de démarrer ou provoquer des erreurs fatales."
+        },
+        {
+          "q": "Quelle ruche est en lecture seule et ne peut pas être modifiée directement ?",
+          "options": ["HKEY_CLASSES_ROOT (HKCR) est une vue fusionnée, les modifications se font dans HKLM ou HKCU", "HKEY_CURRENT_USER", "HKEY_LOCAL_MACHINE", "HKEY_USERS"],
+          "answer": 0,
+          "explain": "HKCR est une vue calculée fusionnant HKLM\\SOFTWARE\\Classes et HKCU\\SOFTWARE\\Classes ; on modifie les sources."
+        },
+        {
+          "q": "Comment importer un fichier .reg pour restaurer des valeurs sauvegardées ?",
+          "options": ["Double-cliquer sur le fichier .reg ou utiliser «reg import»", "Renommer le fichier en .bat puis l'exécuter", "Le copier dans System32", "L'ouvrir avec Notepad et copier le contenu"],
+          "answer": 0,
+          "explain": "Un double-clic sur un fichier .reg propose de fusionner son contenu dans la base de registre."
+        },
+        {
+          "q": "Quel chemin contient le numéro de version de Windows dans la base de registre ?",
+          "options": ["HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", "HKCU\\SOFTWARE\\Microsoft\\Windows", "HKLM\\SYSTEM\\ControlSet001\\Enum", "HKCR\\CLSID"],
+          "answer": 0,
+          "explain": "La valeur ProductName et CurrentBuild se trouvent sous HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion."
+        },
+        {
+          "q": "Quelle permission de registre autorise un utilisateur à lire les valeurs mais pas à les modifier ?",
+          "options": ["Lecture seule", "Contrôle total", "Écriture", "Création de sous-clés"],
+          "answer": 0,
+          "explain": "La permission «Lecture» permet de consulter les valeurs sans pouvoir les modifier ni créer de sous-clés."
+        },
+        {
+          "q": "Que stocke la valeur «ImagePath» dans une clé de service sous HKLM\\SYSTEM\\CurrentControlSet\\Services ?",
+          "options": ["Le chemin de l'exécutable du service", "Le nom d'affichage du service", "Le compte sous lequel le service s'exécute", "La dépendance du service"],
+          "answer": 0,
+          "explain": "ImagePath indique à Windows quel fichier .exe ou .sys lancer pour démarrer le service."
+        },
+        {
+          "q": "Quel outil en ligne de commande permet de modifier une valeur de registre à distance ?",
+          "options": ["reg add \\\\serveur\\HKLM\\... (chemin préfixé par le nom de machine)", "regedit /remote", "regsvr32 /remote", "netsh registry"],
+          "answer": 0,
+          "explain": "La commande «reg» opère sur une machine distante quand on préfixe le chemin de la clé par \\\\NomDeLaMachine (le service Remote Registry doit être actif)."
+        },
+        {
+          "q": "Quelle valeur DWORD courante dans la base de registre représente «activé» ?",
+          "options": ["1", "0", "255", "-1"],
+          "answer": 0,
+          "explain": "Par convention, 1 signifie activé/vrai et 0 signifie désactivé/faux pour les valeurs DWORD booléennes."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Quel type de valeur REG stocke un entier 64 bits ?",
+          "options": ["REG_QWORD", "REG_DWORD", "REG_BINARY", "REG_EXPAND_SZ"],
+          "answer": 0,
+          "explain": "REG_QWORD (Quad Word) stocke un entier non signé sur 64 bits, utile pour les grandes valeurs numériques."
+        },
+        {
+          "q": "Dans le contexte de la base de registre, que désigne le terme «ruche» (hive) ?",
+          "options": ["Un fichier physique qui regroupe un ensemble de clés et valeurs", "Un alias d'une clé racine", "Un type de valeur spécial", "Un outil d'administration tiers"],
+          "answer": 0,
+          "explain": "Une ruche est un fichier disque (ex. NTUSER.DAT, SOFTWARE) chargé en mémoire et monté dans l'arborescence du registre."
+        },
+        {
+          "q": "Quel outil PowerShell liste les valeurs d'une clé de registre ?",
+          "options": ["Get-ItemProperty", "Get-ChildItem", "Get-Service", "Get-Item"],
+          "answer": 0,
+          "explain": "Get-ItemProperty <chemin registre> affiche toutes les valeurs de la clé spécifiée, comme dir sur le système de fichiers."
+        },
+        {
+          "q": "Comment PowerShell accède-t-il à la base de registre comme si c'était un lecteur ?",
+          "options": ["Via les PSDrives HKLM: et HKCU:", "Via le lecteur C:\\Registry\\", "Via la commande Mount-Registry", "Via le module ActiveDirectory"],
+          "answer": 0,
+          "explain": "PowerShell expose HKLM: et HKCU: comme des lecteurs virtuels permettant cd, dir, Get-Item sur le registre."
+        },
+        {
+          "q": "Quel fichier de la ruche HKLM contient la base de données des comptes locaux (SAM) ?",
+          "options": ["C:\\Windows\\System32\\config\\SAM", "C:\\Windows\\System32\\config\\SECURITY", "C:\\Users\\Default\\NTUSER.DAT", "C:\\Windows\\System32\\config\\SYSTEM"],
+          "answer": 0,
+          "explain": "Le fichier SAM (Security Account Manager) contient les hachages des mots de passe des comptes locaux."
+        },
+        {
+          "q": "Quel mécanisme Windows protège les clés de registre sensibles contre les modifications non autorisées ?",
+          "options": ["Les ACL (permissions) sur les clés de registre", "Le chiffrement BitLocker", "Le Pare-feu Windows", "L'UAC uniquement"],
+          "answer": 0,
+          "explain": "Chaque clé de registre possède une liste de contrôle d'accès (ACL) similaire aux permissions NTFS."
+        },
+        {
+          "q": "Que se passe-t-il si on modifie la valeur «Start» d'un service de 2 (Automatique) à 4 dans la base de registre ?",
+          "options": ["Le service est désactivé", "Le service démarre manuellement", "Le service démarre plus tôt", "Le service est supprimé"],
+          "answer": 0,
+          "explain": "La valeur 4 dans la clé Start d'un service correspond au type de démarrage «Désactivé»."
+        },
+        {
+          "q": "Quel chemin de registre permet de configurer les paramètres du proxy Internet Explorer/Edge hérité ?",
+          "options": ["HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Internet Settings", "HKLM\\SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters", "HKCU\\Control Panel\\Desktop", "HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge"],
+          "answer": 0,
+          "explain": "Les paramètres proxy utilisateur (ProxyEnable, ProxyServer) sont stockés dans Internet Settings sous HKCU."
+        },
+        {
+          "q": "Quelle commande permet d'ajouter une valeur DWORD dans la base de registre depuis cmd.exe ?",
+          "options": ["reg add <clé> /v <nom> /t REG_DWORD /d <données>", "regedit /add <clé> /v <nom>", "set registry <clé>/<nom>=<données>", "regsvr32 /add <clé>"],
+          "answer": 0,
+          "explain": "La syntaxe complète de reg add spécifie la clé cible, le nom de valeur, le type et la donnée à écrire."
+        },
+        {
+          "q": "Lors d'un audit de sécurité, quel chemin de registre indique les programmes lancés automatiquement pour tous les utilisateurs ?",
+          "options": ["HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run", "HKCU\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\RunOnce", "HKLM\\SYSTEM\\CurrentControlSet\\Services", "HKCU\\Control Panel\\Desktop"],
+          "answer": 0,
+          "explain": "La clé Run sous HKLM s'applique à tous les utilisateurs du système et est souvent ciblée par des logiciels malveillants."
+        },
+        {
+          "q": "Quel outil permet de comparer deux fichiers .reg pour identifier les différences de configuration ?",
+          "options": ["Un outil de comparaison de texte (diff, WinMerge)", "regedit natif", "compmgmt.msc", "msconfig.exe"],
+          "answer": 0,
+          "explain": "Les fichiers .reg étant du texte brut, tout outil diff (WinMerge, git diff…) peut comparer deux exports."
+        },
+        {
+          "q": "Pourquoi est-il déconseillé de modifier la ruche SAM directement dans regedit ?",
+          "options": ["Elle est verrouillée par le système et gère les comptes ; une erreur peut bloquer l'authentification", "SAM est en lecture seule et les modifications sont impossibles", "SAM ne contient que des données réseau", "SAM est chiffrée par BitLocker par défaut"],
+          "answer": 0,
+          "explain": "La ruche SAM gère les hachages des mots de passe locaux ; toute corruption peut empêcher toute connexion."
+        },
+        {
+          "q": "Quel est le rôle de la clé «HKLM\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\BootExecute» ?",
+          "options": ["Elle liste les programmes exécutés avant le chargement de Windows (avant le bureau)", "Elle configure le délai de démarrage des services", "Elle stocke le nom d'hôte du PC", "Elle gère les mises à jour automatiques"],
+          "answer": 0,
+          "explain": "BootExecute contient les commandes lancées très tôt au démarrage, avant que la session utilisateur soit initialisée."
+        },
+        {
+          "q": "Quelle fonctionnalité Windows permet de revenir à une configuration de registre antérieure en cas de problème après modification ?",
+          "options": ["La restauration du système (System Restore / Points de restauration)", "La défragmentation", "Le Gestionnaire des tâches", "La Gestion des disques"],
+          "answer": 0,
+          "explain": "Les points de restauration incluent un snapshot du registre, permettant d'annuler des modifications problématiques."
+        },
+        {
+          "q": "Dans un environnement d'entreprise, quel mécanisme permet de déployer des paramètres de registre sur plusieurs postes sans intervention manuelle ?",
+          "options": ["Les stratégies de groupe (GPO)", "Un fichier .reg envoyé par e-mail", "L'outil regedit en mode réseau", "Un script batch manuel"],
+          "answer": 0,
+          "explain": "Les GPO (Group Policy Objects) permettent de pousser des paramètres de registre sur tous les postes du domaine."
+        }
+      ]
+    }
+  ]
+}

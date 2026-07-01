@@ -1,0 +1,291 @@
+{
+  "slug": "histoire-de-windows",
+  "title": "L'histoire de Windows",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "En quelle année Microsoft a-t-il lancé la première version de Windows ?",
+          "options": ["1981", "1985", "1990", "1995"],
+          "answer": 1,
+          "explain": "Windows 1.0 est sorti en novembre 1985, offrant une interface graphique par-dessus MS-DOS."
+        },
+        {
+          "q": "Sur quel système d'exploitation Windows 1.0 fonctionnait-il en s'appuyant ?",
+          "options": ["Unix", "OS/2", "MS-DOS", "CP/M"],
+          "answer": 2,
+          "explain": "Windows 1.0 n'était pas un OS autonome, il s'exécutait au-dessus de MS-DOS."
+        },
+        {
+          "q": "Quelle version de Windows a popularisé le bouton Démarrer en 1995 ?",
+          "options": ["Windows 3.1", "Windows 95", "Windows NT 4.0", "Windows 98"],
+          "answer": 1,
+          "explain": "Windows 95 a introduit le fameux bouton Démarrer et la barre des tâches."
+        },
+        {
+          "q": "Que signifie NT dans « Windows NT » ?",
+          "options": ["New Technology", "Network Terminal", "Native Tool", "Node Transfer"],
+          "answer": 0,
+          "explain": "NT signifie « New Technology », une architecture plus robuste développée par Microsoft."
+        },
+        {
+          "q": "Quelle version de Windows a été lancée en 2001 et est restée populaire jusqu'en 2014 ?",
+          "options": ["Windows 2000", "Windows Me", "Windows XP", "Windows Vista"],
+          "answer": 2,
+          "explain": "Windows XP, sorti en 2001, a bénéficié d'un support prolongé grâce à sa stabilité."
+        },
+        {
+          "q": "Quel est le premier OS Microsoft à avoir utilisé une interface entièrement graphique sans passer par MS-DOS ?",
+          "options": ["Windows 95", "Windows XP", "Windows NT 3.1", "Windows 3.1"],
+          "answer": 2,
+          "explain": "Windows NT 3.1 (1993) était un OS graphique autonome, indépendant de MS-DOS."
+        },
+        {
+          "q": "Quelle version de Windows a été souvent critiquée pour ses problèmes de compatibilité et de performance, sortie en 2007 ?",
+          "options": ["Windows Me", "Windows Vista", "Windows 7", "Windows 8"],
+          "answer": 1,
+          "explain": "Windows Vista (2007) a été critiqué pour ses exigences matérielles élevées et ses problèmes de compatibilité."
+        },
+        {
+          "q": "Quelle version de Windows a réintroduit le bouton Démarrer classique après Windows 8 ?",
+          "options": ["Windows 8.1", "Windows 10", "Windows RT", "Windows Phone"],
+          "answer": 1,
+          "explain": "Windows 10 (2015) a ramené un bouton Démarrer repensé après les critiques de Windows 8."
+        },
+        {
+          "q": "Windows 95 intégrait nativement pour la première fois lequel de ces éléments ?",
+          "options": ["Le Bloc-notes", "Internet Explorer", "le TCP/IP", "le Gestionnaire de fichiers"],
+          "answer": 2,
+          "explain": "Windows 95 intégrait nativement la pile réseau TCP/IP, facilitant la connexion à Internet."
+        },
+        {
+          "q": "En quelle année Windows 10 est-il sorti ?",
+          "options": ["2013", "2014", "2015", "2016"],
+          "answer": 2,
+          "explain": "Windows 10 a été lancé le 29 juillet 2015."
+        },
+        {
+          "q": "Quelle version de Windows a introduit l'interface Metro et la suppression du bouton Démarrer classique ?",
+          "options": ["Windows 7", "Windows Vista", "Windows 8", "Windows 10"],
+          "answer": 2,
+          "explain": "Windows 8 (2012) a remplacé le bureau classique par une interface tuiles tactile appelée Metro."
+        },
+        {
+          "q": "Quel concurrent direct de Microsoft a influencé la création de Windows 1.0 avec son interface graphique ?",
+          "options": ["IBM PC-DOS", "Apple Macintosh", "Commodore Amiga", "Atari ST"],
+          "answer": 1,
+          "explain": "L'interface graphique d'Apple Macintosh (1984) a inspiré Microsoft pour développer Windows."
+        },
+        {
+          "q": "Quelle version de Windows est considérée comme un « retour en grâce » après l'échec de Vista ?",
+          "options": ["Windows XP SP3", "Windows 7", "Windows 8", "Windows 2000"],
+          "answer": 1,
+          "explain": "Windows 7 (2009) a été acclamé pour sa stabilité et ses performances, effaçant l'image négative de Vista."
+        },
+        {
+          "q": "Windows 98 a apporté une intégration plus poussée de quel service Internet ?",
+          "options": ["FTP natif", "Internet Explorer dans le bureau", "un client mail intégré", "un navigateur Opera"],
+          "answer": 1,
+          "explain": "Windows 98 a intégré Internet Explorer directement dans l'interface du bureau Windows."
+        },
+        {
+          "q": "En quelle année Windows 11 a-t-il été officiellement lancé ?",
+          "options": ["2020", "2021", "2022", "2023"],
+          "answer": 1,
+          "explain": "Windows 11 a été lancé le 5 octobre 2021."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Quelle architecture de noyau utilise Windows NT par rapport à Windows 9x ?",
+          "options": ["Micro-noyau pur", "Noyau hybride", "Noyau monolithique", "Exo-noyau"],
+          "answer": 1,
+          "explain": "Windows NT utilise un noyau hybride, combinant des éléments micro-noyau et monolithique."
+        },
+        {
+          "q": "Quel était le nom de code de Windows XP lors de son développement ?",
+          "options": ["Longhorn", "Whistler", "Vienna", "Chicago"],
+          "answer": 1,
+          "explain": "Le nom de code de Windows XP pendant le développement était « Whistler »."
+        },
+        {
+          "q": "Quelle fonctionnalité de sécurité Windows Vista a-t-elle introduite pour limiter les actions des programmes ?",
+          "options": ["Windows Defender", "BitLocker", "UAC (Contrôle de compte utilisateur)", "Windows Firewall"],
+          "answer": 2,
+          "explain": "L'UAC (User Account Control) de Vista demande confirmation avant toute action nécessitant des droits élevés."
+        },
+        {
+          "q": "Quelle version de Windows a introduit BitLocker pour chiffrer les disques durs ?",
+          "options": ["Windows XP SP2", "Windows Vista", "Windows 7", "Windows 8"],
+          "answer": 1,
+          "explain": "BitLocker a été introduit avec Windows Vista pour chiffrer les volumes de disque."
+        },
+        {
+          "q": "Quel est le nom du nom de code de développement de Windows Vista ?",
+          "options": ["Whistler", "Longhorn", "Vienna", "Blackcomb"],
+          "answer": 1,
+          "explain": "Windows Vista a été développé sous le nom de code « Longhorn »."
+        },
+        {
+          "q": "Quelle technologie de virtualisation Microsoft a introduite avec Windows 8 Pro ?",
+          "options": ["VirtualBox", "VMware", "Hyper-V client", "Docker Desktop"],
+          "answer": 2,
+          "explain": "Windows 8 Pro a intégré Hyper-V, permettant la création de machines virtuelles directement dans Windows."
+        },
+        {
+          "q": "Windows XP existe en deux éditions principales ; laquelle était destinée aux entreprises ?",
+          "options": ["Windows XP Édition Familiale", "Windows XP Professionnel", "Windows XP Media Center", "Windows XP Tablet PC"],
+          "answer": 1,
+          "explain": "Windows XP Professionnel offrait des fonctionnalités réseau et de sécurité pour les entreprises."
+        },
+        {
+          "q": "Quelle version de Windows a introduit la fonctionnalité « Snap » pour organiser les fenêtres ?",
+          "options": ["Windows Vista", "Windows 7", "Windows 8", "Windows 10"],
+          "answer": 1,
+          "explain": "Windows 7 a introduit Aero Snap pour coller les fenêtres sur les bords de l'écran."
+        },
+        {
+          "q": "Quel était le successeur immédiat prévu de Windows XP, dont le projet a finalement abouti à Vista ?",
+          "options": ["Longhorn", "Blackcomb", "Cairo", "Neptune"],
+          "answer": 0,
+          "explain": "Longhorn était le successeur prévu de Windows XP ; ce projet a évolué et donné naissance à Windows Vista. Blackcomb désignait la version suivante."
+        },
+        {
+          "q": "Quelle interface graphique 3D translucide a été introduite avec Windows Vista ?",
+          "options": ["Aero Glass", "Metro UI", "Fluent Design", "Aqua"],
+          "answer": 0,
+          "explain": "Aero Glass de Vista proposait des fenêtres translucides et des effets graphiques 3D."
+        },
+        {
+          "q": "Windows 10 a été proposé gratuitement pendant un an lors de son lancement. Aux utilisateurs de quelles versions ?",
+          "options": ["Windows XP et Vista", "Windows 7 et 8.1", "Windows 8 seulement", "Windows 7 seulement"],
+          "answer": 1,
+          "explain": "Microsoft a offert la mise à niveau gratuite vers Windows 10 aux utilisateurs de Windows 7 et 8.1."
+        },
+        {
+          "q": "Quelle configuration minimale en RAM était requise pour Windows 7 32 bits ?",
+          "options": ["128 Mo", "256 Mo", "512 Mo", "1 Go"],
+          "answer": 2,
+          "explain": "Windows 7 nécessitait au minimum 512 Mo de RAM pour la version 32 bits."
+        },
+        {
+          "q": "Quel composant de Windows gère la couche graphique et l'affichage dans les versions modernes ?",
+          "options": ["GDI (Graphics Device Interface)", "DirectX", "WDDM (Windows Display Driver Model)", "OpenGL"],
+          "answer": 2,
+          "explain": "Le WDDM, introduit avec Vista, gère les pilotes graphiques dans les Windows modernes."
+        },
+        {
+          "q": "Windows Server 2003 est basé sur quel noyau Windows client ?",
+          "options": ["Windows XP", "Windows 2000", "Windows Me", "Windows 98"],
+          "answer": 0,
+          "explain": "Windows Server 2003 partage le même noyau que Windows XP."
+        },
+        {
+          "q": "Quelle version de Windows a introduit l'assistant Cortana comme fonctionnalité native ?",
+          "options": ["Windows 8.1", "Windows 10", "Windows 11", "Windows 7"],
+          "answer": 1,
+          "explain": "Cortana, l'assistant vocal de Microsoft, a été intégré nativement dans Windows 10."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Quel ingénieur clé, venu de DEC, a supervisé la création de Windows NT chez Microsoft ?",
+          "options": ["Bill Gates", "Dave Cutler", "Paul Allen", "Steve Ballmer"],
+          "answer": 1,
+          "explain": "Dave Cutler, ancien architecte de VMS chez DEC, a conçu l'architecture de Windows NT."
+        },
+        {
+          "q": "Quelle version de Windows a abandonné définitivement le noyau DOS (Windows 9x) au profit de NT pour le grand public ?",
+          "options": ["Windows 98 SE", "Windows Me", "Windows XP", "Windows 2000"],
+          "answer": 2,
+          "explain": "Windows XP a unifié les gammes 9x et NT, apportant le noyau NT aux utilisateurs grand public."
+        },
+        {
+          "q": "Windows 11 impose un module matériel de sécurité obligatoire. Lequel ?",
+          "options": ["TPM 1.2", "TPM 2.0", "HSM externe", "Secure Enclave"],
+          "answer": 1,
+          "explain": "Windows 11 exige un TPM 2.0 (Trusted Platform Module) pour s'installer."
+        },
+        {
+          "q": "Quel sous-système Windows permet d'exécuter des applications Linux nativement depuis Windows 10 ?",
+          "options": ["Cygwin", "WSL (Windows Subsystem for Linux)", "VirtualBox intégré", "POSIX Subsystem"],
+          "answer": 1,
+          "explain": "Le WSL permet d'exécuter un noyau Linux et des binaires Linux directement dans Windows."
+        },
+        {
+          "q": "Quelle technologie de fichiers système NTFS a-t-elle remplacée dans la gamme NT ?",
+          "options": ["FAT16", "FAT32", "HPFS", "ext2"],
+          "answer": 2,
+          "explain": "NTFS a remplacé HPFS (High Performance File System d'OS/2) dans la gamme Windows NT."
+        },
+        {
+          "q": "Windows 10 utilise un modèle de mise à jour particulier. Comment s'appelle-t-il ?",
+          "options": ["Service Pack annuel", "Windows as a Service (WaaS)", "Rolling Release", "Long Term Support"],
+          "answer": 1,
+          "explain": "Microsoft a adopté le modèle « Windows as a Service » avec des mises à jour semestrielles continues."
+        },
+        {
+          "q": "Quelle version de Windows a introduit le Microsoft Store (anciennement Windows Store) ?",
+          "options": ["Windows 7", "Windows 8", "Windows 10", "Windows Vista"],
+          "answer": 1,
+          "explain": "Le Windows Store a été lancé avec Windows 8 pour distribuer des applications universelles."
+        },
+        {
+          "q": "Quel format de partitionnement de disque Windows 11 exige-t-il pour l'installation en mode UEFI ?",
+          "options": ["MBR", "GPT", "APM", "BSD disklabel"],
+          "answer": 1,
+          "explain": "Windows 11 en mode UEFI exige un disque partitionné en GPT (GUID Partition Table)."
+        },
+        {
+          "q": "Dans le registre Windows, quelle ruche (hive) stocke les paramètres propres à l'utilisateur connecté ?",
+          "options": ["HKEY_LOCAL_MACHINE", "HKEY_CURRENT_USER", "HKEY_CLASSES_ROOT", "HKEY_USERS"],
+          "answer": 1,
+          "explain": "HKEY_CURRENT_USER contient les préférences et paramètres de l'utilisateur actuellement connecté."
+        },
+        {
+          "q": "Quel est le nom du système de fichiers journalisé utilisé par défaut dans Windows NT et ses successeurs ?",
+          "options": ["FAT32", "exFAT", "NTFS", "ReFS"],
+          "answer": 2,
+          "explain": "NTFS (New Technology File System) est le système de fichiers journalisé par défaut de Windows NT."
+        },
+        {
+          "q": "Windows Vista a abandonné quel moteur de recherche interne au profit de Windows Search ?",
+          "options": ["MSN Desktop Search", "Indexing Service", "Google Desktop", "Copernic"],
+          "answer": 1,
+          "explain": "Vista a remplacé l'ancien Indexing Service par Windows Search, beaucoup plus rapide."
+        },
+        {
+          "q": "Quel outil graphique de gestion des processus a été profondément refondu dans Windows 8 ?",
+          "options": ["MSConfig", "Regedit", "Le Gestionnaire des tâches", "Services.msc"],
+          "answer": 2,
+          "explain": "Le Gestionnaire des tâches de Windows 8 a reçu une refonte majeure avec des onglets et graphiques améliorés."
+        },
+        {
+          "q": "Quelle édition de Windows 10 est réservée aux grandes entreprises et inclut LTSC (Long Term Servicing Channel) ?",
+          "options": ["Windows 10 Home", "Windows 10 Pro", "Windows 10 Enterprise", "Windows 10 Education"],
+          "answer": 2,
+          "explain": "Windows 10 Enterprise dispose du canal LTSC pour une stabilité sur 10 ans sans mises à jour de fonctionnalités."
+        },
+        {
+          "q": "Quel protocole réseau propriétaire Microsoft permet le partage de fichiers et d'imprimantes dans Windows ?",
+          "options": ["NFS", "AFP", "SMB (Server Message Block)", "FTP"],
+          "answer": 2,
+          "explain": "SMB (Server Message Block) est le protocole Microsoft pour le partage réseau de fichiers et imprimantes."
+        },
+        {
+          "q": "Windows 11 a redessiné la barre des tâches avec une nouveauté de placement par défaut. Laquelle ?",
+          "options": ["Barre des tâches en haut de l'écran", "Icônes centrées par défaut", "Barre des tâches verticale", "Barre des tâches transparente"],
+          "answer": 1,
+          "explain": "Windows 11 centre les icônes de la barre des tâches par défaut, contrairement aux versions précédentes."
+        }
+      ]
+    }
+  ]
+}

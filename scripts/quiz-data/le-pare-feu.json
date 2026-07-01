@@ -1,0 +1,291 @@
+{
+  "slug": "le-pare-feu",
+  "title": "Le pare-feu (firewall)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Quel est le rôle principal d'un pare-feu ?",
+          "options": ["Accélérer la connexion Internet", "Filtrer le trafic réseau selon des règles prédéfinies pour autoriser ou bloquer les communications", "Distribuer les adresses IP aux machines du réseau", "Relier deux réseaux différents entre eux"],
+          "answer": 1,
+          "explain": "Un pare-feu analyse les paquets réseau et décide de les autoriser ou de les bloquer selon une liste de règles."
+        },
+        {
+          "q": "Quel est le numéro de port standard du protocole HTTP ?",
+          "options": ["21", "25", "80", "443"],
+          "answer": 2,
+          "explain": "HTTP utilise le port 80 par défaut pour les communications web non chiffrées."
+        },
+        {
+          "q": "Quel est le numéro de port standard du protocole HTTPS ?",
+          "options": ["80", "443", "8080", "22"],
+          "answer": 1,
+          "explain": "HTTPS (HTTP sécurisé par TLS) utilise le port 443 par défaut."
+        },
+        {
+          "q": "Quel est le numéro de port standard du protocole SSH ?",
+          "options": ["21", "22", "23", "25"],
+          "answer": 1,
+          "explain": "SSH (Secure Shell) utilise le port 22 pour les connexions distantes sécurisées."
+        },
+        {
+          "q": "Quelle est la politique de sécurité la plus recommandée pour un pare-feu ?",
+          "options": ["Tout autoriser sauf ce qui est explicitement interdit", "Tout interdire sauf ce qui est explicitement autorisé", "N'autoriser que les connexions sortantes", "Bloquer uniquement les adresses IP connues comme malveillantes"],
+          "answer": 1,
+          "explain": "La politique « tout interdire par défaut » (deny all) est la plus sécurisée : seul le trafic explicitement autorisé par une règle passe."
+        },
+        {
+          "q": "Qu'est-ce qu'une ACL (Access Control List) dans le contexte d'un pare-feu ?",
+          "options": ["Une liste des utilisateurs ayant accès à l'administration", "Une liste ordonnée de règles qui autorisent ou bloquent le trafic selon des critères", "Un journal des connexions refusées", "Un certificat numérique d'authentification"],
+          "answer": 1,
+          "explain": "Une ACL est un ensemble de règles ordonnées ; chaque paquet est comparé aux règles dans l'ordre jusqu'à trouver une correspondance."
+        },
+        {
+          "q": "Qu'est-ce qu'un pare-feu matériel (hardware firewall) ?",
+          "options": ["Un logiciel installé sur un PC standard", "Un équipement physique dédié placé entre le réseau interne et Internet", "Un pare-feu intégré au système d'exploitation", "Un service cloud de filtrage DNS"],
+          "answer": 1,
+          "explain": "Un pare-feu matériel est un équipement réseau dédié (ex. Cisco ASA, FortiGate) positionné en coupure sur le réseau."
+        },
+        {
+          "q": "Qu'est-ce qu'un pare-feu logiciel ?",
+          "options": ["Un pare-feu uniquement pour les serveurs Linux", "Un logiciel de filtrage installé directement sur un hôte (ex. Windows Defender Firewall, iptables)", "Un pare-feu qui fonctionne dans le cloud uniquement", "Un antivirus avec fonction de pare-feu"],
+          "answer": 1,
+          "explain": "Un pare-feu logiciel s'exécute sur l'hôte lui-même (PC, serveur) et filtre le trafic entrant et sortant de cette machine."
+        },
+        {
+          "q": "Sur quel protocole de transport reposent généralement les règles de base d'un pare-feu ?",
+          "options": ["ARP et ICMP uniquement", "IP, TCP et UDP (adresses IP, ports source/destination, protocole)", "Uniquement les adresses MAC", "HTTP et HTTPS uniquement"],
+          "answer": 1,
+          "explain": "Les règles pare-feu s'appuient sur les adresses IP source/destination, le protocole (TCP/UDP/ICMP) et les numéros de ports."
+        },
+        {
+          "q": "Quel est le numéro de port utilisé par le protocole FTP pour les commandes ?",
+          "options": ["20", "21", "23", "25"],
+          "answer": 1,
+          "explain": "Le port 21 est le port de contrôle FTP (commandes) ; le port 20 est utilisé pour le transfert de données en mode actif."
+        },
+        {
+          "q": "Qu'est-ce qu'une règle « deny all » (ou « implicit deny ») à la fin d'une ACL pare-feu ?",
+          "options": ["Une règle qui autorise tout le trafic non explicitement interdit", "Une règle implicite qui bloque tout trafic ne correspondant à aucune règle précédente", "Une règle qui désactive le pare-feu", "Une règle de log uniquement sans blocage"],
+          "answer": 1,
+          "explain": "La règle implicite « deny all » en fin d'ACL garantit que tout trafic non explicitement autorisé est bloqué par défaut."
+        },
+        {
+          "q": "Quelle est la différence entre un pare-feu et un antivirus ?",
+          "options": ["Aucune différence, ils remplissent la même fonction", "Le pare-feu filtre le trafic réseau ; l'antivirus analyse les fichiers et programmes pour détecter des malwares", "L'antivirus filtre le réseau, le pare-feu analyse les fichiers", "Le pare-feu fonctionne uniquement sur Windows"],
+          "answer": 1,
+          "explain": "Le pare-feu contrôle les flux réseau (entrées/sorties), tandis que l'antivirus inspecte le contenu des fichiers à la recherche de code malveillant."
+        },
+        {
+          "q": "Qu'est-ce qu'une DMZ (Demilitarized Zone) dans le contexte d'un pare-feu ?",
+          "options": ["Une zone réseau sans aucune protection", "Une zone réseau intermédiaire hébergeant les serveurs accessibles depuis Internet, isolée du LAN interne", "Un protocole de configuration pare-feu", "Un type de règle autorisant tout le trafic entrant"],
+          "answer": 1,
+          "explain": "La DMZ isole les serveurs publics (web, mail) entre Internet et le réseau interne, limitant les risques en cas de compromission."
+        },
+        {
+          "q": "Quel numéro de port utilise le protocole DNS pour les requêtes standard ?",
+          "options": ["25", "53", "110", "143"],
+          "answer": 1,
+          "explain": "Le DNS utilise le port 53 en UDP pour les requêtes standard et en TCP pour les transferts de zone ou les réponses volumineuses."
+        },
+        {
+          "q": "Quelle action un pare-feu peut-il effectuer avec un paquet qui ne correspond à aucune règle d'autorisation ?",
+          "options": ["Il le laisse passer sans analyse", "Il le bloque (DROP) ou le refuse avec notification (REJECT)", "Il le redirige vers un serveur de log uniquement", "Il modifie son adresse destination"],
+          "answer": 1,
+          "explain": "Le pare-feu peut bloquer silencieusement (DROP, sans réponse) ou refuser avec notification (REJECT, envoi d'une erreur à l'émetteur)."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Qu'est-ce qu'un pare-feu « stateful » (à états) ?",
+          "options": ["Un pare-feu qui analyse uniquement les en-têtes IP sans mémoire des connexions", "Un pare-feu qui suit l'état des connexions et autorise automatiquement les réponses aux flux légitimes", "Un pare-feu qui stocke son état de configuration dans un fichier", "Un pare-feu sans règles dynamiques"],
+          "answer": 1,
+          "explain": "Un pare-feu stateful conserve une table des connexions actives et autorise les réponses correspondant à des connexions établies, sans règle supplémentaire."
+        },
+        {
+          "q": "Qu'est-ce qu'un pare-feu « stateless » (sans état) ?",
+          "options": ["Un pare-feu qui ne filtre que les connexions sortantes", "Un pare-feu qui analyse chaque paquet indépendamment sans mémoriser l'état des connexions", "Un pare-feu éteint ou désactivé", "Un pare-feu qui n'a aucune règle configurée"],
+          "answer": 1,
+          "explain": "Un pare-feu stateless évalue chaque paquet individuellement selon les règles, sans tenir compte de la session à laquelle il appartient."
+        },
+        {
+          "q": "Quel est l'avantage principal d'un pare-feu stateful par rapport à un stateless ?",
+          "options": ["Il est moins coûteux en ressources processeur", "Il gère automatiquement les réponses aux connexions établies, réduisant la complexité des règles", "Il peut analyser le contenu applicatif des paquets", "Il ne nécessite aucune configuration initiale"],
+          "answer": 1,
+          "explain": "Le stateful firewall simplifie les règles en autorisant automatiquement les paquets de retour (established) des connexions légitimes."
+        },
+        {
+          "q": "Qu'est-ce qu'un pare-feu de niveau applicatif (layer 7 / proxy firewall) ?",
+          "options": ["Un pare-feu qui n'inspecte que les adresses IP et les ports", "Un pare-feu capable d'analyser le contenu des protocoles applicatifs (HTTP, FTP, DNS...) pour un filtrage plus fin", "Un pare-feu intégré dans les applications elles-mêmes", "Un pare-feu réservé aux connexions Wi-Fi"],
+          "answer": 1,
+          "explain": "Un proxy firewall (layer 7) décode les protocoles applicatifs pour détecter des comportements malveillants impossibles à voir à partir des seuls ports/IP."
+        },
+        {
+          "q": "Qu'est-ce qu'un IPS (Intrusion Prevention System) intégré à un pare-feu ?",
+          "options": ["Un système de sauvegarde des règles pare-feu", "Un module qui détecte ET bloque activement les tentatives d'intrusion en temps réel", "Un outil de gestion des mises à jour du pare-feu", "Un protocole de chiffrement des règles ACL"],
+          "answer": 1,
+          "explain": "L'IPS analyse le trafic en temps réel pour détecter et bloquer les attaques connues (signatures) ou comportementales."
+        },
+        {
+          "q": "Quel est le numéro de port utilisé par le protocole SMTP (envoi d'e-mails) ?",
+          "options": ["25", "110", "143", "465"],
+          "answer": 0,
+          "explain": "SMTP utilise le port 25 pour l'envoi d'e-mails entre serveurs (le port 587 est utilisé pour la soumission sécurisée par les clients)."
+        },
+        {
+          "q": "Que signifie « filtrage par adresse IP source » dans les règles d'un pare-feu ?",
+          "options": ["Autoriser ou bloquer le trafic en fonction de l'adresse IP d'où provient le paquet", "Modifier l'adresse IP source des paquets sortants", "Vérifier que l'adresse IP source est valide selon DNS", "Attribuer une adresse IP fixe aux connexions entrantes"],
+          "answer": 0,
+          "explain": "Le filtrage par adresse IP source permet d'autoriser uniquement certaines plages d'adresses IP ou de bloquer des sources connues comme malveillantes."
+        },
+        {
+          "q": "Qu'est-ce que le « port forwarding » (redirection de port) configuré sur un pare-feu/routeur ?",
+          "options": ["Bloquer un port spécifique sur toutes les interfaces", "Rediriger les connexions arrivant sur un port public vers une machine et un port interne spécifiques", "Changer le numéro de port d'une connexion sortante", "Augmenter la bande passante d'un port réseau"],
+          "answer": 1,
+          "explain": "Le port forwarding redirige le trafic entrant sur un port public vers un serveur interne (ex. port 80 entrant → serveur web 192.168.1.10:80)."
+        },
+        {
+          "q": "Qu'est-ce qu'un UTM (Unified Threat Management) ?",
+          "options": ["Un switch manageable avec pare-feu intégré", "Un appareil de sécurité qui combine pare-feu, antivirus, IPS, filtrage web, VPN et plus en un seul équipement", "Un protocole de gestion centralisée des pare-feux", "Un type de pare-feu réservé aux grandes entreprises"],
+          "answer": 1,
+          "explain": "Un UTM regroupe plusieurs fonctions de sécurité réseau (pare-feu, antivirus, IPS, filtrage URL, VPN...) dans un seul boîtier."
+        },
+        {
+          "q": "Quel outil Linux est couramment utilisé pour configurer le pare-feu intégré au noyau Linux ?",
+          "options": ["netstat", "iptables (ou nftables)", "ifconfig", "tcpdump"],
+          "answer": 1,
+          "explain": "iptables (ou son successeur nftables) est l'outil standard pour configurer le netfilter, le pare-feu intégré au noyau Linux."
+        },
+        {
+          "q": "Qu'est-ce que le « whitelisting » (liste blanche) dans le contexte d'un pare-feu ?",
+          "options": ["Lister toutes les adresses IP bloquées", "N'autoriser que les sources ou destinations explicitement approuvées, tout le reste est bloqué", "Autoriser tout sauf ce qui est dans la liste noire", "Lister les règles actives du pare-feu"],
+          "answer": 1,
+          "explain": "Le whitelisting applique le principe « tout interdit par défaut » : seules les entités de la liste blanche sont autorisées."
+        },
+        {
+          "q": "Qu'est-ce qu'un pare-feu « next-generation » (NGFW — pare-feu de nouvelle génération) ?",
+          "options": ["Un pare-feu plus rapide grâce à des processeurs dédiés uniquement", "Un pare-feu qui combine filtrage stateful, inspection applicative (L7), contrôle d'identité et IPS", "Un pare-feu uniquement disponible dans le cloud", "Un pare-feu sans règles configurables"],
+          "answer": 1,
+          "explain": "Un NGFW ajoute au pare-feu stateful des capacités d'inspection approfondie (DPI), de contrôle applicatif, d'identification utilisateur et d'IPS."
+        },
+        {
+          "q": "Pourquoi est-il important de journaliser (logger) les connexions bloquées par un pare-feu ?",
+          "options": ["Pour accélérer le traitement des paquets", "Pour détecter des tentatives d'intrusion, auditer la sécurité et diagnostiquer les problèmes de connectivité", "Pour libérer de la mémoire sur l'équipement", "Pour informer les utilisateurs en temps réel"],
+          "answer": 1,
+          "explain": "Les journaux pare-feu permettent d'identifier des tentatives d'attaque, de vérifier la conformité des règles et de diagnostiquer des blocages légitimes."
+        },
+        {
+          "q": "Quel est le numéro de port utilisé par RDP (Remote Desktop Protocol) de Microsoft ?",
+          "options": ["22", "23", "3389", "5900"],
+          "answer": 2,
+          "explain": "RDP utilise le port TCP 3389 ; ce port est souvent ciblé par des attaques par force brute et doit être protégé ou restreint par le pare-feu."
+        },
+        {
+          "q": "Qu'est-ce que le Deep Packet Inspection (DPI) dans un pare-feu ?",
+          "options": ["Une inspection uniquement des adresses IP des paquets", "Une analyse approfondie du contenu des paquets, y compris les données applicatives, pour détecter des menaces cachées", "Une mesure de la profondeur des tables de routage", "Un chiffrement renforcé des paquets en transit"],
+          "answer": 1,
+          "explain": "Le DPI inspecte le contenu complet des paquets (au-delà des en-têtes) pour détecter des malwares, des violations de politique ou des applications non autorisées."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Qu'est-ce qu'une attaque par « SYN flood » et comment un pare-feu stateful peut-il s'en protéger ?",
+          "options": ["Une attaque par volume de trames broadcast ; le pare-feu bloque les broadcasts", "Une attaque qui envoie un grand nombre de paquets SYN sans compléter la connexion TCP, saturer les ressources ; le pare-feu peut utiliser des SYN cookies pour y résister", "Une attaque qui inonde les logs du pare-feu", "Une attaque qui exploite les ports UDP ouverts"],
+          "answer": 1,
+          "explain": "Le SYN flood épuise les ressources d'un serveur en initiant des connexions TCP jamais finalisées ; les SYN cookies permettent au pare-feu de valider les connexions sans allouer de ressources prématurément."
+        },
+        {
+          "q": "Qu'est-ce que le « reflexive ACL » (ou ACL réflexive) sur un routeur Cisco ?",
+          "options": ["Une ACL qui se recopie automatiquement sur tous les routeurs", "Une ACL qui crée dynamiquement des règles temporaires pour autoriser les réponses aux connexions sortantes légitimes", "Une ACL qui s'applique en entrée et en sortie simultanément", "Une ACL sans règle deny all finale"],
+          "answer": 1,
+          "explain": "Les ACL réflexives créent temporairement des règles inverses pour les flux de retour, simulant un comportement stateful sur un routeur standard."
+        },
+        {
+          "q": "Dans une architecture pare-feu à double DMZ, quelle est la disposition typique des zones ?",
+          "options": ["Internet — Pare-feu — LAN interne — Pare-feu — DMZ", "Internet — Pare-feu 1 — DMZ — Pare-feu 2 — LAN interne", "LAN interne — Pare-feu — DMZ — Internet", "Internet — DMZ — LAN interne (sans pare-feu entre les deux)"],
+          "answer": 1,
+          "explain": "La DMZ est placée entre deux pare-feux : le premier la sépare d'Internet, le second la sépare du réseau interne, limitant l'impact d'une compromission."
+        },
+        {
+          "q": "Qu'est-ce que le « zero trust » appliqué à la politique pare-feu ?",
+          "options": ["Ne faire confiance à aucun trafic réseau, interne ou externe, sans vérification explicite de l'identité et du contexte", "Bloquer tout le trafic entrant d'Internet sans exception", "Désactiver tous les pare-feux au profit de la surveillance", "Faire confiance uniquement au réseau interne"],
+          "answer": 0,
+          "explain": "Le modèle Zero Trust ne fait confiance à aucun réseau ni utilisateur par défaut, exigeant une vérification continue même pour le trafic interne."
+        },
+        {
+          "q": "Qu'est-ce que le « geo-blocking » dans un pare-feu NGFW ?",
+          "options": ["Bloquer les paquets dont le TTL géographique est expiré", "Filtrer le trafic entrant ou sortant en fonction du pays d'origine des adresses IP", "Chiffrer les communications selon la région géographique", "Limiter la bande passante par zone géographique"],
+          "answer": 1,
+          "explain": "Le geo-blocking utilise des bases de données de géolocalisation IP pour bloquer ou autoriser le trafic selon le pays d'origine ou de destination."
+        },
+        {
+          "q": "Quelle est la différence entre DROP et REJECT dans une règle iptables Linux ?",
+          "options": ["DROP envoie une erreur ICMP à l'émetteur, REJECT ignore silencieusement le paquet", "REJECT envoie une erreur à l'émetteur, DROP jette le paquet silencieusement", "DROP est plus lent que REJECT", "Aucune différence fonctionnelle"],
+          "answer": 1,
+          "explain": "REJECT notifie l'émetteur que la connexion est refusée (ICMP port unreachable) ; DROP ignore silencieusement le paquet, laissant l'émetteur sans réponse."
+        },
+        {
+          "q": "Qu'est-ce qu'un pare-feu « Cloud » (ou CASB — Cloud Access Security Broker) ?",
+          "options": ["Un pare-feu physique placé dans un datacenter cloud", "Un service de sécurité interposé entre les utilisateurs et les applications cloud pour contrôler et sécuriser les accès", "Un pare-feu géré uniquement par l'opérateur cloud", "Un type de VPN pour accéder au cloud en sécurité"],
+          "answer": 1,
+          "explain": "Un CASB agit comme un pare-feu applicatif pour les services cloud (SaaS), appliquant des politiques de sécurité, de conformité et de DLP."
+        },
+        {
+          "q": "Qu'est-ce que le « SSL inspection » (ou HTTPS inspection) sur un pare-feu NGFW ?",
+          "options": ["La vérification que le certificat SSL d'un site est valide", "Le déchiffrement du trafic TLS/SSL pour l'analyser, puis son rechiffrement, permettant d'inspecter le contenu chiffré", "Le blocage de tout trafic SSL non signé par une autorité connue", "La compression du trafic HTTPS pour le rendre plus rapide"],
+          "answer": 1,
+          "explain": "L'inspection SSL (man-in-the-middle contrôlé) permet au pare-feu de déchiffrer, analyser et rechiffrer le trafic HTTPS pour détecter des menaces cachées dans les flux chiffrés."
+        },
+        {
+          "q": "Qu'est-ce que la notion de « rule shadowing » dans la gestion des règles pare-feu ?",
+          "options": ["La copie automatique des règles vers un pare-feu de secours", "Une règle plus générale placée avant une règle plus spécifique qui la masque, rendant la règle spécifique inutile", "L'activation partielle d'une règle pendant les heures creuses", "La journalisation en arrière-plan des règles actives"],
+          "answer": 1,
+          "explain": "Le rule shadowing survient quand une règle permissive (ex. any → any) est placée avant une règle restrictive, empêchant cette dernière de s'appliquer jamais."
+        },
+        {
+          "q": "Qu'est-ce que le « failopen » vs « failclose » dans la conception d'un pare-feu ?",
+          "options": ["Failopen laisse passer tout le trafic en cas de panne du pare-feu ; failclose bloque tout le trafic en cas de panne", "Failopen bloque tout en cas de panne ; failclose laisse tout passer", "Ces termes désignent des modes de démarrage du pare-feu", "Failopen s'applique aux connexions UDP, failclose aux connexions TCP"],
+          "answer": 0,
+          "explain": "Failclose est préférable en sécurité (panne = tout bloqué), même si cela coupe le service ; failopen privilégie la disponibilité au détriment de la sécurité."
+        },
+        {
+          "q": "Qu'est-ce qu'une « honeypot » dans le contexte de la sécurité réseau associée à un pare-feu ?",
+          "options": ["Un serveur leurre conçu pour attirer et détecter les attaquants, leur faisant croire qu'ils ont accès à des systèmes réels", "Un module de chiffrement des règles pare-feu", "Un système de sauvegarde des logs pare-feu", "Un protocole d'alerte automatique en cas d'intrusion"],
+          "answer": 0,
+          "explain": "Une honeypot est un système piège qui détourne les attaquants de systèmes réels tout en permettant d'analyser leurs techniques."
+        },
+        {
+          "q": "Dans iptables Linux, que fait la chaîne INPUT ?",
+          "options": ["Traite les paquets transitant par la machine vers une autre destination", "Traite les paquets générés par la machine locale à destination d'un autre hôte", "Traite les paquets entrants destinés à la machine locale elle-même", "Traite les paquets sortants vers Internet uniquement"],
+          "answer": 2,
+          "explain": "La chaîne INPUT traite tous les paquets entrants dont la destination est la machine locale ; FORWARD est pour les paquets qui transitent."
+        },
+        {
+          "q": "Qu'est-ce que la règle « established, related » dans un pare-feu stateful Linux (iptables) ?",
+          "options": ["Une règle qui autorise uniquement les nouvelles connexions", "Une règle qui autorise les paquets appartenant à des connexions déjà établies ou liées à une connexion établie", "Une règle qui établit une liste de relations entre IPs autorisées", "Une règle de logging pour les connexions longues"],
+          "answer": 1,
+          "explain": "La règle « -m state --state ESTABLISHED,RELATED » autorise les paquets de retour des connexions légitimes sans avoir à créer de règle explicite pour chaque réponse."
+        },
+        {
+          "q": "Qu'est-ce que le « firewall as a service » (FWaaS) ?",
+          "options": ["Un pare-feu physique loué à l'heure à un datacenter", "Un pare-feu hébergé et géré dans le cloud, auquel le trafic est redirigé pour inspection centralisée", "Un service d'audit des règles pare-feu fourni par un consultant", "Un pare-feu intégré aux services d'un FAI"],
+          "answer": 1,
+          "explain": "Le FWaaS centralise le pare-feu dans le cloud, permettant d'inspecter le trafic de tous les sites et utilisateurs distants depuis un seul point."
+        },
+        {
+          "q": "Comment évaluer l'ordre de priorité des règles dans une ACL pare-feu en cas de conflit ?",
+          "options": ["La règle la plus récente l'emporte toujours", "Les règles sont évaluées dans l'ordre de la liste ; la première correspondance s'applique", "La règle la plus spécifique l'emporte toujours, quel que soit son ordre", "Toutes les règles sont appliquées simultanément"],
+          "answer": 1,
+          "explain": "Une ACL est traitée séquentiellement ; dès qu'un paquet correspond à une règle (permit ou deny), cette règle est appliquée et les suivantes ignorées."
+        }
+      ]
+    }
+  ]
+}

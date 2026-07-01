@@ -1,0 +1,291 @@
+{
+  "slug": "hardware",
+  "title": "Le hardware",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Que signifie le terme «hardware» ?",
+          "options": ["Logiciel", "Composant physique", "Système d'exploitation", "Réseau informatique"],
+          "answer": 1,
+          "explain": "Hardware désigne l'ensemble des composants physiques d'un ordinateur, par opposition au software (logiciel)."
+        },
+        {
+          "q": "Quel composant est considéré comme le «cerveau» de l'ordinateur ?",
+          "options": ["La RAM", "Le disque dur", "Le processeur (CPU)", "La carte graphique"],
+          "answer": 2,
+          "explain": "Le CPU (Central Processing Unit) effectue tous les calculs et traite les instructions du système."
+        },
+        {
+          "q": "À quoi sert la RAM ?",
+          "options": ["Stocker les fichiers de façon permanente", "Alimenter le processeur", "Stocker temporairement les données en cours d'utilisation", "Afficher l'image sur l'écran"],
+          "answer": 2,
+          "explain": "La RAM (mémoire vive) contient temporairement les données actives ; son contenu est effacé à l'extinction."
+        },
+        {
+          "q": "Que fait l'alimentation (PSU) dans un PC ?",
+          "options": ["Elle refroidit le processeur", "Elle convertit le courant secteur en tensions utilisables par les composants", "Elle stocke l'énergie pour les pannes", "Elle gère la fréquence du CPU"],
+          "answer": 1,
+          "explain": "Le PSU (Power Supply Unit) convertit le 230 V alternatif en tensions continues (12 V, 5 V, 3,3 V) pour alimenter les composants."
+        },
+        {
+          "q": "Quel composant relie physiquement tous les autres composants d'un PC ?",
+          "options": ["Le boîtier", "La carte mère", "Le câble SATA", "Le ventilateur"],
+          "answer": 1,
+          "explain": "La carte mère est le circuit imprimé principal qui interconnecte le CPU, la RAM, le stockage et tous les autres composants."
+        },
+        {
+          "q": "Quelle est la différence principale entre un HDD et un SSD ?",
+          "options": ["Le HDD est plus rapide que le SSD", "Le SSD utilise des plateaux magnétiques, le HDD des puces électroniques", "Le HDD utilise des plateaux magnétiques, le SSD des puces électroniques", "Ils sont identiques, seul le nom change"],
+          "answer": 2,
+          "explain": "Le HDD stocke les données sur des plateaux magnétiques rotatifs ; le SSD utilise de la mémoire flash sans pièce mobile."
+        },
+        {
+          "q": "À quoi sert la carte graphique (GPU) ?",
+          "options": ["À accélérer la connexion réseau", "À calculer et afficher les images sur l'écran", "À lire les disques optiques", "À augmenter la capacité de la RAM"],
+          "answer": 1,
+          "explain": "Le GPU (Graphics Processing Unit) est spécialisé dans le traitement graphique et envoie le signal vidéo vers l'écran."
+        },
+        {
+          "q": "Quel est le rôle principal du boîtier PC ?",
+          "options": ["Refroidir directement le processeur", "Alimenter la carte mère", "Contenir et protéger les composants internes", "Connecter l'ordinateur à Internet"],
+          "answer": 2,
+          "explain": "Le boîtier protège les composants, assure la circulation de l'air et supporte la fixation de la carte mère et des périphériques."
+        },
+        {
+          "q": "Que signifie CPU ?",
+          "options": ["Central Power Unit", "Central Processing Unit", "Computer Processing Utility", "Core Processor Unit"],
+          "answer": 1,
+          "explain": "CPU signifie Central Processing Unit, c'est le nom technique du processeur."
+        },
+        {
+          "q": "Laquelle de ces unités mesure la capacité de stockage d'un disque dur ?",
+          "options": ["GHz", "Go (gigaoctet)", "Watt", "MHz"],
+          "answer": 1,
+          "explain": "La capacité de stockage se mesure en octets et ses multiples (Go, To), pas en hertz ni en watts."
+        },
+        {
+          "q": "Quel composant fournit la ventilation sur un processeur ?",
+          "options": ["Le chipset", "Le ventirad (radiateur + ventilateur)", "La pile CMOS", "Le slot PCIe"],
+          "answer": 1,
+          "explain": "Le ventirad (ou système de refroidissement) dissipe la chaleur produite par le CPU pour éviter la surchauffe."
+        },
+        {
+          "q": "Que se passe-t-il si la RAM est insuffisante ?",
+          "options": ["L'ordinateur s'éteint immédiatement", "L'ordinateur ralentit car il utilise le stockage comme mémoire virtuelle", "La carte graphique prend le relais", "Le processeur augmente sa fréquence automatiquement"],
+          "answer": 1,
+          "explain": "Quand la RAM est pleine, le système utilise une partie du stockage (fichier de pagination), ce qui ralentit fortement les performances."
+        },
+        {
+          "q": "Quelle tension principale est fournie par l'alimentation pour les composants les plus énergivores ?",
+          "options": ["3,3 V", "5 V", "12 V", "24 V"],
+          "answer": 2,
+          "explain": "Le rail 12 V alimente les composants les plus gourmands comme le CPU et le GPU."
+        },
+        {
+          "q": "Qu'est-ce que la mémoire vive ?",
+          "options": ["Un stockage permanent de données", "Une mémoire rapide et temporaire utilisée par le processeur", "Un type de disque dur", "La mémoire intégrée dans le CPU"],
+          "answer": 1,
+          "explain": "La mémoire vive (RAM) est volatile : rapide d'accès mais effacée à chaque extinction."
+        },
+        {
+          "q": "Parmi ces composants, lequel consomme généralement le plus d'énergie dans un PC gamer ?",
+          "options": ["La RAM", "Le SSD", "La carte graphique (GPU)", "La carte son"],
+          "answer": 2,
+          "explain": "Les cartes graphiques haut de gamme peuvent consommer plusieurs centaines de watts, bien plus que les autres composants."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Que signifie DDR dans le contexte de la RAM ?",
+          "options": ["Double Data Rate", "Direct Data Register", "Double Drive Ram", "Dual Digital Relay"],
+          "answer": 0,
+          "explain": "DDR signifie Double Data Rate : la RAM transfère des données sur les deux fronts (montant et descendant) du signal d'horloge."
+        },
+        {
+          "q": "Quelle est la différence entre DDR4 et DDR5 ?",
+          "options": ["DDR5 est plus lente mais plus économe", "DDR5 offre une bande passante supérieure et une meilleure efficacité énergétique", "DDR4 a plus de broches que DDR5", "Elles sont compatibles entre elles"],
+          "answer": 1,
+          "explain": "DDR5 apporte des fréquences plus élevées, une bande passante doublée et une tension réduite par rapport à DDR4."
+        },
+        {
+          "q": "Qu'est-ce que le TDP d'un processeur ?",
+          "options": ["La vitesse maximale du CPU", "Le nombre de cœurs", "La chaleur dissipée en fonctionnement nominal, exprimée en watts", "La tension d'alimentation"],
+          "answer": 2,
+          "explain": "Le TDP (Thermal Design Power) indique la quantité de chaleur que le système de refroidissement doit pouvoir dissiper."
+        },
+        {
+          "q": "Qu'est-ce qu'un SSD NVMe ?",
+          "options": ["Un SSD qui utilise l'interface SATA", "Un SSD connecté via PCIe offrant des débits bien supérieurs au SATA", "Un disque dur avec mémoire cache", "Un SSD externe portable"],
+          "answer": 1,
+          "explain": "NVMe (Non-Volatile Memory Express) est un protocole conçu pour les SSD PCIe, offrant des vitesses jusqu'à 10 fois supérieures au SATA."
+        },
+        {
+          "q": "Combien de broches comporte généralement le connecteur d'alimentation principal de la carte mère ?",
+          "options": ["8 broches", "20 broches", "24 broches", "16 broches"],
+          "answer": 2,
+          "explain": "Le connecteur ATX principal est un connecteur 24 broches qui alimente la carte mère en tensions 3,3 V, 5 V et 12 V."
+        },
+        {
+          "q": "Que mesure la fréquence d'un processeur exprimée en GHz ?",
+          "options": ["Sa consommation électrique", "Le nombre d'instructions traitées par seconde (en milliards de cycles)", "La taille de son cache", "Le nombre de cœurs actifs"],
+          "answer": 1,
+          "explain": "Un GHz correspond à un milliard de cycles par seconde ; chaque cycle permet au CPU d'exécuter une ou plusieurs instructions."
+        },
+        {
+          "q": "Qu'est-ce que le cache L3 d'un processeur ?",
+          "options": ["Un type de RAM externe", "Une mémoire ultra-rapide intégrée au CPU, partagée entre tous les cœurs", "Un ventilateur supplémentaire", "Un niveau du BIOS"],
+          "answer": 1,
+          "explain": "Le cache L3 est la mémoire cache la plus grande et la plus lente des trois niveaux, partagée entre tous les cœurs du processeur."
+        },
+        {
+          "q": "Quelle interface utilise un disque dur SATA classique ?",
+          "options": ["PCIe x4", "USB 3.0", "SATA III (6 Gb/s)", "M.2 NVMe"],
+          "answer": 2,
+          "explain": "SATA III est l'interface standard des HDD et SSD classiques avec un débit théorique de 6 Gb/s."
+        },
+        {
+          "q": "Pourquoi faut-il choisir une alimentation de puissance adaptée à sa configuration ?",
+          "options": ["Pour éviter que la carte mère surchauffe", "Pour que les composants reçoivent l'énergie nécessaire sans risque de panne ou de dommage", "Pour augmenter la vitesse du processeur", "Car une alimentation trop puissante grille la RAM"],
+          "answer": 1,
+          "explain": "Une alimentation sous-dimensionnée peut provoquer des instabilités ou des pannes ; sur-dimensionnée, elle fonctionne à faible charge mais n'endommage rien."
+        },
+        {
+          "q": "Que signifie GPU ?",
+          "options": ["General Processing Unit", "Graphics Processing Unit", "Global Power Unit", "Graphic Protocol Utility"],
+          "answer": 1,
+          "explain": "GPU signifie Graphics Processing Unit, le processeur graphique dédié au calcul des images."
+        },
+        {
+          "q": "Quelle est la fonction principale du chipset sur une carte mère ?",
+          "options": ["Calculer les images 3D", "Gérer les communications entre le CPU et les périphériques (stockage, USB, PCIe)", "Alimenter les barrettes RAM", "Contrôler la vitesse des ventilateurs"],
+          "answer": 1,
+          "explain": "Le chipset orchestre les échanges de données entre le processeur et les autres composants connectés à la carte mère."
+        },
+        {
+          "q": "Qu'est-ce que la mémoire ECC utilisée dans les serveurs ?",
+          "options": ["Une RAM plus rapide que la DDR5", "Une RAM avec correction automatique des erreurs de bits", "Un type de SSD NVMe", "Une RAM sans dissipateur thermique"],
+          "answer": 1,
+          "explain": "La RAM ECC (Error-Correcting Code) détecte et corrige automatiquement les erreurs sur les bits, indispensable pour la fiabilité des serveurs."
+        },
+        {
+          "q": "Qu'indique le nombre de cœurs d'un processeur ?",
+          "options": ["Sa vitesse en GHz", "Le nombre d'unités de calcul indépendantes capables de traiter des tâches en parallèle", "La taille de son cache L2", "Sa consommation en watts"],
+          "answer": 1,
+          "explain": "Chaque cœur est une unité de calcul autonome ; plus un CPU en possède, plus il peut traiter de tâches simultanément."
+        },
+        {
+          "q": "Un SSD 2,5 pouces SATA est-il plus rapide qu'un HDD 7200 tr/min ?",
+          "options": ["Non, ils ont les mêmes performances", "Oui, le SSD est nettement plus rapide car il n'a pas de parties mécaniques", "Non, le HDD est plus rapide en lecture séquentielle", "Cela dépend uniquement de la marque"],
+          "answer": 1,
+          "explain": "Un SSD SATA atteint ~500 Mo/s contre ~150 Mo/s pour un HDD 7200 tr/min, grâce à l'absence de mécanique rotatoire."
+        },
+        {
+          "q": "Quel est le rôle du ventirad sur un processeur ?",
+          "options": ["Augmenter la fréquence du CPU", "Dissiper la chaleur produite par le CPU pour maintenir une température sûre", "Alimenter le CPU en électricité", "Protéger le CPU des surtensions"],
+          "answer": 1,
+          "explain": "Le ventirad (ou watercooling) transporte la chaleur du CPU vers l'extérieur du boîtier pour éviter la surchauffe."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Qu'est-ce que l'overclocking d'un CPU ?",
+          "options": ["Réduire la fréquence du CPU pour économiser l'énergie", "Augmenter la fréquence au-delà des spécifications d'usine pour de meilleures performances", "Remplacer les cœurs inactifs", "Activer la technologie Hyper-Threading"],
+          "answer": 1,
+          "explain": "L'overclocking consiste à dépasser la fréquence nominale du CPU, ce qui nécessite un meilleur refroidissement et peut réduire la durée de vie."
+        },
+        {
+          "q": "Que signifie VRAM sur une carte graphique ?",
+          "options": ["Very Rapid Access Memory", "Video RAM : mémoire dédiée au stockage des textures et des frames", "Variable Rate Addressing Memory", "Virtual Ram pour le GPU"],
+          "answer": 1,
+          "explain": "La VRAM est la mémoire embarquée sur la carte graphique, utilisée pour stocker textures, tampons de frame et données GPU."
+        },
+        {
+          "q": "Quelle technologie permet à un processeur de simuler deux threads par cœur physique chez Intel ?",
+          "options": ["Turbo Boost", "Hyper-Threading", "SpeedStep", "TurboCore"],
+          "answer": 1,
+          "explain": "L'Hyper-Threading (Intel) expose deux threads logiques par cœur physique, permettant une meilleure utilisation des unités d'exécution."
+        },
+        {
+          "q": "Qu'est-ce que le RAID 1 pour les disques durs ?",
+          "options": ["Agrégation de deux disques pour doubler la capacité", "Mise en miroir de deux disques pour la redondance des données", "Répartition des données sur quatre disques pour la vitesse", "Chiffrement matériel du disque"],
+          "answer": 1,
+          "explain": "Le RAID 1 (mirroring) copie en temps réel les données sur deux disques ; si l'un tombe en panne, l'autre prend le relais."
+        },
+        {
+          "q": "Que mesure la bande passante mémoire d'une RAM DDR4-3200 ?",
+          "options": ["La fréquence d'horloge réelle de 3200 MHz", "La quantité de données transférées par seconde entre la RAM et le CPU", "La latence en nanosecondes", "La tension d'alimentation"],
+          "answer": 1,
+          "explain": "La bande passante mémoire exprime le volume de données (en Go/s) que la RAM peut fournir au CPU par seconde."
+        },
+        {
+          "q": "Qu'est-ce que la latence CAS (CL) de la RAM ?",
+          "options": ["La vitesse de transfert en Go/s", "Le délai en cycles d'horloge entre une demande de lecture et la donnée disponible", "La tension nominale de la barrette", "Le nombre de modules installés"],
+          "answer": 1,
+          "explain": "La latence CAS (Column Address Strobe) indique le nombre de cycles d'horloge que le contrôleur attend avant de recevoir les données demandées."
+        },
+        {
+          "q": "Un GPU intégré (iGPU) diffère d'un GPU dédié principalement par :",
+          "options": ["Sa marque (Intel vs NVIDIA)", "L'absence de mémoire VRAM dédiée : il partage la RAM système", "Sa consommation plus élevée", "Son incapacité à afficher la vidéo"],
+          "answer": 1,
+          "explain": "Un iGPU est intégré au CPU et utilise une partie de la RAM système, contrairement à un GPU dédié qui dispose de sa propre VRAM."
+        },
+        {
+          "q": "Quel connecteur d'alimentation est réservé au CPU sur la carte mère ?",
+          "options": ["Connecteur 24 broches ATX", "Connecteur PCIe 6+2 broches", "Connecteur EPS 8 broches (ou 4+4 broches)", "Connecteur SATA power"],
+          "answer": 2,
+          "explain": "Le connecteur EPS 8 broches (ou 4+4) fournit l'alimentation 12 V spécifique au processeur, séparément du connecteur 24 broches de la carte mère."
+        },
+        {
+          "q": "Qu'est-ce que le TLC dans les SSD ?",
+          "options": ["Un protocole de transfert rapide", "Triple-Level Cell : chaque cellule stocke 3 bits, compromis entre capacité et endurance", "Un type de cache SSD", "La technologie de refroidissement des SSD M.2"],
+          "answer": 1,
+          "explain": "TLC (Triple-Level Cell) stocke 3 bits par cellule, offrant une grande densité mais une endurance inférieure aux cellules MLC ou SLC."
+        },
+        {
+          "q": "Pourquoi la vitesse de lecture séquentielle est-elle différente de la vitesse de lecture aléatoire pour un HDD ?",
+          "options": ["À cause de la différence de tension d'alimentation", "La lecture séquentielle se fait sur des secteurs adjacents (tête fixe), l'aléatoire nécessite des déplacements mécaniques (seek)", "Le HDD a deux contrôleurs distincts pour chaque mode", "Les deux vitesses sont identiques sur un HDD moderne"],
+          "answer": 1,
+          "explain": "Les temps de déplacement mécanique de la tête de lecture (seek time) pénalisent fortement les accès aléatoires sur un HDD."
+        },
+        {
+          "q": "Qu'est-ce que le dual-channel pour la RAM ?",
+          "options": ["Deux barrettes de marques différentes", "L'utilisation de deux barrettes identiques sur des slots dédiés pour doubler la bande passante mémoire", "Un mode d'économie d'énergie", "Une technologie uniquement AMD"],
+          "answer": 1,
+          "explain": "Le dual-channel active deux canaux mémoire en parallèle, doublant théoriquement la bande passante entre la RAM et le CPU."
+        },
+        {
+          "q": "Quelle est la différence entre mémoire cache L1 et L3 ?",
+          "options": ["Le L1 est partagé entre tous les cœurs, le L3 est propre à chaque cœur", "Le L1 est plus petit, plus rapide et propre à chaque cœur ; le L3 est plus grand, plus lent et partagé", "Il n'y a aucune différence fonctionnelle", "Le L3 est plus rapide que le L1"],
+          "answer": 1,
+          "explain": "Les niveaux de cache vont du plus rapide/petit (L1 par cœur) au plus grand/lent (L3 partagé) pour équilibrer vitesse et capacité."
+        },
+        {
+          "q": "Quelle norme indique l'efficacité énergétique d'une alimentation PC ?",
+          "options": ["ATX 3.0", "80 Plus (Bronze, Gold, Platinum...)", "PCIe 5.0", "EPS 12 V"],
+          "answer": 1,
+          "explain": "La certification 80 Plus garantit qu'une alimentation convertit au moins 80 % de l'énergie secteur (or, platine = niveaux encore meilleurs)."
+        },
+        {
+          "q": "Qu'est-ce que le XMP/EXPO pour la RAM ?",
+          "options": ["Un protocole de communication entre CPU et GPU", "Un profil d'overclocking officiel activé dans le BIOS pour exploiter les fréquences élevées de la RAM", "Une certification de qualité des barrettes", "Un format de barrette mémoire pour serveurs"],
+          "answer": 1,
+          "explain": "XMP (Intel) et EXPO (AMD) sont des profils stockés sur la RAM permettant au BIOS d'activer automatiquement les fréquences et timings optimisés."
+        },
+        {
+          "q": "Combien de watts une carte graphique haut de gamme moderne (ex: RTX 4090) peut-elle consommer ?",
+          "options": ["Environ 50 W", "Environ 150 W", "Environ 450 W", "Environ 1 000 W"],
+          "answer": 2,
+          "explain": "La RTX 4090 a un TDP de 450 W, ce qui représente à elle seule la majorité du budget énergétique d'une configuration standard."
+        }
+      ]
+    }
+  ]
+}

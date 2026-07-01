@@ -1,0 +1,291 @@
+{
+  "slug": "le-routeur",
+  "title": "Le routeur",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "À quel niveau du modèle OSI travaille un routeur ?",
+          "options": ["Niveau 1 — Physique", "Niveau 2 — Liaison", "Niveau 3 — Réseau", "Niveau 4 — Transport"],
+          "answer": 2,
+          "explain": "Le routeur travaille au niveau 3 (Réseau) et utilise les adresses IP pour acheminer les paquets."
+        },
+        {
+          "q": "Quel est le rôle principal d'un routeur ?",
+          "options": ["Connecter des appareils au sein d'un même réseau local", "Relier deux réseaux différents entre eux", "Amplifier le signal Wi-Fi", "Filtrer le trafic selon des règles de sécurité"],
+          "answer": 1,
+          "explain": "Un routeur relie des réseaux distincts, par exemple votre LAN local et Internet (WAN)."
+        },
+        {
+          "q": "Sur quoi le routeur se base-t-il pour décider où envoyer un paquet ?",
+          "options": ["L'adresse MAC de destination", "L'adresse IP de destination", "Le nom de domaine demandé", "Le numéro de port TCP"],
+          "answer": 1,
+          "explain": "Le routeur lit l'adresse IP de destination du paquet pour consulter sa table de routage."
+        },
+        {
+          "q": "Comment appelle-t-on l'adresse IP du routeur que les machines du réseau local utilisent pour accéder à Internet ?",
+          "options": ["Adresse de diffusion", "Adresse de loopback", "Passerelle par défaut", "Masque de sous-réseau"],
+          "answer": 2,
+          "explain": "La passerelle par défaut (ou default gateway) est l'adresse du routeur vers laquelle les paquets sans route connue sont envoyés."
+        },
+        {
+          "q": "Que contient une table de routage ?",
+          "options": ["La liste des adresses MAC du réseau", "Les règles de filtrage du pare-feu", "Les réseaux connus et les interfaces ou sauts pour les atteindre", "Les noms de domaine et leurs adresses IP"],
+          "answer": 2,
+          "explain": "La table de routage associe des préfixes réseaux (ex. 192.168.1.0/24) à une interface de sortie ou à un prochain saut."
+        },
+        {
+          "q": "Qu'est-ce que le NAT (Network Address Translation) ?",
+          "options": ["Une technique pour augmenter la vitesse du réseau", "Un mécanisme permettant à plusieurs machines de partager une seule IP publique", "Un protocole pour chiffrer les communications", "Un système d'attribution automatique d'adresses IP"],
+          "answer": 1,
+          "explain": "Le NAT traduit les adresses IP privées en une seule IP publique pour permettre à tout le réseau local d'accéder à Internet."
+        },
+        {
+          "q": "Quel service le routeur assure-t-il souvent pour attribuer automatiquement des adresses IP aux machines du réseau local ?",
+          "options": ["DNS", "FTP", "DHCP", "SNMP"],
+          "answer": 2,
+          "explain": "Le DHCP (Dynamic Host Configuration Protocol) est souvent intégré au routeur pour distribuer automatiquement les adresses IP."
+        },
+        {
+          "q": "Comment s'appelle la zone côté Internet dans une infrastructure réseau classique ?",
+          "options": ["LAN", "VLAN", "DMZ", "WAN"],
+          "answer": 3,
+          "explain": "Le WAN (Wide Area Network) désigne le réseau étendu, typiquement la connexion vers Internet."
+        },
+        {
+          "q": "Quelle est la principale différence entre un routeur et un switch ?",
+          "options": ["Le switch relie des réseaux différents, le routeur relie les machines d'un même réseau", "Le routeur relie des réseaux différents, le switch relie les machines d'un même réseau local", "Le routeur utilise des adresses MAC, le switch utilise des adresses IP", "Il n'y a aucune différence fonctionnelle"],
+          "answer": 1,
+          "explain": "Le switch opère en niveau 2 au sein d'un même LAN, tandis que le routeur opère en niveau 3 pour interconnecter des réseaux."
+        },
+        {
+          "q": "Une « box » fournie par un opérateur internet est-elle un simple routeur ?",
+          "options": ["Oui, c'est uniquement un routeur basique", "Non, c'est un appareil multifonction (routeur, switch, point d'accès Wi-Fi, modem...)", "Non, c'est uniquement un modem", "Non, c'est uniquement un pare-feu"],
+          "answer": 1,
+          "explain": "Une box opérateur intègre généralement un modem, un routeur, un switch, un point d'accès Wi-Fi et parfois un serveur DHCP/DNS."
+        },
+        {
+          "q": "Qu'est-ce qu'un « saut » (hop) dans le contexte du routage ?",
+          "options": ["Une connexion physique entre deux machines", "Le passage d'un paquet d'un routeur à un autre", "Un canal Wi-Fi différent", "Le délai de transmission d'un paquet"],
+          "answer": 1,
+          "explain": "Chaque routeur traversé par un paquet pour atteindre sa destination représente un saut (hop)."
+        },
+        {
+          "q": "Quel outil en ligne de commande permet de visualiser les sauts (routeurs) traversés jusqu'à une destination ?",
+          "options": ["ping", "ipconfig", "tracert (ou traceroute)", "netstat"],
+          "answer": 2,
+          "explain": "La commande tracert (Windows) ou traceroute (Linux) affiche chaque routeur (hop) traversé jusqu'à la destination."
+        },
+        {
+          "q": "Une adresse IP privée comme 192.168.1.10 peut-elle circuler directement sur Internet ?",
+          "options": ["Oui, sans aucune restriction", "Non, les adresses privées ne sont pas routables sur Internet", "Oui, mais seulement pour les serveurs web", "Non, aucune adresse IP ne circule sur Internet"],
+          "answer": 1,
+          "explain": "Les plages privées (192.168.x.x, 10.x.x.x, 172.16-31.x.x) sont non routables sur Internet ; le NAT est nécessaire."
+        },
+        {
+          "q": "Comment appelle-t-on le fait qu'un routeur choisisse le meilleur chemin parmi plusieurs routes possibles vers une même destination ?",
+          "options": ["Le filtrage de paquets", "Le routage dynamique", "La sélection de route (best path selection)", "Le bridging"],
+          "answer": 2,
+          "explain": "Quand plusieurs routes existent, le routeur applique une métrique pour choisir la meilleure route possible."
+        },
+        {
+          "q": "Dans quel cas le routeur utilise-t-il la route par défaut (0.0.0.0/0) ?",
+          "options": ["Quand le paquet est destiné à la machine locale", "Quand aucune route spécifique ne correspond à la destination du paquet", "Quand le paquet est un broadcast", "Quand l'adresse IP de destination est privée"],
+          "answer": 1,
+          "explain": "La route par défaut est utilisée en dernier recours quand aucune entrée plus spécifique n'existe dans la table de routage."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Qu'est-ce que le routage statique ?",
+          "options": ["Des routes configurées manuellement par l'administrateur", "Des routes apprises automatiquement via un protocole", "La route vers l'interface loopback", "Le routage uniquement dans un réseau local"],
+          "answer": 0,
+          "explain": "En routage statique, l'administrateur entre manuellement chaque route dans la table de routage du routeur."
+        },
+        {
+          "q": "Quel protocole de routage dynamique est couramment utilisé dans les petits réseaux d'entreprise ?",
+          "options": ["HTTP", "RIP (Routing Information Protocol)", "FTP", "SMTP"],
+          "answer": 1,
+          "explain": "RIP est un protocole de routage dynamique simple, adapté aux petites topologies réseau."
+        },
+        {
+          "q": "Qu'est-ce que la métrique dans le routage ?",
+          "options": ["La taille maximale d'un paquet", "La valeur permettant de comparer la qualité des routes (nombre de sauts, bande passante...)", "Le délai de réponse d'un ping", "Le protocole utilisé pour transmettre un paquet"],
+          "answer": 1,
+          "explain": "La métrique est un coût associé à une route ; plus elle est faible, plus la route est préférée."
+        },
+        {
+          "q": "Que signifie « NAT overload » ou PAT (Port Address Translation) ?",
+          "options": ["Chaque adresse privée reçoit une adresse publique dédiée", "Plusieurs adresses privées partagent une seule adresse publique grâce aux ports", "Les paquets sont dupliqués pour fiabilité", "Les ports réseau sont bloqués par le routeur"],
+          "answer": 1,
+          "explain": "Le PAT/NAT overload distingue les sessions par les numéros de port, permettant à des centaines de machines de partager une IP publique."
+        },
+        {
+          "q": "Qu'est-ce qu'une interface WAN sur un routeur ?",
+          "options": ["L'interface connectée au réseau local (LAN)", "L'interface connectée au réseau étendu (Internet/opérateur)", "L'interface de gestion du routeur", "L'interface Wi-Fi du routeur"],
+          "answer": 1,
+          "explain": "L'interface WAN est celle raccordée à l'opérateur ou à Internet, côté « public »."
+        },
+        {
+          "q": "Quelle commande Windows permet de voir la table de routage locale d'une machine ?",
+          "options": ["ipconfig /all", "route print", "netstat -a", "arp -a"],
+          "answer": 1,
+          "explain": "La commande « route print » (ou « netstat -r ») affiche la table de routage locale de la machine Windows."
+        },
+        {
+          "q": "Que se passe-t-il si aucune route par défaut n'est configurée et qu'un paquet n'a pas de correspondance dans la table de routage ?",
+          "options": ["Le paquet est redirigé vers le switch", "Le routeur envoie le paquet en broadcast", "Le paquet est rejeté (dropped)", "Le routeur demande l'adresse par DNS"],
+          "answer": 2,
+          "explain": "Sans route correspondante, le routeur rejette le paquet et peut envoyer un message ICMP « Destination Unreachable »."
+        },
+        {
+          "q": "Quel protocole utilise le routeur pour résoudre dynamiquement l'adresse MAC d'un prochain saut ?",
+          "options": ["DNS", "DHCP", "ARP (Address Resolution Protocol)", "ICMP"],
+          "answer": 2,
+          "explain": "L'ARP associe une adresse IP à une adresse MAC pour permettre la livraison du paquet au niveau 2."
+        },
+        {
+          "q": "Pourquoi un routeur décrémente-t-il le champ TTL (Time To Live) de chaque paquet IP ?",
+          "options": ["Pour augmenter la vitesse de transmission", "Pour éviter qu'un paquet ne circule indéfiniment en boucle", "Pour compresser l'en-tête IP", "Pour authentifier l'émetteur du paquet"],
+          "answer": 1,
+          "explain": "Chaque routeur diminue le TTL de 1 ; quand il atteint 0, le paquet est détruit et un message ICMP Time Exceeded est envoyé."
+        },
+        {
+          "q": "Dans une table de routage, que représente le préfixe 0.0.0.0/0 ?",
+          "options": ["La route vers le réseau local uniquement", "La route par défaut vers n'importe quelle destination inconnue", "L'adresse de loopback", "Un réseau invalide"],
+          "answer": 1,
+          "explain": "0.0.0.0/0 est la route par défaut ; elle correspond à toutes les destinations et est utilisée en dernier recours."
+        },
+        {
+          "q": "Qu'est-ce qu'un routeur « multiprotocole » ?",
+          "options": ["Un routeur capable de gérer plusieurs protocoles réseau (IP, IPX, etc.)", "Un routeur avec plusieurs interfaces physiques", "Un routeur qui supporte le Wi-Fi et l'Ethernet", "Un routeur qui effectue aussi le filtrage pare-feu"],
+          "answer": 0,
+          "explain": "Un routeur multiprotocole peut acheminer des paquets de différentes familles de protocoles réseau."
+        },
+        {
+          "q": "Quel protocole permet à deux routeurs d'échanger automatiquement leurs tables de routage ?",
+          "options": ["SMTP", "OSPF (Open Shortest Path First)", "HTTP", "NTP"],
+          "answer": 1,
+          "explain": "OSPF est un protocole de routage dynamique à état de lien qui permet aux routeurs de partager leurs routes automatiquement."
+        },
+        {
+          "q": "Qu'est-ce qu'un sous-réseau (subnet) ?",
+          "options": ["Un routeur secondaire de secours", "Une subdivision logique d'un réseau IP", "Un câble reliant deux routeurs", "Un protocole de chiffrement réseau"],
+          "answer": 1,
+          "explain": "Le sous-réseau divise un espace d'adressage IP en segments plus petits, facilement routables."
+        },
+        {
+          "q": "Un routeur peut-il avoir plusieurs interfaces LAN ?",
+          "options": ["Non, un routeur n'a qu'une seule interface", "Oui, certains routeurs disposent de plusieurs interfaces LAN et WAN", "Oui, mais seulement en Wi-Fi", "Non, seul un switch peut avoir plusieurs interfaces LAN"],
+          "answer": 1,
+          "explain": "Un routeur peut avoir plusieurs interfaces LAN et WAN, ce qui lui permet d'interconnecter plusieurs réseaux simultanément."
+        },
+        {
+          "q": "Quel est le rôle du protocole ICMP dans le contexte du routage ?",
+          "options": ["Attribuer des adresses IP automatiquement", "Transporter des messages d'erreur et de diagnostic réseau (ping, TTL expiré...)", "Établir des connexions sécurisées entre routeurs", "Résoudre les noms de domaine en adresses IP"],
+          "answer": 1,
+          "explain": "ICMP est utilisé pour envoyer des messages de diagnostic comme les réponses ping ou les erreurs « Destination Unreachable »."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Quelle est la différence entre le routage dynamique et le routage statique ?",
+          "options": ["Le routage dynamique est plus lent car il recalcule les routes en permanence", "Le routage dynamique apprend les routes automatiquement via des protocoles ; le statique est configuré manuellement", "Le routage statique s'adapte automatiquement aux pannes", "Il n'y a aucune différence pratique"],
+          "answer": 1,
+          "explain": "Le routage dynamique (RIP, OSPF, BGP) permet aux routeurs de s'adapter aux changements de topologie sans intervention manuelle."
+        },
+        {
+          "q": "Quel protocole de routage est utilisé entre les grandes infrastructures d'Internet (AS - Autonomous Systems) ?",
+          "options": ["RIP", "OSPF", "BGP (Border Gateway Protocol)", "EIGRP"],
+          "answer": 2,
+          "explain": "BGP est le protocole de routage inter-domaines qui gère le routage entre les systèmes autonomes (FAI, grandes entreprises)."
+        },
+        {
+          "q": "Que signifie CIDR (Classless Inter-Domain Routing) ?",
+          "options": ["Un protocole pour sécuriser les échanges entre routeurs", "Une notation d'adressage IP sans classes fixes (ex. 192.168.1.0/24)", "Un type de routeur sans fil", "Un outil de diagnostic réseau"],
+          "answer": 1,
+          "explain": "CIDR permet de définir des sous-réseaux de taille variable grâce à la notation /n (nombre de bits du masque réseau)."
+        },
+        {
+          "q": "Dans un scénario de NAT, quel équipement maintient la table de correspondance entre IP privée/port et IP publique/port ?",
+          "options": ["Le switch du réseau local", "Le serveur DHCP", "Le routeur effectuant le NAT", "Le DNS de l'opérateur"],
+          "answer": 2,
+          "explain": "Le routeur NAT conserve une table de traduction pour savoir à quelle machine interne rediriger la réponse reçue d'Internet."
+        },
+        {
+          "q": "Qu'est-ce que le « split horizon » dans les protocoles de routage à vecteur de distance ?",
+          "options": ["Une technique pour couper la connexion en cas de panne", "Une règle qui interdit d'annoncer une route par l'interface depuis laquelle elle a été apprise", "Un mécanisme de chiffrement des tables de routage", "Un algorithme de compression des paquets"],
+          "answer": 1,
+          "explain": "Le split horizon évite les boucles de routage en empêchant un routeur de ré-annoncer une route vers la source depuis laquelle il l'a apprise."
+        },
+        {
+          "q": "Qu'est-ce qu'une route flottante (floating static route) ?",
+          "options": ["Une route qui change d'adresse automatiquement", "Une route statique de secours avec une métrique élevée, utilisée si la route principale tombe", "Une route apprise par protocole dynamique", "Une route IPv6 uniquement"],
+          "answer": 1,
+          "explain": "La route flottante est une route statique de backup ; sa métrique élevée la rend moins prioritaire que la route principale."
+        },
+        {
+          "q": "Qu'est-ce que l'agrégation de routes (route summarization) ?",
+          "options": ["Regrouper plusieurs routes spécifiques en une seule route résumée pour réduire la taille des tables", "Fusionner deux routeurs en un seul", "Augmenter la bande passante d'une liaison", "Dupliquer une route pour redondance"],
+          "answer": 0,
+          "explain": "L'agrégation réduit la taille des tables de routage en regroupant plusieurs sous-réseaux contigus en une seule entrée plus générale."
+        },
+        {
+          "q": "Dans le contexte IPv6, quel mécanisme remplace le NAT pour permettre à plusieurs machines de communiquer sur Internet ?",
+          "options": ["Le routage statique étendu", "L'attribution d'adresses IPv6 publiques uniques à chaque machine (espace d'adressage immense)", "Le double NAT", "Le protocole DHCP v6 uniquement"],
+          "answer": 1,
+          "explain": "IPv6 offre un espace d'adressage si vaste (2^128) que chaque appareil peut avoir une adresse publique unique, rendant le NAT moins nécessaire."
+        },
+        {
+          "q": "Qu'est-ce qu'un routeur virtuel (VRF — Virtual Routing and Forwarding) ?",
+          "options": ["Un routeur logiciel émulé dans une VM", "Des instances de tables de routage indépendantes coexistant sur un même routeur physique", "Un routeur dédié au trafic VPN uniquement", "Un protocole de routage pour réseaux virtuels"],
+          "answer": 1,
+          "explain": "Le VRF permet de créer plusieurs tables de routage virtuelles isolées sur un seul routeur physique (utile pour la mutualisation)."
+        },
+        {
+          "q": "Quelle est la différence entre un routeur de bordure (edge router) et un routeur cœur de réseau (core router) ?",
+          "options": ["Le routeur de bordure est plus rapide", "Le routeur de bordure connecte le réseau interne à Internet ; le cœur de réseau achemine le trafic à haute vitesse au sein d'un grand réseau", "Le cœur de réseau gère uniquement les VLAN", "Il n'y a aucune différence fonctionnelle"],
+          "answer": 1,
+          "explain": "Le routeur de bordure fait la jonction LAN/WAN tandis que les routeurs cœur de réseau traitent des volumes de trafic très élevés en interne."
+        },
+        {
+          "q": "Comment le routeur effectue-t-il la « longest prefix match » (correspondance du préfixe le plus long) ?",
+          "options": ["Il choisit la route avec la métrique la plus élevée", "Il choisit la route dont le masque réseau est le plus spécifique (préfixe le plus long)", "Il choisit la première route dans l'ordre alphabétique", "Il demande au DNS quelle route utiliser"],
+          "answer": 1,
+          "explain": "Le routeur préfère toujours la route la plus spécifique : /28 est préféré à /24 pour une même adresse de destination."
+        },
+        {
+          "q": "Qu'est-ce que le « policy-based routing » (PBR — routage par politique) ?",
+          "options": ["Un routage basé uniquement sur la destination IP", "Un routage qui peut dépendre de la source, du protocole ou d'autres critères plutôt que de la seule destination", "Un protocole de sécurité pour chiffrer les routes", "Un routage réservé aux réseaux IPv6"],
+          "answer": 1,
+          "explain": "Le PBR permet de définir des règles de routage basées sur des critères variés (source, type de trafic, QoS) et pas seulement la destination."
+        },
+        {
+          "q": "Quel protocole de redondance permet à deux routeurs de partager une IP virtuelle pour la haute disponibilité ?",
+          "options": ["STP (Spanning Tree Protocol)", "VRRP (Virtual Router Redundancy Protocol)", "BGP", "OSPF"],
+          "answer": 1,
+          "explain": "VRRP (ou son équivalent Cisco HSRP) permet à deux routeurs de partager une adresse IP virtuelle ; si le principal tombe, le secondaire prend le relais."
+        },
+        {
+          "q": "Pourquoi préfère-t-on une route apprise via OSPF à une route apprise via RIP sur un même routeur ?",
+          "options": ["Parce que OSPF est plus ancien et donc plus fiable", "Parce que OSPF a une distance administrative plus faible (110) que RIP (120)", "Parce que RIP ne fonctionne qu'en IPv6", "Parce que OSPF chiffre les routes"],
+          "answer": 1,
+          "explain": "La distance administrative (AD) indique la fiabilité du protocole ; une AD plus faible est préférée : OSPF (110) l'emporte sur RIP (120)."
+        },
+        {
+          "q": "Un routeur de niveau 3 peut-il également effectuer des fonctions de niveau 4 (ex. inspecter les ports TCP/UDP) ?",
+          "options": ["Non, un routeur est strictement limité au niveau 3", "Oui, les routeurs modernes peuvent inspecter jusqu'au niveau 4 pour du filtrage ou du QoS", "Oui, mais seulement pour le protocole UDP", "Non, seul le pare-feu peut lire les ports"],
+          "answer": 1,
+          "explain": "Les routeurs modernes intègrent souvent des ACL étendues capables d'inspecter les ports TCP/UDP pour filtrer ou prioriser le trafic."
+        }
+      ]
+    }
+  ]
+}

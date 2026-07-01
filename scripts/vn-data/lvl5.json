@@ -1,0 +1,297 @@
+{
+  "n": 5,
+  "layer": "5 · Session",
+  "diff": 5,
+  "title": "Compte bloqué",
+  "setup": "L’utilisateur Léa Moreau n’arrive plus à ouvrir sa session sur son poste du domaine. Elle te contacte car elle obtient un message d’erreur et ne peut pas travailler.",
+  "start": "n1",
+  "nodes": {
+    "n1": {
+      "kind": "step",
+      "text": "Tu arrives devant le poste de Léa. L’écran de connexion Windows est affiché.",
+      "question": "Quelle est ta première action ?",
+      "choices": [
+        {
+          "t": "Regarder le voyant de la carte réseau sur le poste",
+          "to": "n2"
+        },
+        {
+          "t": "Essayer de changer le mot de passe du compte de Léa tout de suite",
+          "to": "f_mdp_direct"
+        },
+        {
+          "t": "Réinstaller Windows car le profil est sûrement corrompu",
+          "to": "f_reinstall"
+        }
+      ]
+    },
+    "n2": {
+      "kind": "step",
+      "text": "Tu observes la prise RJ45 à l’arrière du poste. Le voyant est allumé en vert et clignote : le lien physique est actif, des trames circulent.",
+      "question": "La couche 1 semble correcte. Que fais-tu ensuite ?",
+      "choices": [
+        {
+          "t": "Ouvrir un invite de commandes et vérifier l’adresse IP (ipconfig)",
+          "to": "n3"
+        },
+        {
+          "t": "Passer directement à l’examen du compte dans Active Directory",
+          "to": "f_skip_reseau"
+        },
+        {
+          "t": "Tester le ping vers Google pour vérifier Internet",
+          "to": "f_internet"
+        }
+      ]
+    },
+    "n3": {
+      "kind": "step",
+      "text": "Tu ouvres une session locale de diagnostic (compte admin local) et tu lances ipconfig. Le poste a une adresse IP valide sur le sous-réseau du domaine, masque et passerelle corrects, pas d’APIPA.",
+      "question": "Le réseau couche 3 est bon. Que testes-tu maintenant ?",
+      "choices": [
+        {
+          "t": "Pinger le contrôleur de domaine par son nom (ping dc01.domaine.local)",
+          "to": "n4"
+        },
+        {
+          "t": "Tester directement un autre compte utilisateur du domaine sur ce poste",
+          "to": "n5"
+        },
+        {
+          "t": "Rejoindre le domaine car le poste est sûrement sorti du domaine",
+          "to": "f_rejoin"
+        }
+      ]
+    },
+    "n4": {
+      "kind": "step",
+      "text": "Tu exécutes ping dc01.domaine.local depuis l’invite de commandes. Les réponses arrivent sans perte de paquets : le poste joint bien le contrôleur de domaine.",
+      "question": "La connectivité réseau est confirmée jusqu’au DC. Quelle est l’étape suivante ?",
+      "choices": [
+        {
+          "t": "Tester si un autre compte du domaine peut se connecter sur ce poste",
+          "to": "n5"
+        },
+        {
+          "t": "Examiner le compte de Léa dans Active Directory tout de suite",
+          "to": "n6"
+        },
+        {
+          "t": "Vérifier si le câble réseau est bien branché au switch",
+          "to": "f_deja_verifie"
+        }
+      ]
+    },
+    "n5": {
+      "kind": "step",
+      "text": "Tu essaies de te connecter avec un compte test du domaine sur ce poste. La session s’ouvre sans problème : le poste est bien dans le domaine et fonctionne correctement.",
+      "question": "Le poste est sain, le problème est bien lié au compte de Léa. Que fais-tu ?",
+      "choices": [
+        {
+          "t": "Ouvrir Active Directory - Utilisateurs et ordinateurs sur le serveur",
+          "to": "n6"
+        },
+        {
+          "t": "Demander à Léa de rappeler demain, le serveur est peut-être chargé",
+          "to": "f_attendre"
+        },
+        {
+          "t": "Désactiver puis réactiver la carte réseau du poste",
+          "to": "f_carte_reseau"
+        }
+      ]
+    },
+    "n6": {
+      "kind": "step",
+      "text": "Tu ouvres la console Active Directory - Utilisateurs et ordinateurs (ADUC) depuis le serveur. Tu localises le compte de Léa Moreau dans l’OU correspondante.",
+      "question": "Que regardes-tu en premier sur le compte ?",
+      "choices": [
+        {
+          "t": "L’onglet Compte : vérifier si le compte est verrouillé, désactivé ou expiré",
+          "to": "n7"
+        },
+        {
+          "t": "L’onglet Profil : vérifier le chemin du profil itinérant",
+          "to": "f_profil"
+        },
+        {
+          "t": "L’onglet Groupes : vérifier les appartenances aux groupes",
+          "to": "f_groupes"
+        }
+      ]
+    },
+    "n7": {
+      "kind": "step",
+      "text": "Dans l’onglet Compte, tu constates que la case Le compte est verrouillé est cochée. Le compte a été verrouillé après plusieurs tentatives de connexion incorrectes (stratégie de verrouillage du domaine).",
+      "question": "Tu as identifié la cause. Quelle est la bonne procédure de correction ?",
+      "choices": [
+        {
+          "t": "Décocher le verrouillage ET cocher L’utilisateur doit changer son mot de passe à la prochaine connexion",
+          "to": "n8"
+        },
+        {
+          "t": "Décocher uniquement le verrouillage sans toucher au mot de passe",
+          "to": "f_mdp_inchange"
+        },
+        {
+          "t": "Supprimer et recréer le compte pour repartir sur des bases saines",
+          "to": "f_supprimer_compte"
+        }
+      ]
+    },
+    "n8": {
+      "kind": "step",
+      "text": "Tu décoches le verrouillage et tu coches L’utilisateur doit changer son mot de passe à la prochaine connexion. Tu valides avec OK. Le compte est maintenant actif dans l’AD.",
+      "question": "Que fais-tu avant de considérer l’incident comme résolu ?",
+      "choices": [
+        {
+          "t": "Retourner au poste et demander à Léa de tenter une connexion pour valider",
+          "to": "n9"
+        },
+        {
+          "t": "Considérer que c’est bon et clore le ticket sans valider avec l’utilisateur",
+          "to": "f_pas_valide"
+        },
+        {
+          "t": "Changer le mot de passe toi-même et le communiquer à Léa par email",
+          "to": "f_mdp_email"
+        }
+      ]
+    },
+    "n9": {
+      "kind": "step",
+      "text": "Léa revient à son poste. Elle saisit son identifiant. Une fenêtre s’ouvre lui demandant de choisir un nouveau mot de passe. Elle le définit selon la politique de complexité du domaine.",
+      "question": "La session s’est ouverte après le changement de mot de passe. Quelle est la dernière étape ?",
+      "choices": [
+        {
+          "t": "Confirmer avec Léa que tout fonctionne et clore le ticket d’incident",
+          "to": "win"
+        },
+        {
+          "t": "Modifier la politique de verrouillage du domaine pour éviter que cela se reproduise",
+          "to": "f_politique"
+        },
+        {
+          "t": "Redémarrer le poste pour s’assurer que la session est bien propre",
+          "to": "f_redemarrage"
+        }
+      ]
+    },
+    "f_mdp_direct": {
+      "kind": "fail",
+      "text": "Avant de modifier quoi que ce soit, il faut d’abord vérifier que le poste et le réseau fonctionnent. On repart toujours de la couche 1 : changer le mot de passe sans avoir diagnostiqué le bas de la pile peut masquer un autre problème ou être inutile.",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n1"
+    },
+    "f_reinstall": {
+      "kind": "fail",
+      "text": "Réinstaller Windows est une mesure radicale et non justifiée : aucun diagnostic n’a encore été effectué. On commence toujours par vérifier le bas de la pile (câble, IP, réseau) avant d’envisager une action aussi lourde.",
+      "course": "gestion-ordinateur-windows",
+      "courseLabel": "La gestion de l’ordinateur",
+      "retryTo": "n1"
+    },
+    "f_internet": {
+      "kind": "fail",
+      "text": "Tester Internet n’est pas pertinent ici : la connexion au domaine Active Directory ne nécessite pas Internet. On doit vérifier la connectivité avec le contrôleur de domaine, pas avec des serveurs externes.",
+      "course": "bases-du-reseau",
+      "courseLabel": "Les bases du réseau",
+      "retryTo": "n2"
+    },
+    "f_skip_reseau": {
+      "kind": "fail",
+      "text": "Passer directement à Active Directory sans avoir confirmé que le poste a une IP valide est une erreur de méthode. Si le poste n’a pas de réseau, aucune correction AD ne servira à rien. On valide toujours le réseau avant de monter dans les couches.",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n2"
+    },
+    "f_rejoin": {
+      "kind": "fail",
+      "text": "Rejoindre le domaine est une opération lourde et non justifiée à ce stade. La présence d’une IP valide ne signifie pas que le poste est sorti du domaine. Il faut d’abord tester la connectivité vers le contrôleur de domaine et essayer un autre compte.",
+      "course": "gestion-ordinateur-windows",
+      "courseLabel": "La gestion de l’ordinateur",
+      "retryTo": "n3"
+    },
+    "f_deja_verifie": {
+      "kind": "fail",
+      "text": "Le voyant était déjà allumé et le ping vers le DC a répondu : le câble et la connexion réseau sont confirmés. Revérifier le câble est une perte de temps. Quand un test est déjà concluant, on passe à l’étape suivante.",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n4"
+    },
+    "f_attendre": {
+      "kind": "fail",
+      "text": "Un problème de compte verrouillé ne se résout pas en attendant. L’utilisateur ne peut pas travailler. Tu as déjà toutes les informations pour agir : le poste fonctionne, le problème vient du compte.",
+      "course": "roles-windows-server",
+      "courseLabel": "Les rôles de Windows Server",
+      "retryTo": "n5"
+    },
+    "f_carte_reseau": {
+      "kind": "fail",
+      "text": "Tu viens de confirmer que le poste et le réseau fonctionnent (un autre compte s’est connecté). Désactiver la carte réseau est une action inutile et contre-productive à ce stade. Le problème est au niveau du compte, pas du matériel.",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n5"
+    },
+    "f_profil": {
+      "kind": "fail",
+      "text": "L’onglet Profil concerne la configuration du profil itinérant et des scripts de connexion. Ce n’est pas la première chose à vérifier quand un utilisateur ne peut pas se connecter. L’onglet Compte contient les informations critiques : verrouillage, expiration, activation.",
+      "course": "roles-windows-server",
+      "courseLabel": "Les rôles de Windows Server",
+      "retryTo": "n6"
+    },
+    "f_groupes": {
+      "kind": "fail",
+      "text": "Les appartenances aux groupes déterminent les droits d’accès aux ressources, mais ne sont pas en cause si l’utilisateur ne peut pas ouvrir de session. C’est l’onglet Compte qui indique si le compte est verrouillé, désactivé ou expiré.",
+      "course": "roles-windows-server",
+      "courseLabel": "Les rôles de Windows Server",
+      "retryTo": "n6"
+    },
+    "f_mdp_inchange": {
+      "kind": "fail",
+      "text": "Déverrouiller sans forcer le changement de mot de passe est une erreur : si le mot de passe était compromis, rien n’empêche que cela se reproduise. La bonne pratique impose de forcer le changement de mot de passe à la prochaine connexion.",
+      "course": "roles-windows-server",
+      "courseLabel": "Les rôles de Windows Server",
+      "retryTo": "n7"
+    },
+    "f_supprimer_compte": {
+      "kind": "fail",
+      "text": "Supprimer un compte Active Directory est irréversible (le SID est perdu) et entraîne la perte de tous les droits et appartenances associés. C’est une action bien trop radicale pour un simple verrouillage de compte.",
+      "course": "roles-windows-server",
+      "courseLabel": "Les rôles de Windows Server",
+      "retryTo": "n7"
+    },
+    "f_pas_valide": {
+      "kind": "fail",
+      "text": "Ne jamais clore un ticket sans validation utilisateur. Peut-être que Léa a oublié son mot de passe, ou que la stratégie de complexité rejette ce qu’elle saisit. La validation avec l’utilisateur est indispensable pour confirmer la résolution.",
+      "course": "gestion-ordinateur-windows",
+      "courseLabel": "La gestion de l’ordinateur",
+      "retryTo": "n8"
+    },
+    "f_mdp_email": {
+      "kind": "fail",
+      "text": "Communiquer un mot de passe par email est une mauvaise pratique de sécurité : l’email n’est pas un canal sécurisé. En cochant L’utilisateur doit changer son mot de passe à la prochaine connexion, c’est Léa qui choisit elle-même son nouveau mot de passe. Aucun mot de passe temporaire n’est à transmettre.",
+      "course": "roles-windows-server",
+      "courseLabel": "Les rôles de Windows Server",
+      "retryTo": "n8"
+    },
+    "f_politique": {
+      "kind": "fail",
+      "text": "Modifier la politique de verrouillage du domaine est une décision qui appartient au responsable système ou à la DSI, pas à toi seul lors d’un ticket de dépannage standard. Ta mission est résolue : le compte fonctionne et l’utilisateur a validé. Il faut clore le ticket.",
+      "course": "roles-windows-server",
+      "courseLabel": "Les rôles de Windows Server",
+      "retryTo": "n9"
+    },
+    "f_redemarrage": {
+      "kind": "fail",
+      "text": "Léa vient d’ouvrir sa session avec succès après avoir changé son mot de passe : la session est déjà propre et fonctionnelle. Un redémarrage est inutile ici et ferait perdre du temps à l’utilisateur. Il faut valider et clore le ticket.",
+      "course": "gestion-ordinateur-windows",
+      "courseLabel": "La gestion de l’ordinateur",
+      "retryTo": "n9"
+    },
+    "win": {
+      "kind": "win",
+      "text": "Bravo ! Tu as suivi la bonne démarche : vérification physique (voyant), couche 3 (IP valide), connectivité DC (ping), isolation du problème (autre compte OK sur ce poste), diagnostic AD (compte verrouillé), correction propre (déverrouillage + changement de mot de passe obligatoire) et validation avec l’utilisateur. Léa peut travailler. Ticket résolu."
+    }
+  }
+}

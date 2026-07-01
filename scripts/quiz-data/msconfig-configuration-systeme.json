@@ -1,0 +1,516 @@
+{
+ "slug": "msconfig-configuration-systeme",
+ "title": "Configuration du système (MSConfig)",
+ "quizzes": [
+  {
+   "title": "Quiz 1 — Les bases",
+   "questions": [
+    {
+     "q": "Comment ouvrir MSConfig sous Windows ?",
+     "options": [
+      "Depuis le Panneau de configuration uniquement",
+      "En tapant msconfig dans la boîte Exécuter (Win+R)",
+      "Depuis le Gestionnaire des tâches",
+      "En cliquant droit sur le bureau"
+     ],
+     "answer": 1,
+     "explain": "On lance MSConfig en appuyant sur Win+R puis en tapant msconfig et en validant."
+    },
+    {
+     "q": "Quel est le nom complet de l'outil MSConfig ?",
+     "options": [
+      "Microsoft Startup Config",
+      "Microsoft System Configuration",
+      "Configuration du système Windows",
+      "Gestionnaire de configuration système"
+     ],
+     "answer": 2,
+     "explain": "MSConfig s'appelle officiellement « Configuration du système » dans Windows."
+    },
+    {
+     "q": "Combien d'onglets principaux possède MSConfig ?",
+     "options": [
+      "3",
+      "4",
+      "5",
+      "6"
+     ],
+     "answer": 2,
+     "explain": "MSConfig possède 5 onglets : Général, Démarrage du système, Services, Démarrage et Outils. Depuis Windows 8, l'onglet Démarrage renvoie vers le Gestionnaire des tâches."
+    },
+    {
+     "q": "Que permet l'onglet Général de MSConfig ?",
+     "options": [
+      "Configurer les services Windows",
+      "Choisir le mode de démarrage : normal, diagnostic ou sélectif",
+      "Désactiver les programmes au démarrage",
+      "Accéder à des outils système"
+     ],
+     "answer": 1,
+     "explain": "L'onglet Général permet de choisir entre un démarrage normal, de diagnostic (minimal) ou sélectif."
+    },
+    {
+     "q": "Que permet l'onglet « Services » de MSConfig ?",
+     "options": [
+      "Voir et désactiver les services Windows qui se lancent au démarrage",
+      "Voir les programmes installés",
+      "Configurer le réseau",
+      "Mettre à jour Windows"
+     ],
+     "answer": 0,
+     "explain": "L'onglet Services liste tous les services Windows et permet d'en désactiver certains pour le démarrage."
+    },
+    {
+     "q": "Quel mode de démarrage MSConfig « Diagnostic » active-t-il ?",
+     "options": [
+      "Le mode sans échec avec réseau",
+      "Un démarrage minimal avec uniquement les pilotes et services essentiels Microsoft",
+      "Un démarrage rapide sans applications",
+      "Le mode de récupération Windows"
+     ],
+     "answer": 1,
+     "explain": "Le démarrage de diagnostic ne charge que les pilotes et services de base Microsoft, idéal pour isoler un problème."
+    },
+    {
+     "q": "Où se trouvent les options de démarrage du système d'exploitation dans MSConfig ?",
+     "options": [
+      "Dans l'onglet Général",
+      "Dans l'onglet Démarrage du système",
+      "Dans l'onglet Services",
+      "Dans l'onglet Outils"
+     ],
+     "answer": 1,
+     "explain": "L'onglet « Démarrage du système » liste les OS installés et permet de configurer les options de démarrage."
+    },
+    {
+     "q": "Que se passe-t-il si on coche « Démarrage sans échec » dans l'onglet Démarrage du système de MSConfig ?",
+     "options": [
+      "Windows démarre en mode normal la prochaine fois",
+      "Windows démarre en mode sans échec au prochain redémarrage",
+      "Windows lance une réparation automatique",
+      "Un message d'avertissement s'affiche uniquement"
+     ],
+     "answer": 1,
+     "explain": "Cocher cette option force Windows à démarrer en mode sans échec au prochain redémarrage."
+    },
+    {
+     "q": "Dans MSConfig, que permet la case « Masquer tous les services Microsoft » dans l'onglet Services ?",
+     "options": [
+      "Désactiver tous les services Microsoft",
+      "Filtrer la liste pour n'afficher que les services tiers et éviter de désactiver des services critiques",
+      "Afficher uniquement les services actifs",
+      "Supprimer les services de la liste"
+     ],
+     "answer": 1,
+     "explain": "Cette case masque les services Microsoft pour se concentrer sur les services tiers potentiellement problématiques."
+    },
+    {
+     "q": "Depuis Windows 8, quel outil a repris la gestion des programmes au démarrage autrefois dans l'onglet Démarrage de MSConfig ?",
+     "options": [
+      "Le Panneau de configuration",
+      "L'Éditeur du Registre",
+      "Le Gestionnaire des tâches (onglet Démarrage)",
+      "Services.msc"
+     ],
+     "answer": 2,
+     "explain": "Depuis Windows 8, l'onglet Démarrage du Gestionnaire des tâches gère les programmes lancés au démarrage."
+    },
+    {
+     "q": "Qu'est-ce que le démarrage sélectif dans MSConfig ?",
+     "options": [
+      "Un démarrage qui sélectionne automatiquement les meilleurs paramètres",
+      "Un mode où l'utilisateur choisit quels éléments de démarrage charger",
+      "Un démarrage réservé aux administrateurs",
+      "Un démarrage depuis une clé USB sélectionnée"
+     ],
+     "answer": 1,
+     "explain": "Le démarrage sélectif permet de choisir précisément quels services et éléments de démarrage sont chargés."
+    },
+    {
+     "q": "MSConfig est-il un outil de configuration permanent ou temporaire ?",
+     "options": [
+      "Permanent uniquement",
+      "Temporaire uniquement, les changements reviennent à chaque redémarrage",
+      "Les changements persistent jusqu'à ce qu'on les modifie à nouveau dans MSConfig",
+      "Aucun des deux, il ne fait que diagnostiquer"
+     ],
+     "answer": 2,
+     "explain": "Les modifications dans MSConfig persistent jusqu'à ce qu'on les annule manuellement dans l'outil."
+    },
+    {
+     "q": "Quel onglet de MSConfig permet de lancer des outils système comme l'Éditeur du Registre ou l'Observateur d'événements ?",
+     "options": [
+      "Général",
+      "Démarrage du système",
+      "Services",
+      "Outils"
+     ],
+     "answer": 3,
+     "explain": "L'onglet Outils liste et permet de lancer directement divers outils d'administration Windows."
+    },
+    {
+     "q": "Après avoir modifié des paramètres dans MSConfig, que faut-il faire pour que les changements prennent effet ?",
+     "options": [
+      "Se déconnecter puis se reconnecter",
+      "Redémarrer l'ordinateur",
+      "Appliquer un correctif Windows",
+      "Rien, les changements sont immédiats"
+     ],
+     "answer": 1,
+     "explain": "La plupart des modifications dans MSConfig nécessitent un redémarrage pour prendre effet."
+    },
+    {
+     "q": "Quel type d'utilisateur peut normalement accéder à et modifier MSConfig ?",
+     "options": [
+      "Tout utilisateur sans restriction",
+      "Uniquement les utilisateurs ayant des droits d'administrateur",
+      "Uniquement le compte SYSTEM",
+      "Uniquement les techniciens Microsoft"
+     ],
+     "answer": 1,
+     "explain": "Certaines modifications dans MSConfig (notamment services) nécessitent des droits d'administrateur."
+    }
+   ]
+  },
+  {
+   "title": "Quiz 2 — Intermédiaire",
+   "questions": [
+    {
+     "q": "Quelle différence y a-t-il entre le mode sans échec minimal et le mode sans échec avec réseau ?",
+     "options": [
+      "Il n'y a aucune différence",
+      "Le mode avec réseau charge les pilotes réseau en plus, permettant l'accès à Internet",
+      "Le mode minimal permet plus de modifications",
+      "Le mode avec réseau est plus lent"
+     ],
+     "answer": 1,
+     "explain": "Le mode sans échec avec réseau ajoute les pilotes réseau au démarrage minimal, utile pour télécharger des correctifs."
+    },
+    {
+     "q": "Pourquoi est-il conseillé de cocher « Masquer tous les services Microsoft » avant de désactiver des services dans MSConfig ?",
+     "options": [
+      "Pour aller plus vite",
+      "Pour éviter de désactiver accidentellement un service Windows essentiel au fonctionnement du système",
+      "Pour afficher uniquement les services actifs",
+      "Microsoft l'exige pour des raisons légales"
+     ],
+     "answer": 1,
+     "explain": "Masquer les services Microsoft protège contre la désactivation accidentelle d'un service critique du système."
+    },
+    {
+     "q": "Quel est le risque principal si l'on désactive trop de services dans MSConfig sans connaître leur rôle ?",
+     "options": [
+      "Windows devient plus rapide mais avec des bugs mineurs",
+      "Windows peut devenir instable ou certaines fonctionnalités peuvent cesser de fonctionner",
+      "Les fichiers personnels peuvent être supprimés",
+      "La connexion Internet est définitivement coupée"
+     ],
+     "answer": 1,
+     "explain": "Désactiver des services essentiels peut rendre Windows instable, empêcher des fonctionnalités de fonctionner ou bloquer le démarrage."
+    },
+    {
+     "q": "Dans le Gestionnaire des tâches (onglet Démarrage), que représente la colonne « Impact au démarrage » ?",
+     "options": [
+      "La quantité de mémoire utilisée par le programme",
+      "L'impact de ce programme sur la durée du démarrage de Windows (faible/moyen/élevé)",
+      "La priorité d'exécution du processus",
+      "La version du logiciel"
+     ],
+     "answer": 1,
+     "explain": "La colonne « Impact au démarrage » indique si un programme ralentit significativement le démarrage de Windows."
+    },
+    {
+     "q": "Comment MSConfig interagit-il avec le BCD (Boot Configuration Data) ?",
+     "options": [
+      "MSConfig modifie directement les fichiers du BCD",
+      "MSConfig écrit des paramètres dans le BCD via des API Windows pour les options de démarrage",
+      "MSConfig ne touche pas au BCD",
+      "MSConfig crée un nouveau BCD à chaque utilisation"
+     ],
+     "answer": 1,
+     "explain": "MSConfig utilise les API Windows pour modifier les entrées du BCD correspondant aux options de démarrage."
+    },
+    {
+     "q": "Quel onglet MSConfig permet de configurer le nombre de processeurs utilisés au démarrage ?",
+     "options": [
+      "Général",
+      "Services",
+      "Démarrage du système (options avancées)",
+      "Outils"
+     ],
+     "answer": 2,
+     "explain": "L'onglet « Démarrage du système » possède un bouton « Options avancées » permettant de limiter les processeurs et la RAM."
+    },
+    {
+     "q": "Qu'est-ce que l'option « Pas de démarrage avec interface utilisateur graphique » dans MSConfig ?",
+     "options": [
+      "Démarre Windows sans fond d'écran",
+      "Empêche l'écran de démarrage graphique (splash screen) de s'afficher",
+      "Démarre en mode texte uniquement sans bureau",
+      "Désactive le Gestionnaire des tâches"
+     ],
+     "answer": 1,
+     "explain": "Cette option supprime l'animation de démarrage graphique de Windows, utile pour diagnostiquer des problèmes d'affichage."
+    },
+    {
+     "q": "Quelle commande PowerShell permet de voir tous les programmes configurés pour démarrer avec Windows, similaire à MSConfig ?",
+     "options": [
+      "Get-Service",
+      "Get-StartupApps",
+      "Get-CimInstance Win32_StartupCommand",
+      "Get-Process"
+     ],
+     "answer": 2,
+     "explain": "Get-CimInstance Win32_StartupCommand liste les programmes configurés pour démarrer automatiquement avec Windows."
+    },
+    {
+     "q": "Dans MSConfig, l'option « Journalisation du démarrage » crée quel fichier ?",
+     "options": [
+      "C:\\Windows\\debug\\netlogon.log",
+      "C:\\Windows\\ntbtlog.txt",
+      "C:\\bootlog.txt",
+      "C:\\Windows\\System32\\drivers\\bootlog.txt"
+     ],
+     "answer": 1,
+     "explain": "L'option journalisation crée C:\\Windows\\ntbtlog.txt qui liste tous les pilotes chargés (ou non) au démarrage."
+    },
+    {
+     "q": "Que signifie qu'un service est « désactivé » dans MSConfig comparé à « arrêté » ?",
+     "options": [
+      "Il n'y a aucune différence",
+      "Désactivé signifie qu'il ne peut pas démarrer automatiquement ; arrêté signifie qu'il est inactif mais peut être lancé",
+      "Arrêté signifie qu'il est définitivement supprimé",
+      "Désactivé signifie qu'il consomme moins de RAM"
+     ],
+     "answer": 1,
+     "explain": "Un service désactivé ne peut pas démarrer ; un service arrêté peut être relancé manuellement ou automatiquement."
+    },
+    {
+     "q": "Quel outil en ligne de commande complète MSConfig pour gérer finement les services (démarrage, arrêt, type) ?",
+     "options": [
+      "net start / net stop et sc.exe",
+      "taskkill et tasklist",
+      "wmic et pslist",
+      "regedit et devmgmt"
+     ],
+     "answer": 0,
+     "explain": "net start/stop gère les services en ligne de commande, et sc.exe permet une configuration fine du type de démarrage."
+    },
+    {
+     "q": "Dans l'onglet Outils de MSConfig, quel outil permet d'analyser les événements système et les erreurs ?",
+     "options": [
+      "Éditeur du Registre",
+      "Vérificateur de fichiers système",
+      "Observateur d'événements",
+      "Informations système"
+     ],
+     "answer": 2,
+     "explain": "L'Observateur d'événements liste tous les événements, avertissements et erreurs survenus dans Windows."
+    },
+    {
+     "q": "Pourquoi MSConfig est-il utile pour diagnostiquer un PC lent au démarrage ?",
+     "options": [
+      "Il augmente la vitesse du processeur",
+      "Il permet d'identifier et de désactiver les services et programmes non essentiels qui ralentissent le démarrage",
+      "Il défragmente le disque dur",
+      "Il met à jour les pilotes automatiquement"
+     ],
+     "answer": 1,
+     "explain": "En désactivant un par un les services et programmes suspects, MSConfig aide à trouver ce qui ralentit le démarrage."
+    },
+    {
+     "q": "Quelle option avancée de l'onglet Démarrage permet de limiter la RAM utilisée au démarrage pour des tests ?",
+     "options": [
+      "Mémoire maximale (Maximum memory)",
+      "Mémoire de base",
+      "RAM de démarrage",
+      "Allocation mémoire"
+     ],
+     "answer": 0,
+     "explain": "L'option « Mémoire maximale » dans les options avancées de démarrage limite la RAM visible par Windows au démarrage."
+    },
+    {
+     "q": "Après un diagnostic avec MSConfig, comment revenir à un démarrage normal sans réouvrir MSConfig ?",
+     "options": [
+      "Réinstaller Windows",
+      "Dans MSConfig, onglet Général, sélectionner « Démarrage normal » et redémarrer",
+      "Restaurer un point de restauration",
+      "Utiliser bootrec /rebuildbcd"
+     ],
+     "answer": 1,
+     "explain": "Il suffit de rouvrir MSConfig, sélectionner « Démarrage normal » dans l'onglet Général et de redémarrer."
+    }
+   ]
+  },
+  {
+   "title": "Quiz 3 — Approfondissement",
+   "questions": [
+    {
+     "q": "Dans quel registre Windows MSConfig stocke-t-il les éléments de démarrage sur les versions antérieures à Windows 8 ?",
+     "options": [
+      "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Run",
+      "HKEY_CURRENT_USER\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Winlogon",
+      "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Services",
+      "HKEY_CLASSES_ROOT\\Applications"
+     ],
+     "answer": 0,
+     "explain": "Les programmes au démarrage sont listés dans HKLM ou HKCU sous ...\\CurrentVersion\\Run dans le registre."
+    },
+    {
+     "q": "Quelle est la différence entre les clés de registre HKCU\\Run et HKLM\\Run pour les programmes au démarrage ?",
+     "options": [
+      "Il n'y a aucune différence",
+      "HKCU\\Run lance des programmes pour l'utilisateur courant uniquement ; HKLM\\Run les lance pour tous les utilisateurs",
+      "HKLM\\Run est prioritaire et remplace HKCU\\Run",
+      "HKCU\\Run est ignoré dans Windows 10"
+     ],
+     "answer": 1,
+     "explain": "HKCU\\Run s'applique à l'utilisateur connecté uniquement, tandis que HKLM\\Run s'applique à tous les utilisateurs de la machine."
+    },
+    {
+     "q": "Quel dossier système Windows contient les raccourcis des programmes lancés au démarrage pour tous les utilisateurs ?",
+     "options": [
+      "C:\\Windows\\System32\\startup",
+      "C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup",
+      "C:\\Windows\\Boot",
+      "C:\\Users\\Public\\Startup"
+     ],
+     "answer": 1,
+     "explain": "Le dossier Démarrage commun est dans C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup."
+    },
+    {
+     "q": "Qu'est-ce que la clé de registre HKLM\\SYSTEM\\CurrentControlSet\\Services et son rapport avec MSConfig ?",
+     "options": [
+      "Elle contient les associations de fichiers",
+      "Elle stocke la configuration de tous les services Windows, que MSConfig lit et modifie",
+      "Elle contient les programmes au démarrage utilisateur",
+      "Elle stocke les paramètres réseau uniquement"
+     ],
+     "answer": 1,
+     "explain": "Cette clé registre contient la configuration de chaque service Windows ; MSConfig y lit et écrit via des API pour l'onglet Services."
+    },
+    {
+     "q": "Quelle valeur de registre (type de démarrage) correspond à un service « désactivé » dans Services.msc et MSConfig ?",
+     "options": [
+      "Start = 0",
+      "Start = 2",
+      "Start = 3",
+      "Start = 4"
+     ],
+     "answer": 3,
+     "explain": "Dans le registre, Start=4 signifie « Disabled » (désactivé), Start=2 = automatique, Start=3 = manuel."
+    },
+    {
+     "q": "Quel outil plus avancé que MSConfig permet de voir précisément tous les points d'auto-démarrage (Autoruns) sous Windows ?",
+     "options": [
+      "Process Monitor",
+      "Autoruns de Sysinternals",
+      "Process Explorer",
+      "ProcDump"
+     ],
+     "answer": 1,
+     "explain": "Autoruns (Sysinternals/Microsoft) liste tous les points de démarrage de Windows, bien plus exhaustivement que MSConfig."
+    },
+    {
+     "q": "Comment les services « RunOnce » diffèrent-ils des entrées « Run » dans le registre ?",
+     "options": [
+      "RunOnce lance des programmes plus rapidement",
+      "RunOnce exécute un programme une seule fois au prochain démarrage puis supprime l'entrée",
+      "RunOnce est prioritaire sur Run",
+      "RunOnce concerne uniquement les services réseau"
+     ],
+     "answer": 1,
+     "explain": "Les clés RunOnce exécutent un programme une seule fois au prochain démarrage, puis se suppriment automatiquement."
+    },
+    {
+     "q": "Qu'est-ce que le service « Windows Update » (wuauserv) et pourquoi faut-il être prudent si on le désactive via MSConfig ?",
+     "options": [
+      "C'est un service facultatif sans impact de sécurité",
+      "C'est le service qui gère les mises à jour de sécurité Windows ; le désactiver empêche les correctifs de sécurité",
+      "C'est le service de démarrage rapide",
+      "C'est le service d'indexation des fichiers"
+     ],
+     "answer": 1,
+     "explain": "Désactiver wuauserv empêche Windows de recevoir les mises à jour de sécurité, exposant le PC aux vulnérabilités."
+    },
+    {
+     "q": "Quel impact a la désactivation du service « Windows Defender Antivirus Service » via MSConfig sur la sécurité ?",
+     "options": [
+      "Aucun impact si un autre antivirus est installé",
+      "Windows Defender est désactivé, laissant le PC sans protection en temps réel si aucun autre antivirus n'est présent",
+      "Windows réactive automatiquement Defender après chaque redémarrage",
+      "Cela améliore les performances sans risque de sécurité"
+     ],
+     "answer": 1,
+     "explain": "Désactiver Windows Defender laisse le PC sans protection en temps réel si aucun antivirus tiers n'est installé."
+    },
+    {
+     "q": "Quelle est la limite principale de MSConfig par rapport à Autoruns pour analyser les malwares au démarrage ?",
+     "options": [
+      "MSConfig ne fonctionne pas sur Windows 10",
+      "MSConfig ne liste pas tous les points d'auto-démarrage (GPO, tâches planifiées, DLL hijacking, etc.)",
+      "MSConfig ne peut pas désactiver les services",
+      "MSConfig nécessite une connexion Internet"
+     ],
+     "answer": 1,
+     "explain": "MSConfig ne couvre pas les GPO, les tâches planifiées, les DLL hijacking ni les drivers — Autoruns est beaucoup plus complet."
+    },
+    {
+     "q": "Quelle commande PowerShell permet de désactiver un service de démarrage automatique sans passer par MSConfig ?",
+     "options": [
+      "Stop-Service -Name «nom»",
+      "Set-Service -Name «nom» -StartupType Disabled",
+      "Disable-Service -Name «nom»",
+      "Remove-Service -Name «nom»"
+     ],
+     "answer": 1,
+     "explain": "Set-Service avec le paramètre -StartupType Disabled configure le type de démarrage d'un service directement depuis PowerShell."
+    },
+    {
+     "q": "Dans le Gestionnaire des tâches (onglet Démarrage), comment désactiver définitivement un programme sans le désinstaller ?",
+     "options": [
+      "Cliquer droit et choisir « Supprimer »",
+      "Cliquer droit et choisir « Désactiver »",
+      "Décocher la case dans la colonne « Activé »",
+      "Déplacer le fichier hors de son dossier"
+     ],
+     "answer": 1,
+     "explain": "Un clic droit sur le programme et « Désactiver » empêche son lancement au démarrage sans le désinstaller."
+    },
+    {
+     "q": "Quel est l'équivalent de MSConfig en ligne de commande pour afficher la configuration de démarrage ?",
+     "options": [
+      "sfc /scannow",
+      "bcdedit /enum",
+      "dism /get-imageinfo",
+      "net config server"
+     ],
+     "answer": 1,
+     "explain": "bcdedit /enum affiche toutes les entrées du BCD (Boot Configuration Data), l'équivalent en ligne de commande de l'onglet Démarrage de MSConfig."
+    },
+    {
+     "q": "Pourquoi MSConfig est-il insuffisant pour un diagnostic approfondi de malware au démarrage ?",
+     "options": [
+      "MSConfig est trop complexe pour les techniciens",
+      "Un malware peut se camoufler dans des emplacements que MSConfig ne surveille pas (pilotes, tâches, COM)",
+      "MSConfig ne fonctionne pas en mode sans échec",
+      "MSConfig supprime les malwares au lieu de les identifier"
+     ],
+     "answer": 1,
+     "explain": "Les malwares sophistiqués utilisent des pilotes, des tâches planifiées ou des entrées COM que MSConfig ne liste pas."
+    },
+    {
+     "q": "Que fait l'option « Démarrage sécurisé » avec « Réseau » dans l'onglet Démarrage du système de MSConfig ?",
+     "options": [
+      "Active le Secure Boot UEFI",
+      "Démarre en mode sans échec avec les pilotes réseau activés",
+      "Configure le démarrage PXE réseau",
+      "Active un pare-feu renforcé au démarrage"
+     ],
+     "answer": 1,
+     "explain": "Cette option lance Windows en mode sans échec avec réseau : seuls les pilotes essentiels et réseau sont chargés."
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,259 @@
+{
+  "n": 7,
+  "layer": "7 · Application",
+  "diff": 7,
+  "title": "Le réseau est là, mais le nom est introuvable",
+  "setup": "Plusieurs postes du parc signalent qu'ils ne peuvent plus accéder au serveur de fichiers en tapant son nom dans l'explorateur. Aucun autre incident réseau n'a été remonté ce matin.",
+  "start": "n1",
+  "nodes": {
+    "n1": {
+      "kind": "step",
+      "text": "Premier réflexe : tu t'installes devant le poste en panne.",
+      "question": "Par où commences-tu ?",
+      "choices": [
+        { "t": "Je regarde le voyant de la carte réseau sur le poste", "to": "n2" },
+        { "t": "Je tape directement le nom du serveur dans l'explorateur pour reproduire l'erreur", "to": "det_explorateur" },
+        { "t": "Je lance tout de suite une commande nslookup pour tester le DNS", "to": "det_nslookup_trop_tot" }
+      ]
+    },
+    "n2": {
+      "kind": "step",
+      "text": "Le voyant de la carte réseau est allumé et clignote. Le câble est correctement branché des deux côtés. La couche 1 (physique) semble OK.",
+      "question": "Tu montes à la couche 2 et couche 3. Que fais-tu ensuite ?",
+      "choices": [
+        { "t": "Je vérifie l'adresse IP du poste (ipconfig) et je pinge la passerelle", "to": "n3" },
+        { "t": "Je redémarre le poste pour voir si ça revient", "to": "det_reboot_poste" },
+        { "t": "Je branche un autre câble au cas où", "to": "det_cable" }
+      ]
+    },
+    "n3": {
+      "kind": "step",
+      "text": "Le poste a bien une adresse IP cohérente avec le réseau. Le ping vers la passerelle répond sans perte. Les couches 1 à 3 sont valides.",
+      "question": "La connectivité de base est là. Que testes-tu maintenant ?",
+      "choices": [
+        { "t": "Je pinge l'adresse IP du serveur de fichiers directement", "to": "n4" },
+        { "t": "Je pinge le nom du serveur (ping SRV-FICHIERS)", "to": "n4b" },
+        { "t": "Je vérifie les partages réseau dans l'explorateur", "to": "det_explorateur" }
+      ]
+    },
+    "n4": {
+      "kind": "step",
+      "text": "Le ping vers l'adresse IP du serveur de fichiers répond parfaitement. Le serveur est joignable au niveau réseau. La panne n'est donc pas matérielle.",
+      "question": "L'IP fonctionne. Tu veux confirmer que le problème est bien lié au nom. Que fais-tu ?",
+      "choices": [
+        { "t": "Je pinge maintenant le nom du serveur (ping SRV-FICHIERS) pour comparer", "to": "n5" },
+        { "t": "Je tente d'accéder au partage via son IP dans l'explorateur (chemin UNC par IP)", "to": "n4c" },
+        { "t": "Je suppose que c'est le pare-feu et je le désactive temporairement", "to": "det_parefeu" }
+      ]
+    },
+    "n4b": {
+      "kind": "step",
+      "text": "Le ping par nom échoue : impossible de résoudre le nom SRV-FICHIERS. Tu n'as pas encore vérifié si l'IP répondait, ce qui t'aurait permis de localiser la couche exacte.",
+      "question": "Pour bien isoler la panne, que fais-tu maintenant ?",
+      "choices": [
+        { "t": "Je pinge l'adresse IP du serveur pour voir si la couche 3 répond", "to": "n4" },
+        { "t": "Je conclus directement que c'est un problème DNS et je vais sur le serveur", "to": "det_nslookup_trop_tot" }
+      ]
+    },
+    "n4c": {
+      "kind": "step",
+      "text": "L'accès via chemin UNC par IP fonctionne : tu vois les partages du serveur. Cela confirme que seule la résolution de nom est en cause, pas le serveur lui-même.",
+      "question": "La panne est clairement dans la résolution de noms. Quel outil utilises-tu pour diagnostiquer ?",
+      "choices": [
+        { "t": "Je lance nslookup SRV-FICHIERS pour interroger le DNS", "to": "n5" },
+        { "t": "J'ajoute une entrée dans le fichier hosts du poste pour forcer la résolution", "to": "det_hosts" }
+      ]
+    },
+    "n5": {
+      "kind": "step",
+      "text": "Le ping par nom échoue : le nom SRV-FICHIERS ne peut pas être résolu. La commande nslookup confirme : 'Le serveur DNS ne répond pas' ou 'Délai d'attente de la requête dépassé'. Le service DNS semble inaccessible.",
+      "question": "Le DNS ne répond pas. Où vas-tu pour investiguer ?",
+      "choices": [
+        { "t": "Je me connecte au serveur Windows et j'ouvre le Gestionnaire de serveurs", "to": "n6" },
+        { "t": "Je me connecte au serveur et j'ouvre services.msc", "to": "n6b" },
+        { "t": "Je vérifie d'abord si la VM qui héberge le DNS est bien démarrée dans Hyper-V", "to": "n6c" }
+      ]
+    },
+    "n6": {
+      "kind": "step",
+      "text": "Dans le Gestionnaire de serveurs, tu cliques sur Outils puis DNS. La console DNS s'ouvre mais elle ne parvient pas à joindre le serveur DNS configuré. Un autre serveur de l'infrastructure pourrait héberger le DNS dans une VM.",
+      "question": "La console DNS ne répond pas. Quelle piste suis-tu ?",
+      "choices": [
+        { "t": "Je lance le Gestionnaire Hyper-V pour vérifier l'état des machines virtuelles", "to": "n6c" },
+        { "t": "Je redémarre le rôle DNS depuis le Gestionnaire de serveurs sans chercher plus loin", "to": "det_restart_role" },
+        { "t": "Je vérifie services.msc sur le serveur physique pour voir si DNS.exe tourne", "to": "n6b" }
+      ]
+    },
+    "n6b": {
+      "kind": "step",
+      "text": "Dans services.msc sur le serveur physique, tu cherches le service Serveur DNS. Il n'apparaît pas : le rôle DNS n'est pas installé sur ce serveur physique, il est probablement hébergé dans une VM Hyper-V.",
+      "question": "Le service DNS n'est pas sur le serveur physique. Que fais-tu ?",
+      "choices": [
+        { "t": "J'ouvre le Gestionnaire Hyper-V pour voir les VM actives", "to": "n6c" },
+        { "t": "Je réinstalle le rôle DNS sur le serveur physique", "to": "det_reinstall_role" }
+      ]
+    },
+    "n6c": {
+      "kind": "step",
+      "text": "Dans le Gestionnaire Hyper-V, tu vois plusieurs machines virtuelles. L'une d'elles, SRV-DC01 (le contrôleur de domaine qui héberge le DNS), est à l'état Éteint.",
+      "question": "La VM du contrôleur de domaine est éteinte. Que fais-tu ?",
+      "choices": [
+        { "t": "Je démarre la VM SRV-DC01 depuis le Gestionnaire Hyper-V", "to": "n7" },
+        { "t": "Je vérifie d'abord le commutateur virtuel Hyper-V avant de démarrer la VM", "to": "n6d" },
+        { "t": "Je supprime et recrée la VM, ça ira plus vite", "to": "det_supprimer_vm" }
+      ]
+    },
+    "n6d": {
+      "kind": "step",
+      "text": "Dans les paramètres Hyper-V, tu vérifies le commutateur virtuel associé à SRV-DC01. Il est bien configuré et connecté au réseau physique. Aucun problème de ce côté.",
+      "question": "Le commutateur virtuel est OK. Que fais-tu maintenant ?",
+      "choices": [
+        { "t": "Je démarre la VM SRV-DC01 depuis le Gestionnaire Hyper-V", "to": "n7" },
+        { "t": "Je modifie quand même la configuration du commutateur par précaution", "to": "det_commutateur" }
+      ]
+    },
+    "n7": {
+      "kind": "step",
+      "text": "La VM SRV-DC01 démarre. Après environ une minute, elle est en ligne. Tu te connectes en bureau à distance sur SRV-DC01 et tu ouvres services.msc.",
+      "question": "Que constates-tu et que fais-tu ?",
+      "choices": [
+        { "t": "Le service DNS est Arrêté : je le démarre et je le passe en démarrage Automatique", "to": "n8" },
+        { "t": "Le service DNS tourne déjà : je redémarre quand même le contrôleur de domaine", "to": "det_reboot_dc" },
+        { "t": "Je rouvre directement la console DNS du Gestionnaire de serveurs sans vérifier services.msc", "to": "n7b" }
+      ]
+    },
+    "n7b": {
+      "kind": "step",
+      "text": "La console DNS s'ouvre et tu peux te connecter à SRV-DC01. Dans la zone directe, les enregistrements sont bien là. Tu remarques cependant que le type de démarrage du service DNS est en Manuel.",
+      "question": "Pour éviter que la panne se reproduise au prochain démarrage de la VM, que fais-tu ?",
+      "choices": [
+        { "t": "Je corrige le type de démarrage du service DNS en Automatique dans services.msc", "to": "n8" },
+        { "t": "Je laisse en Manuel, ça marche maintenant", "to": "det_laisser" }
+      ]
+    },
+    "n8": {
+      "kind": "step",
+      "text": "Dans services.msc sur SRV-DC01, tu démarres le service Serveur DNS et tu changes son type de démarrage de Manuel en Automatique. Le service est maintenant actif.",
+      "question": "Le service DNS est relancé. Comment valides-tu la correction ?",
+      "choices": [
+        { "t": "Je retourne sur le poste client et je relance nslookup SRV-FICHIERS", "to": "n9" },
+        { "t": "Je vérifie la zone DNS et les enregistrements depuis la console DNS", "to": "n8b" },
+        { "t": "Je considère que c'est réglé et je ferme tout", "to": "det_laisser" }
+      ]
+    },
+    "n8b": {
+      "kind": "step",
+      "text": "Dans la console DNS, tu ouvres la zone de recherche directe. L'enregistrement A pour SRV-FICHIERS est présent avec la bonne adresse IP. La zone et les enregistrements sont intacts.",
+      "question": "La zone DNS est correcte. Tu valides maintenant côté poste client ?",
+      "choices": [
+        { "t": "Je retourne sur le poste client et je lance nslookup SRV-FICHIERS", "to": "n9" },
+        { "t": "Je vide d'abord le cache DNS du poste client (ipconfig /flushdns) avant de tester", "to": "n8c" }
+      ]
+    },
+    "n8c": {
+      "kind": "step",
+      "text": "Tu exécutes ipconfig /flushdns sur le poste client. Le cache DNS local est vidé. Bonne pratique : tu t'assures ainsi que le poste interroge vraiment le serveur DNS plutôt qu'une entrée en cache.",
+      "question": "Cache vidé. Tu testes maintenant ?",
+      "choices": [
+        { "t": "Je lance nslookup SRV-FICHIERS et je tente l'accès par nom", "to": "n9" }
+      ]
+    },
+    "n9": {
+      "kind": "step",
+      "text": "Sur le poste client, nslookup SRV-FICHIERS retourne la bonne adresse IP. Le ping par nom fonctionne. Dans l'explorateur, l'accès au nom SRV-FICHIERS s'ouvre sans erreur.",
+      "question": "Tout fonctionne. Quelle est la bonne conclusion de l'intervention ?",
+      "choices": [
+        { "t": "Je documente : VM SRV-DC01 éteinte, service DNS en démarrage Manuel, corrigé en Automatique. Je vérifie ensuite pourquoi la VM s'est éteinte.", "to": "win" },
+        { "t": "Je ferme le ticket, c'est résolu, pas besoin de chercher plus loin", "to": "det_laisser" }
+      ]
+    },
+    "win": {
+      "kind": "win",
+      "text": "Bravo ! Tu as remonté méthodiquement depuis la couche physique jusqu'à la couche application. Tu as identifié que la VM hébergeant le contrôleur de domaine (et le service DNS) était éteinte, tu l'as relancée depuis Hyper-V, tu as corrigé le type de démarrage du service DNS et tu as validé la résolution de noms depuis le poste client. La règle d'or : toujours remonter depuis la couche 1, même quand le symptôme pointe vers la couche 7."
+    },
+    "det_explorateur": {
+      "kind": "fail",
+      "text": "Reproduire l'erreur dans l'explorateur sans méthode ne te donne aucune information sur la couche touchée. On repart toujours de la couche 1 pour remonter systématiquement.",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n1"
+    },
+    "det_nslookup_trop_tot": {
+      "kind": "fail",
+      "text": "Commencer par le DNS sans avoir vérifié la couche physique ni la connectivité IP, c'est sauter des étapes. Si la carte réseau n'avait pas de lien, nslookup échouerait pour une raison totalement différente. On repart de la couche 1.",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n1"
+    },
+    "det_reboot_poste": {
+      "kind": "fail",
+      "text": "Redémarrer sans diagnostiquer fait perdre du temps et peut masquer des informations utiles (logs, état des connexions). La méthode OSI s'impose avant toute action.",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n2"
+    },
+    "det_cable": {
+      "kind": "fail",
+      "text": "Le voyant est allumé et le câble est en place : changer le câble sans raison fait perdre du temps. On continue la vérification par couche.",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n2"
+    },
+    "det_parefeu": {
+      "kind": "fail",
+      "text": "Le pare-feu ne bloque pas la résolution DNS dans ce cas de figure. Désactiver le pare-feu sans diagnostic précis est une mauvaise pratique de sécurité. On cible la bonne couche avant d'agir.",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n4"
+    },
+    "det_hosts": {
+      "kind": "fail",
+      "text": "Modifier le fichier hosts est un contournement local, pas une correction. Tous les postes du parc sont impactés : il faudrait modifier ce fichier sur chaque machine. Ce n'est pas une solution durable.",
+      "course": "les-7-couches-osi",
+      "courseLabel": "Les 7 couches OSI",
+      "retryTo": "n4c"
+    },
+    "det_restart_role": {
+      "kind": "fail",
+      "text": "Tenter de redémarrer un rôle depuis le Gestionnaire de serveurs sans savoir où il tourne (serveur physique ou VM) peut ne rien changer. Il faut d'abord localiser où est hébergé le service DNS.",
+      "course": "gestionnaire-de-serveurs",
+      "courseLabel": "Le gestionnaire de serveurs",
+      "retryTo": "n6"
+    },
+    "det_reinstall_role": {
+      "kind": "fail",
+      "text": "Réinstaller un rôle sur le mauvais serveur n'a aucun effet sur la panne. Il faut d'abord identifier où est réellement hébergé le DNS, ici dans une VM Hyper-V.",
+      "course": "roles-windows-server",
+      "courseLabel": "Les rôles de Windows Server",
+      "retryTo": "n6b"
+    },
+    "det_supprimer_vm": {
+      "kind": "fail",
+      "text": "Supprimer une VM de contrôleur de domaine est une action destructrice et irréversible sans sauvegarde. Toutes les données Active Directory et DNS seraient perdues. On ne touche jamais à une VM de production sans certitude absolue.",
+      "course": "virtualisation",
+      "courseLabel": "La virtualisation avec Hyper-V",
+      "retryTo": "n6c"
+    },
+    "det_commutateur": {
+      "kind": "fail",
+      "text": "Modifier une configuration réseau qui fonctionne correctement risque d'introduire une nouvelle panne. Si le commutateur virtuel est OK, on ne le touche pas.",
+      "course": "virtualisation",
+      "courseLabel": "La virtualisation avec Hyper-V",
+      "retryTo": "n6d"
+    },
+    "det_reboot_dc": {
+      "kind": "fail",
+      "text": "Redémarrer un contrôleur de domaine sans raison perturbe l'ensemble du domaine : authentification, stratégies de groupe, DNS. Il faut cibler le service en cause, pas redémarrer le serveur entier.",
+      "course": "roles-windows-server",
+      "courseLabel": "Les rôles de Windows Server",
+      "retryTo": "n7"
+    },
+    "det_laisser": {
+      "kind": "fail",
+      "text": "Fermer le ticket sans comprendre pourquoi la VM s'est éteinte ni documenter l'intervention, c'est prendre le risque que la panne se reproduise. Un bon technicien va au bout de l'analyse.",
+      "course": "gestionnaire-de-serveurs",
+      "courseLabel": "Le gestionnaire de serveurs",
+      "retryTo": "n9"
+    }
+  }
+}

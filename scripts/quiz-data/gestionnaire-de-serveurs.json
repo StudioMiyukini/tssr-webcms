@@ -1,0 +1,291 @@
+{
+  "slug": "gestionnaire-de-serveurs",
+  "title": "Le gestionnaire de serveurs (Server Manager)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Quel est le rôle principal du Gestionnaire de serveurs (Server Manager) dans Windows Server ?",
+          "options": ["Naviguer sur Internet depuis le serveur", "Administrer les rôles, fonctionnalités et surveiller l'état du serveur depuis une interface centralisée", "Gérer les fichiers et dossiers du serveur", "Configurer le bureau à distance uniquement"],
+          "answer": 1,
+          "explain": "Le Gestionnaire de serveurs est la console d'administration centrale de Windows Server : il permet d'installer des rôles, de gérer plusieurs serveurs et de surveiller leur état."
+        },
+        {
+          "q": "Comment ouvre-t-on le Gestionnaire de serveurs sur Windows Server 2019 ?",
+          "options": ["En tapant « servermgr.exe » dans l'invite de commandes", "Il s'ouvre automatiquement à l'ouverture de session ou via la barre des tâches", "Via le Panneau de configuration > Système", "En faisant un clic droit sur le Bureau"],
+          "answer": 1,
+          "explain": "Par défaut, le Gestionnaire de serveurs s'ouvre automatiquement à la connexion d'un administrateur, et son icône est épinglée dans la barre des tâches."
+        },
+        {
+          "q": "Depuis le Gestionnaire de serveurs, comment installe-t-on un nouveau rôle ?",
+          "options": ["Fichier > Nouveau rôle", "Gérer > Ajouter des rôles et des fonctionnalités", "Outils > Installer un rôle", "Action > Nouveau rôle Windows"],
+          "answer": 1,
+          "explain": "Pour installer un rôle, on passe par le menu « Gérer » puis « Ajouter des rôles et des fonctionnalités », qui lance l'assistant d'installation."
+        },
+        {
+          "q": "Qu'affiche le « Tableau de bord » du Gestionnaire de serveurs au démarrage ?",
+          "options": ["La liste de tous les fichiers sur le serveur", "Un résumé de l'état des rôles installés, des événements récents et des alertes", "Les performances CPU et RAM uniquement", "La liste des utilisateurs connectés en ce moment"],
+          "answer": 1,
+          "explain": "Le tableau de bord présente une vue synthétique : état des rôles, alertes de performance, événements critiques et tâches de gestion courantes."
+        },
+        {
+          "q": "Le Gestionnaire de serveurs peut-il gérer plusieurs serveurs en même temps ?",
+          "options": ["Non, il est limité au serveur local uniquement", "Oui, on peut ajouter d'autres serveurs et les administrer depuis une console centralisée", "Oui, mais uniquement via une connexion VPN dédiée", "Non, chaque serveur doit avoir sa propre console locale"],
+          "answer": 1,
+          "explain": "Le Gestionnaire de serveurs permet d'ajouter des serveurs distants et d'administrer plusieurs serveurs depuis une seule console, ce qui simplifie la gestion d'un parc."
+        },
+        {
+          "q": "Que signifie « installation basée sur un rôle » dans l'assistant d'ajout de rôles ?",
+          "options": ["On installe le rôle uniquement pour un utilisateur précis", "On choisit un rôle ou une fonctionnalité Windows Server à ajouter sur un serveur cible", "On installe une application tierce certifiée Microsoft", "On configure un rôle déjà installé sans modification du système"],
+          "answer": 1,
+          "explain": "L'installation basée sur un rôle permet de sélectionner des rôles (AD DS, DHCP, DNS...) ou des fonctionnalités Windows Server à installer sur un serveur cible spécifié."
+        },
+        {
+          "q": "Quelle section du Gestionnaire de serveurs affiche les événements (erreurs, avertissements) des rôles installés ?",
+          "options": ["La section « Outils »", "La section spécifique au rôle (ex : AD DS, DNS) dans le menu de gauche", "La section « Démarrage rapide »", "La section « Fichiers journaux » dans le Panneau de configuration"],
+          "answer": 1,
+          "explain": "Chaque rôle installé dispose de sa propre section dans le Gestionnaire de serveurs, affichant les événements, services et l'état spécifiques à ce rôle."
+        },
+        {
+          "q": "Pour supprimer un rôle via le Gestionnaire de serveurs, on utilise :",
+          "options": ["Gérer > Supprimer des rôles et des fonctionnalités", "Fichier > Désinstaller le rôle", "Outils > Enlever un composant", "Action > Retirer le service"],
+          "answer": 0,
+          "explain": "La suppression d'un rôle se fait via « Gérer > Supprimer des rôles et des fonctionnalités », qui lance un assistant similaire à celui d'installation."
+        },
+        {
+          "q": "Comment ajouter un serveur distant dans le Gestionnaire de serveurs pour l'administrer ?",
+          "options": ["Gérer > Ajouter des serveurs", "Outils > Connecter un serveur distant", "Fichier > Nouveau serveur", "Tableau de bord > Importer un serveur"],
+          "answer": 0,
+          "explain": "Via « Gérer > Ajouter des serveurs », on peut rechercher des serveurs dans AD DS, DNS ou par adresse IP et les ajouter dans la console."
+        },
+        {
+          "q": "Le Gestionnaire de serveurs peut-il être utilisé depuis un poste client Windows 10/11 pour administrer un serveur distant ?",
+          "options": ["Non, il est réservé exclusivement aux versions Server", "Oui, via les RSAT (Remote Server Administration Tools) installables sur Windows 10/11", "Oui, mais uniquement via une connexion RDP directe", "Non, les postes clients ne peuvent pas utiliser le Gestionnaire de serveurs"],
+          "answer": 1,
+          "explain": "Les RSAT (Remote Server Administration Tools) permettent d'installer le Gestionnaire de serveurs et d'autres outils d'administration sur un poste Windows 10/11 pour gérer des serveurs à distance."
+        },
+        {
+          "q": "Dans l'assistant « Ajouter des rôles et des fonctionnalités », quelle est la différence entre un « rôle » et une « fonctionnalité » ?",
+          "options": ["Un rôle est payant, une fonctionnalité est gratuite", "Un rôle est un service principal (AD DS, IIS...), une fonctionnalité est un composant complémentaire (.NET, BitLocker...)", "Un rôle s'installe automatiquement, une fonctionnalité est manuelle", "Il n'y a aucune différence, ce sont des synonymes"],
+          "answer": 1,
+          "explain": "Les rôles définissent la fonction principale du serveur (AD DS, DNS, IIS), tandis que les fonctionnalités sont des composants complémentaires qui enrichissent le système (framework .NET, télémétrie, etc.)."
+        },
+        {
+          "q": "Que propose l'option « Démarrage rapide » dans le tableau de bord du Gestionnaire de serveurs ?",
+          "options": ["Des raccourcis vers les tâches administratives courantes comme l'ajout de rôles ou la configuration réseau", "Un accès direct au bureau à distance", "Un outil de diagnostic réseau automatique", "Un assistant de mise à jour Windows"],
+          "answer": 0,
+          "explain": "La section Démarrage rapide propose des liens rapides vers les tâches les plus fréquentes : ajouter des rôles, ajouter des serveurs, créer des groupes de serveurs."
+        },
+        {
+          "q": "Après l'installation d'un rôle via l'assistant, une notification apparaît dans le Gestionnaire de serveurs. Que signifie-t-elle ?",
+          "options": ["Le rôle a été installé avec des erreurs", "L'installation est terminée et peut nécessiter une configuration post-installation ou un redémarrage", "Le serveur a besoin d'une mise à jour Windows", "La licence du rôle doit être activée dans les 30 jours"],
+          "answer": 1,
+          "explain": "La notification (icône drapeau) signale que l'installation est terminée et indique souvent qu'une configuration post-installation est nécessaire (par exemple : promouvoir en DC pour AD DS)."
+        },
+        {
+          "q": "Quelle section du Gestionnaire de serveurs regroupe plusieurs serveurs par type de rôle pour une administration simplifiée ?",
+          "options": ["Tableau de bord", "Serveur local", "Groupes de serveurs et sections par rôle (ex : AD DS, DNS)", "Outils > Console de gestion"],
+          "answer": 2,
+          "explain": "Le Gestionnaire de serveurs organise les serveurs par rôle installé : on retrouve une section dédiée à chaque rôle (AD DS, DNS, DHCP...) regroupant tous les serveurs portant ce rôle."
+        },
+        {
+          "q": "La section « Serveur local » du Gestionnaire de serveurs affiche notamment :",
+          "options": ["Uniquement la liste des utilisateurs locaux", "Les propriétés du serveur local : nom, adresse IP, état du pare-feu, état des mises à jour, etc.", "Les performances réseau en temps réel uniquement", "La liste des rôles disponibles mais non installés"],
+          "answer": 1,
+          "explain": "La section « Serveur local » centralise les informations et paramètres du serveur courant : nom, configuration réseau, pare-feu Windows, Windows Update, fuseau horaire, etc."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Comment le Gestionnaire de serveurs surveille-t-il l'état des services des rôles installés ?",
+          "options": ["Il effectue des requêtes WMI/WinRM vers les serveurs et affiche l'état en temps réel dans chaque section de rôle", "Il envoie un e-mail à l'administrateur en cas de panne", "Il utilise uniquement les journaux d'événements Windows locaux", "Il vérifie l'état des services toutes les 24 heures uniquement"],
+          "answer": 0,
+          "explain": "Le Gestionnaire de serveurs utilise WMI et WinRM pour interroger l'état des services, des événements et des performances sur les serveurs locaux et distants, en actualisant régulièrement l'affichage."
+        },
+        {
+          "q": "Qu'est-ce que WinRM et pourquoi est-il important pour le Gestionnaire de serveurs distant ?",
+          "options": ["C'est le gestionnaire de licences Windows Server", "C'est le service de gestion à distance Windows qui permet la communication entre le Gestionnaire de serveurs et les serveurs distants", "C'est un protocole de sauvegarde automatique", "C'est l'outil de mise à jour des pilotes"],
+          "answer": 1,
+          "explain": "WinRM (Windows Remote Management) est le service qui permet les connexions de gestion à distance. Sans WinRM activé sur les serveurs cibles, le Gestionnaire de serveurs ne peut pas les administrer."
+        },
+        {
+          "q": "Peut-on redémarrer un service sur un serveur distant directement depuis le Gestionnaire de serveurs ?",
+          "options": ["Non, il faut se connecter en RDP sur le serveur distant", "Oui, en faisant un clic droit sur le service dans la section du rôle correspondant", "Oui, mais uniquement avec PowerShell", "Non, le Gestionnaire de serveurs est en lecture seule pour les serveurs distants"],
+          "answer": 1,
+          "explain": "Dans la section d'un rôle du Gestionnaire de serveurs, un clic droit sur un service permet de le démarrer, arrêter ou redémarrer sur le serveur distant, sans connexion RDP."
+        },
+        {
+          "q": "Lors de l'ajout d'un rôle, l'assistant propose souvent d'installer des « services de rôle ». Qu'est-ce que cela signifie ?",
+          "options": ["Ce sont des mises à jour optionnelles pour le rôle", "Ce sont des sous-composants du rôle qui peuvent être activés ou désactivés selon les besoins", "Ce sont des rôles supplémentaires différents du rôle principal", "Ce sont des services tiers non Microsoft"],
+          "answer": 1,
+          "explain": "Les services de rôle sont des sous-composants d'un rôle. Par exemple, le rôle Services de fichiers et de stockage propose plusieurs services de rôle : partage de fichiers SMB, iSCSI, BranchCache, etc."
+        },
+        {
+          "q": "Quel outil du menu « Outils » du Gestionnaire de serveurs permet d'administrer Active Directory ?",
+          "options": ["Utilisateurs et ordinateurs Active Directory (ADUC)", "Gestionnaire de disques AD", "Console AD principale", "Active Directory Browser"],
+          "answer": 0,
+          "explain": "« Utilisateurs et ordinateurs Active Directory » (ADUC, dsa.msc) est la console d'administration AD accessible depuis le menu Outils du Gestionnaire de serveurs."
+        },
+        {
+          "q": "Dans le Gestionnaire de serveurs, les cases colorées (vert/rouge/jaune) dans le tableau de bord indiquent :",
+          "options": ["La couleur de l'interface choisie par l'administrateur", "L'état de santé des rôles : vert = OK, rouge = erreur critique, jaune = avertissement", "La charge réseau des serveurs en temps réel", "Le niveau de mise à jour de chaque rôle"],
+          "answer": 1,
+          "explain": "Les indicateurs colorés du tableau de bord donnent un aperçu visuel rapide : vert signifie que tout va bien, rouge indique une erreur nécessitant une intervention, et les compteurs permettent de naviguer vers le détail."
+        },
+        {
+          "q": "Comment créer un « groupe de serveurs » dans le Gestionnaire de serveurs et à quoi cela sert-il ?",
+          "options": ["Gérer > Créer un groupe de serveurs — cela permet de regrouper des serveurs logiquement pour une gestion collective simplifiée", "Outils > Nouveau groupe — cela force les serveurs à partager leurs ressources", "Tableau de bord > Grouper — cela crée automatiquement un cluster de basculement", "Ce n'est pas possible dans le Gestionnaire de serveurs standard"],
+          "answer": 0,
+          "explain": "Via « Gérer > Créer un groupe de serveurs », on regroupe des serveurs par logique métier (ex : serveurs de fichiers, serveurs web) pour les gérer et surveiller ensemble."
+        },
+        {
+          "q": "Le Gestionnaire de serveurs peut-il installer des rôles sur plusieurs serveurs simultanément ?",
+          "options": ["Non, un seul serveur cible est possible par assistant", "Oui, l'assistant permet de sélectionner un serveur cible différent du serveur local", "Oui, on peut cocher tous les serveurs en même temps dans l'assistant", "Non, seul PowerShell permet une installation multi-serveurs"],
+          "answer": 1,
+          "explain": "L'assistant d'ajout de rôles permet de cibler un serveur distant (ou local), mais l'installation se fait sur un serveur à la fois par assistant. Pour plusieurs serveurs simultanément, on utilise PowerShell ou des outils comme DSC."
+        },
+        {
+          "q": "Que contient l'« Observateur d'événements » accessible depuis le menu Outils du Gestionnaire de serveurs ?",
+          "options": ["Uniquement les événements de sécurité Windows", "Les journaux système, d'application, de sécurité et les journaux spécifiques aux rôles et services", "Les statistiques de performance réseau", "Les logs de connexion RDP uniquement"],
+          "answer": 1,
+          "explain": "L'Observateur d'événements (eventvwr.msc) centralise tous les journaux Windows : système, application, sécurité, ainsi que les journaux spécifiques aux rôles et applications installés."
+        },
+        {
+          "q": "Quelle fonctionnalité du Gestionnaire de serveurs permet de générer un rapport sur la configuration d'un serveur ?",
+          "options": ["Fichier > Exporter la configuration", "La fonctionnalité Best Practices Analyzer (BPA) disponible dans chaque section de rôle", "Outils > Rapport de serveur", "Tableau de bord > Générer un rapport"],
+          "answer": 1,
+          "explain": "Le Best Practices Analyzer (BPA) analyse la configuration des rôles installés et génère un rapport signalant les écarts par rapport aux bonnes pratiques Microsoft."
+        },
+        {
+          "q": "Pour qu'un serveur distant soit administrable via le Gestionnaire de serveurs, quelles conditions doivent être réunies ?",
+          "options": ["Le serveur distant doit avoir une IP publique et un certificat SSL", "WinRM doit être activé sur le serveur distant, les ports nécessaires ouverts et les droits d'administrateur disponibles", "Le serveur distant doit être dans le même rack physique", "Une licence Remote Management doit être achetée séparément"],
+          "answer": 1,
+          "explain": "Pour administrer un serveur distant, WinRM doit être actif (activé par défaut sur Server 2012+), les ports de gestion doivent être ouverts dans le pare-feu, et l'administrateur doit avoir les droits sur la machine distante."
+        },
+        {
+          "q": "Quel outil PowerShell est étroitement lié au Gestionnaire de serveurs et permet d'automatiser l'installation de rôles ?",
+          "options": ["Le module NetAdapter", "Le module ServerManager avec les cmdlets Install-WindowsFeature et Get-WindowsFeature", "Le module ActiveDirectory", "Le module PowerShellGet"],
+          "answer": 1,
+          "explain": "Le module PowerShell ServerManager fournit des cmdlets comme Install-WindowsFeature, Uninstall-WindowsFeature et Get-WindowsFeature pour automatiser ce que le Gestionnaire de serveurs fait en mode graphique."
+        },
+        {
+          "q": "Dans la section d'un rôle du Gestionnaire de serveurs, que signifie l'alerte « La gestion à distance n'est pas activée » ?",
+          "options": ["Le rôle est désactivé sur ce serveur", "WinRM n'est pas actif sur le serveur distant, empêchant le Gestionnaire de serveurs de collecter les informations", "Le serveur distant n'a pas d'adresse IP configurée", "Le certificat SSL du serveur distant a expiré"],
+          "answer": 1,
+          "explain": "Si WinRM est désactivé sur un serveur distant, le Gestionnaire de serveurs ne peut pas récupérer les données de ce serveur et affiche une alerte de gestion à distance non disponible."
+        },
+        {
+          "q": "Peut-on désactiver l'ouverture automatique du Gestionnaire de serveurs au démarrage de session ?",
+          "options": ["Non, c'est une obligation de sécurité imposée par Microsoft", "Oui, via la case « Ne pas démarrer automatiquement le Gestionnaire de serveurs à l'ouverture de session » dans le menu Gérer", "Oui, uniquement en modifiant le registre Windows", "Non, il faut désinstaller un composant Windows pour le faire"],
+          "answer": 1,
+          "explain": "Dans le Gestionnaire de serveurs, le menu « Gérer » propose l'option « Propriétés du Gestionnaire de serveurs » où l'on peut désactiver le démarrage automatique à l'ouverture de session."
+        },
+        {
+          "q": "L'assistant d'ajout de rôles propose une option « Installation de Services Bureau à distance ». Cela correspond à :",
+          "options": ["L'installation d'un serveur de terminaux (RDS) avec ses composants spécifiques", "L'activation simple du Bureau à distance (RDP) sur le serveur", "La configuration du pare-feu pour le port 3389", "L'installation du client RDP Microsoft sur le serveur"],
+          "answer": 0,
+          "explain": "L'option « Services Bureau à distance » de l'assistant installe le rôle RDS complet (serveur de terminaux), distinct de la simple activation du Bureau à distance via les propriétés système."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Quel fichier ou outil permet d'automatiser l'installation de rôles en mode silencieux sur plusieurs serveurs Windows Server ?",
+          "options": ["Un fichier .bat standard", "Un fichier de configuration XML combiné à la commande Install-WindowsFeature ou à Desired State Configuration (DSC)", "Un script VBScript exécuté sur chaque serveur", "Un fichier GPO exporté depuis le Gestionnaire de serveurs"],
+          "answer": 1,
+          "explain": "On peut exporter la configuration de l'assistant en fichier XML et l'utiliser avec Install-WindowsFeature, ou utiliser PowerShell DSC pour déployer des rôles de manière cohérente sur plusieurs serveurs."
+        },
+        {
+          "q": "Qu'est-ce que le Best Practices Analyzer (BPA) et comment l'utiliser dans le Gestionnaire de serveurs ?",
+          "options": ["C'est un antivirus intégré, on le lance depuis Outils > Sécurité", "C'est un outil d'analyse de conformité des rôles aux bonnes pratiques Microsoft, accessible dans la section de chaque rôle via le bouton « Analyser »", "C'est un outil de sauvegarde automatique des configurations", "C'est un module payant disponible uniquement sur Windows Server Datacenter"],
+          "answer": 1,
+          "explain": "Le BPA vérifie la configuration de chaque rôle par rapport aux recommandations Microsoft et génère un rapport avec des niveaux de gravité (Information, Avertissement, Erreur) et des conseils correctifs."
+        },
+        {
+          "q": "Comment le Gestionnaire de serveurs gère-t-il la délégation d'administration à des utilisateurs non-administrateurs du domaine ?",
+          "options": ["C'est impossible, seuls les membres du groupe Admins du domaine peuvent utiliser le Gestionnaire de serveurs", "On peut ajouter des utilisateurs au groupe local « Utilisateurs de gestion de serveur à distance » sur chaque serveur pour leur accorder un accès limité", "On utilise l'option « Déléguer » dans le menu Fichier du Gestionnaire de serveurs", "On crée une GPO qui donne accès au Gestionnaire de serveurs à des groupes AD spécifiques"],
+          "answer": 1,
+          "explain": "Le groupe « Utilisateurs de gestion de serveur à distance » (Remote Management Users) permet d'accorder un accès WinRM limité à des utilisateurs non-administrateurs, leur permettant d'utiliser le Gestionnaire de serveurs sans droits d'administration complets."
+        },
+        {
+          "q": "Dans un environnement multi-sites, comment optimiser la gestion de serveurs distants avec le Gestionnaire de serveurs ?",
+          "options": ["En installant un Gestionnaire de serveurs sur chaque site", "En créant des groupes de serveurs par site/rôle et en s'assurant que WinRM est configuré et que les ports de gestion sont ouverts entre les sites via les pare-feu/VPN", "En utilisant uniquement des connexions RDP directes", "En centralisant tous les serveurs physiquement dans un seul datacenter"],
+          "answer": 1,
+          "explain": "Pour les environnements multi-sites, on organise les serveurs en groupes logiques dans le Gestionnaire de serveurs et on s'assure que WinRM (port 5985/5986) est autorisé entre les sites pour permettre la gestion centralisée."
+        },
+        {
+          "q": "Quelle est la différence entre « Ajouter des rôles et des fonctionnalités » et « Ajouter des serveurs » dans le menu Gérer ?",
+          "options": ["Ce sont deux noms pour la même fonctionnalité", "« Ajouter des rôles et des fonctionnalités » installe des composants Windows sur un serveur ; « Ajouter des serveurs » référence des serveurs distants dans la console sans rien installer dessus", "« Ajouter des serveurs » installe Windows Server sur de nouvelles machines", "« Ajouter des rôles » s'applique aux machines virtuelles, « Ajouter des serveurs » aux machines physiques"],
+          "answer": 1,
+          "explain": "Ces deux actions sont distinctes : l'une modifie la configuration logicielle d'un serveur en y ajoutant des rôles, l'autre ajoute des serveurs dans la vue de la console pour les administrer."
+        },
+        {
+          "q": "Qu'est-ce qu'un « rôle de services Bureau à distance » (RDS) et en quoi diffère-t-il de la simple activation du Bureau à distance ?",
+          "options": ["RDS et le Bureau à distance sont strictement identiques", "RDS est un rôle complet permettant de publier des applications ou des bureaux pour de nombreux utilisateurs simultanés, tandis que l'activation simple du Bureau à distance n'autorise que 2 connexions administratives simultanées", "RDS est une version dégradée du Bureau à distance pour les petites entreprises", "RDS nécessite un système d'exploitation client Windows alors que le Bureau à distance fonctionne aussi sous Linux"],
+          "answer": 1,
+          "explain": "Le rôle RDS (Remote Desktop Services) est conçu pour des sessions utilisateurs multiples simultanées avec des licences CAL RDS, alors que le Bureau à distance standard n'autorise que 2 sessions administratives."
+        },
+        {
+          "q": "Comment le Gestionnaire de serveurs collecte-t-il les données de performance et d'événements des serveurs distants ?",
+          "options": ["Via des agents installés manuellement sur chaque serveur", "Via WMI (Windows Management Instrumentation) et WinRM, sans agent supplémentaire", "Via SNMP (Simple Network Management Protocol)", "Via une connexion RDP continue en arrière-plan"],
+          "answer": 1,
+          "explain": "Le Gestionnaire de serveurs utilise WMI et WinRM, des technologies intégrées à Windows, pour collecter données et événements des serveurs distants sans nécessiter d'agents tiers."
+        },
+        {
+          "q": "Quelle cmdlet PowerShell permet d'obtenir la liste de tous les rôles et fonctionnalités disponibles sur Windows Server, qu'ils soient installés ou non ?",
+          "options": ["Get-Role -All", "Get-WindowsFeature", "Show-ServerFeatures", "List-WindowsRoles -Available"],
+          "answer": 1,
+          "explain": "La cmdlet « Get-WindowsFeature » liste tous les rôles et fonctionnalités Windows Server disponibles, en indiquant pour chacun s'il est installé ou non."
+        },
+        {
+          "q": "Dans le Gestionnaire de serveurs, que se passe-t-il si l'on tente de supprimer un rôle dont dépend un autre rôle installé ?",
+          "options": ["La suppression se fait automatiquement sans avertissement", "L'assistant signale la dépendance et propose de désinstaller également les rôles dépendants ou refuse la désinstallation", "Le Gestionnaire de serveurs supprime uniquement le rôle sélectionné et ignore les dépendances", "Le serveur redémarre automatiquement pour résoudre le conflit"],
+          "answer": 1,
+          "explain": "L'assistant de suppression de rôles détecte les dépendances et informe l'administrateur des composants qui seront également supprimés ou qui ne peuvent pas être supprimés tant que d'autres rôles dépendants sont présents."
+        },
+        {
+          "q": "Quelle est la signification de l'indicateur « NIC Teaming » dans la section Serveur local du Gestionnaire de serveurs ?",
+          "options": ["C'est l'état de la connexion Wi-Fi du serveur", "C'est l'état du regroupement de cartes réseau (agrégation de liens) permettant la redondance ou l'augmentation de la bande passante réseau", "C'est le nombre de cartes réseau installées dans le serveur", "C'est le protocole de communication entre les cartes réseau et le switch"],
+          "answer": 1,
+          "explain": "NIC Teaming (ou agrégation de liens) permet de combiner plusieurs cartes réseau physiques pour obtenir de la redondance (basculement automatique en cas de panne) ou une bande passante accrue."
+        },
+        {
+          "q": "Comment sécuriser l'accès au Gestionnaire de serveurs pour les connexions distantes ?",
+          "options": ["En utilisant uniquement des connexions sur le port 80 (HTTP)", "En configurant HTTPS pour WinRM (port 5986), en utilisant des certificats et en limitant les adresses IP autorisées via le pare-feu", "En désactivant complètement WinRM et en utilisant uniquement RDP", "En limitant l'accès au Gestionnaire de serveurs aux seules heures ouvrables via une GPO"],
+          "answer": 1,
+          "explain": "Pour sécuriser WinRM, on préfère HTTPS (port 5986) avec des certificats plutôt que HTTP (port 5985), et on restreint les connexions aux seules adresses IP d'administration autorisées."
+        },
+        {
+          "q": "Qu'est-ce que la fonctionnalité « Gestion des stratégies de groupe » accessible depuis le Gestionnaire de serveurs ?",
+          "options": ["C'est un outil pour gérer les mises à jour Windows via WSUS", "C'est la console GPMC (Group Policy Management Console) qui permet de créer, modifier et lier des GPO dans Active Directory", "C'est un module pour configurer les règles de pare-feu Windows", "C'est un outil de gestion des licences Windows Server"],
+          "answer": 1,
+          "explain": "La console GPMC (gpmc.msc) s'installe avec la fonctionnalité « Gestion des stratégies de groupe » et permet d'administrer toutes les GPO du domaine AD DS."
+        },
+        {
+          "q": "Pourquoi est-il recommandé de ne pas utiliser directement le Gestionnaire de serveurs sur le serveur physique en production pour les tâches d'administration courantes ?",
+          "options": ["Car le Gestionnaire de serveurs est instable sur les serveurs de production", "Car travailler directement sur un serveur de production augmente le risque d'erreur ; il est préférable d'administrer à distance depuis un poste d'administration dédié (PAW)", "Car le Gestionnaire de serveurs consomme trop de ressources pour être utilisé en production", "Car Microsoft impose l'utilisation de PowerShell pour toutes les tâches en production"],
+          "answer": 1,
+          "explain": "Les bonnes pratiques de sécurité recommandent d'utiliser des postes d'administration dédiés (PAW - Privileged Access Workstations) pour administrer les serveurs à distance, réduisant ainsi les risques d'erreur et d'exposition."
+        },
+        {
+          "q": "Quelle commande permet d'activer WinRM sur un serveur Windows Server pour permettre son administration à distance ?",
+          "options": ["Start-Service WinRM", "Enable-PSRemoting -Force", "winrm quickconfig", "Set-Service RemoteManagement -Start Automatic"],
+          "answer": 2,
+          "explain": "La commande « winrm quickconfig » configure WinRM avec les paramètres par défaut et ouvre les exceptions de pare-feu nécessaires. La cmdlet Enable-PSRemoting fait de même depuis PowerShell."
+        },
+        {
+          "q": "Dans une infrastructure Windows Server, qu'est-ce que le « Server Core » et quel impact a-t-il sur l'utilisation du Gestionnaire de serveurs ?",
+          "options": ["Server Core est une version allégée sans interface graphique (GUI), donc le Gestionnaire de serveurs local est absent mais on peut administrer un Server Core depuis un Gestionnaire de serveurs sur une machine distante", "Server Core est une version avec uniquement le Gestionnaire de serveurs installé, sans autres applications", "Server Core ne peut pas être administré avec le Gestionnaire de serveurs", "Server Core est identique à Windows Server standard mais avec des performances améliorées"],
+          "answer": 0,
+          "explain": "Windows Server Core n'a pas d'interface graphique locale (pas de Gestionnaire de serveurs local), mais peut être administré à distance depuis le Gestionnaire de serveurs d'une autre machine ou via PowerShell remoting."
+        }
+      ]
+    }
+  ]
+}

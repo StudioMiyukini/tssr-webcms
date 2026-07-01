@@ -1,0 +1,291 @@
+{
+  "slug": "le-switch",
+  "title": "Le switch (commutateur)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "À quel niveau du modèle OSI travaille un switch classique ?",
+          "options": ["Niveau 1 — Physique", "Niveau 2 — Liaison de données", "Niveau 3 — Réseau", "Niveau 4 — Transport"],
+          "answer": 1,
+          "explain": "Un switch standard opère au niveau 2 (Liaison) et utilise les adresses MAC pour commuter les trames."
+        },
+        {
+          "q": "Quel identifiant le switch utilise-t-il pour savoir vers quel port envoyer une trame ?",
+          "options": ["L'adresse IP de destination", "L'adresse MAC de destination", "Le numéro de port TCP", "Le nom d'hôte de destination"],
+          "answer": 1,
+          "explain": "Le switch lit l'adresse MAC de destination de la trame et consulte sa table MAC pour déterminer le port de sortie."
+        },
+        {
+          "q": "Comment s'appelle la table interne du switch qui associe adresses MAC et numéros de ports ?",
+          "options": ["Table de routage", "Table ARP", "Table MAC (ou table CAM)", "Table DHCP"],
+          "answer": 2,
+          "explain": "La table MAC (Content Addressable Memory) mémorise sur quel port physique se trouve chaque adresse MAC."
+        },
+        {
+          "q": "Que fait un switch quand il reçoit une trame dont l'adresse MAC de destination est inconnue ?",
+          "options": ["Il rejette la trame", "Il l'envoie uniquement à la passerelle", "Il la diffuse sur tous les ports sauf celui d'entrée (flooding)", "Il la met en file d'attente indéfiniment"],
+          "answer": 2,
+          "explain": "Si le switch ne connaît pas le port associé à l'adresse MAC de destination, il envoie la trame à tous les ports (flooding)."
+        },
+        {
+          "q": "Quelle est la principale différence entre un switch et un hub ?",
+          "options": ["Le hub envoie les données uniquement au destinataire, le switch les diffuse à tous", "Le switch envoie les données uniquement au destinataire, le hub les diffuse à tous les ports", "Le hub travaille en niveau 2, le switch en niveau 1", "Il n'y a aucune différence fonctionnelle"],
+          "answer": 1,
+          "explain": "Contrairement au hub qui diffuse à tout le monde, le switch commute la trame uniquement vers le port du destinataire."
+        },
+        {
+          "q": "Dans un réseau avec un switch, chaque paire de ports communique dans son propre « domaine de collision ». Qu'est-ce que cela signifie ?",
+          "options": ["Les collisions se produisent plus fréquemment", "Chaque lien est dédié et les collisions sont quasi-inexistantes en mode full duplex", "Le switch interdit toute communication simultanée", "Les trames sont chiffrées pour éviter les collisions"],
+          "answer": 1,
+          "explain": "Chaque port de switch crée son propre domaine de collision, ce qui évite les conflits et permet la communication simultanée."
+        },
+        {
+          "q": "Quel type d'adresse le switch apprend-il en observant les trames entrantes ?",
+          "options": ["Les adresses IP source", "Les adresses MAC source", "Les adresses MAC de destination uniquement", "Les numéros de ports TCP"],
+          "answer": 1,
+          "explain": "Le switch lit l'adresse MAC source de chaque trame entrante pour apprendre sur quel port se trouve chaque machine."
+        },
+        {
+          "q": "Qu'est-ce qu'un VLAN (Virtual LAN) ?",
+          "options": ["Un réseau sans fil virtuel", "Un réseau local virtuel qui sépare logiquement les machines sur un même switch", "Un type de câble réseau", "Un protocole de chiffrement pour les switchs"],
+          "answer": 1,
+          "explain": "Un VLAN permet de créer des réseaux logiquement séparés sur un même switch physique, comme si chaque VLAN avait son propre switch."
+        },
+        {
+          "q": "Quelle est la principale différence entre un switch et un routeur ?",
+          "options": ["Le switch relie des réseaux différents, le routeur des machines d'un même réseau", "Le switch relie des machines d'un même réseau local, le routeur relie des réseaux différents", "Le switch utilise des adresses IP, le routeur des adresses MAC", "Aucune différence dans un réseau moderne"],
+          "answer": 1,
+          "explain": "Le switch commute au sein d'un réseau local (niveau 2, MAC), le routeur interconnecte des réseaux distincts (niveau 3, IP)."
+        },
+        {
+          "q": "Qu'est-ce qu'un switch « manageable » (ou administrable) ?",
+          "options": ["Un switch qui gère automatiquement les pannes", "Un switch configurable via une interface (CLI ou web) pour les VLAN, QoS, supervision...", "Un switch réservé aux environnements industriels", "Un switch avec un port USB de gestion uniquement"],
+          "answer": 1,
+          "explain": "Un switch manageable offre une interface d'administration pour configurer les VLAN, le spanning tree, le monitoring de ports, etc."
+        },
+        {
+          "q": "Combien de domaines de broadcast un switch 24 ports sans VLAN possède-t-il ?",
+          "options": ["24 domaines de broadcast", "0 domaine de broadcast", "1 seul domaine de broadcast", "2 domaines de broadcast"],
+          "answer": 2,
+          "explain": "Sans VLAN, tout le switch forme un seul domaine de broadcast ; un broadcast envoyé sur un port est reçu par tous."
+        },
+        {
+          "q": "Quel équipement doit intervenir pour qu'un ordinateur sur le VLAN 10 puisse communiquer avec un ordinateur sur le VLAN 20 ?",
+          "options": ["Un hub supplémentaire", "Un câble croisé entre les VLANs", "Un routeur (ou switch de niveau 3)", "Un serveur DNS"],
+          "answer": 2,
+          "explain": "Les VLANs sont des réseaux logiquement séparés ; seul un routeur ou un switch L3 peut assurer le routage inter-VLAN."
+        },
+        {
+          "q": "Quelle technologie câblée est la plus couramment utilisée pour connecter les appareils à un switch ?",
+          "options": ["Fibre optique mono-mode uniquement", "Ethernet (câbles RJ45 / câbles à paires torsadées)", "Coaxial BNC", "USB réseau"],
+          "answer": 1,
+          "explain": "L'Ethernet sur câble à paires torsadées (RJ45) est la technologie standard pour les connexions filaires aux switchs."
+        },
+        {
+          "q": "Qu'est-ce que le mode « full duplex » sur un port de switch ?",
+          "options": ["L'envoi et la réception de données sont possibles simultanément sur la même liaison", "Les données ne peuvent circuler que dans un sens à la fois", "Le port double sa vitesse automatiquement", "Le port utilise deux câbles au lieu d'un"],
+          "answer": 0,
+          "explain": "Le full duplex permet l'émission et la réception simultanées sur un port, éliminant les collisions et doublant le débit effectif."
+        },
+        {
+          "q": "Comment un switch apprend-il à vider (vieillir) les entrées de sa table MAC ?",
+          "options": ["Il supprime toutes les entrées toutes les heures", "Il supprime les entrées inactives après un délai d'expiration (aging time)", "Il demande au routeur de lui fournir la table mise à jour", "Il ne supprime jamais les entrées de sa table"],
+          "answer": 1,
+          "explain": "Le switch supprime automatiquement les entrées MAC qui n'ont pas été vues depuis un certain temps (par défaut 300 secondes sur beaucoup de switchs)."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Qu'est-ce qu'un port « trunk » sur un switch manageable ?",
+          "options": ["Un port réservé à la connexion du câble d'alimentation", "Un port qui transporte le trafic de plusieurs VLANs simultanément", "Un port à débit plus élevé que les autres", "Un port dédié à la gestion hors-bande du switch"],
+          "answer": 1,
+          "explain": "Un port trunk (ou port étiquetté) transporte les trames de plusieurs VLANs en ajoutant un tag 802.1Q pour identifier le VLAN d'appartenance."
+        },
+        {
+          "q": "Quel standard IEEE définit le protocole de marquage VLAN (tagging) utilisé sur les ports trunk ?",
+          "options": ["IEEE 802.3", "IEEE 802.11", "IEEE 802.1Q", "IEEE 802.1D"],
+          "answer": 2,
+          "explain": "IEEE 802.1Q définit l'ajout d'un champ de 4 octets dans la trame Ethernet pour identifier le VLAN (tag VLAN)."
+        },
+        {
+          "q": "Qu'est-ce que le « VLAN natif » sur un port trunk Cisco ?",
+          "options": ["Le VLAN avec le plus de trafic", "Le VLAN dont les trames ne sont pas étiquetées sur le lien trunk", "Le VLAN réservé à la gestion du switch", "Le VLAN créé par défaut (VLAN 0)"],
+          "answer": 1,
+          "explain": "Le VLAN natif est le seul VLAN dont les trames transitent sans tag 802.1Q sur un lien trunk (VLAN 1 par défaut sur Cisco)."
+        },
+        {
+          "q": "Quel est le rôle du protocole STP (Spanning Tree Protocol) ?",
+          "options": ["Accélérer la commutation des trames Ethernet", "Prévenir les boucles de commutation dans un réseau avec des liens redondants", "Sécuriser les échanges entre switchs", "Attribuer des adresses IP aux machines"],
+          "answer": 1,
+          "explain": "STP désactive logiquement certains liens redondants pour éviter les boucles, tout en les conservant disponibles en cas de panne."
+        },
+        {
+          "q": "Quelle est la version améliorée et plus rapide de STP standardisée par IEEE ?",
+          "options": ["MSTP", "RSTP (Rapid Spanning Tree Protocol — IEEE 802.1w)", "PVST+", "LACP"],
+          "answer": 1,
+          "explain": "RSTP (IEEE 802.1w) converge beaucoup plus rapidement que le STP classique en cas de changement de topologie."
+        },
+        {
+          "q": "Qu'est-ce qu'un « port access » (non trunk) dans la configuration VLAN d'un switch ?",
+          "options": ["Un port qui transporte plusieurs VLANs avec étiquettes", "Un port appartenant à un seul VLAN, dont les trames ne sont pas étiquetées vers la machine connectée", "Un port réservé aux liaisons inter-switchs", "Un port en mode lecture seule"],
+          "answer": 1,
+          "explain": "Un port access est affecté à un seul VLAN ; la machine connectée n'a pas conscience du VLAN et reçoit des trames non étiquetées."
+        },
+        {
+          "q": "Qu'est-ce que l'agrégation de liens (Link Aggregation / EtherChannel) ?",
+          "options": ["Regrouper plusieurs liens physiques en un seul lien logique pour augmenter le débit et la redondance", "Séparer un lien physique en plusieurs VLANs", "Configurer un port en mode full duplex", "Répartir le trafic sur plusieurs VLANs"],
+          "answer": 0,
+          "explain": "L'agrégation de liens (LACP/EtherChannel) combine plusieurs ports physiques en un seul lien logique plus rapide et tolérant aux pannes."
+        },
+        {
+          "q": "Un switch de niveau 3 (L3) se distingue d'un switch L2 car il peut…",
+          "options": ["Gérer plus de 1000 ports simultanément", "Effectuer du routage IP entre VLANs sans routeur externe", "Fonctionner sans table MAC", "Attribuer des adresses IP automatiquement"],
+          "answer": 1,
+          "explain": "Un switch L3 intègre des fonctions de routage IP et peut assurer le trafic inter-VLAN sans nécessiter un routeur dédié."
+        },
+        {
+          "q": "Qu'est-ce que la fonction « Port Security » sur un switch manageable ?",
+          "options": ["Chiffrer le trafic sur un port spécifique", "Limiter le nombre d'adresses MAC autorisées sur un port pour prévenir les accès non autorisés", "Bloquer les ports inutilisés physiquement", "Protéger le port contre les surtensions"],
+          "answer": 1,
+          "explain": "La sécurité de port permet de restreindre quelles adresses MAC peuvent accéder à un port, et de réagir en cas de violation."
+        },
+        {
+          "q": "Qu'est-ce qu'un « broadcast storm » (tempête de broadcast) ?",
+          "options": ["Un excès de requêtes DNS broadcast", "Une boucle réseau qui génère une quantité infinie de broadcasts saturant le réseau", "Un attaque DDoS par inondation de trames unicast", "Un défaut d'alimentation des switchs"],
+          "answer": 1,
+          "explain": "Un broadcast storm survient quand une boucle de commutation propage indéfiniment des trames de broadcast, paralysant le réseau."
+        },
+        {
+          "q": "Qu'est-ce que le « mirroring » ou SPAN (Switched Port Analyzer) sur un switch ?",
+          "options": ["Dupliquer le trafic d'un port vers un autre port pour l'analyse ou la supervision", "Mirroiser physiquement un switch en copie identique", "Activer la redondance STP sur un port", "Configurer deux adresses MAC sur un même port"],
+          "answer": 0,
+          "explain": "Le SPAN copie le trafic d'un ou plusieurs ports vers un port dédié, permettant à un analyseur réseau (ex. Wireshark) de capturer les trames."
+        },
+        {
+          "q": "Comment s'appelle l'attaque réseau qui consiste à inonder un switch de fausses adresses MAC pour remplir sa table et provoquer un flooding généralisé ?",
+          "options": ["ARP poisoning", "MAC flooding", "VLAN hopping", "STP manipulation"],
+          "answer": 1,
+          "explain": "Le MAC flooding sature la table CAM du switch avec de fausses adresses MAC, forçant le switch à passer en mode hub (flooding de toutes les trames)."
+        },
+        {
+          "q": "Qu'est-ce que le QoS (Quality of Service) sur un switch ?",
+          "options": ["Un protocole pour chiffrer le trafic réseau", "La priorisation de certains types de trafic (voix, vidéo) sur la commutation", "Une fonction de pare-feu intégrée au switch", "La gestion de la consommation électrique du switch"],
+          "answer": 1,
+          "explain": "Le QoS permet de prioriser certains types de trafic (ex. VoIP) pour garantir une qualité d'expérience même en cas de congestion."
+        },
+        {
+          "q": "Qu'est-ce que le protocole 802.1X utilisé sur un switch manageable ?",
+          "options": ["Un protocole d'agrégation de liens", "Un protocole d'authentification des appareils avant d'autoriser l'accès au réseau", "Le standard Wi-Fi 6", "Un protocole de spanning tree amélioré"],
+          "answer": 1,
+          "explain": "802.1X permet d'authentifier chaque appareil (via un serveur RADIUS) avant de lui accorder l'accès au réseau local via le port du switch."
+        },
+        {
+          "q": "Qu'est-ce que le « DHCP Snooping » activé sur un switch ?",
+          "options": ["Un service DHCP intégré au switch", "Une protection contre les serveurs DHCP pirates en n'autorisant les réponses DHCP que depuis des ports de confiance", "Une fonction qui surveille la consommation DHCP", "Un filtrage des requêtes DNS via le switch"],
+          "answer": 1,
+          "explain": "Le DHCP Snooping n'autorise les réponses DHCP que depuis les ports marqués « trusted », bloquant ainsi les serveurs DHCP non autorisés."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Qu'est-ce que le « VLAN hopping » (saut de VLAN) ?",
+          "options": ["La migration automatique d'un VLAN vers un autre switch", "Une attaque exploitant le VLAN natif ou la négociation de trunk pour accéder à un VLAN non autorisé", "La configuration d'un port d'un VLAN à un autre", "Le changement automatique de VLAN en cas de défaillance"],
+          "answer": 1,
+          "explain": "Le VLAN hopping exploite des failles de configuration (VLAN natif, DTP) pour envoyer du trafic dans un VLAN auquel on ne devrait pas avoir accès."
+        },
+        {
+          "q": "Qu'est-ce que le protocole DTP (Dynamic Trunking Protocol) et pourquoi est-il considéré comme un risque de sécurité ?",
+          "options": ["C'est un protocole de chiffrement des trames trunk", "C'est un protocole Cisco qui négocie automatiquement les ports trunk, et peut être exploité pour créer un trunk non autorisé", "C'est une version améliorée de STP", "C'est le protocole qui attribue les VLAN aux ports"],
+          "answer": 1,
+          "explain": "DTP permet la négociation automatique des trunks ; un attaquant peut en abuser pour transformer un port access en trunk et accéder à tous les VLANs."
+        },
+        {
+          "q": "Dans une architecture réseau à trois niveaux (core / distribution / access), quel niveau est assuré par des switchs d'accès ?",
+          "options": ["Le niveau cœur (core) — haute vitesse inter-datacenter", "Le niveau distribution — agrégation et politiques", "Le niveau accès — connexion directe des postes utilisateurs", "Les trois niveaux simultanément"],
+          "answer": 2,
+          "explain": "Les switchs d'accès connectent directement les utilisateurs finaux au réseau ; ils remontent vers les switchs de distribution."
+        },
+        {
+          "q": "Qu'est-ce que le protocole MSTP (Multiple Spanning Tree Protocol) ?",
+          "options": ["Une version allégée de STP pour les petits réseaux", "Un STP qui regroupe plusieurs VLANs dans des instances STP distinctes pour optimiser les chemins", "Un protocole pour agréger plusieurs liens STP", "Le spanning tree spécifique aux switchs Cisco"],
+          "answer": 1,
+          "explain": "MSTP (IEEE 802.1s) permet de créer plusieurs instances de spanning tree, associant chacune à un groupe de VLANs pour un routage plus efficace."
+        },
+        {
+          "q": "Quelle est la différence entre un switch « store-and-forward » et un switch « cut-through » ?",
+          "options": ["Store-and-forward vérifie la trame entière avant de la transmettre ; cut-through commence à transmettre dès la lecture de l'adresse MAC destination", "Cut-through stocke la trame entière, store-and-forward la découpe en fragments", "Store-and-forward est plus rapide que cut-through", "Cut-through est utilisé uniquement pour les VLAN trunk"],
+          "answer": 0,
+          "explain": "Store-and-forward offre une meilleure fiabilité (vérifie les erreurs CRC) ; cut-through réduit la latence en commençant à relayer la trame plus tôt."
+        },
+        {
+          "q": "Qu'est-ce que le « Dynamic ARP Inspection » (DAI) activé sur un switch ?",
+          "options": ["Une accélération matérielle de la résolution ARP", "Une protection contre l'ARP poisoning en vérifiant que les réponses ARP correspondent aux baux DHCP connus", "Une suppression des requêtes ARP inutiles", "Un protocole de remplacement de l'ARP en IPv6"],
+          "answer": 1,
+          "explain": "Le DAI valide les réponses ARP en les comparant à la table DHCP Snooping, bloquant ainsi les attaques ARP poisoning/spoofing."
+        },
+        {
+          "q": "Qu'est-ce que le protocole LLDP (Link Layer Discovery Protocol) ?",
+          "options": ["Un protocole de spanning tree amélioré", "Un protocole standard permettant aux équipements réseau de s'identifier mutuellement sur leurs liens directs", "Un protocole d'authentification 802.1X", "Un protocole de supervision SNMP amélioré"],
+          "answer": 1,
+          "explain": "LLDP permet à chaque équipement d'annoncer ses caractéristiques (nom, capacités, VLAN) à ses voisins directs pour faciliter la cartographie réseau."
+        },
+        {
+          "q": "Qu'est-ce qu'une « table CAM » (Content Addressable Memory) et quelle est sa capacité typique sur un switch d'entrée de gamme ?",
+          "options": ["C'est la mémoire de configuration du switch, capacité illimitée", "C'est la table MAC du switch, typiquement quelques milliers à quelques dizaines de milliers d'entrées", "C'est la table ARP du switch, avec 256 entrées maximum", "C'est la table de routage IP, variable selon le modèle"],
+          "answer": 1,
+          "explain": "La table CAM stocke les associations MAC/port ; sa capacité limitée (quelques milliers d'entrées) est la cible de l'attaque MAC flooding."
+        },
+        {
+          "q": "Quel est l'avantage principal d'un switch « stackable » (empilable) ?",
+          "options": ["Il permet de réduire la consommation électrique de moitié", "Plusieurs switchs physiques fonctionnent comme un seul switch logique, simplifiant la gestion et augmentant la densité de ports", "Il permet de doubler le débit de chaque port", "Il supprime le besoin de câbles réseau entre les switchs"],
+          "answer": 1,
+          "explain": "La stacking permet de regrouper plusieurs switchs (via des câbles de stack dédiés) en une seule unité logique administrable depuis une seule interface."
+        },
+        {
+          "q": "Qu'est-ce que le « Private VLAN » (PVLAN) ?",
+          "options": ["Un VLAN réservé aux communications cryptées", "Une extension du VLAN permettant d'isoler des ports dans un même VLAN (ports « isolated » et « community »)", "Un VLAN accessible uniquement par le switch de cœur", "Un VLAN sans broadcast"],
+          "answer": 1,
+          "explain": "Le PVLAN permet d'isoler des hôtes au sein d'un même VLAN, utile par exemple dans les hébergements mutualisés pour séparer les clients."
+        },
+        {
+          "q": "En cas de boucle réseau sans STP, que se passe-t-il avec les trames de broadcast ?",
+          "options": ["Elles sont supprimées après un TTL de 64", "Elles circulent indéfiniment en boucle, saturant totalement la bande passante", "Elles sont redirigées vers la passerelle", "Elles sont stockées dans la mémoire tampon du switch"],
+          "answer": 1,
+          "explain": "Sans STP, une boucle génère une tempête de broadcast infinie car les trames de broadcast n'ont pas de TTL au niveau 2."
+        },
+        {
+          "q": "Qu'est-ce que la fonctionnalité PoE (Power over Ethernet) sur un switch ?",
+          "options": ["Une technologie pour augmenter le débit via le câble Ethernet", "La capacité d'alimenter électriquement des appareils (téléphones IP, points d'accès Wi-Fi) via le câble Ethernet", "Une protection contre les surtensions sur les ports", "Un mode d'économie d'énergie du switch"],
+          "answer": 1,
+          "explain": "Le PoE (IEEE 802.3af/at/bt) permet d'alimenter des équipements comme des téléphones IP ou des caméras IP via le câble réseau RJ45."
+        },
+        {
+          "q": "Quelle est la signification du terme « convergence STP » ?",
+          "options": ["La vitesse à laquelle tous les switchs du réseau se mettent d'accord sur la topologie active sans boucle", "La capacité du switch à traiter plusieurs VLANs", "La synchronisation des tables MAC entre switchs", "La réduction de la consommation électrique du réseau"],
+          "answer": 0,
+          "explain": "La convergence STP est le temps nécessaire après un changement de topologie pour que tous les switchs recalculent les ports actifs sans boucle."
+        },
+        {
+          "q": "Qu'est-ce que l'IP Source Guard activé sur un switch ?",
+          "options": ["Un filtrage des paquets IP par adresse MAC source", "Une protection qui n'autorise que les paquets IP dont la source correspond aux baux DHCP Snooping enregistrés", "Un chiffrement du trafic IP entre les ports du switch", "Une limitation de débit par adresse IP source"],
+          "answer": 1,
+          "explain": "L'IP Source Guard s'appuie sur la table DHCP Snooping pour n'autoriser que les paquets IP provenant d'une source IP légitime (connue du DHCP)."
+        },
+        {
+          "q": "Dans quel ordre le switch consulte-t-il ses mécanismes pour traiter une trame entrante ?",
+          "options": ["Table MAC → VLAN → sécurité de port", "Sécurité de port → VLAN → Table MAC → décision de commutation", "VLAN → Table MAC → sécurité de port", "Table ARP → Table MAC → VLAN"],
+          "answer": 1,
+          "explain": "Le switch vérifie d'abord la sécurité de port, puis l'appartenance VLAN, puis consulte la table MAC pour décider du port de sortie."
+        }
+      ]
+    }
+  ]
+}
