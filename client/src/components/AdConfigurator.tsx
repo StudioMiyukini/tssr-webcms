@@ -30,14 +30,9 @@ export function AdConfigurator() {
   const [disableSource, setDisableSource] = useState(true);
   const [copyGroups, setCopyGroups] = useState(true);
   const [copied, setCopied] = useState(false);
-  // Verrou d'accès (dissuasif, côté navigateur)
+  // Avertissement à accepter avant d'utiliser l'outil (mémorisé pour la session)
   const [unlocked, setUnlocked] = useState(() => { try { return sessionStorage.getItem('vmcfg_ok') === '1'; } catch { return false; } });
-  const [pwd, setPwd] = useState('');
-  const [pwdErr, setPwdErr] = useState(false);
-  const tryUnlock = () => {
-    if (pwd === 'Takatoukiter31') { setUnlocked(true); setPwdErr(false); try { sessionStorage.setItem('vmcfg_ok', '1'); } catch { /* */ } }
-    else setPwdErr(true);
-  };
+  const unlock = () => { setUnlocked(true); try { sessionStorage.setItem('vmcfg_ok', '1'); } catch { /* */ } };
 
   const login = loginManual || `${slug(prenom)}.${slug(nom)}`;
   const displayName = `${prenom} ${nom}`.trim();
@@ -87,19 +82,12 @@ export function AdConfigurator() {
   if (!unlocked) {
     return (
       <div style={{ margin: '14px 0', maxWidth: 580, border: '1px solid var(--border)', borderRadius: 12, padding: '20px 22px', background: 'var(--surface-2)' }}>
-        <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>🔒 Accès protégé</div>
+        <div style={{ fontWeight: 700, fontSize: 17, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8 }}>⚠️ Avant d’utiliser cet outil</div>
         <aside className="pb-note pb-note-yellow" style={{ marginBottom: 14 }}>
-          <p className="pb-note-title">⚠️ Outil réservé aux personnes qui maîtrisent</p>
+          <p className="pb-note-title">Outil réservé aux personnes qui maîtrisent</p>
           <p>Ce configurateur génère des scripts qui <strong>modifient l’annuaire Active Directory</strong> (création d’UO et de comptes, <strong>désactivation de l’administrateur</strong>). Une mauvaise utilisation peut <strong>bloquer l’accès au domaine</strong>. À n’utiliser que si tu maîtrises l’administration <strong>Active Directory</strong>, sur un environnement de test, après avoir un <strong>autre compte administrateur fonctionnel</strong>.</p>
         </aside>
-        <label style={labelStyle}>Code d’accès</label>
-        <div style={{ display: 'flex', gap: 8, maxWidth: 360 }}>
-          <input type="password" style={fieldStyle} value={pwd} autoFocus
-            onChange={e => { setPwd(e.target.value); setPwdErr(false); }}
-            onKeyDown={e => { if (e.key === 'Enter') tryUnlock(); }} placeholder="Code d’accès" />
-          <button type="button" style={btnStyle} onClick={tryUnlock}>Déverrouiller</button>
-        </div>
-        {pwdErr && <div style={{ color: 'var(--danger)', fontSize: 13, marginTop: 8 }}>Code incorrect.</div>}
+        <button type="button" onClick={unlock} style={{ padding: '10px 18px', border: 'none', borderRadius: 8, background: 'var(--accent)', color: '#fff', fontWeight: 700, cursor: 'pointer', fontSize: 14 }}>Je veux utiliser l’outil</button>
       </div>
     );
   }
