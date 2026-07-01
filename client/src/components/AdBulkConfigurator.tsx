@@ -53,13 +53,21 @@ export function AdBulkConfigurator() {
   const [bulkOu, setBulkOu] = useState('o1');
   const [bulkGroups, setBulkGroups] = useState<string[]>(['g1']);
   const [copied, setCopied] = useState(false);
+  const [csvMsg, setCsvMsg] = useState('');
   const [unlocked, setUnlocked] = useState(() => { try { return sessionStorage.getItem('vmcfg_ok') === '1'; } catch { return false; } });
   const idc = useRef(100);
+  const csvRef = useRef<HTMLInputElement>(null);
   const nid = (p: string) => `${p}${idc.current++}`;
 
   const domainDN = domainToDN(domain);
-  const ouOpts = ous.map(o => ({ id: o.id, label: o.name }));
   const grpOpts = groups.map(g => ({ id: g.id, label: g.name }));
+
+  // Modèle CSV (reprend les noms d'UO/groupes déjà définis pour être conforme)
+  const tplOu = ous.find(o => o.name)?.name || 'Formations';
+  const tplGrp = groups.filter(g => g.name);
+  const tG1 = tplGrp[0]?.name || 'G_Toutes_Formations';
+  const tG2 = tplGrp[1]?.name;
+  const templateText = `prenom;nom;login;ou;groupes\nJean;NGUYEN;;${tplOu};${tG1}${tG2 ? ',' + tG2 : ''}\nMarie;DURAND;m.durand;${tplOu};${tG1}`;
 
   const ouDN = (id: string): string => {
     const o = ous.find(x => x.id === id);
@@ -80,6 +88,48 @@ export function AdBulkConfigurator() {
   };
   const upd = <T,>(setter: React.Dispatch<React.SetStateAction<T[]>>, id: string, patch: Partial<T>) =>
     setter(v => v.map((it: any) => it.id === id ? { ...it, ...patch } : it));
+
+  // Import CSV : colonnes séparées par ; (ou ,) ; groupes séparés par le second délimiteur.
+  const importCsv = (text: string) => {
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    if (lines.length < 2) { setCsvMsg('CSV vide ou sans données.'); return; }
+    const delim = lines[0].includes(';') ? ';' : ',';
+    const gsep = delim === ';' ? ',' : ';';
+    const header = lines[0].split(delim).map(h => h.trim().toLowerCase());
+    const col = (names: string[]) => { for (const n of names) { const i = header.indexOf(n); if (i >= 0) return i; } return -1; };
+    const iP = col(['prenom', 'prénom', 'firstname', 'givenname']);
+    const iN = col(['nom', 'lastname', 'surname']);
+    const iL = col(['login', 'samaccountname', 'identifiant']);
+    const iO = col(['ou', 'unite', 'unité']);
+    const iG = col(['groupes', 'groups', 'groupe', 'group']);
+    const findOu = (name: string) => ous.find(o => o.name.toLowerCase() === name.trim().toLowerCase())?.id || '';
+    const findGrp = (name: string) => groups.find(g => g.name.toLowerCase() === name.trim().toLowerCase())?.id;
+    const rows: Usr[] = []; let skO = 0, skG = 0;
+    for (const line of lines.slice(1)) {
+      const c = line.split(delim);
+      const prenom = (iP >= 0 ? c[iP] : '')?.trim() || '';
+      const nom = (iN >= 0 ? c[iN] : '')?.trim() || '';
+      if (!prenom && !nom) continue;
+      const login = ((iL >= 0 ? c[iL] : '')?.trim() || '') || `${slug(prenom)}.${slug(nom)}`.replace(/^\.|\.$/g, '');
+      const ouName = (iO >= 0 ? c[iO] : '')?.trim() || '';
+      const ou = ouName ? findOu(ouName) : ''; if (ouName && !ou) skO++;
+      const gids: string[] = [];
+      ((iG >= 0 ? c[iG] : '') || '').split(gsep).map(x => x.trim()).filter(Boolean).forEach(gn => { const id = findGrp(gn); if (id) gids.push(id); else skG++; });
+      rows.push({ id: nid('u'), prenom, nom, login, ou, groups: gids });
+    }
+    setUsers(v => [...v, ...rows]);
+    setCsvMsg(`✓ ${rows.length} utilisateur(s) importé(s)` + (skO ? ` · ${skO} UO non trouvée(s)` : '') + (skG ? ` · ${skG} groupe(s) non trouvé(s)` : ''));
+  };
+  const onCsvFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]; if (!file) return;
+    const r = new FileReader(); r.onload = () => importCsv(String(r.result || '')); r.readAsText(file, 'utf-8');
+    e.target.value = '';
+  };
+  const downloadTemplate = () => {
+    const blob = new Blob(['﻿' + templateText + '\n'], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob); const a = document.createElement('a');
+    a.href = url; a.download = 'utilisateurs-modele.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  };
 
   const script = useMemo(() => {
     const L: string[] = [];
@@ -232,6 +282,21 @@ export function AdBulkConfigurator() {
             <button type="button" style={{ ...addBtn, marginTop: 10, width: '100%' }} onClick={genBulk}>➕ Générer les utilisateurs</button>
           </div>
         </div>
+        <div style={{ borderTop: '1px dashed var(--border)', margin: '13px 0 10px' }} />
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
+          <span style={{ fontSize: 13, fontWeight: 700 }}>📄 ou par fichier CSV :</span>
+          <input ref={csvRef} type="file" accept=".csv,text/csv" style={{ display: 'none' }} onChange={onCsvFile} />
+          <button type="button" style={{ ...addBtn, borderStyle: 'solid' }} onClick={() => csvRef.current?.click()}>Importer un CSV</button>
+          <button type="button" style={addBtn} onClick={downloadTemplate}>📥 Télécharger le modèle</button>
+          {csvMsg && <span style={{ fontSize: 12.5, color: 'var(--text-muted)' }}>{csvMsg}</span>}
+        </div>
+        <details style={{ marginTop: 8 }}>
+          <summary style={{ cursor: 'pointer', fontSize: 12.5, color: 'var(--text-muted)' }}>Format attendu du CSV</summary>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 6, lineHeight: 1.5 }}>
+            En-tête : <code>prenom;nom;login;ou;groupes</code>. Colonnes séparées par <code>;</code> (le point-virgule d’Excel FR), <strong>groupes</strong> séparés par <code>,</code> dans la cellule. <code>login</code> peut être vide (généré automatiquement). Les <code>ou</code> et <code>groupes</code> doivent correspondre aux <strong>noms définis ci-dessus</strong> ; ceux qui n’existent pas sont ignorés (signalés à l’import). Enregistre le fichier en <strong>UTF-8</strong>.
+          </div>
+          <pre style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 7, padding: '8px 10px', fontSize: 12, marginTop: 6, overflowX: 'auto' }}><code>{templateText}</code></pre>
+        </details>
       </div>
 
       {/* Table utilisateurs */}
