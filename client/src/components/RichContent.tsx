@@ -9,6 +9,7 @@ import { Glossary } from './Glossary';
 import { PlanningEmbed } from './PlanningEmbed';
 import { VmConfigurator } from './VmConfigurator';
 import { AdConfigurator } from './AdConfigurator';
+import { AdBulkConfigurator } from './AdBulkConfigurator';
 import type { PostsMode } from '@/lib/page-blocks';
 
 /**
@@ -66,6 +67,11 @@ export function RichContent({ html, className = 'rich' }: { html: string; classN
     el.querySelectorAll('[data-block="ad-configurator"]').forEach(node => {
       const root = createRoot(node);
       root.render(<AdConfigurator />);
+      roots.push(root);
+    });
+    el.querySelectorAll('[data-block="ad-bulk-configurator"]').forEach(node => {
+      const root = createRoot(node);
+      root.render(<AdBulkConfigurator />);
       roots.push(root);
     });
     el.querySelectorAll('[data-block="note"]').forEach(node => {

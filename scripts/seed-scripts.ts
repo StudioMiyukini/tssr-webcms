@@ -23,6 +23,12 @@ const SCRIPTS: Script[] = [
     tags: ['Interactif', 'PowerShell', 'Hyper-V', 'Clone'],
   },
   {
+    slug: 'constructeur-ad', icon: '🏗️',
+    title: 'Constructeur AD (masse)',
+    desc: 'Outil graphique : définir UO / groupes (imbriqués) / utilisateurs, créer des comptes en masse (collage de liste) → script PowerShell complet.',
+    tags: ['Interactif', 'PowerShell', 'Active Directory', 'Masse'],
+  },
+  {
     slug: 'configurateur-ad', icon: '🏢',
     title: 'Configurateur — Active Directory',
     desc: 'Outil interactif : crée une UO, copie un utilisateur modèle (ex. administrateur → Jean NGUYEN) et désactive le compte source → script PowerShell prêt à copier.',
@@ -166,6 +172,16 @@ const configBlocks: PageBlock[] = [
 ];
 
 // ===================================================================================
+// PAGE — Constructeur AD de masse (îlot React : data-block="ad-bulk-configurator")
+// ===================================================================================
+const adBulkBlocks: PageBlock[] = [
+  block('hero', { eyebrow: 'Script · Active Directory', title: 'Constructeur AD (masse)', subtitle: 'Construire graphiquement UO, groupes et utilisateurs, puis générer le script de création en masse.' }),
+  block('html', { html: '<p>Cet outil <strong>graphique</strong> te laisse définir ta structure Active Directory : <strong>unités d’organisation</strong> (imbriquables), <strong>groupes</strong> (avec <em>portée</em>, <em>type</em>, et surtout <strong>imbrication</strong> — un groupe membre d’un autre via menu déroulant à chips) et <strong>utilisateurs</strong>. Pour la <strong>création de masse</strong>, colle une liste « Prénom Nom » : les comptes sont générés (login automatique) avec UO et groupes par défaut, puis modifiables un par un. Le <strong>script PowerShell</strong> complet se met à jour en direct.</p>' }),
+  block('html', { html: '<div class="pb-dynamic" data-block="ad-bulk-configurator"></div>' }),
+  note('yellow', '⚠️ À exécuter sur le contrôleur de domaine', '<p>Le script (module <code>ActiveDirectory</code>) crée les objets dans l’ordre : UO → groupes → imbrication → utilisateurs → adhésions. Il demande le <strong>mot de passe initial</strong> à l’exécution et force son changement à la 1ʳᵉ connexion. Les créations sont <strong>idempotentes</strong> (elles vérifient l’existence avant de créer). Voir aussi : <a href="/pages/configurateur-ad">Configurateur AD (copie d’utilisateur)</a>, <a href="/pages/vocabulaire-active-directory">vocabulaire AD</a>.</p>'),
+];
+
+// ===================================================================================
 // PAGE — Configurateur Active Directory (îlot React : data-block="ad-configurator")
 // ===================================================================================
 const adBlocks: PageBlock[] = [
@@ -197,6 +213,8 @@ async function main() {
   const h = { 'Content-Type': 'application/json', Cookie: cookie };
   const existing = await (await fetch(`${BASE}/api/admin/pages`, { headers: { Cookie: cookie } })).json() as Array<{ id: number; slug: string }>;
 
+  await upsertPage(h, cookie, existing, 'constructeur-ad', 'Constructeur AD (masse)',
+    'Constructeur AD graphique : définir UO, groupes (imbriqués) et utilisateurs, créer des comptes en masse (collage de liste) et générer le script PowerShell complet (module ActiveDirectory).', adBulkBlocks);
   await upsertPage(h, cookie, existing, 'configurateur-ad', 'Configurateur — Active Directory',
     'Configurateur interactif Active Directory : crée une UO, copie un utilisateur modèle (administrateur → Jean NGUYEN) et désactive le compte source. Génère le script PowerShell prêt à copier.', adBlocks);
   await upsertPage(h, cookie, existing, 'configurateur-vm', 'Configurateur — VM serveur',
