@@ -124,6 +124,9 @@ export const DOMAINS: Domain[] = [
       { name: 'Réseau & pare-feu', courses: [
         { href: '/pages/astuce-pare-feu-ping', title: 'Autoriser le ping (ICMP) dans le pare-feu', desc: 'Rendre une machine « pingable » : Windows Server, Windows 10 & 11.' },
       ] },
+      { name: 'Accès à distance', courses: [
+        { href: '/pages/astuce-bureau-a-distance', title: 'Activer le Bureau à distance (RDP)', desc: 'Prendre la main à distance : Windows 10/11 & Server, pare-feu, mstsc.' },
+      ] },
     ],
   },
   {
