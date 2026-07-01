@@ -131,6 +131,24 @@ export function AdBulkConfigurator() {
     a.href = url; a.download = 'utilisateurs-modele.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
   };
 
+  // ---- Garde-fous anti-doublons ----
+  const norm = (s: string) => s.trim().toLowerCase();
+  const userLogin = (u: Usr) => (u.login || `${slug(u.prenom)}.${slug(u.nom)}`.replace(/^\.|\.$/g, ''));
+  const dupKeys = (arr: string[]) => { const seen = new Set<string>(), dup = new Set<string>(); arr.forEach(k => { if (!k) return; if (seen.has(k)) dup.add(k); else seen.add(k); }); return dup; };
+  const ouDup = dupKeys(ous.map(o => o.name.trim() ? `${norm(o.name)}|${o.parent}` : ''));
+  const grpDup = dupKeys(groups.map(g => norm(g.name)));
+  const usrDup = dupKeys(users.map(u => norm(userLogin(u))));
+  const isOuDup = (o: OU) => o.name.trim() !== '' && ouDup.has(`${norm(o.name)}|${o.parent}`);
+  const isGrpDup = (g: Grp) => g.name.trim() !== '' && grpDup.has(norm(g.name));
+  const isUsrDup = (u: Usr) => usrDup.has(norm(userLogin(u)));
+  const dupOuN = ous.filter(isOuDup).length, dupGrpN = groups.filter(isGrpDup).length, dupUsrN = users.filter(isUsrDup).length;
+  const hasDup = dupOuN + dupGrpN + dupUsrN > 0;
+  const errF = (bad: boolean): React.CSSProperties => bad ? { ...f, borderColor: 'var(--danger)', background: 'rgba(220,38,38,0.06)' } : f;
+  const fixLogins = () => {
+    const seen: Record<string, number> = {};
+    setUsers(v => v.map(u => { const base = userLogin(u); const k = base.toLowerCase(); seen[k] = (seen[k] || 0) + 1; return { ...u, login: seen[k] > 1 ? `${base}${seen[k]}` : base }; }));
+  };
+
   const script = useMemo(() => {
     const L: string[] = [];
     L.push('#Requires -RunAsAdministrator');
@@ -142,11 +160,11 @@ export function AdBulkConfigurator() {
     // 1) UO (parents d'abord)
     if (ous.length) {
       L.push('# ===== 1) Unites d\'organisation =====');
+      const ouSeen = new Set<string>();
       [...ous].filter(o => o.name).sort((a, b) => depth(a.id) - depth(b.id)).forEach(o => {
-        const parentDN = o.parent ? ouDN(o.parent) : '$DomainDN';
+        const key = `${o.name.toLowerCase()}|${o.parent}`; if (ouSeen.has(key)) return; ouSeen.add(key);
         const pdn = o.parent ? `'${ouDN(o.parent)}'` : '$DomainDN';
         L.push(`if (-not (Get-ADOrganizationalUnit -Filter "Name -eq '${o.name}'" -SearchBase ${pdn} -ErrorAction SilentlyContinue)) { New-ADOrganizationalUnit -Name '${o.name}' -Path ${pdn} -ProtectedFromAccidentalDeletion $false }`);
-        void parentDN;
       });
       L.push('');
     }
@@ -154,7 +172,9 @@ export function AdBulkConfigurator() {
     const gById = Object.fromEntries(groups.map(g => [g.id, g]));
     if (groups.some(g => g.name)) {
       L.push('# ===== 2) Groupes =====');
+      const gSeen = new Set<string>();
       groups.filter(g => g.name).forEach(g => {
+        if (gSeen.has(g.name.toLowerCase())) return; gSeen.add(g.name.toLowerCase());
         const path = g.ou ? `'${ouDN(g.ou)}'` : '$DomainDN';
         L.push(`if (-not (Get-ADGroup -Filter "Name -eq '${g.name}'" -ErrorAction SilentlyContinue)) { New-ADGroup -Name '${g.name}' -GroupScope ${g.scope} -GroupCategory ${g.cat} -Path ${path} }`);
       });
@@ -171,20 +191,23 @@ export function AdBulkConfigurator() {
     const valid = users.filter(u => u.prenom || u.nom);
     if (valid.length) {
       L.push('# ===== 4) Utilisateurs =====');
+      const uSeen = new Set<string>();
       valid.forEach(u => {
         const login = u.login || `${slug(u.prenom)}.${slug(u.nom)}`.replace(/^\.|\.$/g, '');
+        if (uSeen.has(login.toLowerCase())) return; uSeen.add(login.toLowerCase());
         const name = `${u.prenom} ${u.nom}`.trim();
         const path = u.ou ? `'${ouDN(u.ou)}'` : '$DomainDN';
         L.push(`if (-not (Get-ADUser -Filter "SamAccountName -eq '${login}'" -ErrorAction SilentlyContinue)) { New-ADUser -Name "${name}" -GivenName "${u.prenom}" -Surname "${u.nom}" -DisplayName "${name}" -SamAccountName '${login}' -UserPrincipalName "${login}@$Domain" -Path ${path} -AccountPassword $Password -Enabled $true -ChangePasswordAtLogon $true }`);
       });
       L.push('');
-      // 5) Adhesions
+      // 5) Adhesions (dedupe login+groupe)
+      const aSeen = new Set<string>();
       const withG = valid.filter(u => u.groups.length);
       if (withG.length) {
         L.push('# ===== 5) Adhesions des utilisateurs aux groupes =====');
         withG.forEach(u => {
           const login = u.login || `${slug(u.prenom)}.${slug(u.nom)}`.replace(/^\.|\.$/g, '');
-          u.groups.forEach(gid => { const g = gById[gid]; if (g?.name) L.push(`Add-ADGroupMember -Identity '${g.name}' -Members '${login}'`); });
+          u.groups.forEach(gid => { const g = gById[gid]; if (!g?.name) return; const k = `${login.toLowerCase()}|${g.name.toLowerCase()}`; if (aSeen.has(k)) return; aSeen.add(k); L.push(`Add-ADGroupMember -Identity '${g.name}' -Members '${login}'`); });
         });
       }
     }
@@ -225,7 +248,7 @@ export function AdBulkConfigurator() {
         <div style={sub}>Crée l’arborescence d’UO. Une UO peut être placée sous une autre (imbrication).</div>
         {ous.map(o => (
           <div key={o.id} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr auto', gap: 8, marginBottom: 7, alignItems: 'center' }}>
-            <input style={f} placeholder="Nom de l’UO" value={o.name} onChange={e => upd(setOus, o.id, { name: e.target.value })} />
+            <input style={errF(isOuDup(o))} placeholder="Nom de l’UO" value={o.name} onChange={e => upd(setOus, o.id, { name: e.target.value })} />
             <select style={f} value={o.parent} onChange={e => upd(setOus, o.id, { parent: e.target.value })}>
               <option value="">(racine du domaine)</option>
               {ous.filter(x => x.id !== o.id).map(x => <option key={x.id} value={x.id}>sous : {x.name || '—'}</option>)}
@@ -243,7 +266,7 @@ export function AdBulkConfigurator() {
         {groups.map(g => (
           <div key={g.id} style={{ border: '1px solid var(--border)', borderRadius: 9, padding: 10, marginBottom: 8, background: 'var(--surface)' }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr .9fr .9fr auto', gap: 8, alignItems: 'center' }}>
-              <input style={f} placeholder="Nom du groupe" value={g.name} onChange={e => upd(setGroups, g.id, { name: e.target.value })} />
+              <input style={errF(isGrpDup(g))} placeholder="Nom du groupe" value={g.name} onChange={e => upd(setGroups, g.id, { name: e.target.value })} />
               <select style={f} value={g.ou} onChange={e => upd(setGroups, g.id, { ou: e.target.value })}>
                 <option value="">(racine)</option>
                 {ous.map(o => <option key={o.id} value={o.id}>{o.name || '—'}</option>)}
@@ -307,7 +330,7 @@ export function AdBulkConfigurator() {
           <div key={u.id} style={{ display: 'grid', gridTemplateColumns: '.9fr .9fr 1fr 1fr 1.3fr auto', gap: 7, marginBottom: 7, alignItems: 'center' }}>
             <input style={f} placeholder="Prénom" value={u.prenom} onChange={e => upd(setUsers, u.id, { prenom: e.target.value })} />
             <input style={f} placeholder="Nom" value={u.nom} onChange={e => upd(setUsers, u.id, { nom: e.target.value })} />
-            <input style={{ ...f, fontFamily: 'ui-monospace,monospace' }} placeholder="login" value={u.login || `${slug(u.prenom)}.${slug(u.nom)}`.replace(/^\.|\.$/g, '')} onChange={e => upd(setUsers, u.id, { login: e.target.value })} />
+            <input style={{ ...errF(isUsrDup(u)), fontFamily: 'ui-monospace,monospace' }} placeholder="login" value={u.login || `${slug(u.prenom)}.${slug(u.nom)}`.replace(/^\.|\.$/g, '')} onChange={e => upd(setUsers, u.id, { login: e.target.value })} />
             <select style={f} value={u.ou} onChange={e => upd(setUsers, u.id, { ou: e.target.value })}>
               <option value="">(racine)</option>{ous.map(o => <option key={o.id} value={o.id}>{o.name || '—'}</option>)}
             </select>
@@ -317,6 +340,16 @@ export function AdBulkConfigurator() {
         ))}
         <button type="button" style={addBtn} onClick={addUsr}>+ Ajouter un utilisateur</button>
       </div>
+
+      {/* Garde-fou doublons */}
+      {hasDup && (
+        <aside className="pb-note pb-note-yellow" style={{ marginBottom: 12 }}>
+          <p className="pb-note-title">⚠️ Doublons détectés</p>
+          <p>{[dupOuN && `${dupOuN} UO`, dupGrpN && `${dupGrpN} groupe(s)`, dupUsrN && `${dupUsrN} utilisateur(s)`].filter(Boolean).join(' · ')} en double (surlignés en rouge). Ils sont <strong>ignorés</strong> dans le script généré, mais mieux vaut les corriger (un même nom d’UO/groupe ou un même login ne peut exister qu’une fois).
+            {dupUsrN > 0 && <> <button type="button" onClick={fixLogins} style={{ marginLeft: 4, padding: '3px 10px', border: '1px solid var(--danger)', borderRadius: 7, background: 'transparent', color: 'var(--danger)', fontWeight: 700, cursor: 'pointer', fontSize: 12 }}>Corriger les logins en double</button></>}
+          </p>
+        </aside>
+      )}
 
       {/* Sortie */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '4px 0 6px' }}>
