@@ -10,6 +10,7 @@ import { PlanningEmbed } from './PlanningEmbed';
 import { VmConfigurator } from './VmConfigurator';
 import { AdConfigurator } from './AdConfigurator';
 import { AdBulkConfigurator } from './AdBulkConfigurator';
+import { NetDiagnostic } from './NetDiagnostic';
 import type { PostsMode } from '@/lib/page-blocks';
 
 /**
@@ -72,6 +73,11 @@ export function RichContent({ html, className = 'rich' }: { html: string; classN
     el.querySelectorAll('[data-block="ad-bulk-configurator"]').forEach(node => {
       const root = createRoot(node);
       root.render(<AdBulkConfigurator />);
+      roots.push(root);
+    });
+    el.querySelectorAll('[data-block="net-diagnostic"]').forEach(node => {
+      const root = createRoot(node);
+      root.render(<NetDiagnostic />);
       roots.push(root);
     });
     el.querySelectorAll('[data-block="note"]').forEach(node => {

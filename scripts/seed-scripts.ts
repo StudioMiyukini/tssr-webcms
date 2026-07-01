@@ -23,6 +23,12 @@ const SCRIPTS: Script[] = [
     tags: ['Interactif', 'PowerShell', 'Hyper-V', 'Clone'],
   },
   {
+    slug: 'diagnostic-reseau', icon: '🩺',
+    title: 'Diagnostic réseau (modèle OSI)',
+    desc: 'Outil de dépannage : saisis ton contexte (IP, passerelle, DNS, cible, port, partage) → script PowerShell qui teste couche par couche et réduit le périmètre de la panne.',
+    tags: ['Interactif', 'PowerShell', 'Réseau', 'Dépannage'],
+  },
+  {
     slug: 'constructeur-ad', icon: '🏗️',
     title: 'Constructeur AD (masse)',
     desc: 'Outil graphique : définir UO / groupes (imbriqués) / utilisateurs, créer des comptes en masse (collage de liste) → script PowerShell complet.',
@@ -172,6 +178,16 @@ const configBlocks: PageBlock[] = [
 ];
 
 // ===================================================================================
+// PAGE — Diagnostic réseau OSI (îlot React : data-block="net-diagnostic")
+// ===================================================================================
+const netDiagBlocks: PageBlock[] = [
+  block('hero', { eyebrow: 'Script · Dépannage', title: 'Diagnostic réseau (modèle OSI)', subtitle: 'Un dépannage méthodique, de la couche physique jusqu’aux accès, pour cerner la panne.' }),
+  block('html', { html: '<p>Cet outil génère un <strong>script de diagnostic</strong> qui teste, <strong>couche par couche</strong> (du bas vers le haut du modèle <strong>OSI</strong>), les points essentiels : <strong>physique</strong> (carte réseau), <strong>configuration IP</strong>, <strong>pare-feu</strong> (ping), <strong>connectivité</strong> (pings loopback / passerelle / DNS / cible), <strong>résolution DNS</strong>, <strong>service/port</strong> et <strong>accès au partage</strong>. Chaque test affiche <span style="color:#16a34a;font-weight:700">[OK]</span> ou <span style="color:#dc2626;font-weight:700">[KO]</span> avec une <strong>piste de correction</strong>. Objectif : <strong>réduire le périmètre de la panne</strong> — et le résultat peut être <strong>entièrement positif</strong>.</p>' }),
+  block('html', { html: '<div class="pb-dynamic" data-block="net-diagnostic"></div>' }),
+  note('blue', 'ℹ️ Lecture du résultat', '<p>Le script <strong>ne modifie rien</strong> (lecture/tests seulement). Corrige toujours la <strong>première couche en échec</strong> en priorité : une panne basse (physique/IP) fait échouer tout ce qui est au-dessus. Pour les corrections : <a href="/pages/astuce-pare-feu-ping">autoriser le ping</a>, <a href="/pages/permissions-partage-ntfs">permissions Partage/NTFS</a>, <a href="/pages/hebergement-web">DNS/hébergement</a>.</p>'),
+];
+
+// ===================================================================================
 // PAGE — Constructeur AD de masse (îlot React : data-block="ad-bulk-configurator")
 // ===================================================================================
 const adBulkBlocks: PageBlock[] = [
@@ -213,6 +229,8 @@ async function main() {
   const h = { 'Content-Type': 'application/json', Cookie: cookie };
   const existing = await (await fetch(`${BASE}/api/admin/pages`, { headers: { Cookie: cookie } })).json() as Array<{ id: number; slug: string }>;
 
+  await upsertPage(h, cookie, existing, 'diagnostic-reseau', 'Diagnostic réseau (modèle OSI)',
+    'Outil de dépannage interactif : saisir le contexte réseau (IP, passerelle, DNS, cible, port, partage) et générer un script PowerShell qui teste couche par couche (modèle OSI) pour réduire le périmètre de la panne.', netDiagBlocks);
   await upsertPage(h, cookie, existing, 'constructeur-ad', 'Constructeur AD (masse)',
     'Constructeur AD graphique : définir UO, groupes (imbriqués) et utilisateurs, créer des comptes en masse (collage de liste) et générer le script PowerShell complet (module ActiveDirectory).', adBulkBlocks);
   await upsertPage(h, cookie, existing, 'configurateur-ad', 'Configurateur — Active Directory',
