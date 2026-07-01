@@ -14,6 +14,24 @@ const leg: React.CSSProperties = { fontWeight: 800, fontSize: 15, marginBottom: 
 const row: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 };
 const chip = (on: boolean): React.CSSProperties => ({ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', border: '1px solid var(--border)', borderRadius: 999, background: on ? 'var(--accent-light)' : 'var(--surface)', cursor: 'pointer', fontSize: 13 });
 
+// Protocoles standards et leur port (test TCP via Test-NetConnection)
+const PROTOCOLS: { k: string; label: string; port: number }[] = [
+  { k: 'dns', label: 'DNS', port: 53 },
+  { k: 'kerberos', label: 'Kerberos', port: 88 },
+  { k: 'rpc', label: 'RPC', port: 135 },
+  { k: 'ldap', label: 'LDAP', port: 389 },
+  { k: 'smb', label: 'SMB', port: 445 },
+  { k: 'ldaps', label: 'LDAPS', port: 636 },
+  { k: 'gc', label: 'Catalogue global', port: 3268 },
+  { k: 'rdp', label: 'RDP', port: 3389 },
+  { k: 'http', label: 'HTTP', port: 80 },
+  { k: 'https', label: 'HTTPS', port: 443 },
+  { k: 'ftp', label: 'FTP', port: 21 },
+  { k: 'ssh', label: 'SSH', port: 22 },
+  { k: 'smtp', label: 'SMTP', port: 25 },
+  { k: 'winrm', label: 'WinRM', port: 5985 },
+];
+
 export function NetDiagnostic() {
   const [iface, setIface] = useState('Ethernet');
   const [ip, setIp] = useState('192.168.10.101');
@@ -21,10 +39,12 @@ export function NetDiagnostic() {
   const [dns, setDns] = useState('192.168.10.11');
   const [target, setTarget] = useState('192.168.10.11');
   const [fqdn, setFqdn] = useState('srv-ad.miyukini.lan');
-  const [port, setPort] = useState('445');
-  const [portLbl, setPortLbl] = useState('SMB (partage)');
+  const [protos, setProtos] = useState<string[]>(['smb', 'rdp', 'dns', 'ldap', 'kerberos']);
+  const [port, setPort] = useState('');
+  const [portLbl, setPortLbl] = useState('');
   const [share, setShare] = useState('\\\\SRV-AD\\Partage');
-  const [t, setT] = useState({ phys: true, ipcfg: true, fw: true, ping: true, dns: true, port: true, acc: true });
+  const [hvSwitch, setHvSwitch] = useState('COM_private');
+  const [t, setT] = useState({ phys: true, sw: true, ipcfg: true, fw: true, ping: true, dns: true, port: true, acc: true });
   const [copied, setCopied] = useState(false);
   const [unlocked, setUnlocked] = useState(() => { try { return sessionStorage.getItem('vmcfg_ok') === '1'; } catch { return false; } });
   const unlock = () => { setUnlocked(true); try { sessionStorage.setItem('vmcfg_ok', '1'); } catch { /* */ } };
@@ -43,8 +63,8 @@ export function NetDiagnostic() {
     L.push(`$Dns    = '${dns}'`);
     L.push(`$Target = '${target}'`);
     L.push(`$Fqdn   = '${fqdn}'`);
-    L.push(`$Port   = ${port || 0}`);
     L.push(`$Share  = '${share}'`);
+    L.push(`$HvSwitch = '${hvSwitch}'`);
     L.push('$ok = 0; $ko = 0');
     L.push('function Step($lbl,$res,$hint){ if($res){ Write-Host ("  [OK]  {0}" -f $lbl) -ForegroundColor Green; $script:ok++ } else { Write-Host ("  [KO]  {0}" -f $lbl) -ForegroundColor Red; Write-Host ("        piste: {0}" -f $hint) -ForegroundColor DarkYellow; $script:ko++ } }');
     L.push('');
@@ -53,6 +73,16 @@ export function NetDiagnostic() {
       L.push('$ad = Get-NetAdapter -Name $Iface -ErrorAction SilentlyContinue');
       L.push('Step "Carte \'$Iface\' presente et UP" ($ad -and $ad.Status -eq \'Up\') "Cable debranche, carte desactivee, ou mauvais nom d\'interface (Get-NetAdapter)"');
       L.push('if($ad){ Write-Host ("        lien: {0}" -f $ad.LinkSpeed) -ForegroundColor DarkGray }');
+      L.push('');
+    }
+    if (t.sw) {
+      L.push('Write-Host "== Hyper-V - commutateurs des VM (a executer sur l\'HOTE) ==" -ForegroundColor Cyan');
+      L.push('if(Get-Command Get-VM -ErrorAction SilentlyContinue){');
+      L.push('  Step "Commutateur \'$HvSwitch\' present" ([bool](Get-VMSwitch -Name $HvSwitch -ErrorAction SilentlyContinue)) "Commutateur absent -> New-VMSwitch -Name \'$HvSwitch\' -SwitchType Private"');
+      L.push('  $sw = Get-VMSwitch -Name $HvSwitch -ErrorAction SilentlyContinue');
+      L.push('  if($sw){ Step "\'$HvSwitch\' est de type Prive/Interne" ($sw.SwitchType -in \'Private\',\'Internal\') ("Type actuel: {0} -> pour un labo isole, utiliser Private" -f $sw.SwitchType) }');
+      L.push('  foreach($a in (Get-VM | Get-VMNetworkAdapter)){ Step ("VM \'{0}\' -> commutateur \'{1}\'" -f $a.VMName,$a.SwitchName) ($a.SwitchName -eq $HvSwitch) ("VM \'{0}\' connectee a \'{1}\' au lieu de \'{2}\' (ou deconnectee) -> Connect-VMNetworkAdapter -VMName \'{0}\' -SwitchName \'{2}\'" -f $a.VMName,$a.SwitchName,$HvSwitch) }');
+      L.push('} else { Write-Host "  (module Hyper-V absent : cette partie se lance sur l\'HOTE Hyper-V, pas dans la VM)" -ForegroundColor DarkGray }');
       L.push('');
     }
     if (t.ipcfg) {
@@ -85,9 +115,16 @@ export function NetDiagnostic() {
       L.push('if($Fqdn){ $r = Resolve-DnsName $Fqdn -ErrorAction SilentlyContinue; Step "Resolution de $Fqdn" ([bool]$r) "DNS ne resout pas -> mauvais serveur DNS ou enregistrement A manquant"; if($r){ Write-Host ("        -> " + (($r | Where-Object IPAddress | Select-Object -First 1).IPAddress)) -ForegroundColor DarkGray } }');
       L.push('');
     }
-    if (t.port) {
-      L.push('Write-Host "== Couche 4 - Service / port ==" -ForegroundColor Cyan');
-      L.push('if($Target -and $Port -gt 0){ $tc = Test-NetConnection $Target -Port $Port -WarningAction SilentlyContinue; Step "Port $Port ouvert sur $Target" ($tc.TcpTestSucceeded) "Service arrete OU pare-feu de la cible bloque le port $Port" }');
+    const selP = PROTOCOLS.filter(p => protos.includes(p.k));
+    if (t.port && (selP.length || Number(port) > 0)) {
+      L.push('Write-Host "== Couche 4 - Services / protocoles (ports TCP) ==" -ForegroundColor Cyan');
+      L.push('if($Target){');
+      L.push('  $ports = @(');
+      selP.forEach(p => L.push(`    @{ n = '${p.label}'; p = ${p.port} },`));
+      if (Number(port) > 0) L.push(`    @{ n = '${(portLbl || 'Personnalise').replace(/'/g, ' ')}'; p = ${Number(port)} },`);
+      L.push('  )');
+      L.push('  foreach($s in $ports){ $tc = Test-NetConnection $Target -Port $s.p -WarningAction SilentlyContinue; Step ("{0} (port {1}) sur $Target" -f $s.n,$s.p) ($tc.TcpTestSucceeded) ("{0} injoignable : service arrete OU pare-feu de la cible bloque le port {1} (test TCP)" -f $s.n,$s.p) }');
+      L.push('} else { Write-Host "  (cible non renseignee, tests de ports ignores)" -ForegroundColor DarkGray }');
       L.push('');
     }
     if (t.acc) {
@@ -101,7 +138,7 @@ export function NetDiagnostic() {
     L.push('if($ko -eq 0){ Write-Host ("RESULTAT : tout est OK ({0} verifications passees)." -f $ok) -ForegroundColor Green }');
     L.push('else { Write-Host ("RESULTAT : {0} probleme(s), {1} OK. Corrige la 1ere couche en echec EN PREMIER (de bas en haut)." -f $ko,$ok) -ForegroundColor Yellow }');
     return L.join('\n');
-  }, [iface, ip, gw, dns, target, fqdn, port, share, t]);
+  }, [iface, ip, gw, dns, target, fqdn, protos, port, portLbl, share, hvSwitch, t]);
 
   const copy = () => { navigator.clipboard?.writeText(script).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1800); }).catch(() => {}); };
 
@@ -129,16 +166,31 @@ export function NetDiagnostic() {
           <div><label style={lb}>Serveur DNS</label><input style={f} value={dns} onChange={e => setDns(e.target.value)} /></div>
           <div><label style={lb}>Cible à joindre (IP/nom)</label><input style={f} value={target} onChange={e => setTarget(e.target.value)} /></div>
           <div><label style={lb}>Nom à résoudre (FQDN)</label><input style={f} value={fqdn} onChange={e => setFqdn(e.target.value)} /></div>
-          <div><label style={lb}>Port de service {portLbl && <span className="meta" style={{ fontWeight: 400 }}>· {portLbl}</span>}</label><input style={f} value={port} onChange={e => setPort(e.target.value.replace(/\D/g, ''))} /></div>
-          <div><label style={lb}>Libellé du port</label><input style={f} value={portLbl} onChange={e => setPortLbl(e.target.value)} /></div>
+          <div><label style={lb}>Commutateur Hyper-V attendu</label><input style={f} value={hvSwitch} onChange={e => setHvSwitch(e.target.value)} placeholder="COM_private" /></div>
           <div style={{ gridColumn: '1 / -1' }}><label style={lb}>Chemin de partage à tester</label><input style={{ ...f, fontFamily: 'ui-monospace,monospace' }} value={share} onChange={e => setShare(e.target.value)} /></div>
+        </div>
+      </div>
+
+      <div style={grp}>
+        <div style={leg}>🔌 Protocoles / ports à tester <span className="meta" style={{ fontWeight: 400, fontSize: 12 }}>(sur la cible · test TCP)</span></div>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          {PROTOCOLS.map(p => (
+            <label key={p.k} style={chip(protos.includes(p.k))}>
+              <input type="checkbox" checked={protos.includes(p.k)} onChange={() => setProtos(v => v.includes(p.k) ? v.filter(x => x !== p.k) : [...v, p.k])} />
+              {p.label} <span className="meta" style={{ fontSize: 11 }}>:{p.port}</span>
+            </label>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 10, marginTop: 10, flexWrap: 'wrap', alignItems: 'end' }}>
+          <div style={{ maxWidth: 140 }}><label style={lb}>Port perso.</label><input style={f} value={port} onChange={e => setPort(e.target.value.replace(/\D/g, ''))} placeholder="ex. 8080" /></div>
+          <div style={{ maxWidth: 220 }}><label style={lb}>Libellé du port perso.</label><input style={f} value={portLbl} onChange={e => setPortLbl(e.target.value)} placeholder="ex. Application interne" /></div>
         </div>
       </div>
 
       <div style={grp}>
         <div style={leg}>🧪 Vérifications à inclure <span className="meta" style={{ fontWeight: 400, fontSize: 12 }}>(du bas vers le haut du modèle OSI)</span></div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 9 }}>
-          {([['phys', '① Physique'], ['ipcfg', '③ Config IP'], ['fw', '🧱 Pare-feu (ping)'], ['ping', '③ Pings'], ['dns', '⑦ DNS'], ['port', '④ Port service'], ['acc', '⑦ Accès / partage']] as [keyof typeof t, string][]).map(([k, label]) => (
+          {([['phys', '① Physique'], ['sw', '🔀 Commutateurs VM'], ['ipcfg', '③ Config IP'], ['fw', '🧱 Pare-feu (ping)'], ['ping', '③ Pings'], ['dns', '⑦ DNS'], ['port', '④ Protocoles/ports'], ['acc', '⑦ Accès / partage']] as [keyof typeof t, string][]).map(([k, label]) => (
             <label key={k} style={chip(t[k])}><input type="checkbox" checked={t[k]} onChange={() => tog(k)} />{label}</label>
           ))}
         </div>
