@@ -51,6 +51,9 @@ export const DOMAINS: Domain[] = [
         { href: '/pages/vocabulaire-active-directory', title: 'Vocabulaire Active Directory (AD)', desc: 'Forêt, domaine, DC, schéma, OU, groupes… en questions-réponses.' },
         { href: '/pages/hebergement-web', title: 'L’hébergement web (DNS + IIS)', desc: 'Publier un site : serveur web IIS, résolution DNS, FQDN, FTP, tests.' },
       ] },
+      { name: 'Serveur de fichiers', courses: [
+        { href: '/pages/permissions-partage-ntfs', title: 'Permissions : Partage & NTFS', desc: 'Partage vs NTFS, cumul (le plus restrictif), héritage, bonne pratique.' },
+      ] },
       { name: 'Virtualisation', courses: [
         { href: '/pages/virtualisation-theorie', title: 'La virtualisation : théorie & concepts', desc: 'Abstraction, types, hyperviseurs, VM vs conteneur — et la place en TSSR.' },
         { href: '/pages/virtualisation', title: 'La virtualisation avec Hyper-V', desc: 'Hyper-V, VM, commutateur virtuel — via le Gestionnaire de serveurs.' },

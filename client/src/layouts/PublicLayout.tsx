@@ -78,6 +78,7 @@ export function PublicLayout() {
       <footer className="public-footer">
         <div className="public-wrap">
           <span>© {new Date().getFullYear()} {theme.data?.brandName || 'Mon Site'}</span>
+          <span>Construit et maintenu par <strong>Van Jean NGUYEN</strong></span>
           <span>Back-office sur <Link to="/admin">/admin</Link></span>
         </div>
       </footer>
