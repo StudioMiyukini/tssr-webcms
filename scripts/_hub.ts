@@ -115,6 +115,7 @@ export const DOMAINS: Domain[] = [
       ] },
       { name: 'Active Directory', courses: [
         { href: '/pages/procedure-installation-active-directory', title: 'Installer & configurer Active Directory', desc: 'De la VM vierge au client intégré au domaine : procédure complète.' },
+        { href: '/pages/procedure-agdlp', title: 'Mettre en place AGDLP', desc: 'Attribuer les droits proprement : Account → Global → Domain Local → Permission.' },
       ] },
     ],
   },
