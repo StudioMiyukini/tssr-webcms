@@ -109,18 +109,6 @@ export const DOMAINS: Domain[] = [
     ],
   },
   {
-    icon: '📋', name: 'Procédures', intro: 'Modes opératoires pas-à-pas, prêts à suivre en TP ou en production.',
-    subcats: [
-      { name: 'Machines virtuelles', courses: [
-        { href: '/pages/procedure-vm-hyperv', title: 'Créer & configurer une VM (ISO) sur Hyper-V', desc: 'De la création de la VM au début du TP : OS, nom, IP fixe, pare-feu.' },
-      ] },
-      { name: 'Active Directory', courses: [
-        { href: '/pages/procedure-installation-active-directory', title: 'Installer & configurer Active Directory', desc: 'De la VM vierge au client intégré au domaine : procédure complète.' },
-        { href: '/pages/procedure-agdlp', title: 'Mettre en place AGDLP', desc: 'Attribuer les droits proprement : Account → Global → Domain Local → Permission.' },
-      ] },
-    ],
-  },
-  {
     icon: '💡', name: 'Astuces', intro: 'Petites manips qui font gagner du temps au quotidien.',
     subcats: [
       { name: 'Réseau & pare-feu', courses: [
