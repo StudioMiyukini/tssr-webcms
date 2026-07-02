@@ -53,6 +53,7 @@ export const DOMAINS: Domain[] = [
       ] },
       { name: 'Serveur de fichiers', courses: [
         { href: '/pages/permissions-partage-ntfs', title: 'Permissions : Partage & NTFS', desc: 'Partage vs NTFS, cumul (le plus restrictif), héritage, bonne pratique.' },
+        { href: '/pages/gestion-avancee-utilisateurs', title: 'Gestion avancée (profils, home, scripts, quotas)', desc: 'Horaires, profils itinérants, dossier de base, scripts de session, ABE, quotas.' },
       ] },
       { name: 'Virtualisation', courses: [
         { href: '/pages/virtualisation-theorie', title: 'La virtualisation : théorie & concepts', desc: 'Abstraction, types, hyperviseurs, VM vs conteneur — et la place en TSSR.' },
