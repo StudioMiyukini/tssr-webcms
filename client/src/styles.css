@@ -673,6 +673,19 @@ table.wp-list .column-primary { font-weight: 600; }
 .gloss-search { width: 100%; background: var(--g-surface); border: 1px solid var(--g-border); color: var(--g-text); padding: 13px 18px 13px 44px; font-family: 'Space Mono', monospace; font-size: 14px; outline: none; border-radius: 0; }
 .gloss-search:focus { border-color: var(--g-accent); box-shadow: 0 0 20px rgba(0,229,255,0.2); }
 .gloss-search::placeholder { color: var(--g-muted); }
+.gloss-clear { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: transparent; border: none; color: var(--g-muted); font-size: 20px; line-height: 1; cursor: pointer; padding: 2px 6px; }
+.gloss-clear:hover { color: var(--g-accent); }
+.gloss-bar { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.gloss-collapse { font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 1px; padding: 5px 12px; border: 1px solid var(--g-border); background: transparent; color: var(--g-muted); cursor: pointer; text-transform: uppercase; transition: all .2s; }
+.gloss-collapse:hover { border-color: var(--g-accent); color: var(--g-accent); }
+.gloss-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+.gloss-link-btn { background: transparent; border: none; color: var(--g-muted); font-size: 13px; cursor: pointer; padding: 2px 4px; line-height: 1; opacity: 0; transition: opacity .2s, color .2s; }
+.gloss-card:hover .gloss-link-btn, .gloss-card.expanded .gloss-link-btn { opacity: 1; }
+.gloss-link-btn:hover { color: var(--g-accent); }
+.gloss-links { margin-top: 12px; padding-top: 10px; border-top: 1px dashed var(--g-border); display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.gloss-links-label { font-family: 'Space Mono', monospace; font-size: 11px; color: var(--g-muted); }
+.gloss-link { display: inline-block; font-family: 'Space Mono', monospace; font-size: 11px; padding: 3px 10px; border: 1px solid rgba(124,58,237,0.35); color: #a78bfa; background: rgba(124,58,237,0.08); border-radius: 3px; text-decoration: none; transition: all .2s; }
+.gloss-link:hover { border-color: var(--g-accent3); background: rgba(124,58,237,0.18); }
 .gloss-filters { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 18px; }
 .gloss-fbtn { font-family: 'Space Mono', monospace; font-size: 11px; letter-spacing: 1px; padding: 6px 14px; border: 1px solid var(--g-border); background: transparent; color: var(--g-muted); cursor: pointer; text-transform: uppercase; transition: all .2s; }
 .gloss-fbtn:hover, .gloss-fbtn.active { border-color: var(--g-accent); color: var(--g-accent); background: rgba(0,229,255,0.05); }

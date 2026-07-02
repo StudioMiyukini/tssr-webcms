@@ -1,5 +1,10 @@
 // Données du glossaire TSSR (porté depuis la page HTML autonome, RAID restauré).
-export interface GlossaryTerm { acronym: string; name: string; category: string; definition: string; tags: string[]; }
+export interface GlossaryTerm { acronym: string; name: string; category: string; definition: string; tags: string[]; aliases?: string[]; links?: Array<{ label: string; href: string }>; }
+
+/** Ancre stable d'un terme (pour le partage de lien et le deep-linking). */
+export function glossarySlug(acronym: string): string {
+  return acronym.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+}
 
 export const GLOSSARY_CATEGORIES: Array<{ key: string; label: string }> = [
   { key: 'réseau', label: '🌐 Réseau & Infrastructure' },
@@ -139,3 +144,87 @@ export const GLOSSARY: GlossaryTerm[] = [
   { acronym: "ToIP / VoIP", name: "Téléphonie sur IP / Voice over IP", category: "expression", definition: "Transmission de la voix via le réseau IP. Remplace la téléphonie analogique. Protocoles : <strong>SIP</strong>, <strong>H.323</strong>. Sensible à la latence et à la gigue (<strong>jitter</strong>). Nécessite une bonne <strong>QoS</strong> sur le réseau. Solutions : Asterisk, 3CX, Teams Phone.", tags: ["expression", "réseau"] },
   { acronym: "Supervision / Monitoring", name: "Surveillance de l'infrastructure", category: "expression", definition: "Surveillance en temps réel de l'état des équipements et services. Métriques : CPU, RAM, disque, bande passante, temps de réponse. Outils : <strong>Centreon</strong>, Zabbix, Nagios, Prometheus+Grafana. Alerte les admins en cas d'anomalie.", tags: ["expression", "réseau"] },
 ];
+
+// ---------------------------------------------------------------------------
+// Enrichissements pour l'usage « index de recherche » :
+//   - GLOSSARY_ALIASES : synonymes / mots-clés supplémentaires pris en compte
+//     dans la recherche (ex. taper « trust » trouve « Approbation »).
+//   - GLOSSARY_LINKS   : renvois vers les pages de cours qui traitent la notion,
+//     affichés dans la carte dépliée (« En savoir plus »).
+// Clés = valeur exacte du champ `acronym`.
+// ---------------------------------------------------------------------------
+export const GLOSSARY_ALIASES: Record<string, string[]> = {
+  "OSI": ["modèle osi", "7 couches", "couches réseau", "pizza"],
+  "TCP/IP": ["pile tcp", "transport", "udp"],
+  "IP": ["adresse ip", "ipv4", "ipv6", "adressage"],
+  "CIDR": ["masque", "notation slash", "prefixe", "sous-réseau"],
+  "MSR": ["masque de sous-réseau", "netmask", "masque réseau"],
+  "idSR / NetID": ["adresse réseau", "network id", "identifiant de sous-réseau"],
+  "Broadcast": ["diffusion", "adresse de broadcast"],
+  "VLAN": ["réseau virtuel", "segmentation", "trunk", "802.1q"],
+  "NAT": ["translation", "pat", "partage ip"],
+  "DHCP": ["attribution ip", "bail", "dora"],
+  "DNS": ["résolution de noms", "nom de domaine", "enregistrement", "zone"],
+  "ARP": ["résolution mac", "ip vers mac"],
+  "MAC": ["adresse physique", "adresse matérielle", "oui"],
+  "AD": ["active directory", "annuaire", "domaine", "aduc"],
+  "GPO": ["stratégie de groupe", "group policy", "lsdou"],
+  "LDAP": ["annuaire", "ldaps"],
+  "OU": ["unité organisationnelle", "uo", "organizational unit"],
+  "DC": ["contrôleur de domaine", "domain controller"],
+  "FSMO": ["rôles fsmo", "maître de schéma", "maître rid", "émulateur pdc", "maître d'infrastructure", "attribution de noms", "single master"],
+  "SYSVOL": ["system volume", "réplication", "partage sysvol"],
+  "Approbation": ["trust", "relation d'approbation", "confiance", "approbation externe", "parent enfant", "transitive"],
+  "Délégation": ["délégation de contrôle", "moindre privilège", "déléguer"],
+  "RDP": ["bureau à distance", "prise en main", "mstsc", "remote desktop"],
+  "SSH": ["accès distant", "shell sécurisé"],
+  "ICMP": ["ping", "echo request", "traceroute"],
+  "RAID": ["grappe de disques", "tolérance de panne disque", "miroir", "parité"],
+  "VM": ["machine virtuelle", "virtualisation"],
+  "Hyper-V": ["hyperviseur", "virtualisation windows", "commutateur virtuel"],
+  "VHDX": ["disque virtuel", "master"],
+  "Firewall": ["pare-feu", "filtrage"],
+  "Switch": ["commutateur"],
+  "Routeur": ["router", "passerelle", "routage"],
+  "CPU": ["processeur", "socket"],
+  "Ticketing": ["glpi", "gestion des incidents", "helpdesk"],
+  "SLA": ["niveau de service", "engagement", "délai de résolution"],
+};
+
+export const GLOSSARY_LINKS: Record<string, Array<{ label: string; href: string }>> = {
+  "OSI": [{ label: "Les 7 couches OSI", href: "/pages/les-7-couches-osi" }],
+  "TCP/IP": [{ label: "TCP & UDP", href: "/pages/tcp-et-udp" }, { label: "Les adresses IP", href: "/pages/adresses-ip" }],
+  "IP": [{ label: "Les adresses IP", href: "/pages/adresses-ip" }, { label: "IP et binaire", href: "/pages/ip-et-binaire" }],
+  "IPv4 / IPv6": [{ label: "Les adresses IP", href: "/pages/adresses-ip" }],
+  "CIDR": [{ label: "Calcul d'IP & masque", href: "/pages/calcul-ip-masque" }, { label: "Segmentation (subnetting)", href: "/pages/segmentation-sous-reseaux" }],
+  "MSR": [{ label: "Calcul d'IP & masque", href: "/pages/calcul-ip-masque" }],
+  "idSR / NetID": [{ label: "Calcul d'IP & masque", href: "/pages/calcul-ip-masque" }],
+  "Broadcast": [{ label: "Calcul d'IP & masque", href: "/pages/calcul-ip-masque" }],
+  "VLAN": [{ label: "Notions clés (lexique)", href: "/pages/notions-complementaires" }],
+  "NAT": [{ label: "Notions clés (lexique)", href: "/pages/notions-complementaires" }],
+  "DHCP": [{ label: "Notions clés (lexique)", href: "/pages/notions-complementaires" }],
+  "DNS": [{ label: "Notions clés (lexique)", href: "/pages/notions-complementaires" }, { label: "Hébergement web (DNS + IIS)", href: "/pages/hebergement-web" }],
+  "ARP": [{ label: "Notions clés (lexique)", href: "/pages/notions-complementaires" }],
+  "MAC": [{ label: "Les adresses MAC", href: "/pages/adresses-mac" }],
+  "AD": [{ label: "Vocabulaire Active Directory", href: "/pages/vocabulaire-active-directory" }, { label: "Installer Active Directory", href: "/pages/procedure-installation-active-directory" }],
+  "GPO": [{ label: "Administration d'un domaine AD", href: "/pages/administration-domaine-ad" }],
+  "LDAP": [{ label: "Vocabulaire Active Directory", href: "/pages/vocabulaire-active-directory" }],
+  "OU": [{ label: "Vocabulaire Active Directory", href: "/pages/vocabulaire-active-directory" }],
+  "DC": [{ label: "Vocabulaire Active Directory", href: "/pages/vocabulaire-active-directory" }, { label: "Administration d'un domaine AD", href: "/pages/administration-domaine-ad" }],
+  "FSMO": [{ label: "Administration d'un domaine AD", href: "/pages/administration-domaine-ad" }],
+  "SYSVOL": [{ label: "Administration d'un domaine AD", href: "/pages/administration-domaine-ad" }],
+  "Approbation": [{ label: "Administration d'un domaine AD", href: "/pages/administration-domaine-ad" }],
+  "Délégation": [{ label: "Administration d'un domaine AD", href: "/pages/administration-domaine-ad" }, { label: "Mettre en place AGDLP", href: "/pages/procedure-agdlp" }],
+  "RDP": [{ label: "Activer le Bureau à distance (RDP)", href: "/pages/astuce-bureau-a-distance" }],
+  "ICMP": [{ label: "Autoriser le ping (ICMP)", href: "/pages/astuce-pare-feu-ping" }],
+  "RAID": [{ label: "Les niveaux de RAID", href: "/pages/le-raid" }],
+  "VM": [{ label: "La virtualisation avec Hyper-V", href: "/pages/virtualisation" }, { label: "Créer & configurer une VM", href: "/pages/procedure-vm-hyperv" }],
+  "Hyper-V": [{ label: "La virtualisation avec Hyper-V", href: "/pages/virtualisation" }, { label: "Virtualisation : théorie", href: "/pages/virtualisation-theorie" }],
+  "VHDX": [{ label: "La virtualisation avec Hyper-V", href: "/pages/virtualisation" }],
+  "Switch": [{ label: "Le switch", href: "/pages/le-switch" }],
+  "Routeur": [{ label: "Le routeur", href: "/pages/le-routeur" }, { label: "Configurer un routeur en CLI", href: "/pages/cisco-routeur-cli" }],
+  "Firewall": [{ label: "Le pare-feu", href: "/pages/le-pare-feu" }],
+  "CPU": [{ label: "Le processeur (CPU)", href: "/pages/le-processeur" }],
+  "Ticketing": [{ label: "Le ticketing", href: "/pages/le-ticketing" }],
+  "SLA": [{ label: "Le ticketing", href: "/pages/le-ticketing" }],
+};
