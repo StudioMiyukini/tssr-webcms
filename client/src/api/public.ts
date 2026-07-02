@@ -80,9 +80,11 @@ export function useUnlockSite() {
   });
 }
 
-export interface SearchResult { type: string; title: string; excerpt: string; url: string; }
+export interface SearchResult { type: string; title: string; excerpt: string; url: string; snippet?: string; }
 export interface SearchResults { items: SearchResult[]; total: number; page: number; pageSize: number; }
 export const usePublicSearch = (q: string, page = 1) => useQuery<SearchResults>({ queryKey: ['search', q, page], queryFn: () => apiGet(`/api/public/search?q=${encodeURIComponent(q)}&page=${page}`), enabled: q.trim().length >= 2 });
+/** Variante « palette » : renvoie les N meilleurs résultats (par pertinence) sans pagination. */
+export const usePublicSearchTop = (q: string, limit = 8) => useQuery<SearchResults>({ queryKey: ['search-top', q, limit], queryFn: () => apiGet(`/api/public/search?q=${encodeURIComponent(q)}&limit=${limit}`), enabled: q.trim().length >= 2, placeholderData: (prev) => prev });
 
 export interface PublicComment { id: number; author: string; body: string; created_at: string; }
 export const usePostComments = (slug: string) => useQuery<PublicComment[]>({ queryKey: ['post-comments', slug], queryFn: () => apiGet(`/api/public/posts/${slug}/comments`), enabled: !!slug });

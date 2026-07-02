@@ -1,9 +1,10 @@
-import { Suspense } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { Outlet, Link, useLocation } from '@tanstack/react-router';
 import { useTheme } from '@/lib/theme';
 import { usePublicMenus, useCart, useCustomerMe, usePublicFeatures, usePublicThemeSettings, useSiteAccess } from '@/api/public';
 import { SiteGate } from '@/components/SiteGate';
 import { MemberGate } from '@/components/MemberGate';
+import { SearchPalette } from '@/components/SearchPalette';
 
 export function PublicLayout() {
   const access = useSiteAccess();
@@ -14,6 +15,16 @@ export function PublicLayout() {
   const me = useCustomerMe();
   const { toggleTheme } = useTheme();
   const loc = useLocation();
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  // Ouvre la palette de recherche via ⌘K / Ctrl-K (en plus du bouton loupe).
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) { e.preventDefault(); setSearchOpen(o => !o); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   // Site privé (mot de passe partagé) : écran d'accès, SAUF le forum et l'espace compte (login/profil/cloud),
   // qui restent accessibles même en mode privé (le compte a sa propre authentification).
@@ -65,7 +76,7 @@ export function PublicLayout() {
                 {me.data ? me.data.name.split(' ')[0] : 'Compte'}
               </Link>
             )}
-            <Link to="/recherche" className="public-link" aria-label="Rechercher" title="Rechercher">🔍</Link>
+            <button type="button" className="public-link search-btn" onClick={() => setSearchOpen(true)} aria-label="Rechercher" title="Rechercher (Ctrl/⌘ + K)">🔍</button>
             <button className="icon-btn" onClick={toggleTheme} title="Thème" aria-label="Thème">◐</button>
           </nav>
         </div>
@@ -82,6 +93,8 @@ export function PublicLayout() {
           <span>Back-office sur <Link to="/admin">/admin</Link></span>
         </div>
       </footer>
+
+      <SearchPalette open={searchOpen} onClose={() => setSearchOpen(false)} />
     </>
   );
 }
