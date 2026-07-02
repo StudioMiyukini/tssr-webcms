@@ -11,6 +11,7 @@ import { VmConfigurator } from './VmConfigurator';
 import { AdConfigurator } from './AdConfigurator';
 import { AdBulkConfigurator } from './AdBulkConfigurator';
 import { NetDiagnostic } from './NetDiagnostic';
+import { SubnetTrainer } from './SubnetTrainer';
 import type { PostsMode } from '@/lib/page-blocks';
 
 /**
@@ -78,6 +79,11 @@ export function RichContent({ html, className = 'rich' }: { html: string; classN
     el.querySelectorAll('[data-block="net-diagnostic"]').forEach(node => {
       const root = createRoot(node);
       root.render(<NetDiagnostic />);
+      roots.push(root);
+    });
+    el.querySelectorAll('[data-block="subnet-trainer"]').forEach(node => {
+      const root = createRoot(node);
+      root.render(<SubnetTrainer />);
       roots.push(root);
     });
     el.querySelectorAll('[data-block="note"]').forEach(node => {

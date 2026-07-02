@@ -75,6 +75,9 @@ export const DOMAINS: Domain[] = [
         { href: '/pages/adresses-mac', title: 'Les adresses MAC', desc: 'L’identité matérielle de la carte réseau (vs IP).' },
         { href: '/pages/notions-complementaires', title: 'Notions clés (lexique illustré)', desc: 'NAT, VPN, DMZ, VLAN, PoE, DNS, DHCP, ARP, proxy, QoS.' },
       ] },
+      { name: 'Méthodes & entraînement', courses: [
+        { href: '/pages/trouver-plage-ip-cidr', title: 'Trouver une plage d’IP (IP + CIDR)', desc: 'Procédure pas-à-pas (nombre magique) + exemple résolu + tableau des masques + exerciseur interactif.' },
+      ] },
       { name: 'Équipements', courses: [
         { href: '/pages/le-routeur', title: 'Le routeur', desc: 'Relie ton réseau local à Internet.' },
         { href: '/pages/le-switch', title: 'Le switch', desc: 'Connecte les appareils d’un même réseau.' },
