@@ -155,6 +155,35 @@ const blocks: PageBlock[] = [
     ['Qu’est-ce qu’une « délégation de contrôle » ?', '<p>Accorder à un utilisateur ou un groupe des <strong>droits d’administration limités</strong> sur une partie de l’AD (souvent une <strong>OU</strong>), <strong>sans en faire un administrateur complet</strong>. Ex. autoriser le helpdesk à réinitialiser les mots de passe d’un service. <em>Principe du moindre privilège.</em></p>', 'https://learn.microsoft.com/fr-fr/windows-server/identity/ad-ds/manage/delegation-control-wizard'],
   ]),
 
+  block('heading', { level: 2, text: '🎖️ Les rôles FSMO' }),
+  block('html', { html: '<p>Les <strong>rôles FSMO</strong> (<em>Flexible Single Master Operations</em>) sont des <strong>fonctions spécifiques</strong> attribuées à certains contrôleurs de domaine. Ils <strong>évitent les conflits</strong> en centralisant des opérations critiques. Il en existe <strong>5</strong> — <strong>2 au niveau de la forêt</strong>, <strong>3 au niveau du domaine</strong> — chacun <strong>unique</strong> et tenu par <strong>un seul serveur</strong>. Ils sont <strong>indispensables</strong> et <strong>transférables</strong> en cas de panne ou de maintenance.</p>' }),
+  block('html', { html: `<div style="overflow-x:auto;margin:6px 0 12px"><table style="border-collapse:collapse;width:100%;min-width:640px;font-size:13.5px"><thead><tr style="background:var(--surface-2)">${['Rôle FSMO', 'Niveau', 'Utilité principale'].map(c => `<th style="text-align:left;padding:8px 10px;border:1px solid var(--border)">${c}</th>`).join('')}</tr></thead><tbody>` +
+    ([
+      ['🗂️ Maître de schéma <span class="meta">(Schema Master)</span>', 'Forêt', 'Gère les modifications du schéma AD'],
+      ['🏷️ Maître d’attribution de noms <span class="meta">(Domain Naming Master)</span>', 'Forêt', 'Gère l’ajout / la suppression de domaines'],
+      ['🔢 Maître RID <span class="meta">(RID Master)</span>', 'Domaine', 'Attribue les identifiants uniques (SID / RID)'],
+      ['🕰️ Émulateur PDC <span class="meta">(PDC Emulator)</span>', 'Domaine', 'Authentification, mots de passe, synchronisation horaire'],
+      ['🔗 Maître d’infrastructure <span class="meta">(Infrastructure Master)</span>', 'Domaine', 'Met à jour les références entre objets de domaines différents'],
+    ] as Array<[string, string, string]>).map(r => `<tr><td style="padding:8px 10px;border:1px solid var(--border);font-weight:600">${r[0]}</td><td style="padding:8px 10px;border:1px solid var(--border)">${r[1]}</td><td style="padding:8px 10px;border:1px solid var(--border)">${r[2]}</td></tr>`).join('') +
+    `</tbody></table></div>` }),
+  note('yellow', '🔧 Transfert de rôles', '<p>Comme chaque rôle est <strong>unique</strong>, la panne du DC qui le porte peut gêner l’AD. On peut <strong>transférer</strong> un rôle (<em>transfer</em>, DC source disponible) ou le <strong>saisir de force</strong> (<em>seize</em>, DC source définitivement perdu). Commande utile : <code>netdom query fsmo</code> pour voir qui détient quoi.</p>'),
+
+  block('heading', { level: 2, text: '📂 SYSVOL' }),
+  block('html', { html: '<p><strong>SYSVOL</strong> est un <strong>dossier partagé présent sur chaque contrôleur de domaine</strong> (<code>C:\\Windows\\SYSVOL</code>). Il stocke les données qui doivent être <strong>répliquées entre les DC</strong> ou <strong>accessibles par les clients</strong> — principalement les <strong>stratégies de groupe (GPO)</strong> et les <strong>scripts de connexion</strong>. Il est <strong>répliqué automatiquement</strong> entre tous les DC, <strong>accessible par le réseau</strong> et <strong>indispensable au bon fonctionnement des GPO</strong> : toute modification y est propagée aux autres DC.</p>' }),
+
+  block('heading', { level: 2, text: '🤝 Les relations d’approbation (trusts)' }),
+  block('html', { html: '<p>Une <strong>relation d’approbation</strong> permet à des <strong>domaines ou forêts différents</strong> de mettre en place un <strong>lien de confiance</strong> pour autoriser l’accès aux ressources : des utilisateurs d’un domaine peuvent accéder aux ressources d’un autre, et on partage des ressources entre plusieurs domaines. Une approbation se caractérise par son <strong>sens</strong> et sa <strong>portée</strong> :</p>' }),
+  block('list', { listItems: [
+    'Unidirectionnelle : l’accès n’est disponible que dans un sens (A → B).',
+    'Bidirectionnelle : l’accès est disponible dans les deux sens (A ↔ B).',
+    'Transitive : si A approuve B et que B approuve C, alors A approuve aussi C.',
+  ] }),
+  block('html', { html: '<p>Il existe deux grands cas :</p>' }),
+  accordion([
+    ['Approbations automatiques (parent / enfant)', '<p>Dans une <strong>même forêt</strong>, quand on ajoute un <strong>domaine enfant</strong> (ex. <code>toulouse.adrar.local</code> sous <code>adrar.local</code>), une relation de confiance est créée <strong>automatiquement</strong>. Elle est <strong>transitive</strong> et <strong>bidirectionnelle</strong> — on parle d’approbation « parent/enfant ».</p>'],
+    ['Approbations externes', '<p>Entre <strong>domaines de forêts différentes</strong>. Ces relations sont <strong>unidirectionnelles</strong> et <strong>non transitives</strong>. Pour obtenir un accès <strong>bidirectionnel</strong>, il faut que <strong>chaque domaine</strong> crée une relation vers le domaine cible.</p>'],
+  ]),
+
   note('green', '🎯 À retenir', '<p><strong>Forêt</strong> ⊃ <strong>arbre</strong> ⊃ <strong>domaine</strong> ⊃ <strong>OU</strong> ⊃ <strong>objets</strong>. Le <strong>contrôleur de domaine</strong> héberge l’annuaire ; le <strong>DNS</strong> et <strong>Kerberos</strong> le font fonctionner ; le <strong>schéma</strong> définit classes et attributs ; les <strong>groupes</strong> et la <strong>délégation</strong> simplifient l’attribution des droits. Pour la mise en pratique : <a href="/pages/roles-windows-server">rôles Windows Server</a> et <a href="/pages/gestionnaire-de-serveurs">gestionnaire de serveurs</a>.</p>'),
 ];
 
