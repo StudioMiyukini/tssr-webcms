@@ -61,6 +61,8 @@ export function VmConfigurator() {
   const [masters, setMasters] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem('vmcfg_masters') || '[]'); } catch { return []; } });
   const [manualSource, setManualSource] = useState(false);
   const [scanMsg, setScanMsg] = useState('');
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteText, setPasteText] = useState('');
   // Avertissement à accepter avant d'utiliser l'outil (mémorisé pour la session)
   const [unlocked, setUnlocked] = useState(() => { try { return sessionStorage.getItem('vmcfg_ok') === '1'; } catch { return false; } });
   const unlock = () => { setUnlocked(true); try { sessionStorage.setItem('vmcfg_ok', '1'); } catch { /* */ } };
@@ -191,6 +193,20 @@ export function VmConfigurator() {
     setTimeout(() => URL.revokeObjectURL(url), 1500);
   };
 
+  // Importe une liste de VM collée (sortie de `Get-VM`) : une VM par ligne, ou tableau Hyper-V.
+  const importPasted = () => {
+    const names = Array.from(new Set(pasteText.split(/\r?\n/)
+      .map(l => l.trim())
+      .filter(l => l && !/^name\b/i.test(l) && !/^-{3,}/.test(l))
+      .map(l => l.split(/\s{2,}|\t/)[0].trim())
+      .filter(Boolean)))
+      .sort((a, b) => a.localeCompare(b));
+    if (!names.length) { setScanMsg('Aucun nom de VM détecté dans le texte collé.'); return; }
+    setMasters(names); setManualSource(false); setPasteOpen(false);
+    setScanMsg(`${names.length} VM importée(s) depuis ta liste.`);
+    if (!names.includes(sourceVM)) setSourceVM(names[0]);
+  };
+
   if (!unlocked) {
     return (
       <div style={{ margin: '14px 0', maxWidth: 580, border: '1px solid var(--border)', borderRadius: 12, padding: '20px 22px', background: 'var(--surface-2)' }}>
@@ -261,22 +277,34 @@ export function VmConfigurator() {
           <div style={legendStyle}>🧬 Clonage (hôte)</div>
           <div>
             <label style={labelStyle}>VM source à cloner</label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {masters.length > 0 && !manualSource ? (
-                <select style={fieldStyle} value={masters.includes(sourceVM) ? sourceVM : ''} onChange={e => { if (e.target.value === '__manual') { setManualSource(true); } else { setSourceVM(e.target.value); } }}>
-                  {!masters.includes(sourceVM) && <option value="">— choisir un master —</option>}
-                  {masters.map(m => <option key={m} value={m}>{m}</option>)}
-                  <option value="__manual">✎ Saisir manuellement…</option>
-                </select>
-              ) : (
-                <input style={fieldStyle} value={sourceVM} onChange={e => setSourceVM(e.target.value)} placeholder="Master-WS2022" />
-              )}
-              <button type="button" onClick={scanMasters} style={btnStyle} title="Scanner un dossier pour lister les masters (Edge / Chrome)">📁 Parcourir…</button>
-            </div>
-            {scanMsg && <div className="meta" style={{ fontSize: 11.5, marginTop: 4 }}>{scanMsg}</div>}
-            {masters.length > 0 && manualSource && (
-              <button type="button" onClick={() => setManualSource(false)} style={{ ...btnStyle, marginTop: 6, padding: '4px 10px', fontSize: 12 }}>↩ Revenir à la liste</button>
+            {masters.length > 0 && !manualSource ? (
+              <select style={fieldStyle} value={masters.includes(sourceVM) ? sourceVM : ''} onChange={e => { if (e.target.value === '__manual') { setManualSource(true); } else { setSourceVM(e.target.value); } }}>
+                {!masters.includes(sourceVM) && <option value="">— choisir un master —</option>}
+                {masters.map(m => <option key={m} value={m}>{m}</option>)}
+                <option value="__manual">✎ Saisir manuellement…</option>
+              </select>
+            ) : (
+              <input style={fieldStyle} value={sourceVM} onChange={e => setSourceVM(e.target.value)} placeholder="Master-WS2022" />
             )}
+            <div style={{ display: 'flex', gap: 8, marginTop: 6, flexWrap: 'wrap' }}>
+              <button type="button" onClick={() => setPasteOpen(o => !o)} style={{ ...btnStyle, padding: '5px 11px', fontSize: 12.5 }} title="Coller la liste de tes VM (résultat de Get-VM)">📋 Coller mes VM</button>
+              <button type="button" onClick={scanMasters} style={{ ...btnStyle, padding: '5px 11px', fontSize: 12.5, borderColor: 'var(--border)', color: 'var(--text-soft)' }} title="Scanner un dossier (Edge / Chrome)">📁 Parcourir un dossier</button>
+              {masters.length > 0 && manualSource && (
+                <button type="button" onClick={() => setManualSource(false)} style={{ ...btnStyle, padding: '5px 11px', fontSize: 12.5 }}>↩ Revenir à la liste</button>
+              )}
+            </div>
+            {pasteOpen && (
+              <div style={{ marginTop: 8, border: '1px solid var(--border)', borderRadius: 8, padding: 10, background: 'var(--surface)' }}>
+                <div className="meta" style={{ fontSize: 11.5, marginBottom: 6 }}>Sur l’hôte Hyper-V (PowerShell), exécute puis colle le résultat ci-dessous :</div>
+                <code style={{ display: 'block', fontSize: 12, background: 'var(--surface-2)', padding: '6px 8px', borderRadius: 6, marginBottom: 8, fontFamily: 'ui-monospace,monospace' }}>Get-VM | Select-Object -ExpandProperty Name</code>
+                <textarea value={pasteText} onChange={e => setPasteText(e.target.value)} placeholder={'MASTER-SRV_AD\nMASTER-SRV_DHCP_MASTER\nMASTER-CLIENT10'} style={{ width: '100%', minHeight: 90, padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface)', color: 'var(--text)', fontSize: 13, fontFamily: 'ui-monospace,monospace', boxSizing: 'border-box', resize: 'vertical' }} />
+                <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                  <button type="button" onClick={importPasted} style={{ ...btnStyle, background: 'var(--accent)', color: '#fff', border: 'none', padding: '6px 14px' }}>Utiliser cette liste</button>
+                  <button type="button" onClick={() => setPasteOpen(false)} style={{ ...btnStyle, padding: '6px 12px' }}>Annuler</button>
+                </div>
+              </div>
+            )}
+            {scanMsg && <div className="meta" style={{ fontSize: 11.5, marginTop: 6 }}>{scanMsg}</div>}
           </div>
           <div style={{ marginTop: 10 }}>
             <label style={labelStyle}>Dossier d’export temporaire</label>
