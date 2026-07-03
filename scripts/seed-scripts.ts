@@ -29,6 +29,12 @@ const SCRIPTS: Script[] = [
     tags: ['Interactif', 'PowerShell', 'Réseau', 'Dépannage'],
   },
   {
+    slug: 'constructeur-agdlp', icon: '🔐',
+    title: 'Constructeur AGDLP',
+    desc: 'Outil tout-en-un : services, dossiers + besoins d’accès, utilisateurs → génère UO, groupes G/DL (bonne convention), imbrication, comptes et partages NTFS. Arborescence UO + NTFS en aperçu, 2 scripts PowerShell.',
+    tags: ['Interactif', 'PowerShell', 'Active Directory', 'AGDLP', 'NTFS'],
+  },
+  {
     slug: 'constructeur-ad', icon: '🏗️',
     title: 'Constructeur AD (masse)',
     desc: 'Outil graphique : définir UO / groupes (imbriqués) / utilisateurs, créer des comptes en masse (collage de liste) → script PowerShell complet.',
@@ -198,6 +204,16 @@ const adBulkBlocks: PageBlock[] = [
 ];
 
 // ===================================================================================
+// PAGE — Constructeur AGDLP (îlot React : data-block="agdlp-builder")
+// ===================================================================================
+const agdlpBlocks: PageBlock[] = [
+  block('hero', { eyebrow: 'Script · Active Directory', title: 'Constructeur AGDLP', subtitle: 'Des services, des dossiers et des utilisateurs → toute la structure AGDLP générée, en un minimum de temps.' }),
+  block('html', { html: '<p>Cet outil <strong>tout-en-un</strong> applique la stratégie <strong>AGDLP</strong> (<em>Account → Global → Domain Local → Permission</em>) sans erreur de convention. Tu définis tes <strong>services</strong> (métiers), tes <strong>ressources</strong> (dossiers) avec <strong>qui a quel droit</strong>, et tes <strong>utilisateurs</strong> ; l’outil génère automatiquement : les <strong>UO</strong>, les <strong>groupes Globaux</strong> (<code>G_&lt;service&gt;</code>), les <strong>groupes Domaine Local</strong> (<code>DL_&lt;ressource&gt;_&lt;droit&gt;</code>), l’<strong>imbrication</strong> G→DL, les <strong>comptes</strong> (login <code>prénom.nom</code>, placés dans la bonne OU et le bon Global) et les <strong>partages + permissions NTFS</strong> posées sur les groupes DL. Tu obtiens aussi l’<strong>arborescence des UO</strong> et l’<strong>arborescence des droits NTFS</strong> en aperçu, plus <strong>2 scripts</strong> : ① sur le contrôleur de domaine, ② sur le serveur de fichiers.</p>' }),
+  block('html', { html: '<div class="pb-dynamic" data-block="agdlp-builder"></div>' }),
+  note('yellow', '⚠️ Ordre & exécution', '<p>Exécute d’abord le script <strong>① sur le contrôleur de domaine</strong> (module <code>ActiveDirectory</code> : OU, groupes, imbrication, utilisateurs — il demande le mot de passe initial), puis le script <strong>② sur le serveur de fichiers</strong> (dossiers, partages, <code>icacls</code>). Les créations sont <strong>idempotentes</strong>. Le partage reste large : c’est le <strong>NTFS sur les groupes DL</strong> qui filtre réellement. Méthode graphique équivalente : <a href="/pages/procedure-agdlp">Mettre en place AGDLP</a>.</p>'),
+];
+
+// ===================================================================================
 // PAGE — Configurateur Active Directory (îlot React : data-block="ad-configurator")
 // ===================================================================================
 const adBlocks: PageBlock[] = [
@@ -233,6 +249,8 @@ async function main() {
     'Outil de dépannage interactif : saisir le contexte réseau (IP, passerelle, DNS, cible, port, partage) et générer un script PowerShell qui teste couche par couche (modèle OSI) pour réduire le périmètre de la panne.', netDiagBlocks);
   await upsertPage(h, cookie, existing, 'constructeur-ad', 'Constructeur AD (masse)',
     'Constructeur AD graphique : définir UO, groupes (imbriqués) et utilisateurs, créer des comptes en masse (collage de liste) et générer le script PowerShell complet (module ActiveDirectory).', adBulkBlocks);
+  await upsertPage(h, cookie, existing, 'constructeur-agdlp', 'Constructeur AGDLP',
+    'Outil tout-en-un AGDLP : services, dossiers + besoins d’accès et utilisateurs → génère UO, groupes Globaux/Domaine Local (convention G_/DL_), imbrication, comptes et partages NTFS. Arborescence UO + NTFS et 2 scripts PowerShell (DC + serveur de fichiers).', agdlpBlocks);
   await upsertPage(h, cookie, existing, 'configurateur-ad', 'Configurateur — Active Directory',
     'Configurateur interactif Active Directory : crée une UO, copie un utilisateur modèle (administrateur → Jean NGUYEN) et désactive le compte source. Génère le script PowerShell prêt à copier.', adBlocks);
   await upsertPage(h, cookie, existing, 'configurateur-vm', 'Configurateur — VM serveur',
