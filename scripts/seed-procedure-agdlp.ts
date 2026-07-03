@@ -81,7 +81,42 @@ const blocks: PageBlock[] = [
     ].map(r => `<tr><td style="padding:8px 10px;border:1px solid var(--border);font-family:ui-monospace,monospace">${r[0]}</td><td style="padding:8px 10px;border:1px solid var(--border);font-weight:600">${r[1]}</td><td style="padding:8px 10px;border:1px solid var(--border);font-family:ui-monospace,monospace">${r[2]}</td></tr>`).join('') +
     `</tbody></table></div>` }),
 
-  block('heading', { level: 2, text: '💻 En PowerShell' }),
+  block('html', { html: '<p>On applique exactement cette logique dans le <strong>TP serveur de fichiers</strong> : le serveur <code>SRV-FILE</code> héberge <code>E:\\Partages\\</code> avec un dossier par service, sur le domaine <code>miyukini.lan</code>. Les besoins d’accès :</p>' }),
+  block('html', { html: `<div style="overflow-x:auto;margin:6px 0 12px"><table style="border-collapse:collapse;width:100%;min-width:520px;font-size:13.5px"><thead>${th(['Service', 'Peut modifier', 'Lecture seule'])}</thead><tbody>` +
+    [
+      ['Comptabilité', 'Comptables', 'Direction'],
+      ['Commercial', 'Commerciaux', 'Direction'],
+      ['Direction', 'Direction', '—'],
+    ].map(r => `<tr>${r.map((c, i) => `<td style="padding:8px 10px;border:1px solid var(--border)${i === 0 ? ';font-weight:600' : ''}">${c}</td>`).join('')}</tr>`).join('') +
+    `</tbody></table></div>` }),
+  block('html', { html: '<p>Traduit en <strong>AGDLP</strong> (un groupe Domaine Local par dossier <strong>et par niveau de droit</strong>) :</p>' }),
+  block('html', { html: `<div style="overflow-x:auto;margin:6px 0 12px"><table style="border-collapse:collapse;width:100%;min-width:680px;font-size:13px"><thead>${th(['Dossier (permission NTFS)', 'Groupe Domaine Local', 'Droit', 'Membre (Global)'])}</thead><tbody>` +
+    [
+      ['E:\\Partages\\Comptabilité', 'DL_Compta_Modification', 'Modifier', 'G_Comptables'],
+      ['', 'DL_Compta_Lecture', 'Lecture', 'G_Direction'],
+      ['E:\\Partages\\Commercial', 'DL_Commercial_Modification', 'Modifier', 'G_Commerciaux'],
+      ['', 'DL_Commercial_Lecture', 'Lecture', 'G_Direction'],
+      ['E:\\Partages\\Direction', 'DL_Direction_Modification', 'Modifier', 'G_Direction'],
+    ].map(r => `<tr><td style="padding:8px 10px;border:1px solid var(--border);font-family:ui-monospace,monospace">${r[0]}</td><td style="padding:8px 10px;border:1px solid var(--border);font-family:ui-monospace,monospace">${r[1]}</td><td style="padding:8px 10px;border:1px solid var(--border);font-weight:600">${r[2]}</td><td style="padding:8px 10px;border:1px solid var(--border);font-family:ui-monospace,monospace">${r[3]}</td></tr>`).join('') +
+    `</tbody></table></div>` }),
+
+  block('heading', { level: 2, text: '🖱️ Pas-à-pas graphique (ADUC + Sécurité) — cas « Comptabilité »' }),
+  block('html', { html: '<p>La méthode <strong>graphique</strong> (celle attendue en TP), pour le dossier <code>Comptabilité</code>. On répète ensuite la même logique pour <em>Commercial</em> et <em>Direction</em>.</p>' }),
+  block('html', { html: `<style>.agdlp-steps{padding-left:22px;line-height:1.7}.agdlp-steps>li{margin:8px 0}.agdlp-steps code{font-family:ui-monospace,'Space Mono',monospace}</style>
+<ol class="agdlp-steps">
+  <li><strong>A — Les comptes existent.</strong> Dans <strong>ADUC</strong>, vérifie que <code>jean.nguyen</code>, <code>marie.durand</code> (comptables) et les comptes de la direction sont dans leur UO.</li>
+  <li><strong>G — Créer les groupes Globaux.</strong> Clic droit sur l’<strong>OU Groupes</strong> → <em>Nouveau</em> → <em>Groupe</em> → nom <code>G_Comptables</code>, <strong>Étendue : Globale</strong>, Type <strong>Sécurité</strong> → OK. Recommence pour <code>G_Direction</code>.</li>
+  <li><strong>G — Y placer les comptes.</strong> Double-clic <code>G_Comptables</code> → onglet <strong>Membres</strong> → <em>Ajouter</em> → <code>jean.nguyen; marie.durand</code> → <em>Vérifier les noms</em> → OK.</li>
+  <li><strong>DL — Créer les groupes Domaine Local.</strong> Clic droit OU Groupes → <em>Nouveau</em> → <em>Groupe</em> → <code>DL_Compta_Modification</code>, <strong>Étendue : Domaine local</strong> → OK. Recommence pour <code>DL_Compta_Lecture</code>.</li>
+  <li><strong>Imbrication — Global dans Domaine Local.</strong> Double-clic <code>DL_Compta_Modification</code> → <strong>Membres</strong> → <em>Ajouter</em> → <code>G_Comptables</code> → OK. Puis <code>DL_Compta_Lecture</code> → Membres → <code>G_Direction</code>.</li>
+  <li><strong>P — Permission NTFS.</strong> Sur <code>SRV-FILE</code> : clic droit <code>E:\\Partages\\Comptabilité</code> → <em>Propriétés</em> → onglet <strong>Sécurité</strong> → <em>Modifier…</em> → <em>Ajouter…</em> → <code>DL_Compta_Modification</code> → <em>Vérifier les noms</em> → OK → cocher <strong>Modifier</strong> → Appliquer.</li>
+  <li><strong>P — Ajouter la lecture.</strong> Toujours dans Sécurité → <em>Ajouter…</em> → <code>DL_Compta_Lecture</code> → cocher <strong>Lecture et exécution</strong> → OK.</li>
+  <li><strong>Vérifier.</strong> Connecte-toi en tant que <code>jean.nguyen</code> : il crée/modifie dans <code>Comptabilité</code>. En tant qu’un membre de la <strong>Direction</strong> : lecture seule (modification refusée).</li>
+</ol>` }),
+  note('yellow', '🔗 Côté partage', '<p>Au niveau du <strong>partage réseau</strong> (onglet <em>Partage</em> → <em>Partage avancé</em> → <em>Autorisations</em>), on laisse <code>Utilisateurs authentifiés</code> en <strong>Contrôle total</strong> : c’est le <strong>NTFS qui filtre réellement</strong> (le plus restrictif l’emporte). Voir <a href="/pages/permissions-partage-ntfs">Permissions Partage &amp; NTFS</a>.</p>'),
+  note('purple', '📝 En TP', '<p>C’est la <strong>méthode graphique ci-dessus</strong> qui est attendue (ADUC + onglet Sécurité). Le PowerShell ci-dessous est un <strong>bonus</strong> pour aller plus vite, si l’usage en est autorisé.</p>'),
+
+  block('heading', { level: 2, text: '💻 Bonus — le faire en PowerShell (plus rapide)' }),
   block('html', { html: pre(`# G — groupes globaux (par metier) + adhesion des comptes
 New-ADGroup -Name 'G_Comptables' -GroupScope Global -GroupCategory Security -Path 'OU=Groupes,DC=miyukini,DC=lan'
 New-ADGroup -Name 'G_Direction'  -GroupScope Global -GroupCategory Security -Path 'OU=Groupes,DC=miyukini,DC=lan'
