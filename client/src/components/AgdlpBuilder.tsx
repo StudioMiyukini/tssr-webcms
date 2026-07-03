@@ -19,12 +19,14 @@ const NTFS: Array<{ key: NtfsKey; label: string; icacls: string; suffix: string 
   { key: 'CUSTOM', label: 'Personnalisé (icacls)…', icacls: '', suffix: 'Perso' },
 ];
 const ntfs = (k: NtfsKey) => NTFS.find(x => x.key === k) || NTFS[1];
+// Codes de droit courts pour tenir le nom de groupe DL sous la limite AD (sAMAccountName ≤ 20).
+const RIGHT_CODE: Record<NtfsKey, string> = { F: 'CT', M: 'M', MND: 'MND', RX: 'RX', R: 'L', W: 'E', CUSTOM: 'P' };
 
 type Ou = { id: string; name: string; parent: string };
 type GGroup = { id: string; name: string; ou: string };
 type User = { id: string; prenom: string; nom: string; ou: string; group: string };
 type Rule = { group: string; right: NtfsKey; custom?: string };
-type Folder = { id: string; name: string; parent: string; noInherit?: boolean; rules: Rule[] };
+type Folder = { id: string; name: string; code: string; parent: string; abs?: string; noInherit?: boolean; rules: Rule[] };
 
 const clean = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '');
 const login = (p: string, n: string) => `${clean(p)}.${clean(n)}`.toLowerCase();
@@ -51,8 +53,8 @@ const D_OUS: Ou[] = [
 const D_GG: GGroup[] = [{ id: 'gcompta', name: 'Comptables', ou: 'grp' }, { id: 'gdir', name: 'Direction', ou: 'grp' }];
 const D_USERS: User[] = [{ id: 'u1', prenom: 'Jean', nom: 'Nguyen', ou: 'compta', group: 'gcompta' }, { id: 'u2', prenom: 'Marie', nom: 'Durand', ou: 'compta', group: 'gcompta' }];
 const D_FOLDERS: Folder[] = [
-  { id: 'fc', name: 'Comptabilité', parent: 'ROOT', rules: [{ group: 'gcompta', right: 'M' }, { group: 'gdir', right: 'R' }] },
-  { id: 'fco', name: 'Commercial', parent: 'ROOT', rules: [{ group: 'gdir', right: 'R' }] },
+  { id: 'fc', name: 'Comptabilité', code: 'Compta', parent: 'ROOT', rules: [{ group: 'gcompta', right: 'M' }, { group: 'gdir', right: 'R' }] },
+  { id: 'fco', name: 'Commercial', code: 'Commercial', parent: 'ROOT', rules: [{ group: 'gdir', right: 'R' }] },
 ];
 function load<T>(k: string, d: T): T { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } }
 
@@ -75,6 +77,8 @@ export function AgdlpBuilder() {
   const [folders, setFolders] = useState<Folder[]>(() => load('agdlp2_folders', D_FOLDERS));
   const [copiedId, setCopiedId] = useState('');
   const [bulk, setBulk] = useState(''); const [bulkOu, setBulkOu] = useState(''); const [bulkGrp, setBulkGrp] = useState('');
+  const [bulkGg, setBulkGg] = useState(''); const [bulkGgOu, setBulkGgOu] = useState('');
+  const [bulkFold, setBulkFold] = useState('');
   const [unlocked, setUnlocked] = useState(() => { try { return sessionStorage.getItem('agdlp_ok') === '1'; } catch { return false; } });
 
   useEffect(() => { try {
@@ -91,19 +95,18 @@ export function AgdlpBuilder() {
   const dnOfOu = (id: string): string => { const o = ouById(id); if (!o) return domainDN; return `OU=${o.name},${o.parent === 'ROOT' ? domainDN : dnOfOu(o.parent)}`; };
   const depthOu = (o: Ou) => { let d = 0, c: Ou | undefined = o; while (c && c.parent !== 'ROOT') { c = ouById(c.parent); d++; if (d > 60) break; } return d; };
   const folderById = (id: string) => folders.find(f => f.id === id);
-  const pathOf = (id: string): string => { const f = folderById(id); if (!f) return basePath; return `${f.parent === 'ROOT' ? basePath : pathOf(f.parent)}\\${f.name}`; };
+  const pathOf = (id: string): string => { const f = folderById(id); if (!f) return basePath; if (f.abs) return f.abs; return `${f.parent === 'ROOT' ? basePath : pathOf(f.parent)}\\${f.name}`; };
   const depthF = (f: Folder) => { let d = 0, c: Folder | undefined = f; while (c && c.parent !== 'ROOT') { c = folderById(c.parent); d++; if (d > 60) break; } return d; };
   const ggById = (id: string) => ggroups.find(g => g.id === id);
-  const gName = (id: string) => 'G_' + clean(ggById(id)?.name || '');
-  const rightSuffix = (rl: Rule) => rl.right === 'CUSTOM' ? ('Perso' + clean(rl.custom || '')).slice(0, 20) : ntfs(rl.right).suffix;
-  const dlName = (f: Folder, rl: Rule) => `DL_${clean(f.name)}_${rightSuffix(rl)}`;
+  const gName = (id: string) => ('G_' + clean(ggById(id)?.name || '')).slice(0, 20);
+  const dlName = (f: Folder, rl: Rule) => `DL_${clean(f.code || f.name).slice(0, 15)}_${RIGHT_CODE[rl.right]}`.slice(0, 20);
   const rightLabel = (rl: Rule) => rl.right === 'CUSTOM' ? `icacls ${rl.custom || '?'}` : ntfs(rl.right).label;
   // Chaîne d'autorisation icacls : (OI)(CI) + le droit (lettre simple, combo, ou personnalisé).
   const igrant = (rl: Rule) => { const p = rl.right === 'CUSTOM' ? `(${(rl.custom || 'R').replace(/[^A-Za-z0-9,]/g, '')})` : ntfs(rl.right).icacls; return `(OI)(CI)${p}`; };
 
   const dlGroups = useMemo(() => {
     const m = new Map<string, { f: Folder; rule: Rule }>();
-    for (const f of folders) for (const rl of f.rules) m.set(`${f.id}|${rl.right}|${rl.right === 'CUSTOM' ? rl.custom : ''}`, { f, rule: rl });
+    for (const f of folders) for (const rl of f.rules) m.set(dlName(f, rl), { f, rule: rl });
     return Array.from(m.values());
   }, [folders]);
 
@@ -145,7 +148,7 @@ export function AgdlpBuilder() {
     o.push('# ============================================================');
     o.push('Import-Module ActiveDirectory');
     o.push('function Ensure-OU($n,$p){ if(-not(Get-ADOrganizationalUnit -Filter "Name -eq \'$n\'" -SearchBase $p -ErrorAction SilentlyContinue)){ New-ADOrganizationalUnit -Name $n -Path $p -ProtectedFromAccidentalDeletion:$false } }');
-    o.push('function Ensure-Grp($n,$s,$p){ if(-not(Get-ADGroup -Filter "Name -eq \'$n\'" -ErrorAction SilentlyContinue)){ New-ADGroup -Name $n -GroupScope $s -GroupCategory Security -Path $p } }');
+    o.push('function Ensure-Grp($n,$s,$p){ if(-not(Get-ADGroup -Filter "Name -eq \'$n\'" -ErrorAction SilentlyContinue)){ New-ADGroup -Name $n -SamAccountName $n -GroupScope $s -GroupCategory Security -Path $p } }');
     o.push('');
     o.push('# --- 1) Unites d\'organisation (parents avant enfants) ---');
     [...ous].sort((a, b) => depthOu(a) - depthOu(b)).forEach(ou => o.push(`Ensure-OU '${ou.name}' '${ou.parent === 'ROOT' ? domainDN : dnOfOu(ou.parent)}'`));
@@ -241,7 +244,16 @@ export function AgdlpBuilder() {
   const addUser = () => setUsers(a => [...a, { id: uid('u'), prenom: 'Prénom', nom: 'Nom', ou: ous.find(o => o.id === 'users')?.id || ous[0]?.id || '', group: ggroups[0]?.id || '' }]);
   const delUser = (id: string) => setUsers(a => a.filter(x => x.id !== id));
   const patchFolder = (id: string, p: Partial<Folder>) => setFolders(a => a.map(x => x.id === id ? { ...x, ...p } : x));
-  const addFolder = () => setFolders(a => [...a, { id: uid('f'), name: 'Dossier', parent: 'ROOT', share: 'F', rules: [] }]);
+  const addFolder = () => setFolders(a => [...a, { id: uid('f'), name: 'Dossier', code: 'Dossier', parent: 'ROOT', rules: [] }]);
+  const addGgBulk = () => {
+    const ou = bulkGgOu || groupsOu;
+    const rows = bulkGg.split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(n => ({ id: uid('g'), name: n, ou }));
+    if (rows.length) { setGgroups(a => [...a, ...rows]); setBulkGg(''); }
+  };
+  const addFoldersBulk = () => {
+    const rows = bulkFold.split(/\r?\n/).map(l => l.trim().replace(/[\\/]+$/, '')).filter(Boolean).map(p => { const seg = p.split(/[\\/]/).filter(Boolean); const name = seg[seg.length - 1] || 'Dossier'; return { id: uid('f'), name, code: clean(name).slice(0, 15), parent: 'ROOT', abs: p, rules: [] as Rule[] }; });
+    if (rows.length) { setFolders(a => [...a, ...rows]); setBulkFold(''); }
+  };
   const delFolder = (id: string) => { const bad = new Set([id, ...descendants(folders, id)]); setFolders(a => a.filter(x => !bad.has(x.id))); };
   const addRule = (fid: string) => setFolders(a => a.map(f => f.id === fid ? { ...f, rules: [...f.rules, { group: ggroups[0]?.id || '', right: 'M' as NtfsKey }] } : f));
   const patchRule = (fid: string, j: number, p: Partial<Rule>) => setFolders(a => a.map(f => f.id === fid ? { ...f, rules: f.rules.map((r, k) => k === j ? { ...r, ...p } : r) } : f));
@@ -326,6 +338,15 @@ export function AgdlpBuilder() {
           </div>
         ))}
         <button style={btnStyle} onClick={addGg}>+ Groupe Global</button>
+        <div style={{ marginTop: 10, borderTop: '1px dashed var(--border)', paddingTop: 10 }}>
+          <label style={labelStyle}>Ajout en masse — un nom de groupe par ligne (préfixe <code>G_</code> ajouté auto)</label>
+          <textarea value={bulkGg} onChange={e => setBulkGg(e.target.value)} placeholder={'Formateurs_Ref_Dev\nStagiaires_Dev'} style={{ ...fieldStyle, minHeight: 54, fontFamily: 'ui-monospace,monospace', resize: 'vertical' }} />
+          <div style={{ display: 'flex', gap: 8, marginTop: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span className="meta" style={{ fontSize: 12 }}>OU</span>
+            <select style={{ ...fieldStyle, ...auto }} value={bulkGgOu} onChange={e => setBulkGgOu(e.target.value)}>{ous.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}</select>
+            <button style={btnStyle} onClick={addGgBulk}>Ajouter ces groupes</button>
+          </div>
+        </div>
       </div>
 
       {/* Arborescence des dossiers + NTFS + partage */}
@@ -333,15 +354,20 @@ export function AgdlpBuilder() {
         <div style={legendStyle}>📂 Arborescence des dossiers — partage & droits NTFS granulaires</div>
         {folders.map(f => (
           <div key={f.id} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 10, marginBottom: 10, background: 'var(--surface)' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1.6fr auto auto auto', gap: 8, alignItems: 'center' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.9fr auto auto auto', gap: 8, alignItems: 'center' }}>
               <input style={fieldStyle} value={f.name} onChange={e => patchFolder(f.id, { name: e.target.value })} placeholder="Nom du dossier" />
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}><span className="meta" style={{ fontSize: 12 }}>sous</span>{parentSel(f.id, f.parent, v => patchFolder(f.id, { parent: v }), folders, folders)}</div>
+              <input style={fieldStyle} value={f.code} onChange={e => patchFolder(f.id, { code: clean(e.target.value) })} placeholder="Code (→ DL_)" title="Code court utilisé dans le nom des groupes DL (≤ 15 caractères)" />
+              {f.abs
+                ? <span className="meta" style={{ fontSize: 12 }}>chemin absolu</span>
+                : <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}><span className="meta" style={{ fontSize: 12 }}>sous</span>{parentSel(f.id, f.parent, v => patchFolder(f.id, { parent: v }), folders, folders)}</div>}
               <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap' }} title="Désactiver l'héritage NTFS (le dossier n'hérite plus des droits du parent)">
                 <input type="checkbox" checked={!!f.noInherit} onChange={e => patchFolder(f.id, { noInherit: e.target.checked })} /> ⛔ héritage
               </label>
               <button style={smallBtn} onClick={() => delFolder(f.id)} title="Supprimer (et sous-dossiers)">✕</button>
             </div>
-            <div className="meta" style={{ fontSize: 11, marginTop: 4, fontFamily: 'ui-monospace,monospace' }}>{pathOf(f.id)}</div>
+            {f.abs
+              ? <input style={{ ...fieldStyle, fontFamily: 'ui-monospace,monospace', marginTop: 4 }} value={f.abs} onChange={e => patchFolder(f.id, { abs: e.target.value })} title="Chemin absolu du dossier" />
+              : <div className="meta" style={{ fontSize: 11, marginTop: 4, fontFamily: 'ui-monospace,monospace' }}>{pathOf(f.id)}</div>}
             <div style={{ marginTop: 8, paddingLeft: 8, borderLeft: '2px solid var(--border)' }}>
               {f.rules.map((rl, j) => (
                 <div key={j} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6, flexWrap: 'wrap' }}>
@@ -359,6 +385,14 @@ export function AgdlpBuilder() {
           </div>
         ))}
         <button style={btnStyle} onClick={addFolder}>+ Dossier</button>
+        <div style={{ marginTop: 10, borderTop: '1px dashed var(--border)', paddingTop: 10 }}>
+          <label style={labelStyle}>Création en masse — un <strong>chemin absolu</strong> par ligne</label>
+          <textarea value={bulkFold} onChange={e => setBulkFold(e.target.value)} placeholder={'C:\\Partage\\Developpement\\Formateurs_Ref_Dev\nC:\\Partage\\Developpement\\Stagiaires_Dev'} style={{ ...fieldStyle, minHeight: 54, fontFamily: 'ui-monospace,monospace', resize: 'vertical' }} />
+          <div style={{ display: 'flex', gap: 8, marginTop: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+            <button style={btnStyle} onClick={addFoldersBulk}>Ajouter ces dossiers</button>
+            <span className="meta" style={{ fontSize: 11.5 }}>Chaque chemin devient un dossier (créé par le script ②) ; ajoute ensuite ses droits NTFS si besoin.</span>
+          </div>
+        </div>
       </div>
 
       {/* Utilisateurs */}
