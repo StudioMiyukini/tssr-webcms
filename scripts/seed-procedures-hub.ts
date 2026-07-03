@@ -12,6 +12,10 @@ const PROCEDURES: Proc[] = [
   { slug: 'procedure-vm-hyperv', icon: '🖥️', title: 'Créer & configurer une VM (ISO) sur Hyper-V', desc: 'De la création de la VM au début du TP : OS, nom, IP fixe, pare-feu.', tags: ['Hyper-V', 'Réseau'] },
   { slug: 'procedure-installation-active-directory', icon: '🏢', title: 'Installer & configurer Active Directory', desc: 'De la VM vierge au client intégré au domaine : procédure complète.', tags: ['Active Directory'] },
   { slug: 'procedure-agdlp', icon: '🔐', title: 'Mettre en place AGDLP', desc: 'Attribuer les droits proprement : Account → Global → Domain Local → Permission.', tags: ['Active Directory', 'Droits'] },
+  { slug: 'procedure-plan-adressage', icon: '🧮', title: 'Plan d’adressage (découpage en sous-réseaux)', desc: 'Découper un réseau selon le besoin en hôtes (VLSM), sans chevauchement.', tags: ['Réseau', 'Subnetting'] },
+  { slug: 'procedure-ip-fixe-windows', icon: '🔧', title: 'Configurer une IP fixe (Windows)', desc: 'IP statique sous Windows 10/11 & Server : méthode graphique + netsh.', tags: ['Réseau', 'Windows'] },
+  { slug: 'procedure-renommer-poste', icon: '🏷️', title: 'Renommer un poste Windows', desc: 'Changer le nom d’un PC/serveur (convention de nommage) puis redémarrer.', tags: ['Windows'] },
+  { slug: 'procedure-test-connectivite', icon: '📡', title: 'Test de connectivité méthodique', desc: 'Dépanner dans l’ordre : loopback → passerelle → Internet → DNS.', tags: ['Réseau', 'Diagnostic'] },
 ];
 
 const PER_PAGE = 20;
