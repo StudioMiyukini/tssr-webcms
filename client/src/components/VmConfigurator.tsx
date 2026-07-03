@@ -57,11 +57,15 @@ export function VmConfigurator() {
   const [domain, setDomain] = useState('miyukini.lan');
   const [workgroup, setWorkgroup] = useState('WORKGROUP');
   const [copiedId, setCopiedId] = useState('');
+  // Masters scannés dans un dossier (persistés) + mode saisie manuelle + message de scan
+  const [masters, setMasters] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem('vmcfg_masters') || '[]'); } catch { return []; } });
+  const [manualSource, setManualSource] = useState(false);
+  const [scanMsg, setScanMsg] = useState('');
   // Avertissement à accepter avant d'utiliser l'outil (mémorisé pour la session)
   const [unlocked, setUnlocked] = useState(() => { try { return sessionStorage.getItem('vmcfg_ok') === '1'; } catch { return false; } });
   const unlock = () => { setUnlocked(true); try { sessionStorage.setItem('vmcfg_ok', '1'); } catch { /* */ } };
 
-  useEffect(() => { try { localStorage.setItem('vmcfg_source', sourceVM); localStorage.setItem('vmcfg_export', exportPath); localStorage.setItem('vmcfg_vhddir', vhdDir); } catch { /* indisponible */ } }, [sourceVM, exportPath, vhdDir]);
+  useEffect(() => { try { localStorage.setItem('vmcfg_source', sourceVM); localStorage.setItem('vmcfg_export', exportPath); localStorage.setItem('vmcfg_vhddir', vhdDir); localStorage.setItem('vmcfg_masters', JSON.stringify(masters)); } catch { /* indisponible */ } }, [sourceVM, exportPath, vhdDir, masters]);
 
   const num2 = (num || '01').padStart(2, '0');
   const primaryKey = type === 'SRV' ? (roles.includes(primary) ? primary : (roles[0] || 'SRV')) : '';
@@ -156,6 +160,37 @@ export function VmConfigurator() {
     navigator.clipboard?.writeText(code).then(() => { setCopiedId(id); setTimeout(() => setCopiedId(''), 1800); }).catch(() => {});
   };
 
+  // Scanne un dossier (API File System Access, Edge/Chrome) et liste les masters :
+  // sous-dossiers (= noms de VM) et fichiers .vhdx (nom sans extension).
+  const scanMasters = async () => {
+    const picker = (window as any).showDirectoryPicker;
+    if (typeof picker !== 'function') { setScanMsg('Sélection de dossier non supportée par ce navigateur (utilise Edge ou Chrome).'); return; }
+    try {
+      const dir = await picker.call(window, { id: 'vm-masters' });
+      const found: string[] = [];
+      const it = dir.values();
+      for (let r = await it.next(); !r.done; r = await it.next()) {
+        const h = r.value;
+        if (h.kind === 'directory') found.push(h.name);
+        else if (/\.vhdx$/i.test(h.name)) found.push(h.name.replace(/\.vhdx$/i, ''));
+      }
+      const uniq = Array.from(new Set(found)).sort((a, b) => a.localeCompare(b));
+      if (!uniq.length) { setScanMsg('Aucun master trouvé (sous-dossier ou .vhdx) dans ce dossier.'); return; }
+      setMasters(uniq); setManualSource(false);
+      setScanMsg(`${uniq.length} master(s) trouvé(s) dans « ${dir.name} ».`);
+      if (!uniq.includes(sourceVM)) setSourceVM(uniq[0]);
+    } catch { setScanMsg('Scan annulé.'); }
+  };
+
+  // Télécharge une section comme script .ps1 prêt à exécuter (BOM UTF-8 pour PowerShell).
+  const download = (code: string, filename: string) => {
+    const blob = new Blob(['\uFEFF' + code], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1500);
+  };
+
   if (!unlocked) {
     return (
       <div style={{ margin: '14px 0', maxWidth: 580, border: '1px solid var(--border)', borderRadius: 12, padding: '20px 22px', background: 'var(--surface-2)' }}>
@@ -226,7 +261,22 @@ export function VmConfigurator() {
           <div style={legendStyle}>🧬 Clonage (hôte)</div>
           <div>
             <label style={labelStyle}>VM source à cloner</label>
-            <input style={fieldStyle} value={sourceVM} onChange={e => setSourceVM(e.target.value)} placeholder="Master-WS2022" />
+            <div style={{ display: 'flex', gap: 8 }}>
+              {masters.length > 0 && !manualSource ? (
+                <select style={fieldStyle} value={masters.includes(sourceVM) ? sourceVM : ''} onChange={e => { if (e.target.value === '__manual') { setManualSource(true); } else { setSourceVM(e.target.value); } }}>
+                  {!masters.includes(sourceVM) && <option value="">— choisir un master —</option>}
+                  {masters.map(m => <option key={m} value={m}>{m}</option>)}
+                  <option value="__manual">✎ Saisir manuellement…</option>
+                </select>
+              ) : (
+                <input style={fieldStyle} value={sourceVM} onChange={e => setSourceVM(e.target.value)} placeholder="Master-WS2022" />
+              )}
+              <button type="button" onClick={scanMasters} style={btnStyle} title="Scanner un dossier pour lister les masters (Edge / Chrome)">📁 Parcourir…</button>
+            </div>
+            {scanMsg && <div className="meta" style={{ fontSize: 11.5, marginTop: 4 }}>{scanMsg}</div>}
+            {masters.length > 0 && manualSource && (
+              <button type="button" onClick={() => setManualSource(false)} style={{ ...btnStyle, marginTop: 6, padding: '4px 10px', fontSize: 12 }}>↩ Revenir à la liste</button>
+            )}
           </div>
           <div style={{ marginTop: 10 }}>
             <label style={labelStyle}>Dossier d’export temporaire</label>
@@ -308,9 +358,12 @@ export function VmConfigurator() {
         <div key={sec.id} style={{ marginTop: 12 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '0 0 6px' }}>
             <div style={{ fontWeight: 700, fontSize: 14 }}>📜 {sec.title}</div>
-            <button onClick={() => copy(sec.id, sec.code)} style={{ padding: '6px 14px', border: '1px solid var(--accent)', borderRadius: 8, background: copiedId === sec.id ? 'var(--accent)' : 'transparent', color: copiedId === sec.id ? '#fff' : 'var(--accent)', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>
-              {copiedId === sec.id ? '✓ Copié' : 'Copier'}
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => download(sec.code, `${sec.id === 'host' ? 'clone' : 'config'}-${vmName}.ps1`)} style={{ padding: '6px 14px', border: '1px solid var(--border)', borderRadius: 8, background: 'transparent', color: 'var(--text)', fontWeight: 600, cursor: 'pointer', fontSize: 13 }} title="Télécharger le script .ps1 prêt à exécuter (à lancer en PowerShell admin)">💾 .ps1</button>
+              <button onClick={() => copy(sec.id, sec.code)} style={{ padding: '6px 14px', border: '1px solid var(--accent)', borderRadius: 8, background: copiedId === sec.id ? 'var(--accent)' : 'transparent', color: copiedId === sec.id ? '#fff' : 'var(--accent)', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>
+                {copiedId === sec.id ? '✓ Copié' : 'Copier'}
+              </button>
+            </div>
           </div>
           <pre style={{ background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px', overflowX: 'auto', fontSize: 12.5, lineHeight: 1.55, margin: 0 }}><code>{sec.code}</code></pre>
         </div>
