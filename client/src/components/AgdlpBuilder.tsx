@@ -12,7 +12,7 @@ type NtfsKey = 'F' | 'M' | 'MND' | 'RX' | 'R' | 'W' | 'CUSTOM';
 const NTFS: Array<{ key: NtfsKey; label: string; icacls: string; suffix: string }> = [
   { key: 'F', label: 'Contrôle total', icacls: 'F', suffix: 'ControleTotal' },
   { key: 'M', label: 'Modification', icacls: 'M', suffix: 'Modification' },
-  { key: 'MND', label: 'Modifier (sans suppression)', icacls: '(RX,W)', suffix: 'ModifSansSuppr' },
+  { key: 'MND', label: 'Modifier (sans suppression)', icacls: '(RD,WD,AD,REA,WEA,RA,WA,X,RC)', suffix: 'ModifSansSuppr' },
   { key: 'RX', label: 'Lecture et exécution', icacls: 'RX', suffix: 'LectureExecution' },
   { key: 'R', label: 'Lecture', icacls: 'R', suffix: 'Lecture' },
   { key: 'W', label: 'Écriture', icacls: 'W', suffix: 'Ecriture' },
@@ -33,6 +33,12 @@ const login = (p: string, n: string) => `${clean(p)}.${clean(n)}`.toLowerCase();
 const domainToDN = (d: string) => d.split('.').filter(Boolean).map(x => `DC=${x}`).join(',');
 const netbiosOf = (d: string) => clean(d.split('.')[0] || 'DOMAINE').toUpperCase();
 const uid = (p: string) => p + Math.random().toString(36).slice(2, 8);
+
+// Bloc PowerShell d'assertions : tests unitaires [OK]/[KO] avec récapitulatif.
+const PS_ASSERT = [
+  'function Assert($label,[scriptblock]$c){ $r=$false; try{ $r=[bool](& $c) }catch{}; if($r){ $global:T.ok++; Write-Host ("  [OK]  " + $label) -ForegroundColor Green } else { $global:T.ko++; Write-Host ("  [KO]  " + $label) -ForegroundColor Red } }',
+  'function Show-Summary($t){ $c = if($global:T.ko -eq 0){"Green"}else{"Red"}; Write-Host ""; Write-Host ("== " + $t + " : " + $global:T.ok + " OK / " + $global:T.ko + " KO ==") -ForegroundColor $c }',
+];
 
 const fieldStyle: React.CSSProperties = { width: '100%', padding: '7px 9px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface)', color: 'var(--text)', fontSize: 13.5, boxSizing: 'border-box' };
 const labelStyle: React.CSSProperties = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-soft)', marginBottom: 4 };
@@ -154,94 +160,127 @@ export function AgdlpBuilder() {
     return L.join('\n');
   }, [folders, basePath, shareRoot, shareName]);
 
-  // ---- Script 1 : contrôleur de domaine ----
+  // ---- Script 1 : contrôleur de domaine (séquencé + tests) ----
   const scriptDC = useMemo(() => {
     const o: string[] = [];
+    const ouParent = (ou: Ou) => ou.parent === 'ROOT' ? domainDN : dnOfOu(ou.parent);
+    const sortedOus = [...ous].sort((a, b) => depthOu(a) - depthOu(b));
     o.push('#Requires -RunAsAdministrator');
     o.push('# ============================================================');
-    o.push(`#  AGDLP - SUR LE CONTROLEUR DE DOMAINE (${domain})`);
+    o.push(`#  AGDLP (1/2) - CONTROLEUR DE DOMAINE (${domain})`);
+    o.push('#  Cree OU -> Globaux -> Domaine Local -> imbrication -> utilisateurs, puis TESTS.');
     o.push('# ============================================================');
     o.push('Import-Module ActiveDirectory');
+    o.push('$global:T = @{ ok = 0; ko = 0 }');
+    o.push(...PS_ASSERT);
     o.push('function Ensure-OU($n,$p){ if(-not(Get-ADOrganizationalUnit -Filter "Name -eq \'$n\'" -SearchBase $p -ErrorAction SilentlyContinue)){ New-ADOrganizationalUnit -Name $n -Path $p -ProtectedFromAccidentalDeletion:$false } }');
     o.push('function Ensure-Grp($n,$s,$p){ if(-not(Get-ADGroup -Filter "Name -eq \'$n\'" -ErrorAction SilentlyContinue)){ New-ADGroup -Name $n -SamAccountName $n -GroupScope $s -GroupCategory Security -Path $p } }');
     o.push('');
-    o.push('# --- 1) Unites d\'organisation (parents avant enfants) ---');
-    [...ous].sort((a, b) => depthOu(a) - depthOu(b)).forEach(ou => o.push(`Ensure-OU '${ou.name}' '${ou.parent === 'ROOT' ? domainDN : dnOfOu(ou.parent)}'`));
-    o.push('');
-    o.push('# --- 2) Groupes GLOBAUX (par metier) ---');
+    o.push('Write-Host "[1/5] Unites d organisation..." -ForegroundColor Cyan');
+    sortedOus.forEach(ou => o.push(`Ensure-OU '${ou.name}' '${ouParent(ou)}'`));
+    o.push('Write-Host "[2/5] Groupes GLOBAUX..." -ForegroundColor Cyan');
     ggroups.forEach(g => o.push(`Ensure-Grp '${gName(g.id)}' Global '${dnOfOu(g.ou)}'`));
-    o.push('');
-    o.push('# --- 3) Groupes DOMAINE LOCAL (par dossier + droit NTFS) ---');
+    o.push('Write-Host "[3/5] Groupes DOMAINE LOCAL..." -ForegroundColor Cyan');
     dlGroups.forEach(g => o.push(`Ensure-Grp '${dlName(g.f, g.rule)}' DomainLocal '${dnOfOu(dlOu)}'`));
-    o.push('');
-    o.push('# --- 4) Imbrication : Global -> Domaine Local ---');
+    o.push('Start-Sleep -Seconds 2   # laisser l annuaire enregistrer les groupes avant de les utiliser');
+    o.push('Write-Host "[4/5] Imbrication Global -> Domaine Local..." -ForegroundColor Cyan');
     for (const f of folders) for (const rl of f.rules) o.push(`Add-ADGroupMember '${dlName(f, rl)}' -Members '${gName(rl.group)}' -ErrorAction SilentlyContinue`);
-    o.push('');
-    o.push('# --- 5) Utilisateurs (OU de placement + ajout au Global) ---');
+    o.push('Write-Host "[5/5] Utilisateurs..." -ForegroundColor Cyan');
     o.push('$pwd = Read-Host "Mot de passe initial des comptes" -AsSecureString');
     for (const u of users) {
       const l = login(u.prenom, u.nom);
       o.push(`if(-not(Get-ADUser -Filter "SamAccountName -eq '${l}'" -ErrorAction SilentlyContinue)){ New-ADUser -Name '${u.prenom} ${u.nom}' -GivenName '${u.prenom}' -Surname '${u.nom}' -SamAccountName '${l}' -UserPrincipalName '${l}@${domain}' -Path '${dnOfOu(u.ou)}' -AccountPassword $pwd -Enabled $true -ChangePasswordAtLogon $true }`);
       if (u.group) o.push(`Add-ADGroupMember '${gName(u.group)}' -Members '${l}' -ErrorAction SilentlyContinue`);
     }
-    o.push('Write-Host "AGDLP applique cote AD." -ForegroundColor Green');
+    o.push('Start-Sleep -Seconds 1');
+    o.push('');
+    o.push('Write-Host "===== TESTS AD =====" -ForegroundColor Yellow');
+    sortedOus.forEach(ou => o.push(`Assert "OU ${ou.name}" { Get-ADOrganizationalUnit -Filter "Name -eq '${ou.name}'" -SearchBase '${ouParent(ou)}' }`));
+    ggroups.forEach(g => o.push(`Assert "Groupe global ${gName(g.id)}" { Get-ADGroup -Identity '${gName(g.id)}' }`));
+    dlGroups.forEach(g => o.push(`Assert "Groupe DL ${dlName(g.f, g.rule)}" { Get-ADGroup -Identity '${dlName(g.f, g.rule)}' }`));
+    for (const f of folders) for (const rl of f.rules) o.push(`Assert "${gName(rl.group)} membre de ${dlName(f, rl)}" { Get-ADGroupMember '${dlName(f, rl)}' | Where-Object { $_.SamAccountName -eq '${gName(rl.group)}' } }`);
+    for (const u of users) {
+      const l = login(u.prenom, u.nom);
+      o.push(`Assert "Utilisateur ${l}" { Get-ADUser -Identity '${l}' }`);
+      if (u.group) o.push(`Assert "${l} membre de ${gName(u.group)}" { Get-ADGroupMember '${gName(u.group)}' | Where-Object { $_.SamAccountName -eq '${l}' } }`);
+    }
+    o.push('Show-Summary "AD (script 1)"');
     return o.join('\n');
   }, [domain, domainDN, ous, ggroups, dlOu, folders, dlGroups, users]);
 
-  // ---- Script 2 : serveur de fichiers ----
+  // ---- Script 2 : serveur de fichiers (séquencé + tests) ----
   const scriptFS = useMemo(() => {
     const o: string[] = [];
+    const sortedF = [...folders].sort((a, b) => depthF(a) - depthF(b));
     o.push('#Requires -RunAsAdministrator');
     o.push('# ============================================================');
-    o.push('#  AGDLP - SUR LE SERVEUR DE FICHIERS');
-    o.push('#  1 partage sur le dossier racine (Utilisateurs authentifies = Controle total)');
-    o.push('#  puis controle reel par NTFS granulaire sur les groupes Domaine Local');
-    o.push('#  PREREQUIS : lancer d\'abord le script (1) sur le DC pour creer les groupes DL,');
-    o.push('#             sinon icacls echoue et laisse des SID orphelins.');
+    o.push('#  AGDLP (2/2) - SERVEUR DE FICHIERS');
+    o.push('#  1 partage sur le dossier racine (Utilisateurs authentifies = Controle total),');
+    o.push('#  controle reel par NTFS sur les groupes Domaine Local, puis TESTS.');
+    o.push('#  PREREQUIS : lancer d\'abord le script (1) sur le DC (les groupes DL doivent exister).');
     o.push('# ============================================================');
-    o.push("# Nom exact du groupe 'Utilisateurs authentifies' resolu via son SID (independant de la langue)");
+    o.push('$global:T = @{ ok = 0; ko = 0 }');
+    o.push(...PS_ASSERT);
     o.push("$AuthUsers = (New-Object System.Security.Principal.SecurityIdentifier('S-1-5-11')).Translate([System.Security.Principal.NTAccount]).Value");
     o.push('');
-    o.push(`# --- Dossier racine + PARTAGE unique ---`);
+    o.push('Write-Host "[1/2] Dossier racine + partage..." -ForegroundColor Cyan');
     o.push(`New-Item -ItemType Directory -Path '${basePath}' -Force | Out-Null`);
     if (shareRoot) o.push(`if(-not(Get-SmbShare -Name '${shareName}' -ErrorAction SilentlyContinue)){ New-SmbShare -Name '${shareName}' -Path '${basePath}' -FullAccess $AuthUsers | Out-Null }`);
-    o.push('');
-    [...folders].sort((a, b) => depthF(a) - depthF(b)).forEach(f => {
+    o.push('Write-Host "[2/2] Sous-dossiers + NTFS (icacls)..." -ForegroundColor Cyan');
+    sortedF.forEach(f => {
       const p = pathOf(f.id);
-      o.push(`# --- ${f.name}  (${p}) ---`);
       o.push(`New-Item -ItemType Directory -Path '${p}' -Force | Out-Null`);
       if (f.noInherit) {
-        o.push(`icacls '${p}' /inheritance:r`);
-        o.push(`icacls '${p}' /grant '*S-1-5-32-544:(OI)(CI)(F)'   # Administrateurs (garde l'acces admin)`);
-        o.push(`icacls '${p}' /grant '*S-1-5-18:(OI)(CI)(F)'       # Systeme`);
+        o.push(`icacls '${p}' /inheritance:r | Out-Null`);
+        o.push(`icacls '${p}' /grant '*S-1-5-32-544:(OI)(CI)(F)' | Out-Null   # Administrateurs (garde l'acces admin)`);
+        o.push(`icacls '${p}' /grant '*S-1-5-18:(OI)(CI)(F)' | Out-Null       # Systeme`);
       }
-      for (const rl of f.rules) o.push(`icacls '${p}' /grant '${netbios}\\${dlName(f, rl)}:${igrant(rl)}'`);
-      o.push('');
-    });
-    o.push('Write-Host "Dossier racine partage + NTFS appliques." -ForegroundColor Green');
-    return o.join('\n').trimEnd();
-  }, [folders, basePath, shareRoot, shareName, netbios]);
-
-  // ---- Script 3 : vérification (lecture seule) ----
-  const scriptVerify = useMemo(() => {
-    const o: string[] = [];
-    o.push('# ============================================================');
-    o.push('#  VERIFICATION (lecture seule) - controler le resultat AGDLP');
-    o.push('# ============================================================');
-    if (shareRoot) { o.push('# --- Partage (sur le serveur de fichiers) ---'); o.push(`Get-SmbShareAccess -Name '${shareName}'`); o.push(''); }
-    o.push('# --- Permissions NTFS par dossier (sur le serveur de fichiers) ---');
-    [...folders].sort((a, b) => depthF(a) - depthF(b)).forEach(f => {
-      const p = pathOf(f.id);
-      o.push(`Write-Host '${p}' -ForegroundColor Cyan`);
-      o.push(`(Get-Acl '${p}').Access | Format-Table IdentityReference,FileSystemRights,AccessControlType,IsInherited -AutoSize`);
+      for (const rl of f.rules) o.push(`icacls '${p}' /grant '${netbios}\\${dlName(f, rl)}:${igrant(rl)}'; if($LASTEXITCODE -ne 0){ Write-Warning "icacls KO pour ${dlName(f, rl)} sur ${p} (le groupe existe-t-il ? script 1 lance ?)" }`);
     });
     o.push('');
-    o.push('# --- Imbrication AGDLP : membres des groupes Domaine Local (sur le DC) ---');
-    o.push('if(Get-Module -ListAvailable ActiveDirectory){ Import-Module ActiveDirectory');
-    dlGroups.forEach(g => o.push(`  Write-Host '${dlName(g.f, g.rule)}' -ForegroundColor Cyan; Get-ADGroupMember '${dlName(g.f, g.rule)}' | Select-Object Name`));
-    o.push('}');
+    o.push('Write-Host "===== TESTS Partage & NTFS =====" -ForegroundColor Yellow');
+    if (shareRoot) {
+      o.push(`Assert "Partage ${shareName} existe" { Get-SmbShare -Name '${shareName}' }`);
+      o.push(`Assert "Partage ${shareName} : Utilisateurs authentifies = Controle total" { Get-SmbShareAccess -Name '${shareName}' | Where-Object { $_.AccessRight -eq 'Full' } }`);
+    }
+    sortedF.forEach(f => {
+      const p = pathOf(f.id);
+      o.push(`Assert "Dossier existe : ${f.name}" { Test-Path '${p}' }`);
+      for (const rl of f.rules) o.push(`Assert "NTFS ${dlName(f, rl)} present sur ${f.name}" { (Get-Acl '${p}').Access | Where-Object { $_.IdentityReference -like '*\\${dlName(f, rl)}' } }`);
+      if (f.noInherit) o.push(`Assert "Administrateurs present sur ${f.name}" { (Get-Acl '${p}').Access | Where-Object { $_.IdentityReference -like '*Admin*' } }`);
+    });
+    o.push('Show-Summary "Partage & NTFS (script 2)"');
     return o.join('\n');
-  }, [folders, basePath, shareRoot, shareName, dlGroups]);
+  }, [folders, basePath, shareRoot, shareName, netbios]);
+
+  // ---- Script 3 : vérification autonome (rejouable, tests [OK]/[KO]) ----
+  const scriptVerify = useMemo(() => {
+    const o: string[] = [];
+    const sortedF = [...folders].sort((a, b) => depthF(a) - depthF(b));
+    o.push('# ============================================================');
+    o.push('#  VERIFICATION AGDLP (lecture seule, rejouable) - TESTS [OK]/[KO]');
+    o.push('#  Lance sur le serveur de fichiers (les tests AD sont ignores si le module manque).');
+    o.push('# ============================================================');
+    o.push('$global:T = @{ ok = 0; ko = 0 }');
+    o.push(...PS_ASSERT);
+    o.push('Write-Host "== Partage & NTFS ==" -ForegroundColor Yellow');
+    if (shareRoot) {
+      o.push(`Assert "Partage ${shareName} existe" { Get-SmbShare -Name '${shareName}' }`);
+      o.push(`Assert "Partage ${shareName} : Utilisateurs authentifies = Controle total" { Get-SmbShareAccess -Name '${shareName}' | Where-Object { $_.AccessRight -eq 'Full' } }`);
+    }
+    sortedF.forEach(f => {
+      const p = pathOf(f.id);
+      o.push(`Assert "Dossier existe : ${f.name}" { Test-Path '${p}' }`);
+      for (const rl of f.rules) o.push(`Assert "NTFS ${dlName(f, rl)} sur ${f.name}" { (Get-Acl '${p}').Access | Where-Object { $_.IdentityReference -like '*\\${dlName(f, rl)}' } }`);
+    });
+    o.push('Write-Host "== Active Directory (si module dispo) ==" -ForegroundColor Yellow');
+    o.push('if(Get-Module -ListAvailable ActiveDirectory){ Import-Module ActiveDirectory');
+    ggroups.forEach(g => o.push(`  Assert "Groupe global ${gName(g.id)}" { Get-ADGroup -Identity '${gName(g.id)}' }`));
+    for (const f of folders) for (const rl of f.rules) o.push(`  Assert "${gName(rl.group)} membre de ${dlName(f, rl)}" { Get-ADGroupMember '${dlName(f, rl)}' | Where-Object { $_.SamAccountName -eq '${gName(rl.group)}' } }`);
+    o.push('} else { Write-Host "  (module ActiveDirectory absent : tests AD ignores)" -ForegroundColor DarkGray }');
+    o.push('Show-Summary "Verification"');
+    return o.join('\n');
+  }, [folders, basePath, shareRoot, shareName, ggroups, dlGroups]);
 
   const copy = (id: string, code: string) => { navigator.clipboard?.writeText(code).then(() => { setCopiedId(id); setTimeout(() => setCopiedId(''), 1600); }).catch(() => {}); };
   const download = (code: string, filename: string) => {
@@ -393,7 +432,7 @@ export function AgdlpBuilder() {
                   <select style={{ ...fieldStyle, ...auto }} value={rl.group} onChange={e => patchRule(f.id, j, { group: e.target.value })}>{ggroups.map(g => <option key={g.id} value={g.id}>{gName(g.id)}</option>)}</select>
                   <span className="meta" style={{ fontSize: 12 }}>→</span>
                   <select style={{ ...fieldStyle, ...auto }} value={rl.right} onChange={e => patchRule(f.id, j, { right: e.target.value as NtfsKey })}>{NTFS.map(n => <option key={n.key} value={n.key}>{n.label}</option>)}</select>
-                  {rl.right === 'CUSTOM' && <input style={{ ...fieldStyle, width: 140, fontFamily: 'ui-monospace,monospace' }} value={rl.custom || ''} onChange={e => patchRule(f.id, j, { custom: e.target.value })} placeholder="ex. RX,WD,AD" title="Droits icacls séparés par des virgules (ex. RX,WD,AD,WEA)" />}
+                  {rl.right === 'CUSTOM' && <input style={{ ...fieldStyle, width: 150, fontFamily: 'ui-monospace,monospace' }} value={rl.custom || ''} onChange={e => patchRule(f.id, j, { custom: e.target.value })} placeholder="ex. RD,WD,AD,X" title="Droits spéciaux icacls séparés par des virgules (RD,WD,AD,X,REA,WEA,RA,WA,DE,RC…)" />}
                   <code style={{ fontSize: 11, color: 'var(--text-muted)' }}>{dlName(f, rl)}</code>
                   <button style={{ ...smallBtn, marginLeft: 'auto' }} onClick={() => delRule(f.id, j)}>✕</button>
                 </div>
