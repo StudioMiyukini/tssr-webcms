@@ -8,24 +8,23 @@ import { useEffect, useMemo, useState } from 'react';
  * Îlot React hydraté via RichContent (data-block="agdlp-builder").
  */
 
-type NtfsKey = 'F' | 'M' | 'RX' | 'R' | 'W';
+type NtfsKey = 'F' | 'M' | 'MND' | 'RX' | 'R' | 'W' | 'CUSTOM';
 const NTFS: Array<{ key: NtfsKey; label: string; icacls: string; suffix: string }> = [
   { key: 'F', label: 'Contrôle total', icacls: 'F', suffix: 'ControleTotal' },
   { key: 'M', label: 'Modification', icacls: 'M', suffix: 'Modification' },
+  { key: 'MND', label: 'Modifier (sans suppression)', icacls: '(RX,W)', suffix: 'ModifSansSuppr' },
   { key: 'RX', label: 'Lecture et exécution', icacls: 'RX', suffix: 'LectureExecution' },
   { key: 'R', label: 'Lecture', icacls: 'R', suffix: 'Lecture' },
   { key: 'W', label: 'Écriture', icacls: 'W', suffix: 'Ecriture' },
+  { key: 'CUSTOM', label: 'Personnalisé (icacls)…', icacls: '', suffix: 'Perso' },
 ];
 const ntfs = (k: NtfsKey) => NTFS.find(x => x.key === k) || NTFS[1];
-type ShareKey = '' | 'R' | 'M' | 'F';
-const SHARE_LABEL: Record<ShareKey, string> = { '': 'Non partagé', R: 'Lecture', M: 'Modification', F: 'Contrôle total' };
-const SHARE_PARAM: Record<string, string> = { R: 'ReadAccess', M: 'ChangeAccess', F: 'FullAccess' };
 
 type Ou = { id: string; name: string; parent: string };
 type GGroup = { id: string; name: string; ou: string };
 type User = { id: string; prenom: string; nom: string; ou: string; group: string };
-type Rule = { group: string; right: NtfsKey };
-type Folder = { id: string; name: string; parent: string; share: ShareKey; rules: Rule[] };
+type Rule = { group: string; right: NtfsKey; custom?: string };
+type Folder = { id: string; name: string; parent: string; noInherit?: boolean; rules: Rule[] };
 
 const clean = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '');
 const login = (p: string, n: string) => `${clean(p)}.${clean(n)}`.toLowerCase();
@@ -52,8 +51,8 @@ const D_OUS: Ou[] = [
 const D_GG: GGroup[] = [{ id: 'gcompta', name: 'Comptables', ou: 'grp' }, { id: 'gdir', name: 'Direction', ou: 'grp' }];
 const D_USERS: User[] = [{ id: 'u1', prenom: 'Jean', nom: 'Nguyen', ou: 'compta', group: 'gcompta' }, { id: 'u2', prenom: 'Marie', nom: 'Durand', ou: 'compta', group: 'gcompta' }];
 const D_FOLDERS: Folder[] = [
-  { id: 'fc', name: 'Comptabilité', parent: 'ROOT', share: 'F', rules: [{ group: 'gcompta', right: 'M' }, { group: 'gdir', right: 'R' }] },
-  { id: 'fco', name: 'Commercial', parent: 'ROOT', share: 'F', rules: [{ group: 'gdir', right: 'R' }] },
+  { id: 'fc', name: 'Comptabilité', parent: 'ROOT', rules: [{ group: 'gcompta', right: 'M' }, { group: 'gdir', right: 'R' }] },
+  { id: 'fco', name: 'Commercial', parent: 'ROOT', rules: [{ group: 'gdir', right: 'R' }] },
 ];
 function load<T>(k: string, d: T): T { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } }
 
@@ -67,6 +66,8 @@ function descendants<T extends { id: string; parent: string }>(items: T[], id: s
 export function AgdlpBuilder() {
   const [domain, setDomain] = useState(() => load('agdlp2_domain', 'miyukini.lan'));
   const [basePath, setBasePath] = useState(() => load('agdlp2_base', 'E:\\Partages'));
+  const [shareRoot, setShareRoot] = useState<boolean>(() => load('agdlp2_shareroot', true));
+  const [shareName, setShareName] = useState(() => load('agdlp2_sharename', 'Partages'));
   const [ous, setOus] = useState<Ou[]>(() => load('agdlp2_ous', D_OUS));
   const [groupsOu, setGroupsOu] = useState<string>(() => load('agdlp2_gou', 'grp'));
   const [ggroups, setGgroups] = useState<GGroup[]>(() => load('agdlp2_gg', D_GG));
@@ -78,10 +79,11 @@ export function AgdlpBuilder() {
 
   useEffect(() => { try {
     localStorage.setItem('agdlp2_domain', JSON.stringify(domain)); localStorage.setItem('agdlp2_base', JSON.stringify(basePath));
+    localStorage.setItem('agdlp2_shareroot', JSON.stringify(shareRoot)); localStorage.setItem('agdlp2_sharename', JSON.stringify(shareName));
     localStorage.setItem('agdlp2_ous', JSON.stringify(ous)); localStorage.setItem('agdlp2_gou', JSON.stringify(groupsOu));
     localStorage.setItem('agdlp2_gg', JSON.stringify(ggroups)); localStorage.setItem('agdlp2_users', JSON.stringify(users));
     localStorage.setItem('agdlp2_folders', JSON.stringify(folders));
-  } catch { /* */ } }, [domain, basePath, ous, groupsOu, ggroups, users, folders]);
+  } catch { /* */ } }, [domain, basePath, shareRoot, shareName, ous, groupsOu, ggroups, users, folders]);
 
   const domainDN = domainToDN(domain);
   const netbios = netbiosOf(domain);
@@ -93,11 +95,15 @@ export function AgdlpBuilder() {
   const depthF = (f: Folder) => { let d = 0, c: Folder | undefined = f; while (c && c.parent !== 'ROOT') { c = folderById(c.parent); d++; if (d > 60) break; } return d; };
   const ggById = (id: string) => ggroups.find(g => g.id === id);
   const gName = (id: string) => 'G_' + clean(ggById(id)?.name || '');
-  const dlName = (f: Folder, r: NtfsKey) => `DL_${clean(f.name)}_${ntfs(r).suffix}`;
+  const rightSuffix = (rl: Rule) => rl.right === 'CUSTOM' ? ('Perso' + clean(rl.custom || '')).slice(0, 20) : ntfs(rl.right).suffix;
+  const dlName = (f: Folder, rl: Rule) => `DL_${clean(f.name)}_${rightSuffix(rl)}`;
+  const rightLabel = (rl: Rule) => rl.right === 'CUSTOM' ? `icacls ${rl.custom || '?'}` : ntfs(rl.right).label;
+  // Chaîne d'autorisation icacls : (OI)(CI) + le droit (lettre simple, combo, ou personnalisé).
+  const igrant = (rl: Rule) => { const p = rl.right === 'CUSTOM' ? `(${(rl.custom || 'R').replace(/[^A-Za-z0-9,]/g, '')})` : ntfs(rl.right).icacls; return `(OI)(CI)${p}`; };
 
   const dlGroups = useMemo(() => {
-    const m = new Map<string, { f: Folder; right: NtfsKey }>();
-    for (const f of folders) for (const rl of f.rules) m.set(`${f.id}|${rl.right}`, { f, right: rl.right });
+    const m = new Map<string, { f: Folder; rule: Rule }>();
+    for (const f of folders) for (const rl of f.rules) m.set(`${f.id}|${rl.right}|${rl.right === 'CUSTOM' ? rl.custom : ''}`, { f, rule: rl });
     return Array.from(m.values());
   }, [folders]);
 
@@ -118,18 +124,17 @@ export function AgdlpBuilder() {
   const ntfsTree = useMemo(() => {
     const L: string[] = [];
     const walk = (f: Folder, prefix: string, last: boolean) => {
-      const sh = f.share ? `partage: ${SHARE_LABEL[f.share]}` : 'non partagé';
-      L.push(`${prefix}${last ? '└─' : '├─'} 📂 ${f.name}   (${sh})`);
+      L.push(`${prefix}${last ? '└─' : '├─'} 📂 ${f.name}${f.noInherit ? '   ⛔ héritage désactivé' : ''}`);
       const sub = prefix + (last ? '    ' : '│   ');
-      f.rules.forEach(rl => L.push(`${sub}   🔒 ${dlName(f, rl.right)} → ${ntfs(rl.right).label}  (⟵ ${gName(rl.group)})`));
+      f.rules.forEach(rl => L.push(`${sub}   🔒 ${dlName(f, rl)} → ${rightLabel(rl)}  (⟵ ${gName(rl.group)})`));
       const kids = folders.filter(c => c.parent === f.id);
       kids.forEach((c, i) => walk(c, sub, i === kids.length - 1));
     };
-    L.push(`📁 ${basePath}`);
+    L.push(`📁 ${basePath}${shareRoot ? `   📤 Partage « ${shareName} » : Utilisateurs authentifiés = Contrôle total` : ''}`);
     const roots = folders.filter(f => f.parent === 'ROOT');
     roots.forEach((f, i) => walk(f, '', i === roots.length - 1));
     return L.join('\n');
-  }, [folders, basePath]);
+  }, [folders, basePath, shareRoot, shareName]);
 
   // ---- Script 1 : contrôleur de domaine ----
   const scriptDC = useMemo(() => {
@@ -149,10 +154,10 @@ export function AgdlpBuilder() {
     ggroups.forEach(g => o.push(`Ensure-Grp '${gName(g.id)}' Global '${dnOfOu(g.ou)}'`));
     o.push('');
     o.push('# --- 3) Groupes DOMAINE LOCAL (par dossier + droit NTFS) ---');
-    dlGroups.forEach(g => o.push(`Ensure-Grp '${dlName(g.f, g.right)}' DomainLocal '${dnOfOu(groupsOu)}'`));
+    dlGroups.forEach(g => o.push(`Ensure-Grp '${dlName(g.f, g.rule)}' DomainLocal '${dnOfOu(groupsOu)}'`));
     o.push('');
     o.push('# --- 4) Imbrication : Global -> Domaine Local ---');
-    for (const f of folders) for (const rl of f.rules) o.push(`Add-ADGroupMember '${dlName(f, rl.right)}' -Members '${gName(rl.group)}' -ErrorAction SilentlyContinue`);
+    for (const f of folders) for (const rl of f.rules) o.push(`Add-ADGroupMember '${dlName(f, rl)}' -Members '${gName(rl.group)}' -ErrorAction SilentlyContinue`);
     o.push('');
     o.push('# --- 5) Utilisateurs (OU de placement + ajout au Global) ---');
     o.push('$pwd = Read-Host "Mot de passe initial des comptes" -AsSecureString');
@@ -170,19 +175,52 @@ export function AgdlpBuilder() {
     const o: string[] = [];
     o.push('#Requires -RunAsAdministrator');
     o.push('# ============================================================');
-    o.push('#  AGDLP - SUR LE SERVEUR DE FICHIERS (dossiers, partages, NTFS granulaire)');
+    o.push('#  AGDLP - SUR LE SERVEUR DE FICHIERS');
+    o.push('#  1 partage sur le dossier racine (Utilisateurs authentifies = Controle total)');
+    o.push('#  puis controle reel par NTFS granulaire sur les groupes Domaine Local');
     o.push('# ============================================================');
+    o.push("# Nom exact du groupe 'Utilisateurs authentifies' resolu via son SID (independant de la langue)");
+    o.push("$AuthUsers = (New-Object System.Security.Principal.SecurityIdentifier('S-1-5-11')).Translate([System.Security.Principal.NTAccount]).Value");
+    o.push('');
+    o.push(`# --- Dossier racine + PARTAGE unique ---`);
+    o.push(`New-Item -ItemType Directory -Path '${basePath}' -Force | Out-Null`);
+    if (shareRoot) o.push(`if(-not(Get-SmbShare -Name '${shareName}' -ErrorAction SilentlyContinue)){ New-SmbShare -Name '${shareName}' -Path '${basePath}' -FullAccess $AuthUsers | Out-Null }`);
+    o.push('');
     [...folders].sort((a, b) => depthF(a) - depthF(b)).forEach(f => {
       const p = pathOf(f.id);
       o.push(`# --- ${f.name}  (${p}) ---`);
       o.push(`New-Item -ItemType Directory -Path '${p}' -Force | Out-Null`);
-      if (f.share) o.push(`if(-not(Get-SmbShare -Name '${clean(f.name)}' -ErrorAction SilentlyContinue)){ New-SmbShare -Name '${clean(f.name)}' -Path '${p}' -${SHARE_PARAM[f.share]} 'Utilisateurs authentifies' | Out-Null }`);
-      for (const rl of f.rules) o.push(`icacls '${p}' /grant '${netbios}\\${dlName(f, rl.right)}:(OI)(CI)${ntfs(rl.right).icacls}'`);
+      if (f.noInherit) {
+        o.push(`icacls '${p}' /inheritance:r`);
+        o.push(`icacls '${p}' /grant '*S-1-5-32-544:(OI)(CI)F' '*S-1-5-18:(OI)(CI)F'   # Administrateurs + Systeme (evite le blocage)`);
+      }
+      for (const rl of f.rules) o.push(`icacls '${p}' /grant '${netbios}\\${dlName(f, rl)}:${igrant(rl)}'`);
       o.push('');
     });
-    o.push('Write-Host "Dossiers, partages et NTFS appliques." -ForegroundColor Green');
+    o.push('Write-Host "Dossier racine partage + NTFS appliques." -ForegroundColor Green');
     return o.join('\n').trimEnd();
-  }, [folders, basePath, netbios]);
+  }, [folders, basePath, shareRoot, shareName, netbios]);
+
+  // ---- Script 3 : vérification (lecture seule) ----
+  const scriptVerify = useMemo(() => {
+    const o: string[] = [];
+    o.push('# ============================================================');
+    o.push('#  VERIFICATION (lecture seule) - controler le resultat AGDLP');
+    o.push('# ============================================================');
+    if (shareRoot) { o.push('# --- Partage (sur le serveur de fichiers) ---'); o.push(`Get-SmbShareAccess -Name '${shareName}'`); o.push(''); }
+    o.push('# --- Permissions NTFS par dossier (sur le serveur de fichiers) ---');
+    [...folders].sort((a, b) => depthF(a) - depthF(b)).forEach(f => {
+      const p = pathOf(f.id);
+      o.push(`Write-Host '${p}' -ForegroundColor Cyan`);
+      o.push(`(Get-Acl '${p}').Access | Format-Table IdentityReference,FileSystemRights,AccessControlType,IsInherited -AutoSize`);
+    });
+    o.push('');
+    o.push('# --- Imbrication AGDLP : membres des groupes Domaine Local (sur le DC) ---');
+    o.push('if(Get-Module -ListAvailable ActiveDirectory){ Import-Module ActiveDirectory');
+    dlGroups.forEach(g => o.push(`  Write-Host '${dlName(g.f, g.rule)}' -ForegroundColor Cyan; Get-ADGroupMember '${dlName(g.f, g.rule)}' | Select-Object Name`));
+    o.push('}');
+    return o.join('\n');
+  }, [folders, basePath, shareRoot, shareName, dlGroups]);
 
   const copy = (id: string, code: string) => { navigator.clipboard?.writeText(code).then(() => { setCopiedId(id); setTimeout(() => setCopiedId(''), 1600); }).catch(() => {}); };
   const download = (code: string, filename: string) => {
@@ -255,7 +293,12 @@ export function AgdlpBuilder() {
           <div><label style={labelStyle}>OU des groupes (G_ / DL_)</label>
             <select style={fieldStyle} value={groupsOu} onChange={e => setGroupsOu(e.target.value)}>{ous.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}</select>
           </div>
+          <div><label style={labelStyle}>Nom du partage (dossier racine)</label><input style={fieldStyle} value={shareName} onChange={e => setShareName(e.target.value)} placeholder="Partages" /></div>
         </div>
+        <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer', marginTop: 10 }}>
+          <input type="checkbox" checked={shareRoot} onChange={e => setShareRoot(e.target.checked)} />
+          <span>Partager le <strong>dossier racine</strong> — une seule autorisation de partage : <code>Utilisateurs authentifiés = Contrôle total</code> (le NTFS filtre réellement)</span>
+        </label>
         <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>Convention : <code>G_&lt;groupe&gt;</code> (global) · <code>DL_&lt;dossier&gt;_&lt;droit NTFS&gt;</code> (domaine local) · NTFS posé sur le <strong>DL</strong>. 💾 Mémorisé dans ce navigateur.</div>
       </div>
 
@@ -293,11 +336,9 @@ export function AgdlpBuilder() {
             <div style={{ display: 'grid', gridTemplateColumns: '1.6fr auto auto auto', gap: 8, alignItems: 'center' }}>
               <input style={fieldStyle} value={f.name} onChange={e => patchFolder(f.id, { name: e.target.value })} placeholder="Nom du dossier" />
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}><span className="meta" style={{ fontSize: 12 }}>sous</span>{parentSel(f.id, f.parent, v => patchFolder(f.id, { parent: v }), folders, folders)}</div>
-              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}><span className="meta" style={{ fontSize: 12 }}>partage</span>
-                <select style={{ ...fieldStyle, ...auto }} value={f.share} onChange={e => patchFolder(f.id, { share: e.target.value as ShareKey })}>
-                  {(['', 'R', 'M', 'F'] as ShareKey[]).map(s => <option key={s} value={s}>{SHARE_LABEL[s]}</option>)}
-                </select>
-              </div>
+              <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap' }} title="Désactiver l'héritage NTFS (le dossier n'hérite plus des droits du parent)">
+                <input type="checkbox" checked={!!f.noInherit} onChange={e => patchFolder(f.id, { noInherit: e.target.checked })} /> ⛔ héritage
+              </label>
               <button style={smallBtn} onClick={() => delFolder(f.id)} title="Supprimer (et sous-dossiers)">✕</button>
             </div>
             <div className="meta" style={{ fontSize: 11, marginTop: 4, fontFamily: 'ui-monospace,monospace' }}>{pathOf(f.id)}</div>
@@ -308,7 +349,8 @@ export function AgdlpBuilder() {
                   <select style={{ ...fieldStyle, ...auto }} value={rl.group} onChange={e => patchRule(f.id, j, { group: e.target.value })}>{ggroups.map(g => <option key={g.id} value={g.id}>{gName(g.id)}</option>)}</select>
                   <span className="meta" style={{ fontSize: 12 }}>→</span>
                   <select style={{ ...fieldStyle, ...auto }} value={rl.right} onChange={e => patchRule(f.id, j, { right: e.target.value as NtfsKey })}>{NTFS.map(n => <option key={n.key} value={n.key}>{n.label}</option>)}</select>
-                  <code style={{ fontSize: 11, color: 'var(--text-muted)' }}>{dlName(f, rl.right)}</code>
+                  {rl.right === 'CUSTOM' && <input style={{ ...fieldStyle, width: 140, fontFamily: 'ui-monospace,monospace' }} value={rl.custom || ''} onChange={e => patchRule(f.id, j, { custom: e.target.value })} placeholder="ex. RX,WD,AD" title="Droits icacls séparés par des virgules (ex. RX,WD,AD,WEA)" />}
+                  <code style={{ fontSize: 11, color: 'var(--text-muted)' }}>{dlName(f, rl)}</code>
                   <button style={{ ...smallBtn, marginLeft: 'auto' }} onClick={() => delRule(f.id, j)}>✕</button>
                 </div>
               ))}
@@ -360,10 +402,17 @@ export function AgdlpBuilder() {
       </div>
       <div style={{ marginTop: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '0 0 6px' }}>
-          <div style={{ fontWeight: 700, fontSize: 14 }}>📜 ② Serveur de fichiers — dossiers, partages, NTFS</div>
+          <div style={{ fontWeight: 700, fontSize: 14 }}>📜 ② Serveur de fichiers — dossier racine partagé + NTFS granulaire</div>
           {outBtns('fs', scriptFS, 'agdlp-partages.ps1')}
         </div>
         <pre style={preStyle}><code>{scriptFS}</code></pre>
+      </div>
+      <div style={{ marginTop: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '0 0 6px' }}>
+          <div style={{ fontWeight: 700, fontSize: 14 }}>📜 ③ Vérification (lecture seule) — partage, NTFS, imbrication</div>
+          {outBtns('vf', scriptVerify, 'agdlp-verification.ps1')}
+        </div>
+        <pre style={preStyle}><code>{scriptVerify}</code></pre>
       </div>
     </div>
   );
