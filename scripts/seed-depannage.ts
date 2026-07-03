@@ -145,6 +145,13 @@ const TIPS: Tip[] = [
     solution: 'Dans <code>diskmgmt.msc</code> : initialiser (MBR/GPT), créer/formater le volume ; pour étendre, libérer un espace contigu. → <a href="/procedure-gestion-disques">Gestion des disques</a>.',
   },
   {
+    id: 'ntfs-heritage-verrouille', icon: '🔒', title: 'Dossier verrouillé après désactivation de l’héritage NTFS', tags: ['NTFS', 'Sécurité', 'AGDLP'],
+    contexte: 'Héritage NTFS désactivé sur un dossier ; les droits Administrateurs/Système ont été retirés (ou l’<code>icacls</code> de re-grant a échoué).',
+    symptome: 'Onglet <em>Sécurité</em> : « <strong>Vous devez disposer d’autorisations d’accès en lecture pour afficher les propriétés de cet objet</strong> ». Impossible d’administrer ; parfois des <strong>comptes inconnus (SID)</strong> à la place des groupes.',
+    cause: 'Casser l’héritage (<code>icacls /inheritance:r</code>) supprime <strong>toutes</strong> les autorisations héritées, dont <strong>Administrateurs</strong> et <strong>Système</strong>. Si elles ne sont pas re-données explicitement, plus personne n’a la main. Les groupes de domaine absents (ex. après <strong>restauration de snapshot</strong>) s’affichent en SID.',
+    solution: 'Invite de commandes <strong>en administrateur</strong> : reprendre la propriété puis réinitialiser l’ACL — <code>takeown /f "C:\\Partages\\MonDossier" /r</code> puis <code>icacls "C:\\Partages\\MonDossier" /reset /t /c</code> (le dossier ré-hérite du parent). Nettoyer un SID orphelin : <code>icacls "…" /remove:g *S-1-5-21-…</code>. Recréer d’abord les <strong>groupes AD</strong> (script ①) <strong>avant</strong> de réappliquer le NTFS (script ②).',
+  },
+  {
     id: 'rdp-refuse', icon: '🖥️', title: 'Connexion Bureau à distance (RDP) refusée', tags: ['RDP', 'Pare-feu'],
     contexte: 'Prise en main à distance d’un poste ou d’un serveur.',
     symptome: '« Impossible de se connecter » / délai dépassé en RDP (<code>mstsc</code>).',

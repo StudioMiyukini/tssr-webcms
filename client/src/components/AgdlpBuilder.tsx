@@ -196,6 +196,8 @@ export function AgdlpBuilder() {
     o.push('#  AGDLP - SUR LE SERVEUR DE FICHIERS');
     o.push('#  1 partage sur le dossier racine (Utilisateurs authentifies = Controle total)');
     o.push('#  puis controle reel par NTFS granulaire sur les groupes Domaine Local');
+    o.push('#  PREREQUIS : lancer d\'abord le script (1) sur le DC pour creer les groupes DL,');
+    o.push('#             sinon icacls echoue et laisse des SID orphelins.');
     o.push('# ============================================================');
     o.push("# Nom exact du groupe 'Utilisateurs authentifies' resolu via son SID (independant de la langue)");
     o.push("$AuthUsers = (New-Object System.Security.Principal.SecurityIdentifier('S-1-5-11')).Translate([System.Security.Principal.NTAccount]).Value");
@@ -210,7 +212,8 @@ export function AgdlpBuilder() {
       o.push(`New-Item -ItemType Directory -Path '${p}' -Force | Out-Null`);
       if (f.noInherit) {
         o.push(`icacls '${p}' /inheritance:r`);
-        o.push(`icacls '${p}' /grant '*S-1-5-32-544:(OI)(CI)F' '*S-1-5-18:(OI)(CI)F'   # Administrateurs + Systeme (evite le blocage)`);
+        o.push(`icacls '${p}' /grant '*S-1-5-32-544:(OI)(CI)(F)'   # Administrateurs (garde l'acces admin)`);
+        o.push(`icacls '${p}' /grant '*S-1-5-18:(OI)(CI)(F)'       # Systeme`);
       }
       for (const rl of f.rules) o.push(`icacls '${p}' /grant '${netbios}\\${dlName(f, rl)}:${igrant(rl)}'`);
       o.push('');
