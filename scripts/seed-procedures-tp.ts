@@ -14,6 +14,27 @@ const note = (cls: string, title: string, html: string) => block('html', { html:
 const stepsStyle = block('html', { html: `<style>.proc-steps{padding-left:22px;line-height:1.75}.proc-steps>li{margin:7px 0}.proc-steps code,.proc-steps kbd{font-family:ui-monospace,'Space Mono',monospace}.proc-steps kbd{border:1px solid var(--border);border-radius:5px;padding:1px 6px;background:var(--surface-2)}.proc-cmd{font-family:ui-monospace,'Space Mono',monospace;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:8px 0;white-space:pre-wrap;overflow-x:auto}</style>` });
 const cmd = (t: string) => block('html', { html: `<div class="proc-cmd">${t}</div>` });
 
+// Tableau de référence subnetting (CIDR /1→/32 : masque de l'octet, octet concerné,
+// puissance = bits d'hôtes, adresses/bloc, pas = nombre magique). Couleur par octet.
+const cidrRefTable = (() => {
+  const MSR = [128, 192, 224, 240, 248, 252, 254, 255];
+  const COL = ['#16a34a', '#d97706', '#dc2626', '#2563eb'];
+  const BG = ['rgba(22,163,74,.10)', 'rgba(217,119,6,.10)', 'rgba(220,38,38,.10)', 'rgba(37,99,235,.10)'];
+  const g = (c: number) => Math.floor((c - 1) / 8);
+  const cs = Array.from({ length: 32 }, (_, i) => i + 1);
+  const cell = (c: number, txt: string, head = false) => `<td style="border:1px solid var(--border);padding:3px 5px;text-align:center;font-size:11px;white-space:nowrap;background:${BG[g(c)]};color:${head ? COL[g(c)] : 'var(--text)'}${head ? ';font-weight:700' : ''}">${txt}</td>`;
+  const rh = (l: string) => `<td style="border:1px solid var(--border);padding:3px 8px;font-size:11px;font-weight:700;background:var(--surface-2);position:sticky;left:0;white-space:nowrap">${l}</td>`;
+  const rows = [
+    rh('CIDR') + cs.map(c => cell(c, '/' + c, true)).join(''),
+    rh('Masque (octet)') + cs.map(c => cell(c, String(MSR[(c - 1) % 8]))).join(''),
+    rh('Octet concerné') + [0, 1, 2, 3].map(k => `<td colspan="8" style="border:1px solid var(--border);padding:3px 5px;text-align:center;font-size:11px;font-weight:700;background:${BG[k]};color:${COL[k]}">${k + 1}e octet</td>`).join(''),
+    rh('Puissance') + cs.map(c => cell(c, '2<sup>' + (32 - c) + '</sup>')).join(''),
+    rh('Adresses / bloc') + cs.map(c => cell(c, c >= 17 ? String(Math.pow(2, 32 - c)) : '')).join(''),
+    rh('Pas (nb magique)') + cs.map(c => cell(c, String(256 - MSR[(c - 1) % 8]))).join(''),
+  ];
+  return `<div style="overflow-x:auto;margin:8px 0 12px"><table style="border-collapse:collapse;min-width:940px"><tbody>${rows.map(r => `<tr>${r}</tr>`).join('')}</tbody></table></div>`;
+})();
+
 type Page = { slug: string; title: string; excerpt: string; blocks: PageBlock[] };
 
 // ===================================================================================
@@ -38,6 +59,11 @@ const planAdressage: Page = {
     block('html', { html: `<div style="overflow-x:auto;margin:8px 0 14px"><table style="border-collapse:collapse;width:100%;min-width:560px;font-size:13.5px" class="ref-table"><thead><tr style="background:var(--surface-2)">${['Besoin en hôtes', 'Bits hôtes (n)', 'CIDR', 'Taille du bloc', 'Hôtes utilisables'].map(h => `<th style="text-align:left;padding:8px 10px;border:1px solid var(--border)">${h}</th>`).join('')}</tr></thead><tbody>`
       + [1, 2, 3, 4, 5, 6, 7, 8].map(n => { const size = Math.pow(2, n); const use = size - 2; const cidr = 32 - n; return `<tr><td>≤ ${use}</td><td>${n}</td><td>/${cidr}</td><td>${size}</td><td>${use}</td></tr>`; }).join('')
       + `</tbody></table></div><style>.ref-table td{padding:7px 10px;border:1px solid var(--border);font-family:ui-monospace,'Space Mono',monospace}.ref-table td:nth-child(3){font-weight:700;color:var(--accent)}</style>` }),
+    block('heading', { level: 2, text: '📊 Tableau de subnetting (référence rapide)' }),
+    block('html', { html: '<p>Le tableau à garder sous les yeux : pour un <code>/CIDR</code> donné, tu lis directement le <strong>masque</strong> de l’octet concerné, la <strong>puissance</strong> (bits d’hôtes), le nombre d’<strong>adresses par bloc</strong> et le <strong>pas</strong> (nombre magique). Chaque couleur correspond à un octet.</p>' }),
+    block('html', { html: cidrRefTable }),
+    note('blue', '🔎 Comment le lire', '<p><strong>Pas</strong> = nombre magique = taille du bloc sur l’octet concerné = <code>256 − masque</code>. <strong>Adresses/bloc</strong> = <code>2^(bits d’hôtes)</code> ; <strong>hôtes utilisables = adresses − 2</strong> (on retire réseau + broadcast). Exemple : <code>/26</code> → 4e octet, masque <code>192</code>, pas <code>64</code>, <code>64</code> adresses, <code>62</code> hôtes.</p>'),
+
     block('heading', { level: 2, text: '✍️ Exemple résolu — 192.168.10.0/24' }),
     block('html', { html: '<p>Services à raccorder : <strong>Production 100</strong>, <strong>Bureaux 50</strong>, <strong>Wi-Fi 20</strong>, <strong>Liaison 2</strong>.</p>' }),
     block('html', { html: `<div style="overflow-x:auto;margin:8px 0 14px"><table style="border-collapse:collapse;width:100%;min-width:680px;font-size:13px" class="ref-table"><thead><tr style="background:var(--surface-2)">${['Service', 'Besoin', 'CIDR', 'Réseau', 'Plage utilisable', 'Broadcast', 'Passerelle'].map(h => `<th style="text-align:left;padding:8px 10px;border:1px solid var(--border)">${h}</th>`).join('')}</tr></thead><tbody>`
