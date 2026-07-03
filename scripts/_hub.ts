@@ -50,6 +50,7 @@ export const DOMAINS: Domain[] = [
         { href: '/pages/gestionnaire-de-serveurs', title: 'Le gestionnaire de serveurs', desc: 'Installer & gérer (fiches pratiques).' },
         { href: '/pages/vocabulaire-active-directory', title: 'Vocabulaire Active Directory (AD)', desc: 'Forêt, domaine, DC, schéma, OU, groupes… en questions-réponses.' },
         { href: '/pages/administration-domaine-ad', title: 'Administration d’un domaine AD', desc: 'Rôles FSMO, SYSVOL, relations d’approbation & délégation de contrôle (avec schémas).' },
+        { href: '/pages/hebergement', title: 'L’hébergement web (concepts)', desc: 'Hébergeur, types (mutualisé/VPS/dédié/cloud), DNS & enregistrements, registrar, FQDN, serveurs racine.' },
         { href: '/pages/hebergement-web', title: 'L’hébergement web (DNS + IIS)', desc: 'Publier un site : serveur web IIS, résolution DNS, FQDN, FTP, tests.' },
       ] },
       { name: 'Serveur de fichiers', courses: [
