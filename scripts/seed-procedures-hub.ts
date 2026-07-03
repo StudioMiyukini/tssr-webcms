@@ -19,6 +19,7 @@ const PROCEDURES: Proc[] = [
   { slug: 'procedure-hyperv-ressources', icon: '🖥️', title: 'Hyper-V : fonctionnement & ressources', desc: 'Hyperviseur, VM, commutateurs, VHDX — et attribuer CPU/RAM/disque/réseau.', tags: ['Hébergement', 'Hyper-V'] },
   { slug: 'procedure-gestion-disques', icon: '💽', title: 'Gestion des disques & partitionnement', desc: 'Initialiser (MBR/GPT), partitionner, formater NTFS — diskmgmt & diskpart.', tags: ['Hébergement', 'Windows'] },
   { slug: 'procedure-dhcp', icon: '📶', title: 'DHCP : étendue, options & réservation', desc: 'Rôle DHCP, plage, options 003/006/015, réservation par MAC.', tags: ['Hébergement', 'Réseau'] },
+  { slug: 'procedure-dhcp-basculement', icon: '🔁', title: 'Basculement DHCP (failover)', desc: 'Redondance entre 2 serveurs : prérequis, répartition de charge vs veille active, pas-à-pas.', tags: ['Hébergement', 'DHCP', 'Haute dispo'] },
   { slug: 'procedure-dns', icon: '🌐', title: 'DNS : zones & enregistrements', desc: 'Zones directe/inversée, enregistrements A/CNAME/PTR, tests nslookup.', tags: ['Hébergement', 'Réseau'] },
   { slug: 'procedure-iis', icon: '🕸️', title: 'IIS : héberger un site web', desc: 'Rôle IIS, site + liaison, DNS, permissions NTFS, pare-feu.', tags: ['Hébergement', 'Web'] },
 ];
