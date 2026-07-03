@@ -143,6 +143,18 @@ const dns: Page = {
       <li><strong>A (hôte)</strong> : clic droit sur la zone → <strong>Nouvel hôte (A)</strong> → nom (ex. <code>srv-web01</code>) + IP → coche <em>Créer un pointeur PTR associé</em>.</li>
       <li><strong>CNAME (alias)</strong> : clic droit → <strong>Nouvel alias</strong> → ex. <code>www</code> → cible <code>srv-web01.domaine.local</code>.</li>
     </ul>` }),
+    block('html', { html: `<p>Les principaux types d’enregistrements :</p><div style="overflow-x:auto;margin:6px 0 12px"><table style="border-collapse:collapse;width:100%;min-width:520px;font-size:13.5px" class="ref-table"><thead><tr style="background:var(--surface-2)">${['Type', 'Rôle'].map(h => `<th style="text-align:left;padding:8px 10px;border:1px solid var(--border)">${h}</th>`).join('')}</tr></thead><tbody>`
+      + [
+        ['A', 'Nom → adresse IPv4'],
+        ['AAAA', 'Nom → adresse IPv6'],
+        ['CNAME', 'Alias vers un autre nom'],
+        ['MX', 'Serveur de messagerie du domaine'],
+        ['NS', 'Serveur DNS faisant autorité sur la zone'],
+        ['SOA', 'Infos de la zone (DNS primaire, e-mail admin, n° de série)'],
+        ['PTR', 'Adresse IP → nom (zone inversée)'],
+        ['SRV', 'Localise un service (host + port) — vital en AD : LDAP, Kerberos'],
+      ].map(r => `<tr><td style="font-weight:700;font-family:ui-monospace,'Space Mono',monospace">${r[0]}</td><td>${r[1]}</td></tr>`).join('')
+      + `</tbody></table></div>` }),
     block('heading', { level: 2, text: '③ Zone de recherche inversée (IP → nom)' }),
     block('html', { html: `<ol class="proc-steps">
       <li>Clic droit <strong>Zones de recherche inversée</strong> → <strong>Nouvelle zone</strong> → IPv4 → <strong>ID réseau</strong> (ex. <code>192.168.10</code>).</li>

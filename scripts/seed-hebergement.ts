@@ -120,6 +120,19 @@ const blocks: PageBlock[] = [
   block('html', { html: '<p>Quand le client tape un nom dans son navigateur, deux étapes s’enchaînent : <strong>résoudre le nom en IP</strong> (DNS), puis <strong>demander la page</strong> au serveur web (IIS).</p>' }),
   block('html', { html: svgDnsFlow }),
 
+  block('heading', { level: 2, text: '🌍 L’écosystème de l’hébergement web' }),
+  block('html', { html: '<p>Avant la technique, le vocabulaire du métier. Un <strong>hébergement web</strong> permet de <strong>stocker un site</strong> et de le rendre <strong>accessible 24 h/24</strong> sur Internet ; les fichiers sont posés sur un <strong>serveur connecté au réseau</strong>. L’<strong>hébergeur</strong> est l’entité qui met ces serveurs à disposition et assure généralement : disponibilité, connectivité, sécurité, sauvegardes, alimentation/climatisation et maintenance.</p>' }),
+  block('html', { html: `<div style="overflow-x:auto;margin:6px 0 12px"><table style="border-collapse:collapse;width:100%;min-width:520px;font-size:13.5px"><thead><tr style="background:var(--surface-2)">${['Type d’hébergement', 'Principe'].map(h => `<th style="text-align:left;padding:8px 10px;border:1px solid var(--border)">${h}</th>`).join('')}</tr></thead><tbody>`
+    + [
+      ['Mutualisé', 'Un serveur partagé entre de nombreux sites — économique, peu de contrôle.'],
+      ['VPS', 'Serveur virtuel dédié (ressources garanties) — bon compromis coût/contrôle.'],
+      ['Dédié', 'Un serveur physique entier pour un seul client — performance et contrôle maximum.'],
+      ['Cloud', 'Ressources élastiques à la demande, facturées à l’usage.'],
+    ].map(r => `<tr><td style="padding:8px 10px;border:1px solid var(--border);font-weight:600">${r[0]}</td><td style="padding:8px 10px;border:1px solid var(--border)">${r[1]}</td></tr>`).join('')
+    + `</tbody></table></div>` }),
+  block('html', { html: '<p>Le <strong>nom de domaine</strong>, lui, se loue chez un <strong>registrar</strong> (bureau d’enregistrement accrédité par l’<strong>ICANN</strong> à l’international, l’<strong>AFNIC</strong> pour le <code>.fr</code>) — ex. OVHcloud, Gandi, Namecheap. On le loue de <strong>1 à 10 ans</strong>, avec <strong>renouvellement</strong> obligatoire pour le conserver.</p>' }),
+  note('gray', '🌐 Les serveurs racine', '<p>Au sommet du DNS mondial, <strong>13 serveurs racine</strong> historiques (nommés de <strong>A à M</strong>, aujourd’hui répartis sur des centaines d’instances) font autorité sur les <strong>TLD</strong> (<code>.com</code>, <code>.fr</code>…). Ils orientent les requêtes vers les bons serveurs DNS de zone.</p>'),
+
   block('heading', { level: 2, text: '🟢 Le DNS : traduire un nom en adresse IP' }),
   block('html', { html: '<p>Le <strong>DNS</strong> (<em>Domain Name System</em>) est l’<strong>annuaire</strong> du réseau : il associe un <strong>nom</strong> (lisible) à une <strong>adresse IP</strong> (la machine). Sans lui, il faudrait retenir des IP. On installe le <strong>rôle DNS</strong> sur le premier serveur, puis on crée une <strong>zone</strong> et des <strong>enregistrements</strong>.</p>' }),
   block('heading', { level: 3, text: '🔤 Anatomie d’un nom de domaine (FQDN)' }),

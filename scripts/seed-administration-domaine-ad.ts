@@ -123,6 +123,23 @@ const blocks: PageBlock[] = [
     'On accorde des tâches précises (réinitialiser un mot de passe, créer des comptes, gérer les membres d’un groupe…), pas « tout ».',
   ] }),
 
+  block('heading', { level: 2, text: '🗃️ Catalogue global & réplication' }),
+  block('html', { html: '<p>Le <strong>catalogue global</strong> (<em>Global Catalog</em>, GC) est une <strong>copie partielle</strong> de <strong>tous les objets de la forêt</strong> — seulement les attributs les plus utiles. Hébergé sur un ou plusieurs DC, il sert à <strong>rechercher un objet dans toute la forêt</strong> et à <strong>authentifier</strong> (notamment via l’UPN et en multi-domaines). Port <code>3268</code>.</p>' }),
+  block('html', { html: '<p>La <strong>réplication</strong> synchronise l’annuaire (<code>NTDS.dit</code>) et le dossier <strong>SYSVOL</strong> (GPO, scripts) entre tous les DC. Elle est <strong>multi-maître</strong> (chaque DC peut écrire), garantit la <strong>cohérence</strong> des données et la <strong>tolérance de panne</strong> : toute modification est propagée automatiquement aux autres contrôleurs.</p>' }),
+
+  block('heading', { level: 2, text: '🪪 Les identifiants des objets AD' }),
+  block('html', { html: '<p>Chaque objet possède plusieurs identifiants, chacun avec un usage précis :</p>' }),
+  block('html', { html: `<div style="overflow-x:auto;margin:6px 0 12px"><table style="border-collapse:collapse;width:100%;min-width:660px;font-size:13px"><thead><tr style="background:var(--surface-2)">${['Identifiant', 'À quoi il sert', 'Exemple / portée'].map(c => `<th style="text-align:left;padding:8px 10px;border:1px solid var(--border)">${c}</th>`).join('')}</tr></thead><tbody>` +
+    ([
+      ['<strong>sAMAccountName</strong>', 'Login historique (Windows 2000), ≤ 20 caractères', '<code>ADRAR\\liam</code> — unique dans le domaine'],
+      ['<strong>UPN</strong> <span class="meta">(UserPrincipalName)</span>', 'Login moderne façon e-mail, recommandé', '<code>liam@adrar.local</code> — unique dans la forêt'],
+      ['<strong>ObjectSID</strong>', 'Sécurité : gestion des permissions NTFS / AD', 'Unique, ne change jamais (même déplacé)'],
+      ['<strong>ObjectGUID</strong>', 'Identifiant technique immuable de l’objet', '128 bits, unique dans la forêt, ne change jamais'],
+      ['<strong>DN</strong> <span class="meta">(DistinguishedName)</span>', 'Chemin LDAP complet localisant l’objet', '<code>cn=Liam,ou=Salariés,dc=adrar,dc=local</code>'],
+    ] as Array<[string, string, string]>).map(r => `<tr><td style="padding:8px 10px;border:1px solid var(--border)">${r[0]}</td><td style="padding:8px 10px;border:1px solid var(--border)">${r[1]}</td><td style="padding:8px 10px;border:1px solid var(--border)">${r[2]}</td></tr>`).join('') +
+    `</tbody></table></div>` }),
+  note('blue', '💡 À distinguer', '<p>Le <strong>SID</strong> sert aux <strong>droits</strong> (NTFS/AD), le <strong>GUID</strong> est l’identité technique interne, le <strong>DN</strong> est l’<strong>adresse</strong> de l’objet dans l’arborescence (cn = nom, ou = unité d’organisation, dc = composant du domaine). Pour la connexion, on privilégie l’<strong>UPN</strong>.</p>'),
+
   note('green', '🎯 À retenir', '<p><strong>FSMO</strong> = 5 rôles uniques (2 forêt, 3 domaine) pour les opérations sensibles, transférables ou saisissables. <strong>SYSVOL</strong> = dossier répliqué sur chaque DC qui porte les <strong>GPO et scripts</strong>. <strong>Approbations</strong> = liens de confiance entre domaines/forêts, définis par leur <strong>sens</strong> et leur <strong>transitivité</strong>. <strong>Délégation</strong> = donner des droits <strong>précis</strong> sur une <strong>OU</strong> sans être admin du domaine. Mise en pratique : <a href="/pages/procedure-installation-active-directory">installer AD</a> et <a href="/pages/procedure-agdlp">mettre en place AGDLP</a>.</p>'),
 ];
 
