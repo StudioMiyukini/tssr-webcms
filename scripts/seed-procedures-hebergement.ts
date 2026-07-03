@@ -118,6 +118,7 @@ const dhcp: Page = {
     </ol>` }),
     cmd('REM Vérification côté client\nipconfig /release\nipconfig /renew\nipconfig /all'),
     note('yellow', '⚠️ Pièges', '<ul><li><strong>Exclure la passerelle et les IP serveurs</strong> de la plage, sinon conflit d’adresses.</li><li>La réservation doit être <strong>dans l’étendue</strong> (mais peut être dans la zone d’exclusion : elle a priorité).</li><li>Sans <strong>autorisation AD</strong>, un DHCP en domaine ne distribue pas.</li></ul>'),
+    note('purple', '🛠️ Dépannage — basculement DHCP', '<p>Le <strong>basculement DHCP</strong> (failover) et l’autorisation exigent que le serveur DHCP soit <strong>membre du domaine AD cible</strong>. S’il ne l’est pas, l’assistant affiche « <em>Erreur rencontrée lors de la validation du serveur partenaire</em> » : joins d’abord le serveur au domaine. → détail dans <a href="/depannage#dep-dhcp-basculement-partenaire">Dépannage</a>.</p>'),
     nameGuard,
   ],
 };
