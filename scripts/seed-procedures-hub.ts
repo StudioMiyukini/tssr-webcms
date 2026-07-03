@@ -16,6 +16,11 @@ const PROCEDURES: Proc[] = [
   { slug: 'procedure-ip-fixe-windows', icon: '🔧', title: 'Configurer une IP fixe (Windows)', desc: 'IP statique sous Windows 10/11 & Server : méthode graphique + netsh.', tags: ['Réseau', 'Windows'] },
   { slug: 'procedure-renommer-poste', icon: '🏷️', title: 'Renommer un poste Windows', desc: 'Changer le nom d’un PC/serveur (convention de nommage) puis redémarrer.', tags: ['Windows'] },
   { slug: 'procedure-test-connectivite', icon: '📡', title: 'Test de connectivité méthodique', desc: 'Dépanner dans l’ordre : loopback → passerelle → Internet → DNS.', tags: ['Réseau', 'Diagnostic'] },
+  { slug: 'procedure-hyperv-ressources', icon: '🖥️', title: 'Hyper-V : fonctionnement & ressources', desc: 'Hyperviseur, VM, commutateurs, VHDX — et attribuer CPU/RAM/disque/réseau.', tags: ['Hébergement', 'Hyper-V'] },
+  { slug: 'procedure-gestion-disques', icon: '💽', title: 'Gestion des disques & partitionnement', desc: 'Initialiser (MBR/GPT), partitionner, formater NTFS — diskmgmt & diskpart.', tags: ['Hébergement', 'Windows'] },
+  { slug: 'procedure-dhcp', icon: '📶', title: 'DHCP : étendue, options & réservation', desc: 'Rôle DHCP, plage, options 003/006/015, réservation par MAC.', tags: ['Hébergement', 'Réseau'] },
+  { slug: 'procedure-dns', icon: '🌐', title: 'DNS : zones & enregistrements', desc: 'Zones directe/inversée, enregistrements A/CNAME/PTR, tests nslookup.', tags: ['Hébergement', 'Réseau'] },
+  { slug: 'procedure-iis', icon: '🕸️', title: 'IIS : héberger un site web', desc: 'Rôle IIS, site + liaison, DNS, permissions NTFS, pare-feu.', tags: ['Hébergement', 'Web'] },
 ];
 
 const PER_PAGE = 20;
