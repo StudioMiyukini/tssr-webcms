@@ -45,12 +45,13 @@ const auto: React.CSSProperties = { width: 'auto' };
 const D_OUS: Ou[] = [
   { id: 'base', name: 'Miyukini', parent: 'ROOT' },
   { id: 'users', name: 'Utilisateurs', parent: 'base' },
-  { id: 'grp', name: 'Groupes', parent: 'base' },
+  { id: 'gg', name: 'GG', parent: 'base' },
+  { id: 'gdl', name: 'GDL', parent: 'base' },
   { id: 'ord', name: 'Ordinateurs', parent: 'base' },
   { id: 'compta', name: 'Comptabilité', parent: 'users' },
   { id: 'direction', name: 'Direction', parent: 'users' },
 ];
-const D_GG: GGroup[] = [{ id: 'gcompta', name: 'Comptables', ou: 'grp' }, { id: 'gdir', name: 'Direction', ou: 'grp' }];
+const D_GG: GGroup[] = [{ id: 'gcompta', name: 'Comptables', ou: 'gg' }, { id: 'gdir', name: 'Direction', ou: 'gg' }];
 const D_USERS: User[] = [{ id: 'u1', prenom: 'Jean', nom: 'Nguyen', ou: 'compta', group: 'gcompta' }, { id: 'u2', prenom: 'Marie', nom: 'Durand', ou: 'compta', group: 'gcompta' }];
 const D_FOLDERS: Folder[] = [
   { id: 'fc', name: 'Comptabilité', code: 'Compta', parent: 'ROOT', rules: [{ group: 'gcompta', right: 'M' }, { group: 'gdir', right: 'R' }] },
@@ -71,7 +72,7 @@ export function AgdlpBuilder() {
   const [shareRoot, setShareRoot] = useState<boolean>(() => load('agdlp2_shareroot', true));
   const [shareName, setShareName] = useState(() => load('agdlp2_sharename', 'Partages'));
   const [ous, setOus] = useState<Ou[]>(() => load('agdlp2_ous', D_OUS));
-  const [groupsOu, setGroupsOu] = useState<string>(() => load('agdlp2_gou', 'grp'));
+  const [dlOu, setDlOu] = useState<string>(() => load('agdlp2_dlou', 'gdl'));
   const [ggroups, setGgroups] = useState<GGroup[]>(() => load('agdlp2_gg', D_GG));
   const [users, setUsers] = useState<User[]>(() => load('agdlp2_users', D_USERS));
   const [folders, setFolders] = useState<Folder[]>(() => load('agdlp2_folders', D_FOLDERS));
@@ -84,13 +85,27 @@ export function AgdlpBuilder() {
   useEffect(() => { try {
     localStorage.setItem('agdlp2_domain', JSON.stringify(domain)); localStorage.setItem('agdlp2_base', JSON.stringify(basePath));
     localStorage.setItem('agdlp2_shareroot', JSON.stringify(shareRoot)); localStorage.setItem('agdlp2_sharename', JSON.stringify(shareName));
-    localStorage.setItem('agdlp2_ous', JSON.stringify(ous)); localStorage.setItem('agdlp2_gou', JSON.stringify(groupsOu));
+    localStorage.setItem('agdlp2_ous', JSON.stringify(ous)); localStorage.setItem('agdlp2_dlou', JSON.stringify(dlOu));
     localStorage.setItem('agdlp2_gg', JSON.stringify(ggroups)); localStorage.setItem('agdlp2_users', JSON.stringify(users));
     localStorage.setItem('agdlp2_folders', JSON.stringify(folders));
-  } catch { /* */ } }, [domain, basePath, shareRoot, shareName, ous, groupsOu, ggroups, users, folders]);
+  } catch { /* */ } }, [domain, basePath, shareRoot, shareName, ous, dlOu, ggroups, users, folders]);
+
+  // Auto-répare : garantit une OU pour les groupes Domaine Local (« GDL ») et y pointe dlOu.
+  useEffect(() => {
+    setOus(prev => {
+      if (prev.some(o => o.id === dlOu)) return prev;
+      const found = prev.find(o => clean(o.name).toUpperCase() === 'GDL');
+      if (found) { setDlOu(found.id); return prev; }
+      const base = prev.find(o => o.parent === 'ROOT') || prev[0];
+      setDlOu('gdl');
+      return [...prev, { id: 'gdl', name: 'GDL', parent: base ? base.id : 'ROOT' }];
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const domainDN = domainToDN(domain);
   const netbios = netbiosOf(domain);
+  const ggOuDefault = ous.find(o => clean(o.name).toUpperCase() === 'GG')?.id || ous.find(o => o.parent === 'ROOT')?.id || ous[0]?.id || 'ROOT';
   const ouById = (id: string) => ous.find(o => o.id === id);
   const dnOfOu = (id: string): string => { const o = ouById(id); if (!o) return domainDN; return `OU=${o.name},${o.parent === 'ROOT' ? domainDN : dnOfOu(o.parent)}`; };
   const depthOu = (o: Ou) => { let d = 0, c: Ou | undefined = o; while (c && c.parent !== 'ROOT') { c = ouById(c.parent); d++; if (d > 60) break; } return d; };
@@ -157,7 +172,7 @@ export function AgdlpBuilder() {
     ggroups.forEach(g => o.push(`Ensure-Grp '${gName(g.id)}' Global '${dnOfOu(g.ou)}'`));
     o.push('');
     o.push('# --- 3) Groupes DOMAINE LOCAL (par dossier + droit NTFS) ---');
-    dlGroups.forEach(g => o.push(`Ensure-Grp '${dlName(g.f, g.rule)}' DomainLocal '${dnOfOu(groupsOu)}'`));
+    dlGroups.forEach(g => o.push(`Ensure-Grp '${dlName(g.f, g.rule)}' DomainLocal '${dnOfOu(dlOu)}'`));
     o.push('');
     o.push('# --- 4) Imbrication : Global -> Domaine Local ---');
     for (const f of folders) for (const rl of f.rules) o.push(`Add-ADGroupMember '${dlName(f, rl)}' -Members '${gName(rl.group)}' -ErrorAction SilentlyContinue`);
@@ -171,7 +186,7 @@ export function AgdlpBuilder() {
     }
     o.push('Write-Host "AGDLP applique cote AD." -ForegroundColor Green');
     return o.join('\n');
-  }, [domain, domainDN, ous, ggroups, groupsOu, folders, dlGroups, users]);
+  }, [domain, domainDN, ous, ggroups, dlOu, folders, dlGroups, users]);
 
   // ---- Script 2 : serveur de fichiers ----
   const scriptFS = useMemo(() => {
@@ -238,7 +253,7 @@ export function AgdlpBuilder() {
   const addOu = () => setOus(a => [...a, { id: uid('o'), name: 'Nouvelle_OU', parent: a[0]?.id || 'ROOT' }]);
   const delOu = (id: string) => { const bad = new Set([id, ...descendants(ous, id)]); setOus(a => a.filter(x => !bad.has(x.id))); };
   const patchGg = (id: string, p: Partial<GGroup>) => setGgroups(a => a.map(x => x.id === id ? { ...x, ...p } : x));
-  const addGg = () => setGgroups(a => [...a, { id: uid('g'), name: 'Groupe', ou: groupsOu }]);
+  const addGg = () => setGgroups(a => [...a, { id: uid('g'), name: 'Groupe', ou: ggOuDefault }]);
   const delGg = (id: string) => setGgroups(a => a.filter(x => x.id !== id));
   const patchUser = (id: string, p: Partial<User>) => setUsers(a => a.map(x => x.id === id ? { ...x, ...p } : x));
   const addUser = () => setUsers(a => [...a, { id: uid('u'), prenom: 'Prénom', nom: 'Nom', ou: ous.find(o => o.id === 'users')?.id || ous[0]?.id || '', group: ggroups[0]?.id || '' }]);
@@ -246,7 +261,7 @@ export function AgdlpBuilder() {
   const patchFolder = (id: string, p: Partial<Folder>) => setFolders(a => a.map(x => x.id === id ? { ...x, ...p } : x));
   const addFolder = () => setFolders(a => [...a, { id: uid('f'), name: 'Dossier', code: 'Dossier', parent: 'ROOT', rules: [] }]);
   const addGgBulk = () => {
-    const ou = bulkGgOu || groupsOu;
+    const ou = bulkGgOu || ggOuDefault;
     const rows = bulkGg.split(/\r?\n/).map(l => l.trim()).filter(Boolean).map(n => ({ id: uid('g'), name: n, ou }));
     if (rows.length) { setGgroups(a => [...a, ...rows]); setBulkGg(''); }
   };
@@ -302,8 +317,8 @@ export function AgdlpBuilder() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: 12 }}>
           <div><label style={labelStyle}>Domaine</label><input style={fieldStyle} value={domain} onChange={e => setDomain(e.target.value)} /></div>
           <div><label style={labelStyle}>Dossier racine des partages</label><input style={{ ...fieldStyle, fontFamily: 'ui-monospace,monospace' }} value={basePath} onChange={e => setBasePath(e.target.value)} /></div>
-          <div><label style={labelStyle}>OU des groupes (G_ / DL_)</label>
-            <select style={fieldStyle} value={groupsOu} onChange={e => setGroupsOu(e.target.value)}>{ous.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}</select>
+          <div><label style={labelStyle}>OU des groupes Domaine Local (DL)</label>
+            <select style={fieldStyle} value={dlOu} onChange={e => setDlOu(e.target.value)}>{ous.map(o => <option key={o.id} value={o.id}>{o.name}</option>)}</select>
           </div>
           <div><label style={labelStyle}>Nom du partage (dossier racine)</label><input style={fieldStyle} value={shareName} onChange={e => setShareName(e.target.value)} placeholder="Partages" /></div>
         </div>
