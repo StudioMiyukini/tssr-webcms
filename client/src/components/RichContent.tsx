@@ -28,19 +28,21 @@ const GLOSS_MAP: Record<string, string> = (() => {
 const GLOSS_KEYS = Object.keys(GLOSS_MAP).sort((a, b) => b.length - a.length);
 const escRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
 const GLOSS_SRC = GLOSS_KEYS.length ? `(?<![\\w/])(${GLOSS_KEYS.map(escRe).join('|')})(?![\\w])` : '';
-const SKIP_TAGS = new Set(['A', 'CODE', 'PRE', 'KBD', 'MARK', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BUTTON', 'SELECT', 'TEXTAREA', 'OPTION', 'SCRIPT', 'STYLE', 'SVG']);
+const SKIP_TAGS = new Set(['A', 'CODE', 'PRE', 'KBD', 'MARK', 'BUTTON', 'SELECT', 'TEXTAREA', 'OPTION', 'SCRIPT', 'STYLE']);
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const BLOCK_SEL = 'p,li,td,th,dd,dt,figcaption,caption,h1,h2,h3,h4,h5,h6,blockquote,summary,aside,div';
 
-/** Transforme la 1re occurrence de chaque acronyme connu en lien vers sa définition (glossaire). */
+/** Transforme la 1re occurrence par bloc de chaque acronyme connu en lien vers sa définition. */
 function linkifyAcronyms(root: HTMLElement) {
   if (!GLOSS_SRC) return;
   let probe: RegExp;
   try { probe = new RegExp(GLOSS_SRC); } catch { return; } // lookbehind non supporté → on renonce sans casser
-  const linked = new Set<string>();
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
     acceptNode(node) {
       let p = node.parentElement;
-      while (p && p !== root) {
-        if (SKIP_TAGS.has(p.tagName) || p.hasAttribute('data-block') || p.classList.contains('gloss') || p.classList.contains('gloss-ref')) return NodeFilter.FILTER_REJECT;
+      while (p) {
+        if (p.namespaceURI === SVG_NS || SKIP_TAGS.has(p.tagName) || p.hasAttribute('data-block') || p.classList.contains('gloss') || p.classList.contains('gloss-ref')) return NodeFilter.FILTER_REJECT;
+        if (p === root) break;
         p = p.parentElement;
       }
       return probe.test(node.nodeValue || '') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
@@ -50,7 +52,10 @@ function linkifyAcronyms(root: HTMLElement) {
   let n: Node | null;
   while ((n = walker.nextNode())) targets.push(n as Text);
   const re = new RegExp(GLOSS_SRC, 'g');
+  const seen = new Map<Element, Set<string>>(); // portée par bloc (1 lien par acronyme et par bloc)
   for (const tn of targets) {
+    const block = (tn.parentElement && tn.parentElement.closest(BLOCK_SEL)) || tn.parentElement || root;
+    let linked = seen.get(block); if (!linked) { linked = new Set(); seen.set(block, linked); }
     const text = tn.nodeValue || '';
     re.lastIndex = 0;
     const frag = document.createDocumentFragment();
