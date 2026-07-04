@@ -687,6 +687,10 @@ table.wp-list .column-primary { font-weight: 600; }
 .gloss-link { display: inline-block; font-family: 'Space Mono', monospace; font-size: 11px; padding: 3px 10px; border: 1px solid rgba(124,58,237,0.35); color: #a78bfa; background: rgba(124,58,237,0.08); border-radius: 3px; text-decoration: none; transition: all .2s; }
 .gloss-link:hover { border-color: var(--g-accent3); background: rgba(124,58,237,0.18); }
 
+/* Auto-liens d'acronymes vers le glossaire (discrets) */
+.gloss-ref { color: inherit; text-decoration: none; border-bottom: 1px dotted var(--accent); cursor: help; }
+.gloss-ref:hover { color: var(--accent); border-bottom-style: solid; }
+
 /* ===== Palette de recherche (site public) ===== */
 .search-btn { background: transparent; border: none; cursor: pointer; font-size: inherit; }
 .spal-overlay { position: fixed; inset: 0; z-index: 1000; background: rgba(10,14,26,0.55); backdrop-filter: blur(3px); display: flex; align-items: flex-start; justify-content: center; padding: 10vh 16px 16px; }

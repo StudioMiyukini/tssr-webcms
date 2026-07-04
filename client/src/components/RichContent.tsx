@@ -13,7 +13,66 @@ import { AdBulkConfigurator } from './AdBulkConfigurator';
 import { NetDiagnostic } from './NetDiagnostic';
 import { SubnetTrainer } from './SubnetTrainer';
 import { AgdlpBuilder } from './AgdlpBuilder';
+import { GLOSSARY, glossarySlug } from '@/lib/glossary-data';
 import type { PostsMode } from '@/lib/page-blocks';
+
+// --- Auto-liens vers le glossaire : acronymes « en majuscules » (2 à 6 car., + / optionnel). ---
+const GLOSS_MAP: Record<string, string> = (() => {
+  const m: Record<string, string> = {};
+  for (const t of GLOSSARY) {
+    const a = t.acronym.trim();
+    if (/^[A-Z0-9]{2,6}(\/[A-Z0-9]{1,6})?$/.test(a)) m[a] = glossarySlug(a);
+  }
+  return m;
+})();
+const GLOSS_KEYS = Object.keys(GLOSS_MAP).sort((a, b) => b.length - a.length);
+const escRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
+const GLOSS_SRC = GLOSS_KEYS.length ? `(?<![\\w/])(${GLOSS_KEYS.map(escRe).join('|')})(?![\\w])` : '';
+const SKIP_TAGS = new Set(['A', 'CODE', 'PRE', 'KBD', 'MARK', 'H1', 'H2', 'H3', 'H4', 'H5', 'H6', 'BUTTON', 'SELECT', 'TEXTAREA', 'OPTION', 'SCRIPT', 'STYLE', 'SVG']);
+
+/** Transforme la 1re occurrence de chaque acronyme connu en lien vers sa définition (glossaire). */
+function linkifyAcronyms(root: HTMLElement) {
+  if (!GLOSS_SRC) return;
+  let probe: RegExp;
+  try { probe = new RegExp(GLOSS_SRC); } catch { return; } // lookbehind non supporté → on renonce sans casser
+  const linked = new Set<string>();
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      let p = node.parentElement;
+      while (p && p !== root) {
+        if (SKIP_TAGS.has(p.tagName) || p.hasAttribute('data-block') || p.classList.contains('gloss') || p.classList.contains('gloss-ref')) return NodeFilter.FILTER_REJECT;
+        p = p.parentElement;
+      }
+      return probe.test(node.nodeValue || '') ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+    },
+  });
+  const targets: Text[] = [];
+  let n: Node | null;
+  while ((n = walker.nextNode())) targets.push(n as Text);
+  const re = new RegExp(GLOSS_SRC, 'g');
+  for (const tn of targets) {
+    const text = tn.nodeValue || '';
+    re.lastIndex = 0;
+    const frag = document.createDocumentFragment();
+    let last = 0, changed = false, m: RegExpExecArray | null;
+    while ((m = re.exec(text))) {
+      const acr = m[1];
+      if (linked.has(acr)) continue;
+      linked.add(acr);
+      if (m.index > last) frag.appendChild(document.createTextNode(text.slice(last, m.index)));
+      const a = document.createElement('a');
+      a.className = 'gloss-ref'; a.href = `/glossaire#gt-${GLOSS_MAP[acr]}`; a.title = `${acr} — voir la définition`;
+      a.textContent = acr;
+      frag.appendChild(a);
+      last = m.index + acr.length;
+      changed = true;
+    }
+    if (changed) {
+      if (last < text.length) frag.appendChild(document.createTextNode(text.slice(last)));
+      tn.parentNode?.replaceChild(frag, tn);
+    }
+  }
+}
 
 /**
  * Rend du HTML (contenu de page/article) et hydrate les blocs dynamiques (îlots React)
@@ -25,6 +84,7 @@ export function RichContent({ html, className = 'rich' }: { html: string; classN
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
+    linkifyAcronyms(el); // acronymes → liens vers le glossaire (avant le montage des îlots)
     const roots: Root[] = [];
     el.querySelectorAll('[data-block="latest-posts"]').forEach(node => {
       const count = Number(node.getAttribute('data-count')) || 3;
