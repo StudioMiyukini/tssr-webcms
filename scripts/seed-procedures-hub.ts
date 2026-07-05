@@ -22,6 +22,7 @@ const PROCEDURES: Proc[] = [
   { slug: 'procedure-dhcp-basculement', icon: '🔁', title: 'Basculement DHCP (failover)', desc: 'Redondance entre 2 serveurs : prérequis, répartition de charge vs veille active, pas-à-pas.', tags: ['Hébergement', 'DHCP', 'Haute dispo'] },
   { slug: 'procedure-dns', icon: '🌐', title: 'DNS : zones & enregistrements', desc: 'Zones directe/inversée, enregistrements A/CNAME/PTR, tests nslookup.', tags: ['Hébergement', 'Réseau'] },
   { slug: 'procedure-iis', icon: '🕸️', title: 'IIS : héberger un site web', desc: 'Rôle IIS, site + liaison, DNS, permissions NTFS, pare-feu.', tags: ['Hébergement', 'Web'] },
+  { slug: 'procedure-iis-hyperv', icon: '🌐', title: 'Installer un serveur IIS sur une VM Hyper-V', desc: 'De la création de la VM à la publication du site : VM → Windows Server → IP → IIS → site → test.', tags: ['Hébergement', 'Hyper-V', 'Web'] },
 ];
 
 const PER_PAGE = 20;
