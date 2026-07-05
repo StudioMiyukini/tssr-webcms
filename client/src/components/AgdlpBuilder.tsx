@@ -31,7 +31,6 @@ type Folder = { id: string; name: string; code: string; parent: string; abs?: st
 const clean = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '');
 const login = (p: string, n: string) => `${clean(p)}.${clean(n)}`.toLowerCase();
 const domainToDN = (d: string) => d.split('.').filter(Boolean).map(x => `DC=${x}`).join(',');
-const netbiosOf = (d: string) => clean(d.split('.')[0] || 'DOMAINE').toUpperCase();
 const uid = (p: string) => p + Math.random().toString(36).slice(2, 8);
 
 // Bloc PowerShell d'assertions : tests unitaires [OK]/[KO] avec récapitulatif.
@@ -110,7 +109,6 @@ export function AgdlpBuilder() {
   }, []);
 
   const domainDN = domainToDN(domain);
-  const netbios = netbiosOf(domain);
   const ggOuDefault = ous.find(o => clean(o.name).toUpperCase() === 'GG')?.id || ous.find(o => o.parent === 'ROOT')?.id || ous[0]?.id || 'ROOT';
   const ouById = (id: string) => ous.find(o => o.id === id);
   const dnOfOu = (id: string): string => { const o = ouById(id); if (!o) return domainDN; return `OU=${o.name},${o.parent === 'ROOT' ? domainDN : dnOfOu(o.parent)}`; };
@@ -123,7 +121,6 @@ export function AgdlpBuilder() {
   const dlName = (f: Folder, rl: Rule) => `DL_${clean(f.code || f.name).slice(0, 15)}_${RIGHT_CODE[rl.right]}`.slice(0, 20);
   const rightLabel = (rl: Rule) => rl.right === 'CUSTOM' ? `icacls ${rl.custom || '?'}` : ntfs(rl.right).label;
   // Chaîne d'autorisation icacls : (OI)(CI) + le droit (lettre simple, combo, ou personnalisé).
-  const igrant = (rl: Rule) => { const p = rl.right === 'CUSTOM' ? `(${(rl.custom || 'R').replace(/[^A-Za-z0-9,]/g, '')})` : ntfs(rl.right).icacls; return `(OI)(CI)${p}`; };
 
   const dlGroups = useMemo(() => {
     const m = new Map<string, { f: Folder; rule: Rule }>();
@@ -208,50 +205,39 @@ export function AgdlpBuilder() {
     return o.join('\n');
   }, [domain, domainDN, ous, ggroups, dlOu, folders, dlGroups, users]);
 
-  // ---- Script 2 : serveur de fichiers (séquencé + tests) ----
+  // ---- Script 2 : serveur de fichiers (dossiers + partage, droits par défaut ; NTFS manuel) ----
   const scriptFS = useMemo(() => {
     const o: string[] = [];
     const sortedF = [...folders].sort((a, b) => depthF(a) - depthF(b));
     o.push('#Requires -RunAsAdministrator');
     o.push('# ============================================================');
     o.push('#  AGDLP (2/2) - SERVEUR DE FICHIERS');
-    o.push('#  1 partage sur le dossier racine (Utilisateurs authentifies = Controle total),');
-    o.push('#  controle reel par NTFS sur les groupes Domaine Local, puis TESTS.');
-    o.push('#  PREREQUIS : lancer d\'abord le script (1) sur le DC (les groupes DL doivent exister).');
+    o.push('#  Cree le dossier racine + le partage, puis les sous-dossiers avec les');
+    o.push('#  DROITS PAR DEFAUT (herites du parent). Les droits NTFS se font a la MAIN.');
     o.push('# ============================================================');
     o.push('$global:T = @{ ok = 0; ko = 0 }');
     o.push(...PS_ASSERT);
-    o.push("$AuthUsers = (New-Object System.Security.Principal.SecurityIdentifier('S-1-5-11')).Translate([System.Security.Principal.NTAccount]).Value");
+    if (shareRoot) o.push("$AuthUsers = (New-Object System.Security.Principal.SecurityIdentifier('S-1-5-11')).Translate([System.Security.Principal.NTAccount]).Value");
     o.push('');
     o.push('Write-Host "[1/2] Dossier racine + partage..." -ForegroundColor Cyan');
     o.push(`New-Item -ItemType Directory -Path '${basePath}' -Force | Out-Null`);
     if (shareRoot) o.push(`if(-not(Get-SmbShare -Name '${shareName}' -ErrorAction SilentlyContinue)){ New-SmbShare -Name '${shareName}' -Path '${basePath}' -FullAccess $AuthUsers | Out-Null }`);
-    o.push('Write-Host "[2/2] Sous-dossiers + NTFS (icacls)..." -ForegroundColor Cyan');
-    sortedF.forEach(f => {
-      const p = pathOf(f.id);
-      o.push(`New-Item -ItemType Directory -Path '${p}' -Force | Out-Null`);
-      if (f.noInherit) {
-        o.push(`icacls '${p}' /inheritance:r | Out-Null`);
-        o.push(`icacls '${p}' /grant '*S-1-5-32-544:(OI)(CI)(F)' | Out-Null   # Administrateurs (garde l'acces admin)`);
-        o.push(`icacls '${p}' /grant '*S-1-5-18:(OI)(CI)(F)' | Out-Null       # Systeme`);
-      }
-      for (const rl of f.rules) o.push(`icacls '${p}' /grant '${netbios}\\${dlName(f, rl)}:${igrant(rl)}'; if($LASTEXITCODE -ne 0){ Write-Warning "icacls KO pour ${dlName(f, rl)} sur ${p} (le groupe existe-t-il ? script 1 lance ?)" }`);
-    });
+    o.push('Write-Host "[2/2] Sous-dossiers (droits par defaut, herites)..." -ForegroundColor Cyan');
+    sortedF.forEach(f => o.push(`New-Item -ItemType Directory -Path '${pathOf(f.id)}' -Force | Out-Null`));
     o.push('');
-    o.push('Write-Host "===== TESTS Partage & NTFS =====" -ForegroundColor Yellow');
+    o.push('# --- Droits NTFS : A APPLIQUER MANUELLEMENT sur les groupes DL (onglet Securite) ---');
+    o.push('# Rappel des grants attendus (voir l apercu "Arborescence des droits NTFS") :');
+    sortedF.forEach(f => { for (const rl of f.rules) o.push(`#   ${dlName(f, rl)}  ->  ${ntfs(rl.right).label}  sur  ${pathOf(f.id)}`); });
+    o.push('');
+    o.push('Write-Host "===== TESTS Dossiers & partage =====" -ForegroundColor Yellow');
     if (shareRoot) {
       o.push(`Assert "Partage ${shareName} existe" { Get-SmbShare -Name '${shareName}' }`);
       o.push(`Assert "Partage ${shareName} : Utilisateurs authentifies = Controle total" { Get-SmbShareAccess -Name '${shareName}' | Where-Object { $_.AccessRight -eq 'Full' } }`);
     }
-    sortedF.forEach(f => {
-      const p = pathOf(f.id);
-      o.push(`Assert "Dossier existe : ${f.name}" { Test-Path '${p}' }`);
-      for (const rl of f.rules) o.push(`Assert "NTFS ${dlName(f, rl)} present sur ${f.name}" { (Get-Acl '${p}').Access | Where-Object { $_.IdentityReference -like '*\\${dlName(f, rl)}' } }`);
-      if (f.noInherit) o.push(`Assert "Administrateurs present sur ${f.name}" { (Get-Acl '${p}').Access | Where-Object { $_.IdentityReference -like '*Admin*' } }`);
-    });
-    o.push('Show-Summary "Partage & NTFS (script 2)"');
+    sortedF.forEach(f => o.push(`Assert "Dossier existe : ${f.name}" { Test-Path '${pathOf(f.id)}' }`));
+    o.push('Show-Summary "Dossiers & partage (script 2)"');
     return o.join('\n');
-  }, [folders, basePath, shareRoot, shareName, netbios]);
+  }, [folders, basePath, shareRoot, shareName]);
 
   // ---- Script 3 : vérification autonome (rejouable, tests [OK]/[KO]) ----
   const scriptVerify = useMemo(() => {
@@ -263,16 +249,12 @@ export function AgdlpBuilder() {
     o.push('# ============================================================');
     o.push('$global:T = @{ ok = 0; ko = 0 }');
     o.push(...PS_ASSERT);
-    o.push('Write-Host "== Partage & NTFS ==" -ForegroundColor Yellow');
+    o.push('Write-Host "== Dossiers & partage ==" -ForegroundColor Yellow');
     if (shareRoot) {
       o.push(`Assert "Partage ${shareName} existe" { Get-SmbShare -Name '${shareName}' }`);
       o.push(`Assert "Partage ${shareName} : Utilisateurs authentifies = Controle total" { Get-SmbShareAccess -Name '${shareName}' | Where-Object { $_.AccessRight -eq 'Full' } }`);
     }
-    sortedF.forEach(f => {
-      const p = pathOf(f.id);
-      o.push(`Assert "Dossier existe : ${f.name}" { Test-Path '${p}' }`);
-      for (const rl of f.rules) o.push(`Assert "NTFS ${dlName(f, rl)} sur ${f.name}" { (Get-Acl '${p}').Access | Where-Object { $_.IdentityReference -like '*\\${dlName(f, rl)}' } }`);
-    });
+    sortedF.forEach(f => o.push(`Assert "Dossier existe : ${f.name}" { Test-Path '${pathOf(f.id)}' }`));
     o.push('Write-Host "== Active Directory (si module dispo) ==" -ForegroundColor Yellow');
     o.push('if(Get-Module -ListAvailable ActiveDirectory){ Import-Module ActiveDirectory');
     ggroups.forEach(g => o.push(`  Assert "Groupe global ${gName(g.id)}" { Get-ADGroup -Identity '${gName(g.id)}' }`));
@@ -493,7 +475,7 @@ export function AgdlpBuilder() {
       </div>
       <div style={{ marginTop: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '0 0 6px' }}>
-          <div style={{ fontWeight: 700, fontSize: 14 }}>📜 ② Serveur de fichiers — dossier racine partagé + NTFS granulaire</div>
+          <div style={{ fontWeight: 700, fontSize: 14 }}>📜 ② Serveur de fichiers — dossiers (droits par défaut) + partage racine</div>
           {outBtns('fs', scriptFS, 'agdlp-partages.ps1')}
         </div>
         <pre style={preStyle}><code>{scriptFS}</code></pre>
