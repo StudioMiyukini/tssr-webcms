@@ -25,7 +25,7 @@ const blocks: PageBlock[] = [
 configure terminal
 hostname [Rx]
 ip domain-name [xx.yy]
-username admin secret Azerty77
+username admin privilege 15 secret Azerty77
 crypto key generate rsa
 1024
 ip ssh version 2
@@ -44,7 +44,7 @@ ip address [ip] [subnet]
 no shutdown
 exit
 ip default-gateway [ip]
-username admin secret [Xx]
+username admin privilege 15 secret [Xx]
 crypto key generate rsa
 1024
 ip ssh version 2
@@ -53,7 +53,7 @@ transport input ssh
 login local
 end
 write memory`),
-  note('gray', '📝 Note', '<p>Le <code>1024</code> sur sa propre ligne est la <strong>réponse</strong> à la question de longueur de clé posée par <code>crypto key generate rsa</code> (colle-le tel quel). Les sections ci-dessous détaillent chaque commande.</p>'),
+  note('gray', '📝 Notes', '<ul><li>Le <code>1024</code> sur sa propre ligne est la <strong>réponse</strong> à la question de longueur de clé posée par <code>crypto key generate rsa</code> (colle-le tel quel).</li><li>Le compte a le <strong>privilège 15</strong> → la session SSH arrive <strong>directement en mode privilégié</strong> (<code>R2#</code>). Sans <code>privilege 15</code>, tu resterais en mode utilisateur (<code>R2&gt;</code>) et <code>enable</code> refuserait (« <em>% No password set</em> ») tant qu’aucun <code>enable secret</code> n’est défini.</li></ul>'),
 
   block('heading', { level: 2, text: '✅ Prérequis' }),
   block('html', { html: `<ul>

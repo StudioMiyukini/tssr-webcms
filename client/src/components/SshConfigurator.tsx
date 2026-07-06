@@ -49,7 +49,7 @@ export function SshConfigurator() {
       o.push('exit');
       o.push(`ip default-gateway ${gw || '192.168.1.254'}`);
     }
-    o.push(`username ${user || 'admin'} secret ${secret || 'MotDePasse'}`);
+    o.push(`username ${user || 'admin'} privilege 15 secret ${secret || 'MotDePasse'}`);
     if (ena.trim()) o.push(`enable secret ${ena.trim()}`);
     o.push('crypto key generate rsa');
     o.push(bits || '1024');

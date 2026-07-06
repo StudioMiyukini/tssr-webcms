@@ -152,6 +152,13 @@ const TIPS: Tip[] = [
     solution: 'Invite de commandes <strong>en administrateur</strong> : reprendre la propriété puis réinitialiser l’ACL — <code>takeown /f "C:\\Partages\\MonDossier" /r</code> puis <code>icacls "C:\\Partages\\MonDossier" /reset /t /c</code> (le dossier ré-hérite du parent). Nettoyer un SID orphelin : <code>icacls "…" /remove:g *S-1-5-21-…</code>. Recréer d’abord les <strong>groupes AD</strong> (script ①) <strong>avant</strong> de réappliquer le NTFS (script ②).',
   },
   {
+    id: 'cisco-enable-no-password', icon: '🔑', title: 'Cisco : « enable » refusé après SSH (% No password set)', tags: ['Cisco', 'SSH', 'Packet Tracer'],
+    contexte: 'Connecté en <strong>SSH</strong> à un routeur/switch (invite <code>R2&gt;</code>), on tape <code>enable</code> pour passer en mode privilégié.',
+    symptome: '<code>enable</code> répond « <strong>% No password set.</strong> » et reste en mode utilisateur ; <code>show run</code> renvoie « <em>Invalid input</em> » (normal en mode utilisateur).',
+    cause: 'Depuis une session <strong>VTY/SSH</strong>, IOS <strong>interdit</strong> le passage en mode privilégié s’il n’y a <strong>aucun mot de passe enable</strong> configuré (sécurité — contrairement à la console). De plus, le compte SSH n’a pas le <strong>niveau de privilège 15</strong>.',
+    solution: 'Sur l’équipement (en mode privilégié via la <strong>console</strong>), deux options : <strong>(1)</strong> définir un mot de passe enable → <code>configure terminal</code> puis <code>enable secret MonSecret</code> → <code>enable</code> marchera ensuite en SSH ; <strong>(2, plus simple)</strong> donner le <strong>privilège 15</strong> au compte → <code>username admin privilege 15 secret MonMdp</code> → la session SSH arrive <strong>directement</strong> en mode privilégié (<code>R2#</code>), sans <code>enable</code>. Détails : <a href="/procedure-ssh-packet-tracer">SSH sur Packet Tracer</a>.',
+  },
+  {
     id: 'rdp-refuse', icon: '🖥️', title: 'Connexion Bureau à distance (RDP) refusée', tags: ['RDP', 'Pare-feu'],
     contexte: 'Prise en main à distance d’un poste ou d’un serveur.',
     symptome: '« Impossible de se connecter » / délai dépassé en RDP (<code>mstsc</code>).',
