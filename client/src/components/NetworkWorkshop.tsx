@@ -32,7 +32,7 @@ export type LinkMedia = 'serial' | 'gig';
 
 export type Service = { id: string; name: string; hosts: string; routerId: string; hasSwitch: boolean; dhcp: boolean };
 export type RouterDef = { id: string; name: string; model: RouterModel };
-export type LinkDef = { id: string; aId: string; bId: string; media: LinkMedia };
+export type LinkDef = { id: string; routerIds: string[]; media: LinkMedia; hasSwitch: boolean };
 
 export type Ctx = {
   // 1. Contexte
@@ -66,7 +66,7 @@ export const DEFAULT_CTX: Ctx = {
     { id: 'rA', name: 'R1', model: '2911' },
     { id: 'rB', name: 'R2', model: '2811' },
   ],
-  links: [{ id: 'lA', aId: 'rA', bId: 'rB', media: 'serial' }],
+  links: [{ id: 'lA', routerIds: ['rA', 'rB'], media: 'gig', hasSwitch: true }],
   login: 'admin', mdp: 'Azerty77', secret: 'MonSecretEnable',
   gwPos: 'last', switchPos: 'beforeRouter', linkCidr: '30', dnsServer: '', leaseDays: '7',
 };
@@ -81,7 +81,7 @@ const SER_SLOTS = ['Serial0/0/0', 'Serial0/0/1', 'Serial0/1/0', 'Serial0/1/1'];
 export type Sub = {
   kind: 'lan' | 'link'; id: string; name: string;
   net: number; first: number; last: number; bc: number; usable: number; mask: number; cidr: number;
-  gw: number | null; switchIp: number | null; routerId?: string; dhcp?: boolean; media?: LinkMedia;
+  gw: number | null; switchIp: number | null; routerId?: string; dhcp?: boolean; media?: LinkMedia; routerIds?: string[];
 };
 export type Iface = {
   routerId: string; routerName: string; iface: string; target: string;
@@ -105,7 +105,10 @@ export function computePlan(ctx: Ctx): Plan {
   type Item = { id: string; kind: 'lan' | 'link'; need: number; cidr: number };
   const items: Item[] = [];
   for (const s of ctx.services) { const need = Math.max(1, Number(s.hosts) || 0); items.push({ id: 'svc:' + s.id, kind: 'lan', need, cidr: 32 - hostBitsFor(need) }); }
-  for (const l of ctx.links) items.push({ id: 'lnk:' + l.id, kind: 'link', need: 2, cidr: linkCidr });
+  for (const l of ctx.links) {
+    const n = l.media === 'serial' ? 2 : Math.max(2, l.routerIds.length + (l.hasSwitch ? 1 : 0));
+    items.push({ id: 'lnk:' + l.id, kind: 'link', need: n, cidr: l.media === 'serial' ? linkCidr : 32 - hostBitsFor(n) });
+  }
 
   // Allocation VLSM : les plus gros blocs d'abord.
   const alloc = new Map<string, { net: number; first: number; last: number; bc: number; usable: number; mask: number; cidr: number }>();
@@ -143,14 +146,23 @@ export function computePlan(ctx: Ctx): Plan {
     const ifc = nextEth(r);
     if (ifc) ifaces.push({ routerId: r.id, routerName: r.name, iface: ifc, target: `LAN ${s.name || ''}`.trim(), ip: gw, mask: a.mask, cidr: a.cidr, role: 'Passerelle LAN', clock: false });
   }
-  // Liaisons inter-routeurs (dans l'ordre des liens)
+  // Liaisons / segments inter-routeurs (dans l'ordre des liens)
   for (const l of ctx.links) {
     const a = alloc.get('lnk:' + l.id); if (!a) continue;
-    const ra = ctx.routers.find(x => x.id === l.aId); const rb = ctx.routers.find(x => x.id === l.bId);
-    subs.push({ kind: 'link', id: 'lnk:' + l.id, name: `Lien ${ra?.name || '?'}–${rb?.name || '?'}`, net: a.net, first: a.first, last: a.last, bc: a.bc, usable: a.usable, mask: a.mask, cidr: a.cidr, gw: null, switchIp: null, media: l.media });
-    const ipA = a.first; const ipB = (a.first + 1) >>> 0;
-    if (ra) { const ifc = l.media === 'serial' ? nextSer(ra) : nextEth(ra); if (ifc) ifaces.push({ routerId: ra.id, routerName: ra.name, iface: ifc, target: `Lien → ${rb?.name || '?'}`, ip: ipA, mask: a.mask, cidr: a.cidr, role: l.media === 'serial' ? 'Liaison série (DCE)' : 'Liaison', clock: l.media === 'serial' }); }
-    if (rb) { const ifc = l.media === 'serial' ? nextSer(rb) : nextEth(rb); if (ifc) ifaces.push({ routerId: rb.id, routerName: rb.name, iface: ifc, target: `Lien → ${ra?.name || '?'}`, ip: ipB, mask: a.mask, cidr: a.cidr, role: l.media === 'serial' ? 'Liaison série (DTE)' : 'Liaison', clock: false }); }
+    const isSerial = l.media === 'serial';
+    const all = l.routerIds.map(id => ctx.routers.find(r => r.id === id)).filter((r): r is RouterDef => !!r);
+    const parts = isSerial ? all.slice(0, 2) : all;
+    const label = `Segment ${parts.map(r => r.name).join('–') || '?'}`;
+    const swIp = (!isSerial && l.hasSwitch) ? (a.first + parts.length) >>> 0 : null;
+    subs.push({ kind: 'link', id: 'lnk:' + l.id, name: label, net: a.net, first: a.first, last: a.last, bc: a.bc, usable: a.usable, mask: a.mask, cidr: a.cidr, gw: null, switchIp: (swIp !== null && swIp <= a.last) ? swIp : null, media: l.media, routerIds: parts.map(r => r.id) });
+    if (isSerial && all.length > 2) warnings.push(`${label} : une liaison série relie exactement 2 routeurs — bascule en « Ethernet (switch) » pour en relier davantage.`);
+    parts.forEach((r, k) => {
+      const ip = (a.first + k) >>> 0;
+      const ifc = isSerial ? nextSer(r) : nextEth(r);
+      if (!ifc) return;
+      const role = isSerial ? (k === 0 ? 'Liaison série (DCE)' : 'Liaison série (DTE)') : 'Interconnexion';
+      ifaces.push({ routerId: r.id, routerName: r.name, iface: ifc, target: label, ip, mask: a.mask, cidr: a.cidr, role, clock: isSerial && k === 0 });
+    });
   }
 
   return { ok: !error, error, warnings, baseNet, baseBc, cidr, totalAddr: (baseBc - baseNet + 1) >>> 0, used: (ptr - baseNet) >>> 0, subs, ifaces };
@@ -269,11 +281,12 @@ export function NetworkWorkshop() {
   // — routers —
   const setRtr = (id: string, p: Partial<RouterDef>) => set({ routers: ctx.routers.map(r => r.id === id ? { ...r, ...p } : r) });
   const addRtr = () => set({ routers: [...ctx.routers, { id: uid('r'), name: 'R' + (ctx.routers.length + 1), model: '2911' }] });
-  const delRtr = (id: string) => set({ routers: ctx.routers.filter(r => r.id !== id), links: ctx.links.filter(l => l.aId !== id && l.bId !== id), services: ctx.services.map(s => s.routerId === id ? { ...s, routerId: '' } : s) });
-  // — links —
+  const delRtr = (id: string) => set({ routers: ctx.routers.filter(r => r.id !== id), links: ctx.links.map(l => ({ ...l, routerIds: l.routerIds.filter(x => x !== id) })).filter(l => l.routerIds.length >= 2), services: ctx.services.map(s => s.routerId === id ? { ...s, routerId: '' } : s) });
+  // — links / segments —
   const setLink = (id: string, p: Partial<LinkDef>) => set({ links: ctx.links.map(l => l.id === id ? { ...l, ...p } : l) });
-  const addLink = () => set({ links: [...ctx.links, { id: uid('l'), aId: ctx.routers[0]?.id || '', bId: ctx.routers[1]?.id || ctx.routers[0]?.id || '', media: 'serial' }] });
+  const addLink = () => set({ links: [...ctx.links, { id: uid('l'), routerIds: ctx.routers.slice(0, 2).map(r => r.id), media: 'gig', hasSwitch: true }] });
   const delLink = (id: string) => set({ links: ctx.links.filter(l => l.id !== id) });
+  const toggleLinkRouter = (id: string, rid: string) => set({ links: ctx.links.map(l => l.id === id ? { ...l, routerIds: l.routerIds.includes(rid) ? l.routerIds.filter(x => x !== rid) : [...l.routerIds, rid] } : l) });
 
   const rname = (id: string) => ctx.routers.find(r => r.id === id)?.name || '—';
 
@@ -389,7 +402,7 @@ export function NetworkWorkshop() {
               <div><label style={label}>Masque des liaisons inter-routeurs (CIDR)</label><input style={{ ...field, ...mono }} value={ctx.linkCidr} onChange={e => set({ linkCidr: e.target.value.replace(/\D/g, '') })} placeholder="30" /></div>
               <div><label style={label}>Bail DHCP (jours)</label><input style={{ ...field, ...mono }} value={ctx.leaseDays} onChange={e => set({ leaseDays: e.target.value.replace(/\D/g, '') })} placeholder="7" /></div>
             </div>
-            <div className="meta" style={{ fontSize: 11.5, marginTop: 10 }}>Convention appliquée : <strong>clients</strong> en début de plage (DHCP), <strong>switch</strong> puis <strong>routeur</strong> en fin de plage. Les liaisons entre routeurs utilisent un /{clampNum(Number(ctx.linkCidr) || 30, 8, 30)} (2 hôtes).</div>
+            <div className="meta" style={{ fontSize: 11.5, marginTop: 10 }}>Convention appliquée : <strong>clients</strong> en début de plage (DHCP), <strong>switch</strong> puis <strong>routeur</strong> en fin de plage. Les <strong>liaisons série</strong> utilisent un /{clampNum(Number(ctx.linkCidr) || 30, 8, 30)} (2 hôtes) ; les <strong>segments Ethernet</strong> sont dimensionnés au nombre de routeurs qu’ils relient.</div>
           </div>
           <StepNav step={step} setStep={setStep} />
         </div>
@@ -449,23 +462,30 @@ export function NetworkWorkshop() {
           </div>
 
           <div style={group}>
-            <div style={legend}>🔗 Liaisons inter-routeurs</div>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 360 }}>
-                <thead><tr><th style={th}>Routeur A (DCE)</th><th style={th}>Routeur B (DTE)</th><th style={th}>Média</th><th style={th}></th></tr></thead>
-                <tbody>
-                  {ctx.links.map(l => (
-                    <tr key={l.id}>
-                      <td style={td}><select style={{ ...field, width: 90 }} value={l.aId} onChange={e => setLink(l.id, { aId: e.target.value })}>{ctx.routers.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</select></td>
-                      <td style={td}><select style={{ ...field, width: 90 }} value={l.bId} onChange={e => setLink(l.id, { bId: e.target.value })}>{ctx.routers.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}</select></td>
-                      <td style={td}><select style={{ ...field, width: 110 }} value={l.media} onChange={e => setLink(l.id, { media: e.target.value as LinkMedia })}><option value="serial">Série</option><option value="gig">Ethernet/Gig</option></select></td>
-                      <td style={{ ...td, width: 40 }}><button type="button" onClick={() => delLink(l.id)} style={{ ...smallBtn, color: '#dc2626', borderColor: 'transparent' }} title="Supprimer">✕</button></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <button type="button" onClick={addLink} style={{ ...btn, marginTop: 10 }} disabled={ctx.routers.length < 2}>+ Ajouter une liaison</button>
+            <div style={legend}>🔗 Liaisons / segments entre routeurs</div>
+            {ctx.links.map(l => (
+              <div key={l.id} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', marginBottom: 10, background: 'var(--surface)' }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
+                  <select style={{ ...field, width: 190 }} value={l.media} onChange={e => setLink(l.id, { media: e.target.value as LinkMedia })}>
+                    <option value="gig">Ethernet (via switch)</option>
+                    <option value="serial">Série (point à point)</option>
+                  </select>
+                  {l.media === 'gig' && <label style={{ fontSize: 12.5, display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}><input type="checkbox" checked={l.hasSwitch} onChange={e => setLink(l.id, { hasSwitch: e.target.checked })} /> switch dans le segment</label>}
+                  <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{l.media === 'serial' ? '2 routeurs (1er = DCE)' : `${l.routerIds.length} routeur(s) sur le segment`}</span>
+                  <button type="button" onClick={() => delLink(l.id)} style={{ ...smallBtn, marginLeft: 'auto', color: '#dc2626', borderColor: 'transparent' }} title="Supprimer">✕</button>
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {ctx.routers.map(r => {
+                    const on = l.routerIds.includes(r.id);
+                    const ord = l.routerIds.indexOf(r.id);
+                    const tag = on && l.media === 'serial' ? (ord === 0 ? 'DCE · ' : 'DTE · ') : '';
+                    return <button key={r.id} type="button" onClick={() => toggleLinkRouter(l.id, r.id)} style={{ padding: '4px 11px', borderRadius: 999, cursor: 'pointer', fontSize: 12, fontWeight: 600, border: `1px solid ${on ? 'var(--accent)' : 'var(--border)'}`, background: on ? 'var(--accent)' : 'var(--surface)', color: on ? '#fff' : 'var(--text)' }}>{tag}{r.name}</button>;
+                  })}
+                </div>
+              </div>
+            ))}
+            <button type="button" onClick={addLink} style={{ ...btn }} disabled={ctx.routers.length < 2}>+ Ajouter une liaison / un segment</button>
+            <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>Un <strong>segment Ethernet</strong> relie <strong>plusieurs routeurs</strong> sur le même sous-réseau (via un switch, comme dans Packet Tracer). Une <strong>liaison série</strong> relie exactement 2 routeurs (DCE = clock rate).</div>
           </div>
 
           {/* Résultats */}
@@ -658,7 +678,7 @@ function SchemaSvg({ ctx, plan }: { ctx: Ctx; plan: Plan }) {
   if (!routers.length) return <div className="meta">Ajoute des routeurs (étape 3) pour afficher le schéma.</div>;
   const lanW = 176, lanH = 56, lanGap = 12, routerW = 128, routerH = 46, colGap = 34, marginX = 16;
   const linkSubs = plan.subs.filter(s => s.kind === 'link');
-  const topPad = linkSubs.length ? 72 : 20;
+  const topPad = linkSubs.length ? (12 + Math.min(3, linkSubs.length) * 30 + 28) : 20;
   const routerY = topPad;
   const firstLanY = routerY + routerH + 30;
   const pitch = lanW + colGap;
@@ -673,19 +693,28 @@ function SchemaSvg({ ctx, plan }: { ctx: Ctx; plan: Plan }) {
     <div style={{ overflowX: 'auto' }}>
       <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ maxWidth: 'none', display: 'block' }}>
         {linkSubs.map((s, k) => {
-          const ia = plan.ifaces.find(i => i.ip === s.first);
-          const ib = plan.ifaces.find(i => i.ip === ((s.first + 1) >>> 0));
-          const a = ia ? idx.get(ia.routerId) : undefined;
-          const b = ib ? idx.get(ib.routerId) : undefined;
-          if (a === undefined || b === undefined) return null;
-          const x1 = cx(a), x2 = cx(b);
-          const apexY = Math.max(8, routerY - 44 - (k % 2) * 14);
-          const midX = (x1 + x2) / 2;
+          const idxs = (s.routerIds || []).map(id => idx.get(id)).filter((v): v is number => v !== undefined);
+          if (idxs.length < 2) return null;
+          const xs = idxs.map(cx);
+          if (s.media === 'serial') {
+            const x1 = xs[0], x2 = xs[1];
+            const apexY = Math.max(8, routerY - 40 - (k % 2) * 12);
+            const midX = (x1 + x2) / 2;
+            return (
+              <g key={s.id}>
+                <path d={`M ${x1} ${routerY} Q ${midX} ${apexY} ${x2} ${routerY}`} fill="none" stroke="var(--accent)" strokeWidth={1.6} strokeDasharray="5 4" />
+                <text x={midX} y={apexY - 2} textAnchor="middle" fontSize={9.5} fill="var(--text-muted)">{ipToStr(s.net)}/{s.cidr} · série</text>
+              </g>
+            );
+          }
+          const nodeX = xs.reduce((a, b) => a + b, 0) / xs.length;
+          const nodeY = 12 + (k % 3) * 30;
+          const nodeW = 120, nodeH = 20;
           return (
             <g key={s.id}>
-              <path d={`M ${x1} ${routerY} Q ${midX} ${apexY} ${x2} ${routerY}`} fill="none" stroke="var(--accent)" strokeWidth={1.6} strokeDasharray="5 4" />
-              <text x={midX} y={apexY - 3} textAnchor="middle" fontSize={9.5} fill="var(--text-muted)">{ipToStr(s.net)}/{s.cidr} · {s.media === 'serial' ? 'série' : 'Gig'}</text>
-              <text x={midX} y={apexY + 9} textAnchor="middle" fontSize={9} fill="var(--text-muted)">{ipToStr(s.first)} ↔ {ipToStr((s.first + 1) >>> 0)}</text>
+              {xs.map((x, j) => <line key={j} x1={nodeX} y1={nodeY + nodeH} x2={x} y2={routerY} stroke="var(--accent)" strokeWidth={1.3} strokeDasharray="4 3" />)}
+              <rect x={nodeX - nodeW / 2} y={nodeY} width={nodeW} height={nodeH} rx={5} fill="var(--surface-3)" stroke="var(--accent)" />
+              <text x={nodeX} y={nodeY + 14} textAnchor="middle" fontSize={9.5} fontWeight={600} fill="var(--text)">🔀 {ipToStr(s.net)}/{s.cidr}</text>
             </g>
           );
         })}

@@ -15,7 +15,7 @@ const blocks: PageBlock[] = [
   block('list', { listItems: [
     '① Contexte — entreprise, domaine, réseau de base et besoins en hôtes (par service/sous-réseau), infra neuve ou extension.',
     '② Préférences — tes pratiques standards : login/mot de passe/enable secret, et la convention d’adressage (clients en début de plage, switch puis routeur en fin, masque des liaisons inter-routeurs).',
-    '③ Segmentation — découpage VLSM automatique, topologie multi-routeurs (2811/2911), et attribution automatique des IP d’interfaces (LAN + liaisons série/Gig, avec côté DCE et clock rate).',
+    '③ Segmentation — découpage VLSM automatique, topologie multi-routeurs (2811/2911) avec segments Ethernet reliant plusieurs routeurs via switch (ou liaisons série point-à-point, DCE/clock), et attribution automatique des IP d’interfaces.',
     '④ Schéma — vue en blocs par sous-réseau + table des interfaces + diagramme SVG (routeurs, liaisons, LAN).',
     '⑤ Pools DHCP — configuration IOS prête à coller, par routeur (réseau/masque, default-router, dns-server, domaine, bail + adresses exclues).',
     '⑥ DNS — enregistrements A/PTR, résolution locale (ip host) et tests (nslookup/ping).',
