@@ -29,6 +29,12 @@ const SCRIPTS: Script[] = [
     tags: ['Interactif', 'PowerShell', 'Réseau', 'Dépannage'],
   },
   {
+    slug: 'configurateur-dhcp-cisco', icon: '📶',
+    title: 'Générateur — DHCP routeur (Packet Tracer)',
+    desc: 'Outil interactif : pools DHCP (réseau, passerelle, DNS, domaine, bail) et adresses exclues → configuration CLI IOS (ip dhcp pool) prête à coller dans Packet Tracer.',
+    tags: ['Interactif', 'Cisco', 'Packet Tracer', 'DHCP'],
+  },
+  {
     slug: 'segmentation-reseau', icon: '🧮',
     title: 'Outil de segmentation réseau (VLSM / FLSM)',
     desc: 'Planificateur de sous-réseaux : réseau de base + besoins en hôtes → plan d’adressage complet (réseau, plage, broadcast, masque, passerelle, hôtes). Modes VLSM et FLSM.',
@@ -216,6 +222,16 @@ const adBulkBlocks: PageBlock[] = [
 ];
 
 // ===================================================================================
+// PAGE — Générateur DHCP routeur (îlot React : data-block="dhcp-configurator")
+// ===================================================================================
+const dhcpBlocks: PageBlock[] = [
+  block('hero', { eyebrow: 'Script · Cisco / Packet Tracer', title: 'Générateur — DHCP routeur', subtitle: 'Décris tes étendues DHCP : la configuration CLI IOS est générée, prête à coller.' }),
+  block('html', { html: '<p>Cet outil génère la <strong>configuration DHCP d’un routeur Cisco</strong> pour <strong>Packet Tracer</strong> : une ou plusieurs <strong>étendues (pools)</strong> avec <strong>réseau + masque</strong>, <strong>passerelle</strong> (<code>default-router</code>), <strong>DNS</strong>, <strong>domaine</strong> et <strong>bail</strong>, plus les <strong>adresses exclues</strong> (passerelle, serveurs, imprimantes). Colle le bloc dans la CLI du routeur.</p>' }),
+  block('html', { html: '<div class="pb-dynamic" data-block="dhcp-configurator"></div>' }),
+  note('blue', 'ℹ️ Comment l’utiliser', '<p>Ouvre l’onglet <strong>CLI</strong> du routeur et colle la configuration. Rappel : <strong>exclus toujours la passerelle et les IP fixes</strong> de la distribution. Si le routeur n’est pas sur le réseau des clients, ajoute <code>ip helper-address</code> sur l’interface côté clients (relais DHCP). Procédure complète : <a href="/pages/procedure-dhcp-packet-tracer">Configurer un serveur DHCP sur Packet Tracer</a>.</p>'),
+];
+
+// ===================================================================================
 // PAGE — Outil de segmentation réseau (îlot React : data-block="subnet-planner")
 // ===================================================================================
 const segBlocks: PageBlock[] = [
@@ -281,6 +297,8 @@ async function main() {
     'Outil de dépannage interactif : saisir le contexte réseau (IP, passerelle, DNS, cible, port, partage) et générer un script PowerShell qui teste couche par couche (modèle OSI) pour réduire le périmètre de la panne.', netDiagBlocks);
   await upsertPage(h, cookie, existing, 'constructeur-ad', 'Constructeur AD (masse)',
     'Constructeur AD graphique : définir UO, groupes (imbriqués) et utilisateurs, créer des comptes en masse (collage de liste) et générer le script PowerShell complet (module ActiveDirectory).', adBulkBlocks);
+  await upsertPage(h, cookie, existing, 'configurateur-dhcp-cisco', 'Générateur — DHCP routeur (Packet Tracer)',
+    'Générateur interactif de configuration DHCP pour routeur Cisco (Packet Tracer) : pools (réseau, passerelle, DNS, domaine, bail) et adresses exclues → configuration CLI IOS prête à coller.', dhcpBlocks);
   await upsertPage(h, cookie, existing, 'segmentation-reseau', 'Outil de segmentation réseau (VLSM / FLSM)',
     'Planificateur de sous-réseaux (subnetting) : à partir d’un réseau de base et des besoins en hôtes, calcule le plan d’adressage complet (adresse réseau, plage utilisable, broadcast, masque, passerelle, nombre d’hôtes). Modes VLSM et FLSM.', segBlocks);
   await upsertPage(h, cookie, existing, 'configurateur-routeur-cisco', 'Configurateur — Routeur Cisco (Packet Tracer)',

@@ -15,6 +15,7 @@ import { SubnetTrainer } from './SubnetTrainer';
 import { AgdlpBuilder } from './AgdlpBuilder';
 import { RouterConfigurator } from './RouterConfigurator';
 import { SubnetPlanner } from './SubnetPlanner';
+import { DhcpConfigurator } from './DhcpConfigurator';
 import { GLOSSARY, glossarySlug } from '@/lib/glossary-data';
 import type { PostsMode } from '@/lib/page-blocks';
 
@@ -167,6 +168,11 @@ export function RichContent({ html, className = 'rich' }: { html: string; classN
     el.querySelectorAll('[data-block="subnet-planner"]').forEach(node => {
       const root = createRoot(node);
       root.render(<SubnetPlanner />);
+      roots.push(root);
+    });
+    el.querySelectorAll('[data-block="dhcp-configurator"]').forEach(node => {
+      const root = createRoot(node);
+      root.render(<DhcpConfigurator />);
       roots.push(root);
     });
     el.querySelectorAll('[data-block="note"]').forEach(node => {
