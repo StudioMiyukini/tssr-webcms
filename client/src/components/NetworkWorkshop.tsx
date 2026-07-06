@@ -92,6 +92,8 @@ const ethName = (m: RouterModel, i: number) => (m === '2811' ? `FastEthernet0/${
 const ethMax = (m: RouterModel) => (m === '2811' ? 2 : 3);
 const ethLabel = (m: RouterModel) => (m === '2811' ? 'FastEthernet' : 'GigabitEthernet');
 const SER_SLOTS = ['Serial0/0/0', 'Serial0/0/1', 'Serial0/1/0', 'Serial0/1/1'];
+// Abréviation courte pour le schéma : GigabitEthernet0/1 → Gig0/1, FastEthernet0/0 → Fa0/0, Serial0/0/0 → Se0/0/0.
+const ifAbbr = (s: string) => s.replace('GigabitEthernet', 'Gig').replace('FastEthernet', 'Fa').replace('Serial', 'Se');
 
 // ─────────────────────────────────────────── Moteur (fonction pure) ───────────────────────────────────────────
 export type Sub = {
@@ -694,7 +696,7 @@ function clientRange(ctx: Ctx, s: Sub): [number, number] | null {
 function SchemaSvg({ ctx, plan }: { ctx: Ctx; plan: Plan }) {
   const routers = ctx.routers;
   if (!routers.length) return <div className="meta">Ajoute des routeurs (étape 3) pour afficher le schéma.</div>;
-  const lanW = 176, lanH = 56, lanGap = 12, routerW = 128, routerH = 46, colGap = 34, marginX = 16;
+  const lanW = 188, lanH = 58, lanGap = 20, routerW = 132, routerH = 46, colGap = 40, marginX = 16;
   const linkSubs = plan.subs.filter(s => s.kind === 'link');
   const topPad = linkSubs.length ? (12 + Math.min(3, linkSubs.length) * 30 + 28) : 20;
   const routerY = topPad;
@@ -739,19 +741,24 @@ function SchemaSvg({ ctx, plan }: { ctx: Ctx; plan: Plan }) {
         {routers.map((r, i) => {
           const rx = cx(i) - routerW / 2;
           const lans = lansByRouter[i];
+          const lx = cx(i) - lanW / 2;
+          const railX = lx - 14;
+          const lastCY = lans.length ? firstLanY + (lans.length - 1) * (lanH + lanGap) + lanH / 2 : routerY + routerH;
           return (
             <g key={r.id}>
+              {/* rail : routeur → chacun de ses LAN (à gauche des boîtes, sans traverser) */}
+              {lans.length > 0 && <path d={`M ${cx(i)} ${routerY + routerH} V ${routerY + routerH + 14} H ${railX} V ${lastCY}`} fill="none" stroke="var(--border)" strokeWidth={1.4} />}
               <rect x={rx} y={routerY} width={routerW} height={routerH} rx={9} fill="var(--accent)" />
               <text x={cx(i)} y={routerY + 19} textAnchor="middle" fontSize={13} fontWeight={700} fill="#fff">{r.name}</text>
               <text x={cx(i)} y={routerY + 34} textAnchor="middle" fontSize={9.5} fill="rgba(255,255,255,.85)">routeur {r.model}</text>
               {lans.map((s, j) => {
                 const ly = firstLanY + j * (lanH + lanGap);
-                const lx = cx(i) - lanW / 2;
+                const cyB = ly + lanH / 2;
                 const ifc = s.gw !== null ? plan.ifaces.find(f => f.routerId === r.id && f.ip === s.gw) : undefined;
                 return (
                   <g key={s.id}>
-                    <line x1={cx(i)} y1={routerY + routerH} x2={cx(i)} y2={ly} stroke="var(--border)" strokeWidth={1.4} />
-                    {ifc && <text x={cx(i) + 5} y={(routerY + routerH + ly) / 2 + 3} fontSize={8.5} fill="var(--text-muted)">{ifc.iface}</text>}
+                    <line x1={railX} y1={cyB} x2={lx} y2={cyB} stroke="var(--border)" strokeWidth={1.4} />
+                    {ifc && <text x={lx + 2} y={ly - 5} fontSize={9} fontWeight={600} fill="var(--accent)">{ifAbbr(ifc.iface)}</text>}
                     <rect x={lx} y={ly} width={lanW} height={lanH} rx={8} fill="var(--surface-2)" stroke="var(--border)" />
                     <text x={cx(i)} y={ly + 17} textAnchor="middle" fontSize={11.5} fontWeight={700} fill="var(--text)">{s.name}</text>
                     <text x={cx(i)} y={ly + 32} textAnchor="middle" fontSize={9.5} fill="var(--text-muted)">{ipToStr(s.net)}/{s.cidr}</text>
