@@ -66,6 +66,31 @@ interface vlan 1
 ! Passerelle par defaut du switch (indispensable pour l'acces distant hors sous-reseau)
 ip default-gateway 192.168.10.254`),
   note('yellow', '💡 Switch vs routeur', '<ul><li>Le switch reçoit son IP sur une <strong>SVI</strong> (<code>interface vlan X</code>), pas sur un port physique.</li><li>Il utilise <code>ip default-gateway</code> (et non des routes), car il <strong>ne fait pas de routage</strong>.</li><li>Le reste (hostname, domaine, clés RSA, <code>username</code>, <code>line vty</code> / <code>transport input ssh</code> / <code>login local</code>) est <strong>identique</strong> au routeur.</li></ul>'),
+  block('html', { html: '<p><strong>Configuration complète d’un switch</strong> (SVI + passerelle + SSH), à coller en une fois dans la CLI :</p>' }),
+  cmd(`enable
+configure terminal
+hostname SW1
+ip domain-name miyukini.lan
+!
+! --- IP de gestion (niveau 2 : sur une interface VLAN) ---
+interface vlan 1
+ ip address 192.168.10.2 255.255.255.0
+ no shutdown
+ exit
+ip default-gateway 192.168.10.254
+!
+! --- SSH ---
+crypto key generate rsa
+! Longueur de cle demandee -> saisir : 1024
+username admin privilege 15 secret MonMotDePasse
+enable secret MonSecretEnable
+ip ssh version 2
+line vty 0 4
+ transport input ssh
+ login local
+ exit
+end
+write memory`),
 
   block('heading', { level: 2, text: '🔎 Vérifier & tester' }),
   block('html', { html: '<p>Sur l’équipement, contrôler l’état de SSH :</p>' }),
