@@ -29,6 +29,12 @@ const SCRIPTS: Script[] = [
     tags: ['Interactif', 'PowerShell', 'Réseau', 'Dépannage'],
   },
   {
+    slug: 'segmentation-reseau', icon: '🧮',
+    title: 'Outil de segmentation réseau (VLSM / FLSM)',
+    desc: 'Planificateur de sous-réseaux : réseau de base + besoins en hôtes → plan d’adressage complet (réseau, plage, broadcast, masque, passerelle, hôtes). Modes VLSM et FLSM.',
+    tags: ['Interactif', 'Réseau', 'Subnetting', 'VLSM'],
+  },
+  {
     slug: 'configurateur-routeur-cisco', icon: '📟',
     title: 'Configurateur — Routeur Cisco (Packet Tracer)',
     desc: 'Outil interactif : hostname, interfaces (IP fixe + activation, clock rate DCE) et routes statiques → configuration CLI IOS prête à coller dans Packet Tracer.',
@@ -210,6 +216,16 @@ const adBulkBlocks: PageBlock[] = [
 ];
 
 // ===================================================================================
+// PAGE — Outil de segmentation réseau (îlot React : data-block="subnet-planner")
+// ===================================================================================
+const segBlocks: PageBlock[] = [
+  block('hero', { eyebrow: 'Outil · Réseau', title: 'Segmentation réseau (VLSM / FLSM)', subtitle: 'Découpe un réseau en sous-réseaux et obtiens le plan d’adressage complet, automatiquement.' }),
+  block('html', { html: '<p>Cet outil calcule ton <strong>plan d’adressage</strong>. Renseigne le <strong>réseau de base</strong> (IP + CIDR), puis :</p><ul><li><strong>VLSM</strong> — saisis le <strong>besoin en hôtes</strong> de chaque service : l’outil attribue à chacun le plus petit bloc suffisant, dans le bon ordre (du plus grand au plus petit), sans chevauchement ;</li><li><strong>FLSM</strong> — indique un <strong>nombre de sous-réseaux</strong> égaux à obtenir.</li></ul><p>Pour chaque sous-réseau : <strong>adresse réseau</strong>, <strong>plage utilisable</strong>, <strong>broadcast</strong>, <strong>masque</strong>, <strong>passerelle</strong> (1re ou dernière IP, au choix) et <strong>nombre d’hôtes</strong>. Le plan est copiable.</p>' }),
+  block('html', { html: '<div class="pb-dynamic" data-block="subnet-planner"></div>' }),
+  note('blue', 'ℹ️ Pour comprendre le calcul', '<p>La méthode pas-à-pas (nombre magique) et un exerciseur : <a href="/pages/trouver-plage-ip-cidr">Trouver une plage d’IP (IP + CIDR)</a>. La procédure de conception : <a href="/pages/procedure-plan-adressage">Plan d’adressage (VLSM)</a>. Cours : <a href="/pages/segmentation-sous-reseaux">La segmentation (subnetting)</a>.</p>'),
+];
+
+// ===================================================================================
 // PAGE — Configurateur routeur Cisco (îlot React : data-block="router-configurator")
 // ===================================================================================
 const routerBlocks: PageBlock[] = [
@@ -265,6 +281,8 @@ async function main() {
     'Outil de dépannage interactif : saisir le contexte réseau (IP, passerelle, DNS, cible, port, partage) et générer un script PowerShell qui teste couche par couche (modèle OSI) pour réduire le périmètre de la panne.', netDiagBlocks);
   await upsertPage(h, cookie, existing, 'constructeur-ad', 'Constructeur AD (masse)',
     'Constructeur AD graphique : définir UO, groupes (imbriqués) et utilisateurs, créer des comptes en masse (collage de liste) et générer le script PowerShell complet (module ActiveDirectory).', adBulkBlocks);
+  await upsertPage(h, cookie, existing, 'segmentation-reseau', 'Outil de segmentation réseau (VLSM / FLSM)',
+    'Planificateur de sous-réseaux (subnetting) : à partir d’un réseau de base et des besoins en hôtes, calcule le plan d’adressage complet (adresse réseau, plage utilisable, broadcast, masque, passerelle, nombre d’hôtes). Modes VLSM et FLSM.', segBlocks);
   await upsertPage(h, cookie, existing, 'configurateur-routeur-cisco', 'Configurateur — Routeur Cisco (Packet Tracer)',
     'Configurateur interactif de routeur Cisco pour Packet Tracer : hostname, interfaces (IP fixe, activation, clock rate DCE) et routes statiques → configuration CLI IOS prête à coller.', routerBlocks);
   await upsertPage(h, cookie, existing, 'constructeur-agdlp', 'Constructeur AGDLP',
