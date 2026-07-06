@@ -23,6 +23,12 @@ const CATEGORIES: { id: string; icon: string; label: string }[] = [
 ];
 const SCRIPTS: Script[] = [
   {
+    slug: 'atelier-reseau', icon: '🗺️',
+    title: 'Atelier Réseau & Packet Tracer (assistant)',
+    desc: 'Assistant multi-étapes à contexte partagé : contexte de l’exercice, préférences, segmentation VLSM multi-routeurs (2811/2911) avec attribution automatique des IP d’interfaces (LAN + liaisons série/Gig, DCE/clock). Schéma, DHCP et DNS en construction.',
+    tags: ['Interactif', 'Réseau', 'Cisco', 'Packet Tracer', 'VLSM', 'Assistant'], cat: 'cisco',
+  },
+  {
     slug: 'configurateur-vm', icon: '🧰',
     title: 'Configurateur — VM serveur',
     desc: 'Outil interactif : clone une VM source (Export/Import), applique ressources, réseau, pare-feu (ping), rôles, nom et domaine/groupe de travail → script PowerShell en 2 parties, prêt à copier.',

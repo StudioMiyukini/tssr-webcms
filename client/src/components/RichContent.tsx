@@ -18,6 +18,7 @@ import { SubnetPlanner } from './SubnetPlanner';
 import { DhcpConfigurator } from './DhcpConfigurator';
 import { StaticRouteGenerator } from './StaticRouteGenerator';
 import { SshConfigurator } from './SshConfigurator';
+import { NetworkWorkshop } from './NetworkWorkshop';
 import { GLOSSARY, glossarySlug } from '@/lib/glossary-data';
 import type { PostsMode } from '@/lib/page-blocks';
 
@@ -185,6 +186,11 @@ export function RichContent({ html, className = 'rich' }: { html: string; classN
     el.querySelectorAll('[data-block="ssh-configurator"]').forEach(node => {
       const root = createRoot(node);
       root.render(<SshConfigurator />);
+      roots.push(root);
+    });
+    el.querySelectorAll('[data-block="network-workshop"]').forEach(node => {
+      const root = createRoot(node);
+      root.render(<NetworkWorkshop />);
       roots.push(root);
     });
     el.querySelectorAll('[data-block="note"]').forEach(node => {
