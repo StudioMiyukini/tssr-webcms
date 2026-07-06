@@ -13,6 +13,7 @@ import { AdBulkConfigurator } from './AdBulkConfigurator';
 import { NetDiagnostic } from './NetDiagnostic';
 import { SubnetTrainer } from './SubnetTrainer';
 import { AgdlpBuilder } from './AgdlpBuilder';
+import { RouterConfigurator } from './RouterConfigurator';
 import { GLOSSARY, glossarySlug } from '@/lib/glossary-data';
 import type { PostsMode } from '@/lib/page-blocks';
 
@@ -155,6 +156,11 @@ export function RichContent({ html, className = 'rich' }: { html: string; classN
     el.querySelectorAll('[data-block="agdlp-builder"]').forEach(node => {
       const root = createRoot(node);
       root.render(<AgdlpBuilder />);
+      roots.push(root);
+    });
+    el.querySelectorAll('[data-block="router-configurator"]').forEach(node => {
+      const root = createRoot(node);
+      root.render(<RouterConfigurator />);
       roots.push(root);
     });
     el.querySelectorAll('[data-block="note"]').forEach(node => {

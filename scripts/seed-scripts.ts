@@ -29,6 +29,12 @@ const SCRIPTS: Script[] = [
     tags: ['Interactif', 'PowerShell', 'Réseau', 'Dépannage'],
   },
   {
+    slug: 'configurateur-routeur-cisco', icon: '📟',
+    title: 'Configurateur — Routeur Cisco (Packet Tracer)',
+    desc: 'Outil interactif : hostname, interfaces (IP fixe + activation, clock rate DCE) et routes statiques → configuration CLI IOS prête à coller dans Packet Tracer.',
+    tags: ['Interactif', 'Cisco', 'Packet Tracer', 'Routage'],
+  },
+  {
     slug: 'constructeur-agdlp', icon: '🔐',
     title: 'Constructeur AGDLP',
     desc: 'Outil tout-en-un : services, dossiers + besoins d’accès, utilisateurs → génère UO, groupes G/DL (bonne convention), imbrication, comptes et partages NTFS. Arborescence UO + NTFS en aperçu, 2 scripts PowerShell.',
@@ -204,6 +210,16 @@ const adBulkBlocks: PageBlock[] = [
 ];
 
 // ===================================================================================
+// PAGE — Configurateur routeur Cisco (îlot React : data-block="router-configurator")
+// ===================================================================================
+const routerBlocks: PageBlock[] = [
+  block('hero', { eyebrow: 'Script · Cisco / Packet Tracer', title: 'Configurateur — Routeur Cisco', subtitle: 'Renseigne les interfaces et les routes : la configuration CLI IOS est générée, prête à coller.' }),
+  block('html', { html: '<p>Cet outil construit la <strong>configuration CLI (Cisco IOS)</strong> d’un routeur pour <strong>Packet Tracer</strong> : <strong>hostname</strong>, <strong>interfaces</strong> (adresse IP fixe + masque, <em>description</em>, activation <code>no shutdown</code>, et <code>clock rate</code> côté <strong>DCE</strong> pour les liaisons série) et <strong>routes statiques</strong> (y compris une <strong>route par défaut</strong>). Colle le bloc généré dans la CLI du routeur (mode <code>enable</code>).</p>' }),
+  block('html', { html: '<div class="pb-dynamic" data-block="router-configurator"></div>' }),
+  note('blue', 'ℹ️ Comment l’utiliser', '<p>Dans Packet Tracer, ouvre l’onglet <strong>CLI</strong> du routeur, puis <strong>colle</strong> la configuration (elle démarre par <code>enable</code> puis <code>configure terminal</code>). Rappel : sur une liaison <strong>série</strong>, seul le côté <strong>DCE</strong> impose le <code>clock rate</code>. Cours liés : <a href="/pages/cisco-routeur-cli">Configurer un routeur en CLI</a> et <a href="/pages/cisco-route-statique">Les routes statiques en CLI</a>.</p>'),
+];
+
+// ===================================================================================
 // PAGE — Constructeur AGDLP (îlot React : data-block="agdlp-builder")
 // ===================================================================================
 const agdlpBlocks: PageBlock[] = [
@@ -249,6 +265,8 @@ async function main() {
     'Outil de dépannage interactif : saisir le contexte réseau (IP, passerelle, DNS, cible, port, partage) et générer un script PowerShell qui teste couche par couche (modèle OSI) pour réduire le périmètre de la panne.', netDiagBlocks);
   await upsertPage(h, cookie, existing, 'constructeur-ad', 'Constructeur AD (masse)',
     'Constructeur AD graphique : définir UO, groupes (imbriqués) et utilisateurs, créer des comptes en masse (collage de liste) et générer le script PowerShell complet (module ActiveDirectory).', adBulkBlocks);
+  await upsertPage(h, cookie, existing, 'configurateur-routeur-cisco', 'Configurateur — Routeur Cisco (Packet Tracer)',
+    'Configurateur interactif de routeur Cisco pour Packet Tracer : hostname, interfaces (IP fixe, activation, clock rate DCE) et routes statiques → configuration CLI IOS prête à coller.', routerBlocks);
   await upsertPage(h, cookie, existing, 'constructeur-agdlp', 'Constructeur AGDLP',
     'Outil tout-en-un AGDLP : services, dossiers + besoins d’accès et utilisateurs → génère UO, groupes Globaux/Domaine Local (convention G_/DL_), imbrication, comptes et partages NTFS. Arborescence UO + NTFS et 2 scripts PowerShell (DC + serveur de fichiers).', agdlpBlocks);
   await upsertPage(h, cookie, existing, 'configurateur-ad', 'Configurateur — Active Directory',
