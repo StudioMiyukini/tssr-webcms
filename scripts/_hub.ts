@@ -86,6 +86,7 @@ export const DOMAINS: Domain[] = [
       ] },
       { name: 'Protocoles', courses: [
         { href: '/pages/tcp-et-udp', title: 'TCP & UDP', desc: 'Fiable ou rapide : les deux protocoles de transport.' },
+        { href: '/pages/le-ssh', title: 'SSH (Secure Shell)', desc: 'Accès distant chiffré (port 22, vs Telnet) et les commandes (ssh, scp, sftp, clés).' },
       ] },
       { name: 'Schémas & doc', courses: [
         { href: '/pages/schemas-infrastructure', title: 'Les schémas d’infrastructure', desc: 'Dessiner un réseau avec draw.io, selon la taille de l’infra.' },
