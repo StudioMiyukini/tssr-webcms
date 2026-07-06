@@ -11,6 +11,8 @@
     "start": "cross-env NODE_ENV=production tsx server/index.ts",
     "start:local": "cross-env NODE_ENV=development SERVE_STATIC=1 tsx server/index.ts",
     "build:portable": "npm run build && node scripts/build-portable.mjs",
+    "export": "node scripts/export-site.mjs",
+    "import": "node scripts/import-site.mjs",
     "typecheck": "tsc --noEmit",
     "test": "tsx --test client/src/lib/page-blocks.test.ts client/src/lib/notes.test.ts server/lib/cache.test.ts server/lib/security.test.ts",
     "db:generate": "drizzle-kit generate",
