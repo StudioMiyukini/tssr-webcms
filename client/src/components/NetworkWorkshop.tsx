@@ -48,6 +48,7 @@ export type Ctx = {
   switchPos: 'beforeRouter' | 'firstHost'; // position IP de gestion du switch
   linkCidr: string;                        // masque des liaisons inter-routeurs (/30 par défaut)
   dnsServer: string;
+  leaseDays: string;                       // durée du bail DHCP (jours)
 };
 
 let _uid = 0;
@@ -67,7 +68,7 @@ export const DEFAULT_CTX: Ctx = {
   ],
   links: [{ id: 'lA', aId: 'rA', bId: 'rB', media: 'serial' }],
   login: 'admin', mdp: 'Azerty77', secret: 'MonSecretEnable',
-  gwPos: 'last', switchPos: 'beforeRouter', linkCidr: '30', dnsServer: '',
+  gwPos: 'last', switchPos: 'beforeRouter', linkCidr: '30', dnsServer: '', leaseDays: '7',
 };
 
 // ─────────────────────────────────────────── Interfaces Cisco ───────────────────────────────────────────
@@ -155,6 +156,74 @@ export function computePlan(ctx: Ctx): Plan {
   return { ok: !error, error, warnings, baseNet, baseBc, cidr, totalAddr: (baseBc - baseNet + 1) >>> 0, used: (ptr - baseNet) >>> 0, subs, ifaces };
 }
 
+// Nom de pool DHCP Cisco (majuscules, sans accents ni espaces).
+const poolName = (s: string) => (s || 'POOL').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'POOL';
+
+export type DhcpBlock = { routerId: string; routerName: string; text: string; pools: number };
+export function buildDhcp(ctx: Ctx, plan: Plan): { byRouter: DhcpBlock[]; full: string } {
+  const lease = clampNum(Number(ctx.leaseDays) || 7, 0, 365);
+  const dom = ctx.domaine.trim();
+  const byRouter: DhcpBlock[] = [];
+  for (const r of ctx.routers) {
+    const lans = plan.subs.filter(s => s.kind === 'lan' && s.routerId === r.id && s.dhcp && s.gw !== null);
+    if (!lans.length) continue;
+    const lines: string[] = [`! === ${r.name} — DHCP ===`];
+    for (const s of lans) {
+      // Réserver l'infra (switch + passerelle) de la distribution.
+      const a = s.switchIp !== null ? Math.min(s.switchIp, s.gw!) : s.gw!;
+      const b = s.switchIp !== null ? Math.max(s.switchIp, s.gw!) : s.gw!;
+      lines.push(`ip dhcp excluded-address ${ipToStr(a)} ${ipToStr(b)}`);
+    }
+    lines.push('!');
+    for (const s of lans) {
+      const dns = ctx.dnsServer.trim() || ipToStr(s.gw!);
+      lines.push(`ip dhcp pool ${poolName(s.name)}`);
+      lines.push(` network ${ipToStr(s.net)} ${ipToStr(s.mask)}`);
+      lines.push(` default-router ${ipToStr(s.gw!)}`);
+      lines.push(` dns-server ${dns}`);
+      if (dom) lines.push(` domain-name ${dom}`);
+      lines.push(` lease ${lease}`);
+      lines.push('!');
+    }
+    byRouter.push({ routerId: r.id, routerName: r.name, text: lines.join('\n'), pools: lans.length });
+  }
+  return { byRouter, full: byRouter.map(b => b.text).join('\n') };
+}
+
+export type DnsRec = { host: string; fqdn: string; ip: number };
+export function buildDns(ctx: Ctx, plan: Plan): { recs: DnsRec[]; domain: string; hostLines: string; zone: string; tests: string[] } {
+  const domain = ctx.domaine.trim() || 'lan';
+  const recs: DnsRec[] = [];
+  const seen = new Set<string>();
+  for (const r of ctx.routers) {
+    const ifc = plan.ifaces.find(i => i.routerId === r.id);
+    if (ifc) { const host = (r.name || 'r').toLowerCase(); recs.push({ host, fqdn: `${host}.${domain}`, ip: ifc.ip }); seen.add(host); }
+  }
+  const dnsIp = strToIp(ctx.dnsServer.trim());
+  if (dnsIp !== null && !seen.has('dns')) recs.push({ host: 'dns', fqdn: `dns.${domain}`, ip: dnsIp });
+
+  const hostLines = [
+    ctx.domaine.trim() ? `ip domain-name ${domain}` : '',
+    ctx.dnsServer.trim() ? `ip name-server ${ctx.dnsServer.trim()}` : '',
+    ...recs.map(r => `ip host ${r.host} ${ipToStr(r.ip)}`),
+  ].filter(Boolean).join('\n');
+
+  const zone = [
+    `; Zone directe — ${domain}`,
+    `@            NS    ${recs.find(r => r.host === 'dns')?.fqdn || 'dns.' + domain}`,
+    ...recs.map(r => `${r.host.padEnd(12)} A     ${ipToStr(r.ip)}`),
+    '',
+    '; Zone inverse (PTR)',
+    ...recs.map(r => `${ipToStr(r.ip).split('.').reverse().join('.')}.in-addr.arpa   PTR   ${r.fqdn}`),
+  ].join('\n');
+
+  const tests = [
+    ...recs.slice(0, 3).map(r => `ping ${r.fqdn}`),
+    ...(recs.length ? [`nslookup ${recs[0].fqdn}`] : []),
+  ];
+  return { recs, domain, hostLines, zone, tests };
+}
+
 // ─────────────────────────────────────────── Styles ───────────────────────────────────────────
 const field: CSSProperties = { width: '100%', padding: '7px 9px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface)', color: 'var(--text)', fontSize: 13.5, boxSizing: 'border-box' };
 const label: CSSProperties = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-soft)', marginBottom: 4 };
@@ -165,6 +234,7 @@ const smallBtn: CSSProperties = { ...btn, padding: '3px 9px', fontSize: 12, bord
 const mono: CSSProperties = { fontFamily: 'ui-monospace,monospace' };
 const th: CSSProperties = { textAlign: 'left', padding: '7px 9px', borderBottom: '2px solid var(--border)', fontSize: 12, color: 'var(--text-soft)', whiteSpace: 'nowrap' };
 const td: CSSProperties = { padding: '6px 9px', borderBottom: '1px solid var(--border)', fontSize: 12.5, whiteSpace: 'nowrap' };
+const preStyle: CSSProperties = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '11px 13px', overflowX: 'auto', fontSize: 12, lineHeight: 1.55, margin: 0, whiteSpace: 'pre', color: 'var(--text)', ...mono };
 
 const STEPS = [
   { n: 1, icon: '🧾', title: 'Contexte' },
@@ -216,6 +286,12 @@ export function NetworkWorkshop() {
     return [head, '', 'Sous-reseaux :', 'Nom\tReseau/CIDR\tMasque\tPlage utilisable\tBroadcast\tPasserelle\tHotes', ...subLines,
       '', 'Table d adressage des interfaces :', 'Routeur\tInterface\tCible\tIP\tMasque\tRole', ...ifLines].join('\n');
   }, [plan]);
+
+  const dhcp = useMemo(() => buildDhcp(ctx, plan), [ctx, plan]);
+  const dns = useMemo(() => buildDns(ctx, plan), [ctx, plan]);
+  const lanSubs = plan.subs.filter(s => s.kind === 'lan');
+  const linkSubs = plan.subs.filter(s => s.kind === 'link');
+  const ifaceFor = (routerId: string, ip: number) => plan.ifaces.find(i => i.routerId === routerId && i.ip === ip);
 
   return (
     <div style={{ margin: '14px 0' }}>
@@ -311,6 +387,7 @@ export function NetworkWorkshop() {
                 </div>
               </div>
               <div><label style={label}>Masque des liaisons inter-routeurs (CIDR)</label><input style={{ ...field, ...mono }} value={ctx.linkCidr} onChange={e => set({ linkCidr: e.target.value.replace(/\D/g, '') })} placeholder="30" /></div>
+              <div><label style={label}>Bail DHCP (jours)</label><input style={{ ...field, ...mono }} value={ctx.leaseDays} onChange={e => set({ leaseDays: e.target.value.replace(/\D/g, '') })} placeholder="7" /></div>
             </div>
             <div className="meta" style={{ fontSize: 11.5, marginTop: 10 }}>Convention appliquée : <strong>clients</strong> en début de plage (DHCP), <strong>switch</strong> puis <strong>routeur</strong> en fin de plage. Les liaisons entre routeurs utilisent un /{clampNum(Number(ctx.linkCidr) || 30, 8, 30)} (2 hôtes).</div>
           </div>
@@ -454,19 +531,192 @@ export function NetworkWorkshop() {
         </div>
       )}
 
-      {/* ── Étapes 4-6 : à venir ── */}
-      {step >= 4 && (
-        <div style={{ ...group, textAlign: 'center', padding: '30px 16px' }}>
-          <div style={{ fontSize: 30, marginBottom: 8 }}>{STEPS[step - 1].icon}</div>
-          <div style={{ fontWeight: 700, fontSize: 15 }}>{STEPS[step - 1].title} — en construction</div>
-          <p className="meta" style={{ fontSize: 12.5, maxWidth: 460, margin: '8px auto 0' }}>
-            {step === 4 && 'Le schéma (vue en blocs par sous-réseau + table des interfaces, puis diagramme SVG) sera généré à partir du plan de l’étape 3.'}
-            {step === 5 && 'Les pools DHCP (ip dhcp pool, réseau/masque, default-router, dns-server, domaine, bail + adresses exclues) seront générés automatiquement pour chaque sous-réseau marqué « DHCP », avec les ip helper-address.'}
-            {step === 6 && 'La configuration DNS (zones directe/inversée, enregistrements A/PTR) et les tests (nslookup/ping) seront proposés à partir du domaine et du plan.'}
-          </p>
-          <p className="meta" style={{ fontSize: 11.5, marginTop: 10 }}>Les données saisies aux étapes 1-3 sont déjà mémorisées et alimenteront ces étapes.</p>
+      {/* ── Étape 4 : Schéma ── */}
+      {step === 4 && (
+        <div>
+          {plan.error && <div style={{ ...group, borderColor: '#dc2626' }}><strong style={{ color: '#dc2626' }}>⚠ {plan.error}</strong></div>}
+          <div style={group}>
+            <div style={legend}>🗺️ Schéma du réseau</div>
+            <SchemaSvg ctx={ctx} plan={plan} />
+            <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>Routeurs (avec modèle) reliés par leurs liaisons ; chaque LAN sous son routeur-passerelle, avec interface, idSR/CIDR, passerelle et IP de gestion du switch.</div>
+          </div>
+
+          <div style={group}>
+            <div style={legend}>🧱 Détail par sous-réseau ({lanSubs.length})</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(240px,1fr))', gap: 12 }}>
+              {lanSubs.map(s => {
+                const cr = clientRange(ctx, s);
+                const ifc = s.gw !== null ? ifaceFor(s.routerId || '', s.gw) : undefined;
+                return (
+                  <div key={s.id} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '11px 13px', background: 'var(--surface)' }}>
+                    <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{s.name}</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '3px 8px', fontSize: 12.5, ...mono }}>
+                      <span style={{ color: 'var(--text-muted)' }}>idSR</span><span>{ipToStr(s.net)}/{s.cidr}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>masque</span><span>{ipToStr(s.mask)}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>broadcast</span><span>{ipToStr(s.bc)}</span>
+                      <span style={{ color: 'var(--text-muted)' }}>passerelle</span><span>{s.gw !== null ? ipToStr(s.gw) : '—'}{ifc ? ` (${ifc.iface})` : ''}</span>
+                      {s.switchIp !== null && (<><span style={{ color: 'var(--text-muted)' }}>switch</span><span>{ipToStr(s.switchIp)}</span></>)}
+                      <span style={{ color: 'var(--text-muted)' }}>clients</span><span>{cr ? `${ipToStr(cr[0])} – ${ipToStr(cr[1])}` : '—'}</span>
+                    </div>
+                    <div style={{ marginTop: 6, fontSize: 11, color: 'var(--text-muted)' }}>{s.dhcp ? '📶 DHCP' : '📌 statique'} · {ctx.routers.find(r => r.id === s.routerId)?.name || 'sans routeur'}</div>
+                  </div>
+                );
+              })}
+              {!lanSubs.length && <div className="meta">Définis des sous-réseaux à l’étape 1 et une topologie à l’étape 3.</div>}
+            </div>
+          </div>
+          <StepNav step={step} setStep={setStep} />
         </div>
       )}
+
+      {/* ── Étape 5 : Pools DHCP ── */}
+      {step === 5 && (
+        <div>
+          <div style={group}>
+            <div style={legend}>
+              📶 Configuration DHCP (par routeur)
+              {!!dhcp.byRouter.length && <button type="button" onClick={() => copy('dhcpAll', dhcp.full)} style={{ ...btn, marginLeft: 'auto' }}>{copied === 'dhcpAll' ? '✓ Copié' : 'Tout copier'}</button>}
+            </div>
+            {!dhcp.byRouter.length && <div className="meta">Aucun sous-réseau marqué « DHCP » n’a de routeur assigné. Coche « DHCP » et assigne un routeur à l’étape 3.</div>}
+            {dhcp.byRouter.map(b => (
+              <div key={b.routerId} style={{ marginBottom: 14 }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 5 }}>
+                  <strong style={{ fontSize: 13 }}>🧭 {b.routerName} — {b.pools} pool{b.pools > 1 ? 's' : ''}</strong>
+                  <button type="button" onClick={() => copy('dhcp:' + b.routerId, b.text)} style={{ ...smallBtn, marginLeft: 'auto' }}>{copied === 'dhcp:' + b.routerId ? '✓ Copié' : 'Copier'}</button>
+                </div>
+                <pre style={preStyle}><code>{b.text}</code></pre>
+              </div>
+            ))}
+          </div>
+          <div style={{ ...group, borderColor: 'var(--border)' }}>
+            <div style={legend}>ℹ️ À savoir</div>
+            <ul style={{ margin: 0, paddingLeft: 18, fontSize: 12.5, lineHeight: 1.6 }}>
+              <li>Chaque routeur héberge les pools de ses <strong>LAN directement connectés</strong> : pas de <code>ip helper-address</code> nécessaire ici.</li>
+              <li>Les adresses <strong>passerelle</strong> et <strong>switch</strong> sont automatiquement <code>excluded-address</code> ; les clients prennent le reste de la plage.</li>
+              <li>Pour un <strong>serveur DHCP centralisé</strong> (un seul serveur pour plusieurs sous-réseaux distants), ajoute sur l’interface LAN de chaque routeur distant : <code>ip helper-address &lt;IP_du_serveur&gt;</code>. (Génération auto possible dans une prochaine version.)</li>
+            </ul>
+          </div>
+          <StepNav step={step} setStep={setStep} />
+        </div>
+      )}
+
+      {/* ── Étape 6 : DNS ── */}
+      {step === 6 && (
+        <div>
+          <div style={group}>
+            <div style={legend}>🌐 Enregistrements DNS — {dns.domain}</div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 380 }}>
+                <thead><tr><th style={th}>Hôte</th><th style={th}>FQDN</th><th style={th}>Type</th><th style={th}>Valeur</th></tr></thead>
+                <tbody>
+                  {dns.recs.map((r, k) => (
+                    <tr key={k}><td style={{ ...td, fontWeight: 600 }}>{r.host}</td><td style={{ ...td, ...mono }}>{r.fqdn}</td><td style={td}>A</td><td style={{ ...td, ...mono }}>{ipToStr(r.ip)}</td></tr>
+                  ))}
+                  {!dns.recs.length && <tr><td style={td} colSpan={4}>Renseigne un domaine (étape 1) et une topologie (étape 3).</td></tr>}
+                </tbody>
+              </table>
+            </div>
+            <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>Les postes clients sont en DHCP (adresses dynamiques) → pas d’enregistrement A statique. Les routeurs (première interface) et le serveur DNS sont proposés ci-dessus.</div>
+          </div>
+
+          <div style={group}>
+            <div style={legend}>🖥️ Résolution locale sur les routeurs (CLI)<button type="button" onClick={() => copy('dnsHost', dns.hostLines)} style={{ ...smallBtn, marginLeft: 'auto' }}>{copied === 'dnsHost' ? '✓ Copié' : 'Copier'}</button></div>
+            <pre style={preStyle}><code>{dns.hostLines || '(rien à générer)'}</code></pre>
+            <div className="meta" style={{ fontSize: 11.5, marginTop: 6 }}>Permet <code>ping R2</code> par nom depuis la CLI. <code>ip name-server</code> n’apparaît que si un serveur DNS est défini (étape 2).</div>
+          </div>
+
+          <div style={group}>
+            <div style={legend}>🗂️ Zones (serveur DNS)<button type="button" onClick={() => copy('dnsZone', dns.zone)} style={{ ...smallBtn, marginLeft: 'auto' }}>{copied === 'dnsZone' ? '✓ Copié' : 'Copier'}</button></div>
+            <pre style={preStyle}><code>{dns.zone}</code></pre>
+            <div className="meta" style={{ fontSize: 11.5, marginTop: 6 }}>Sous Packet Tracer, saisis ces enregistrements dans le service <strong>DNS</strong> du serveur (onglet Services → DNS) ; sous Windows Server, crée la zone directe et la zone inversée correspondantes.</div>
+          </div>
+
+          <div style={group}>
+            <div style={legend}>✅ Tests</div>
+            <pre style={preStyle}><code>{dns.tests.join('\n') || '(rien à tester)'}</code></pre>
+            <div className="meta" style={{ fontSize: 11.5, marginTop: 6 }}>Depuis un client : <code>nslookup</code> pour vérifier la résolution, <code>ping &lt;fqdn&gt;</code> pour la connectivité. Vérifie que les clients ont bien reçu le <strong>serveur DNS</strong> par DHCP (étape 5).</div>
+          </div>
+          <StepNav step={step} setStep={setStep} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function clientRange(ctx: Ctx, s: Sub): [number, number] | null {
+  if (s.gw === null) return null;
+  if (ctx.gwPos === 'last') {
+    const hi = s.switchIp !== null ? (s.switchIp - 1) >>> 0 : (s.gw - 1) >>> 0;
+    return hi >= s.first ? [s.first, hi] : null;
+  }
+  const lo = s.switchIp !== null ? (s.switchIp + 1) >>> 0 : (s.gw + 1) >>> 0;
+  return lo <= s.last ? [lo, s.last] : null;
+}
+
+function SchemaSvg({ ctx, plan }: { ctx: Ctx; plan: Plan }) {
+  const routers = ctx.routers;
+  if (!routers.length) return <div className="meta">Ajoute des routeurs (étape 3) pour afficher le schéma.</div>;
+  const lanW = 176, lanH = 56, lanGap = 12, routerW = 128, routerH = 46, colGap = 34, marginX = 16;
+  const linkSubs = plan.subs.filter(s => s.kind === 'link');
+  const topPad = linkSubs.length ? 72 : 20;
+  const routerY = topPad;
+  const firstLanY = routerY + routerH + 30;
+  const pitch = lanW + colGap;
+  const cx = (i: number) => marginX + lanW / 2 + i * pitch;
+  const lansByRouter = routers.map(r => plan.subs.filter(s => s.kind === 'lan' && s.routerId === r.id));
+  const maxLans = Math.max(1, ...lansByRouter.map(a => a.length));
+  const width = Math.max(320, marginX * 2 + routers.length * lanW + (routers.length - 1) * colGap);
+  const height = firstLanY + maxLans * (lanH + lanGap) + 8;
+  const idx = new Map(routers.map((r, i) => [r.id, i] as const));
+
+  return (
+    <div style={{ overflowX: 'auto' }}>
+      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ maxWidth: 'none', display: 'block' }}>
+        {linkSubs.map((s, k) => {
+          const ia = plan.ifaces.find(i => i.ip === s.first);
+          const ib = plan.ifaces.find(i => i.ip === ((s.first + 1) >>> 0));
+          const a = ia ? idx.get(ia.routerId) : undefined;
+          const b = ib ? idx.get(ib.routerId) : undefined;
+          if (a === undefined || b === undefined) return null;
+          const x1 = cx(a), x2 = cx(b);
+          const apexY = Math.max(8, routerY - 44 - (k % 2) * 14);
+          const midX = (x1 + x2) / 2;
+          return (
+            <g key={s.id}>
+              <path d={`M ${x1} ${routerY} Q ${midX} ${apexY} ${x2} ${routerY}`} fill="none" stroke="var(--accent)" strokeWidth={1.6} strokeDasharray="5 4" />
+              <text x={midX} y={apexY - 3} textAnchor="middle" fontSize={9.5} fill="var(--text-muted)">{ipToStr(s.net)}/{s.cidr} · {s.media === 'serial' ? 'série' : 'Gig'}</text>
+              <text x={midX} y={apexY + 9} textAnchor="middle" fontSize={9} fill="var(--text-muted)">{ipToStr(s.first)} ↔ {ipToStr((s.first + 1) >>> 0)}</text>
+            </g>
+          );
+        })}
+        {routers.map((r, i) => {
+          const rx = cx(i) - routerW / 2;
+          const lans = lansByRouter[i];
+          return (
+            <g key={r.id}>
+              <rect x={rx} y={routerY} width={routerW} height={routerH} rx={9} fill="var(--accent)" />
+              <text x={cx(i)} y={routerY + 19} textAnchor="middle" fontSize={13} fontWeight={700} fill="#fff">{r.name}</text>
+              <text x={cx(i)} y={routerY + 34} textAnchor="middle" fontSize={9.5} fill="rgba(255,255,255,.85)">routeur {r.model}</text>
+              {lans.map((s, j) => {
+                const ly = firstLanY + j * (lanH + lanGap);
+                const lx = cx(i) - lanW / 2;
+                const ifc = s.gw !== null ? plan.ifaces.find(f => f.routerId === r.id && f.ip === s.gw) : undefined;
+                return (
+                  <g key={s.id}>
+                    <line x1={cx(i)} y1={routerY + routerH} x2={cx(i)} y2={ly} stroke="var(--border)" strokeWidth={1.4} />
+                    {ifc && <text x={cx(i) + 5} y={(routerY + routerH + ly) / 2 + 3} fontSize={8.5} fill="var(--text-muted)">{ifc.iface}</text>}
+                    <rect x={lx} y={ly} width={lanW} height={lanH} rx={8} fill="var(--surface-2)" stroke="var(--border)" />
+                    <text x={cx(i)} y={ly + 17} textAnchor="middle" fontSize={11.5} fontWeight={700} fill="var(--text)">{s.name}</text>
+                    <text x={cx(i)} y={ly + 32} textAnchor="middle" fontSize={9.5} fill="var(--text-muted)">{ipToStr(s.net)}/{s.cidr}</text>
+                    <text x={cx(i)} y={ly + 46} textAnchor="middle" fontSize={9.5} fill="var(--text-muted)">gw {s.gw !== null ? ipToStr(s.gw) : '-'}{s.switchIp !== null ? ' · sw ' + ipToStr(s.switchIp) : ''}</text>
+                  </g>
+                );
+              })}
+              {!lans.length && <text x={cx(i)} y={firstLanY + 16} textAnchor="middle" fontSize={9.5} fill="var(--text-muted)">(aucun LAN)</text>}
+            </g>
+          );
+        })}
+      </svg>
     </div>
   );
 }

@@ -16,13 +16,12 @@ const blocks: PageBlock[] = [
     '① Contexte — entreprise, domaine, réseau de base et besoins en hôtes (par service/sous-réseau), infra neuve ou extension.',
     '② Préférences — tes pratiques standards : login/mot de passe/enable secret, et la convention d’adressage (clients en début de plage, switch puis routeur en fin, masque des liaisons inter-routeurs).',
     '③ Segmentation — découpage VLSM automatique, topologie multi-routeurs (2811/2911), et attribution automatique des IP d’interfaces (LAN + liaisons série/Gig, avec côté DCE et clock rate).',
-    '④ Schéma — vue en blocs par sous-réseau + table des interfaces, puis diagramme (en construction).',
-    '⑤ Pools DHCP — configuration prête à coller par sous-réseau (en construction).',
-    '⑥ DNS — zones, enregistrements et tests (en construction).',
+    '④ Schéma — vue en blocs par sous-réseau + table des interfaces + diagramme SVG (routeurs, liaisons, LAN).',
+    '⑤ Pools DHCP — configuration IOS prête à coller, par routeur (réseau/masque, default-router, dns-server, domaine, bail + adresses exclues).',
+    '⑥ DNS — enregistrements A/PTR, résolution locale (ip host) et tests (nslookup/ping).',
   ] }),
   block('html', { html: '<div class="pb-dynamic" data-block="network-workshop"></div>' }),
-  note('blue', 'ℹ️ Comment ça marche', '<p>Renseigne les <strong>étapes 1 et 2</strong> puis passe à l’<strong>étape 3</strong> : le plan d’adressage et la table des interfaces se calculent en direct et sont <strong>copiables</strong>. Les avertissements signalent un manque de place dans le réseau de base ou un routeur à court d’interfaces. Outils liés : <a href="/pages/segmentation-reseau">segmentation VLSM/FLSM</a>, <a href="/pages/configurateur-routeur-cisco">configurateur routeur</a>, <a href="/pages/generateur-routes-statiques">routes statiques</a>, <a href="/pages/configurateur-dhcp-cisco">DHCP routeur</a>. Procédures : <a href="/pages/procedure-plan-adressage">plan d’adressage</a>, <a href="/pages/procedure-ssh-packet-tracer">SSH sur Packet Tracer</a>.</p>'),
-  note('yellow', '🚧 En construction', '<p>Les étapes <strong>4 (schéma)</strong>, <strong>5 (DHCP)</strong> et <strong>6 (DNS)</strong> sont en cours d’ajout. Les données saisies aux étapes 1-3 sont déjà mémorisées et les alimenteront automatiquement.</p>'),
+  note('blue', 'ℹ️ Comment ça marche', '<p>Renseigne les <strong>étapes 1 et 2</strong>, puis déroule les étapes 3 à 6 : le plan d’adressage, le schéma, les pools DHCP et le DNS se calculent en direct à partir du <strong>même contexte</strong> et sont <strong>copiables</strong>. Les avertissements signalent un manque de place dans le réseau de base ou un routeur à court d’interfaces. Outils liés : <a href="/pages/segmentation-reseau">segmentation VLSM/FLSM</a>, <a href="/pages/configurateur-routeur-cisco">configurateur routeur</a>, <a href="/pages/generateur-routes-statiques">routes statiques</a>, <a href="/pages/configurateur-dhcp-cisco">DHCP routeur</a>. Procédures : <a href="/pages/procedure-plan-adressage">plan d’adressage</a>, <a href="/pages/procedure-ssh-packet-tracer">SSH sur Packet Tracer</a>.</p>'),
 ];
 
 function cookieFrom(res: Response): string {
@@ -36,7 +35,7 @@ async function main() {
   const h = { 'Content-Type': 'application/json', Cookie: cookie };
   const existing = await (await fetch(`${BASE}/api/admin/pages`, { headers: { Cookie: cookie } })).json() as Array<{ id: number; slug: string }>;
   const cur = existing.find(e => e.slug === 'atelier-reseau');
-  const body = JSON.stringify({ title: 'Atelier Réseau & Packet Tracer', slug: 'atelier-reseau', excerpt: 'Assistant guidé multi-étapes : contexte, préférences, segmentation VLSM multi-routeurs (2811/2911) avec attribution automatique des interfaces, puis schéma, DHCP et DNS (en construction).', content: renderPageBlocksToHtml(blocks), builder_json: serializePageBlocks(blocks), published: 1 });
+  const body = JSON.stringify({ title: 'Atelier Réseau & Packet Tracer', slug: 'atelier-reseau', excerpt: 'Assistant guidé multi-étapes : contexte, préférences, segmentation VLSM multi-routeurs (2811/2911) avec attribution automatique des interfaces, schéma (blocs + SVG), pools DHCP par routeur et enregistrements DNS + tests.', content: renderPageBlocksToHtml(blocks), builder_json: serializePageBlocks(blocks), published: 1 });
   const res = cur
     ? await fetch(`${BASE}/api/admin/pages/${cur.id}`, { method: 'PUT', headers: h, body })
     : await fetch(`${BASE}/api/admin/pages`, { method: 'POST', headers: h, body });

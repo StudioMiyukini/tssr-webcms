@@ -25,7 +25,7 @@ const SCRIPTS: Script[] = [
   {
     slug: 'atelier-reseau', icon: '🗺️',
     title: 'Atelier Réseau & Packet Tracer (assistant)',
-    desc: 'Assistant multi-étapes à contexte partagé : contexte de l’exercice, préférences, segmentation VLSM multi-routeurs (2811/2911) avec attribution automatique des IP d’interfaces (LAN + liaisons série/Gig, DCE/clock). Schéma, DHCP et DNS en construction.',
+    desc: 'Assistant multi-étapes à contexte partagé : contexte, préférences, segmentation VLSM multi-routeurs (2811/2911) avec attribution auto des interfaces (LAN + liaisons série/Gig, DCE/clock), schéma (blocs + SVG), pools DHCP par routeur et enregistrements DNS + tests.',
     tags: ['Interactif', 'Réseau', 'Cisco', 'Packet Tracer', 'VLSM', 'Assistant'], cat: 'cisco',
   },
   {
