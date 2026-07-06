@@ -96,9 +96,19 @@ write memory`),
   block('html', { html: '<p>Sur l’équipement, contrôler l’état de SSH :</p>' }),
   cmd(`show ip ssh
 show ssh`),
-  block('html', { html: '<p>Depuis un <strong>PC</strong> (invite de commandes de Packet Tracer) ou un autre équipement, se connecter :</p>' }),
-  cmd(`ssh -l admin 192.168.10.254`),
-  block('html', { html: '<p>Saisir le mot de passe du compte <code>admin</code> → tu obtiens l’invite <code>R1&gt;</code> à distance.</p>' }),
+  block('heading', { level: 3, text: '🖥️ Tester depuis un client (PC)' }),
+  block('html', { html: `<ol class="proc-steps">
+    <li>Vérifie que le PC <strong>ping</strong> l’équipement (même réseau ou passerelle correcte).</li>
+    <li>Clique sur le <strong>PC</strong> → onglet <strong>Desktop</strong> → <strong>Command Prompt</strong> (invite de commandes).</li>
+    <li>Lance la connexion SSH avec l’option <code>-l</code> (login) suivie du <strong>compte</strong> puis de l’<strong>IP</strong> de l’équipement :</li>
+  </ol>` }),
+  cmd(`C:\\> ssh -l admin 192.168.10.254`),
+  block('html', { html: `<ol class="proc-steps" start="4">
+    <li>Saisis le <strong>mot de passe</strong> du compte <code>admin</code> (celui du <code>username … secret</code>).</li>
+    <li>Tu obtiens l’invite distante <code>R1&gt;</code> (ou <code>SW1&gt;</code>). Passe en mode privilégié avec <code>enable</code> (mot de passe <em>enable secret</em>).</li>
+    <li>Pour quitter la session : <code>exit</code>.</li>
+  </ol>` }),
+  note('gray', '💻 Depuis un vrai poste Windows', '<p>Hors Packet Tracer, le client OpenSSH de Windows 10/11 utilise la syntaxe <code>ssh admin@192.168.10.254</code>. À la première connexion, il demande d’<strong>accepter l’empreinte</strong> de la clé (répondre <code>yes</code>).</p>'),
 
   note('yellow', '🛠️ Si la connexion échoue', '<ul><li>« <em>No such command</em> » à <code>ssh</code> depuis un routeur → la commande est <code>ssh -l &lt;user&gt; &lt;ip&gt;</code>.</li><li>Connexion refusée → clés RSA non générées, ou <code>transport input</code> ne contient pas <code>ssh</code>, ou pas de compte local + <code>login local</code>.</li><li>IP injoignable → vérifier l’<strong>adressage</strong> et le <strong>ping</strong> vers l’équipement.</li></ul><p>Voir aussi : <a href="/procedure-test-connectivite">test de connectivité</a>.</p>'),
 
