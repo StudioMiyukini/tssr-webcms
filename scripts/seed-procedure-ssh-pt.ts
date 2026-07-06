@@ -54,6 +54,19 @@ line vty 0 4
 write memory`),
   note('yellow', '⚠️ Points clés', '<ul><li>Sans <strong>hostname</strong> ni <strong>ip domain-name</strong>, la génération de clés <strong>échoue</strong>.</li><li><code>transport input ssh</code> = on <strong>interdit Telnet</strong> (mettre <code>ssh telnet</code> pour autoriser les deux — déconseillé).</li><li><code>login local</code> = authentification par le <strong>compte local</strong> (username/secret).</li></ul>'),
 
+  block('heading', { level: 2, text: '🔀 Cas d’un switch (IP de gestion)' }),
+  block('html', { html: '<p>Un <strong>switch</strong> est un équipement de <strong>niveau 2</strong> : ses ports n’ont pas d’adresse IP. Les commandes SSH ci-dessus sont <strong>identiques</strong>, mais il faut d’abord lui donner une <strong>IP de gestion</strong> sur une <strong>interface VLAN (SVI)</strong> et une <strong>passerelle par défaut</strong> (le switch ne route pas : sans passerelle, il ne peut pas répondre à un SSH venant d’un autre sous-réseau).</p>' }),
+  cmd(`enable
+configure terminal
+! IP de gestion sur l'interface VLAN (VLAN 1 par defaut, ou un VLAN de gestion dedie)
+interface vlan 1
+ ip address 192.168.10.2 255.255.255.0
+ no shutdown
+ exit
+! Passerelle par defaut du switch (indispensable pour l'acces distant hors sous-reseau)
+ip default-gateway 192.168.10.254`),
+  note('yellow', '💡 Switch vs routeur', '<ul><li>Le switch reçoit son IP sur une <strong>SVI</strong> (<code>interface vlan X</code>), pas sur un port physique.</li><li>Il utilise <code>ip default-gateway</code> (et non des routes), car il <strong>ne fait pas de routage</strong>.</li><li>Le reste (hostname, domaine, clés RSA, <code>username</code>, <code>line vty</code> / <code>transport input ssh</code> / <code>login local</code>) est <strong>identique</strong> au routeur.</li></ul>'),
+
   block('heading', { level: 2, text: '🔎 Vérifier & tester' }),
   block('html', { html: '<p>Sur l’équipement, contrôler l’état de SSH :</p>' }),
   cmd(`show ip ssh
