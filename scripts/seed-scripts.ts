@@ -14,107 +14,122 @@ const pre = (code: string, lang = 'PowerShell') => `<div style="margin:6px 0 12p
 // ===================================================================================
 // Catalogue des scripts (ajoute ici les futurs scripts)
 // ===================================================================================
-type Script = { slug: string; icon: string; title: string; desc: string; tags: string[] };
+type Script = { slug: string; icon: string; title: string; desc: string; tags: string[]; cat: string };
+const CATEGORIES: { id: string; icon: string; label: string }[] = [
+  { id: 'cisco', icon: '🧪', label: 'Cisco / Packet Tracer' },
+  { id: 'reseau', icon: '🌐', label: 'Réseau & adressage' },
+  { id: 'ad', icon: '🏢', label: 'Active Directory' },
+  { id: 'virtualisation', icon: '🖥️', label: 'Virtualisation & VM' },
+];
 const SCRIPTS: Script[] = [
   {
     slug: 'configurateur-vm', icon: '🧰',
     title: 'Configurateur — VM serveur',
     desc: 'Outil interactif : clone une VM source (Export/Import), applique ressources, réseau, pare-feu (ping), rôles, nom et domaine/groupe de travail → script PowerShell en 2 parties, prêt à copier.',
-    tags: ['Interactif', 'PowerShell', 'Hyper-V', 'Clone'],
+    tags: ['Interactif', 'PowerShell', 'Hyper-V', 'Clone'], cat: 'virtualisation',
   },
   {
     slug: 'diagnostic-reseau', icon: '🩺',
     title: 'Diagnostic réseau (modèle OSI)',
     desc: 'Outil de dépannage : saisis ton contexte (IP, passerelle, DNS, cible, port, partage) → script PowerShell qui teste couche par couche et réduit le périmètre de la panne.',
-    tags: ['Interactif', 'PowerShell', 'Réseau', 'Dépannage'],
+    tags: ['Interactif', 'PowerShell', 'Réseau', 'Dépannage'], cat: 'reseau',
   },
   {
     slug: 'generateur-routes-statiques', icon: '🛣️',
     title: 'Générateur — Routes statiques multi-routeurs (CLI)',
     desc: 'Décris la topologie (routeurs, liaisons, LAN) : l’outil calcule pour chaque routeur les routes statiques (ip route) vers tous les réseaux, avec le bon prochain saut. CLI prête à coller.',
-    tags: ['Interactif', 'Cisco', 'Packet Tracer', 'Routage'],
+    tags: ['Interactif', 'Cisco', 'Packet Tracer', 'Routage'], cat: 'cisco',
   },
   {
     slug: 'configurateur-dhcp-cisco', icon: '📶',
     title: 'Générateur — DHCP routeur (Packet Tracer)',
     desc: 'Outil interactif : pools DHCP (réseau, passerelle, DNS, domaine, bail) et adresses exclues → configuration CLI IOS (ip dhcp pool) prête à coller dans Packet Tracer.',
-    tags: ['Interactif', 'Cisco', 'Packet Tracer', 'DHCP'],
+    tags: ['Interactif', 'Cisco', 'Packet Tracer', 'DHCP'], cat: 'cisco',
   },
   {
     slug: 'segmentation-reseau', icon: '🧮',
     title: 'Outil de segmentation réseau (VLSM / FLSM)',
     desc: 'Planificateur de sous-réseaux : réseau de base + besoins en hôtes → plan d’adressage complet (réseau, plage, broadcast, masque, passerelle, hôtes). Modes VLSM et FLSM.',
-    tags: ['Interactif', 'Réseau', 'Subnetting', 'VLSM'],
+    tags: ['Interactif', 'Réseau', 'Subnetting', 'VLSM'], cat: 'reseau',
   },
   {
     slug: 'configurateur-routeur-cisco', icon: '📟',
     title: 'Configurateur — Routeur Cisco (Packet Tracer)',
     desc: 'Outil interactif : hostname, interfaces (IP fixe + activation, clock rate DCE) et routes statiques → configuration CLI IOS prête à coller dans Packet Tracer.',
-    tags: ['Interactif', 'Cisco', 'Packet Tracer', 'Routage'],
+    tags: ['Interactif', 'Cisco', 'Packet Tracer', 'Routage'], cat: 'cisco',
   },
   {
     slug: 'constructeur-agdlp', icon: '🔐',
     title: 'Constructeur AGDLP',
     desc: 'Outil tout-en-un : services, dossiers + besoins d’accès, utilisateurs → génère UO, groupes G/DL (bonne convention), imbrication, comptes et partages NTFS. Arborescence UO + NTFS en aperçu, 2 scripts PowerShell.',
-    tags: ['Interactif', 'PowerShell', 'Active Directory', 'AGDLP', 'NTFS'],
+    tags: ['Interactif', 'PowerShell', 'Active Directory', 'AGDLP', 'NTFS'], cat: 'ad',
   },
   {
     slug: 'constructeur-ad', icon: '🏗️',
     title: 'Constructeur AD (masse)',
     desc: 'Outil graphique : définir UO / groupes (imbriqués) / utilisateurs, créer des comptes en masse (collage de liste) → script PowerShell complet.',
-    tags: ['Interactif', 'PowerShell', 'Active Directory', 'Masse'],
+    tags: ['Interactif', 'PowerShell', 'Active Directory', 'Masse'], cat: 'ad',
   },
   {
     slug: 'configurateur-ad', icon: '🏢',
     title: 'Configurateur — Active Directory',
     desc: 'Outil interactif : crée une UO, copie un utilisateur modèle (ex. administrateur → Jean NGUYEN) et désactive le compte source → script PowerShell prêt à copier.',
-    tags: ['Interactif', 'PowerShell', 'Active Directory'],
+    tags: ['Interactif', 'PowerShell', 'Active Directory'], cat: 'ad',
   },
   {
     slug: 'script-config-vm', icon: '🖥️',
     title: 'Configuration standard d’une VM',
     desc: 'Renomme le PC (Client_xx / SRV_rôle_xx), applique l’IP fixe (IP, masque, passerelle .254, DNS) et rappelle le commutateur privé COM_private.',
-    tags: ['PowerShell', 'Hyper-V', 'Réseau'],
+    tags: ['PowerShell', 'Hyper-V', 'Réseau'], cat: 'virtualisation',
   },
 ];
 
 // ===================================================================================
 // Page ANNUAIRE — cartes horizontales, pagination CSS 20 par page (sans JS)
 // ===================================================================================
-const PER_PAGE = 20;
-function chunk<T>(arr: T[], n: number): T[][] { const out: T[][] = []; for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n)); return out; }
 function pill(t: string) { return `<span style="display:inline-block;font-size:10.5px;font-weight:600;color:var(--text-muted);background:var(--surface-3);border:1px solid var(--border);border-radius:999px;padding:1px 9px;margin:4px 4px 0 0">${t}</span>`; }
 function card(s: Script) {
+  const interactif = s.tags.includes('Interactif');
+  const badge = `<span class="sc-badge sc-badge-${interactif ? 'int' : 'ps'}">${interactif ? '⚡ Interactif' : '📜 Script'}</span>`;
   return `<a class="script-card" href="/pages/${s.slug}">`
     + `<div class="sc-ico">${s.icon}</div>`
-    + `<div class="sc-body"><div class="sc-title">${s.title}</div><div class="sc-desc meta">${s.desc}</div><div>${s.tags.map(pill).join('')}</div></div>`
+    + `<div class="sc-body"><div class="sc-title">${s.title} ${badge}</div><div class="sc-desc meta">${s.desc}</div><div>${s.tags.filter(t => t !== 'Interactif').map(pill).join('')}</div></div>`
     + `<div class="sc-go">Voir →</div></a>`;
 }
 function buildDirectory(scripts: Script[]): string {
-  const pages = chunk(scripts, PER_PAGE);
-  const radios = pages.map((_, i) => `<input class="sp-radio" type="radio" name="sp" id="sp-${i + 1}"${i === 0 ? ' checked' : ''}>`).join('');
-  let css = `.scripts-dir{position:relative}`
-    + `.scripts-dir input.sp-radio{position:absolute;width:0;height:0;opacity:0;pointer-events:none}`
-    + `.scripts-dir .sp-page{display:none}`
-    + `.script-card{display:flex;gap:14px;align-items:center;padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--surface);text-decoration:none;margin:10px 0;transition:border-color .15s,transform .15s}`
+  const cats = CATEGORIES.filter(c => scripts.some(s => s.cat === c.id));
+  const css = `.scripts-dir{position:relative}`
+    + `.scripts-dir .sc-nav{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 24px}`
+    + `.scripts-dir .sc-chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--text-soft);text-decoration:none;border:1px solid var(--border);border-radius:999px;padding:5px 13px;background:var(--surface);transition:border-color .15s,color .15s}`
+    + `.scripts-dir .sc-chip:hover{border-color:var(--accent);color:var(--accent)}`
+    + `.scripts-dir .sc-chip .sc-n{font-size:11px;color:var(--text-muted);background:var(--surface-3);border-radius:999px;padding:0 7px}`
+    + `.scripts-dir .sc-sec{margin:0 0 30px;scroll-margin-top:84px}`
+    + `.scripts-dir .sc-h{font-size:16.5px;font-weight:800;color:var(--text);margin:0 0 13px;display:flex;align-items:center;gap:9px;padding-bottom:8px;border-bottom:1px solid var(--border)}`
+    + `.scripts-dir .sc-h .sc-count{font-size:12px;font-weight:700;color:var(--text-muted);background:var(--surface-3);border:1px solid var(--border);border-radius:999px;padding:1px 9px}`
+    + `.scripts-dir .sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}`
+    + `.script-card{display:flex;gap:14px;align-items:center;padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--surface);text-decoration:none;transition:border-color .15s,transform .15s}`
     + `.script-card:hover{border-color:var(--accent);transform:translateY(-1px)}`
     + `.script-card .sc-ico{font-size:30px;line-height:1}`
     + `.script-card .sc-body{flex:1;min-width:0}`
     + `.script-card .sc-title{font-weight:700;font-size:15px;color:var(--text)}`
     + `.script-card .sc-desc{font-size:13px;margin-top:2px}`
     + `.script-card .sc-go{color:var(--accent);font-weight:700;white-space:nowrap}`
-    + `.scripts-dir .sp-pager{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:14px}`
-    + `.scripts-dir .sp-pager label{cursor:pointer;border:1px solid var(--border);border-radius:8px;padding:4px 11px;font-size:13px;font-weight:600;color:var(--text-soft)}`;
-  pages.forEach((_, i) => { css += `#sp-${i + 1}:checked~.sp-pages .sp-page-${i + 1}{display:block}`; });
-  pages.forEach((_, i) => { css += `#sp-${i + 1}:checked~.sp-pager label[for="sp-${i + 1}"]{background:var(--accent);color:#fff;border-color:var(--accent)}`; });
-  const body = `<div class="sp-pages">${pages.map((pg, i) => `<div class="sp-page sp-page-${i + 1}">${pg.map(card).join('')}</div>`).join('')}</div>`;
-  const pager = pages.length > 1 ? `<div class="sp-pager">${pages.map((_, i) => `<label for="sp-${i + 1}">${i + 1}</label>`).join('')}</div>` : '';
-  return `<div class="scripts-dir"><style>${css}</style>${radios}${body}${pager}</div>`;
+    + `.sc-badge{display:inline-block;font-size:10px;font-weight:700;border-radius:999px;padding:1px 8px;vertical-align:middle;margin-left:4px}`
+    + `.sc-badge-int{color:#7c3aed;background:color-mix(in srgb,#7c3aed 14%,transparent);border:1px solid color-mix(in srgb,#7c3aed 40%,transparent)}`
+    + `.sc-badge-ps{color:var(--text-muted);background:var(--surface-3);border:1px solid var(--border)}`
+    + `@media (max-width:640px){.scripts-dir .sc-grid{grid-template-columns:1fr}}`;
+  const nav = cats.map(c => `<a class="sc-chip" href="#sec-${c.id}">${c.icon} ${c.label} <span class="sc-n">${scripts.filter(s => s.cat === c.id).length}</span></a>`).join('');
+  const sections = cats.map(c => {
+    const group = scripts.filter(s => s.cat === c.id);
+    return `<section class="sc-sec" id="sec-${c.id}"><h2 class="sc-h">${c.icon} ${c.label} <span class="sc-count">${group.length}</span></h2>`
+      + `<div class="sc-grid">${group.map(card).join('')}</div></section>`;
+  }).join('');
+  return `<div class="scripts-dir"><style>${css}</style><nav class="sc-nav">${nav}</nav>${sections}</div>`;
 }
 
 const dirBlocks: PageBlock[] = [
   block('hero', { eyebrow: 'TSSR', title: 'Outils', subtitle: 'Outils interactifs et scripts prêts à l’emploi pour automatiser les tâches courantes.' }),
-  block('html', { html: `<p class="meta">${SCRIPTS.length} outil(s) · affichés par pages de ${PER_PAGE}. Clique sur une carte pour ouvrir l’outil (générateur ou script + explications).</p>` }),
+  block('html', { html: `<p class="meta">${SCRIPTS.length} outils, classés par domaine. Les <strong>⚡ interactifs</strong> génèrent une config/un script à partir de tes choix ; les <strong>📜 scripts</strong> sont prêts à copier. Utilise le sommaire pour sauter à une catégorie.</p>` }),
   block('html', { html: buildDirectory(SCRIPTS) }),
 ];
 
