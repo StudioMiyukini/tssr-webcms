@@ -94,6 +94,7 @@ const NAV_GROUPS: NavGroup[] = [
       { to: '/admin/features', label: 'Fonctionnalités', icon: '⚙️' },
       { to: '/admin/theme', label: 'Thème visuel', icon: '🎨' },
       { to: '/admin/performance', label: 'Performance & sécurité', icon: '🛡️' },
+      { to: '/admin/backup', label: 'Sauvegarde & export', icon: '💾' },
       { to: '/admin/email', label: 'Emails', icon: '✉️' },
       { to: '/admin/newsletter', label: 'Newsletter', icon: '📣' },
       { to: '/admin/email-templates', label: 'Modèles d\'email', icon: '🗒️' },

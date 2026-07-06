@@ -30,6 +30,7 @@ import searchRouter from './routes/search';
 import notesRouter from './routes/notes';
 import planningsRouter from './routes/plannings';
 import forumRouter from './routes/forum';
+import backupRouter from './routes/backup';
 import { SqliteSessionStore } from './lib/session-store';
 import { errorHandler } from './lib/http';
 import { resolveMeta, metaTags } from './lib/seo';
@@ -113,6 +114,7 @@ async function createServer() {
   app.use(notesRouter);
   app.use(planningsRouter);
   app.use(forumRouter);
+  app.use(backupRouter);
 
   // Fichiers uploadés (servis en dev et prod).
   app.use('/uploads', express.static(UPLOADS_DIR, { maxAge: '7d', fallthrough: true }));

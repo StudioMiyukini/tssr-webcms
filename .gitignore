@@ -15,3 +15,4 @@ portable
 .legacy/
 ecosystem.config.cjs
 export/
+cms.sqlite.bak*

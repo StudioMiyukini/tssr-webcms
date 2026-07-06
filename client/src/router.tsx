@@ -14,6 +14,7 @@ const DashboardPage = lazyNamed(() => import('./pages/Dashboard'), 'DashboardPag
 const FeaturesPage = lazyNamed(() => import('./pages/Features'), 'FeaturesPage');
 const ThemePage = lazyNamed(() => import('./pages/Theme'), 'ThemePage');
 const PerformancePage = lazyNamed(() => import('./pages/Performance'), 'PerformancePage');
+const BackupPage = lazyNamed(() => import('./pages/Backup'), 'BackupPage');
 const MediaPage = lazyNamed(() => import('./pages/Media'), 'MediaPage');
 const NotesPage = lazyNamed(() => import('./pages/Notes'), 'NotesPage');
 const EmailPage = lazyNamed(() => import('./pages/Email'), 'EmailPage');
@@ -84,6 +85,7 @@ const dashRoute = createRoute({ getParentRoute: () => adminRoute, path: '/admin'
 const featuresRoute = createRoute({ getParentRoute: () => adminRoute, path: '/admin/features', component: FeaturesPage });
 const themeRoute = createRoute({ getParentRoute: () => adminRoute, path: '/admin/theme', component: ThemePage });
 const performanceRoute = createRoute({ getParentRoute: () => adminRoute, path: '/admin/performance', component: PerformancePage });
+const backupRoute = createRoute({ getParentRoute: () => adminRoute, path: '/admin/backup', component: BackupPage });
 const mediaRoute = createRoute({ getParentRoute: () => adminRoute, path: '/admin/media', component: MediaPage });
 const notesRoute = createRoute({ getParentRoute: () => adminRoute, path: '/admin/notes', component: NotesPage });
 const emailRoute = createRoute({ getParentRoute: () => adminRoute, path: '/admin/email', component: EmailPage });
@@ -199,6 +201,7 @@ const routeTree = rootRoute.addChildren([
     featuresRoute,
     themeRoute,
     performanceRoute,
+    backupRoute,
     mediaRoute,
     notesRoute,
     emailRoute,
