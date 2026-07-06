@@ -7,28 +7,34 @@ const BASE = process.env.BASE || 'https://tssr.miyukini.com';
 const PW = process.env.ADMIN_PW || 'changeme';
 const block = (type: Parameters<typeof makePageBlock>[0], patch: Partial<PageBlock>) => Object.assign(makePageBlock(type), patch);
 
-type Proc = { slug: string; icon: string; title: string; desc: string; tags: string[] };
+type Proc = { slug: string; icon: string; title: string; desc: string; tags: string[]; cat: string };
+const CATEGORIES: { id: string; icon: string; label: string }[] = [
+  { id: 'virtualisation', icon: '🖥️', label: 'Virtualisation & Hyper-V' },
+  { id: 'ad', icon: '🏢', label: 'Active Directory' },
+  { id: 'reseau', icon: '🌐', label: 'Réseau & adressage' },
+  { id: 'windows', icon: '🪟', label: 'Poste Windows & disques' },
+  { id: 'services', icon: '📶', label: 'Services : DHCP · DNS · Web' },
+  { id: 'cisco', icon: '🧪', label: 'Cisco / Packet Tracer' },
+];
 const PROCEDURES: Proc[] = [
-  { slug: 'procedure-vm-hyperv', icon: '🖥️', title: 'Créer & configurer une VM (ISO) sur Hyper-V', desc: 'De la création de la VM au début du TP : OS, nom, IP fixe, pare-feu.', tags: ['Hyper-V', 'Réseau'] },
-  { slug: 'procedure-installation-active-directory', icon: '🏢', title: 'Installer & configurer Active Directory', desc: 'De la VM vierge au client intégré au domaine : procédure complète.', tags: ['Active Directory'] },
-  { slug: 'procedure-agdlp', icon: '🔐', title: 'Mettre en place AGDLP', desc: 'Attribuer les droits proprement : Account → Global → Domain Local → Permission.', tags: ['Active Directory', 'Droits'] },
-  { slug: 'procedure-plan-adressage', icon: '🧮', title: 'Plan d’adressage (découpage en sous-réseaux)', desc: 'Découper un réseau selon le besoin en hôtes (VLSM), sans chevauchement.', tags: ['Réseau', 'Subnetting'] },
-  { slug: 'procedure-ip-fixe-windows', icon: '🔧', title: 'Configurer une IP fixe (Windows)', desc: 'IP statique sous Windows 10/11 & Server : méthode graphique + netsh.', tags: ['Réseau', 'Windows'] },
-  { slug: 'procedure-renommer-poste', icon: '🏷️', title: 'Renommer un poste Windows', desc: 'Changer le nom d’un PC/serveur (convention de nommage) puis redémarrer.', tags: ['Windows'] },
-  { slug: 'procedure-test-connectivite', icon: '📡', title: 'Test de connectivité méthodique', desc: 'Dépanner dans l’ordre : loopback → passerelle → Internet → DNS.', tags: ['Réseau', 'Diagnostic'] },
-  { slug: 'procedure-hyperv-ressources', icon: '🖥️', title: 'Hyper-V : fonctionnement & ressources', desc: 'Hyperviseur, VM, commutateurs, VHDX — et attribuer CPU/RAM/disque/réseau.', tags: ['Hébergement', 'Hyper-V'] },
-  { slug: 'procedure-gestion-disques', icon: '💽', title: 'Gestion des disques & partitionnement', desc: 'Initialiser (MBR/GPT), partitionner, formater NTFS — diskmgmt & diskpart.', tags: ['Hébergement', 'Windows'] },
-  { slug: 'procedure-dhcp', icon: '📶', title: 'DHCP : étendue, options & réservation', desc: 'Rôle DHCP, plage, options 003/006/015, réservation par MAC.', tags: ['Hébergement', 'Réseau'] },
-  { slug: 'procedure-dhcp-basculement', icon: '🔁', title: 'Basculement DHCP (failover)', desc: 'Redondance entre 2 serveurs : prérequis, répartition de charge vs veille active, pas-à-pas.', tags: ['Hébergement', 'DHCP', 'Haute dispo'] },
-  { slug: 'procedure-dhcp-packet-tracer', icon: '📶', title: 'DHCP sur Packet Tracer', desc: 'Serveur (GUI) ou routeur (CLI ip dhcp pool) + exclusions, relais et tests clients.', tags: ['Réseau', 'DHCP', 'Packet Tracer'] },
-  { slug: 'procedure-ssh-packet-tracer', icon: '🔑', title: 'SSH sur Packet Tracer', desc: 'Accès distant chiffré à un routeur/switch Cisco : domaine, clés RSA, compte, VTY, test.', tags: ['Réseau', 'Cisco', 'Packet Tracer', 'Sécurité'] },
-  { slug: 'procedure-dns', icon: '🌐', title: 'DNS : zones & enregistrements', desc: 'Zones directe/inversée, enregistrements A/CNAME/PTR, tests nslookup.', tags: ['Hébergement', 'Réseau'] },
-  { slug: 'procedure-iis', icon: '🕸️', title: 'IIS : héberger un site web', desc: 'Rôle IIS, site + liaison, DNS, permissions NTFS, pare-feu.', tags: ['Hébergement', 'Web'] },
-  { slug: 'procedure-iis-hyperv', icon: '🌐', title: 'Installer un serveur IIS sur une VM Hyper-V', desc: 'De la création de la VM à la publication du site : VM → Windows Server → IP → IIS → site → test.', tags: ['Hébergement', 'Hyper-V', 'Web'] },
+  { slug: 'procedure-vm-hyperv', icon: '🖥️', title: 'Créer & configurer une VM (ISO) sur Hyper-V', desc: 'De la création de la VM au début du TP : OS, nom, IP fixe, pare-feu.', tags: ['Hyper-V', 'Réseau'], cat: 'virtualisation' },
+  { slug: 'procedure-hyperv-ressources', icon: '🧩', title: 'Hyper-V : fonctionnement & ressources', desc: 'Hyperviseur, VM, commutateurs, VHDX — et attribuer CPU/RAM/disque/réseau.', tags: ['Hyper-V', 'Hébergement'], cat: 'virtualisation' },
+  { slug: 'procedure-installation-active-directory', icon: '🏢', title: 'Installer & configurer Active Directory', desc: 'De la VM vierge au client intégré au domaine : procédure complète.', tags: ['Active Directory'], cat: 'ad' },
+  { slug: 'procedure-agdlp', icon: '🔐', title: 'Mettre en place AGDLP', desc: 'Attribuer les droits proprement : Account → Global → Domain Local → Permission.', tags: ['Active Directory', 'Droits'], cat: 'ad' },
+  { slug: 'procedure-plan-adressage', icon: '🧮', title: 'Plan d’adressage (découpage en sous-réseaux)', desc: 'Découper un réseau selon le besoin en hôtes (VLSM), sans chevauchement.', tags: ['Réseau', 'Subnetting'], cat: 'reseau' },
+  { slug: 'procedure-ip-fixe-windows', icon: '🔧', title: 'Configurer une IP fixe (Windows)', desc: 'IP statique sous Windows 10/11 & Server : méthode graphique + netsh.', tags: ['Réseau', 'Windows'], cat: 'reseau' },
+  { slug: 'procedure-test-connectivite', icon: '📡', title: 'Test de connectivité méthodique', desc: 'Dépanner dans l’ordre : loopback → passerelle → Internet → DNS.', tags: ['Réseau', 'Diagnostic'], cat: 'reseau' },
+  { slug: 'procedure-renommer-poste', icon: '🏷️', title: 'Renommer un poste Windows', desc: 'Changer le nom d’un PC/serveur (convention de nommage) puis redémarrer.', tags: ['Windows'], cat: 'windows' },
+  { slug: 'procedure-gestion-disques', icon: '💽', title: 'Gestion des disques & partitionnement', desc: 'Initialiser (MBR/GPT), partitionner, formater NTFS — diskmgmt & diskpart.', tags: ['Windows', 'Hébergement'], cat: 'windows' },
+  { slug: 'procedure-dhcp', icon: '📶', title: 'DHCP : étendue, options & réservation', desc: 'Rôle DHCP, plage, options 003/006/015, réservation par MAC.', tags: ['Hébergement', 'Réseau'], cat: 'services' },
+  { slug: 'procedure-dhcp-basculement', icon: '🔁', title: 'Basculement DHCP (failover)', desc: 'Redondance entre 2 serveurs : prérequis, répartition de charge vs veille active, pas-à-pas.', tags: ['Hébergement', 'DHCP', 'Haute dispo'], cat: 'services' },
+  { slug: 'procedure-dns', icon: '🌐', title: 'DNS : zones & enregistrements', desc: 'Zones directe/inversée, enregistrements A/CNAME/PTR, tests nslookup.', tags: ['Hébergement', 'Réseau'], cat: 'services' },
+  { slug: 'procedure-iis', icon: '🕸️', title: 'IIS : héberger un site web', desc: 'Rôle IIS, site + liaison, DNS, permissions NTFS, pare-feu.', tags: ['Hébergement', 'Web'], cat: 'services' },
+  { slug: 'procedure-iis-hyperv', icon: '🌍', title: 'Installer un serveur IIS sur une VM Hyper-V', desc: 'De la création de la VM à la publication du site : VM → Windows Server → IP → IIS → site → test.', tags: ['Hébergement', 'Hyper-V', 'Web'], cat: 'services' },
+  { slug: 'procedure-dhcp-packet-tracer', icon: '📶', title: 'DHCP sur Packet Tracer', desc: 'Serveur (GUI) ou routeur (CLI ip dhcp pool) + exclusions, relais et tests clients.', tags: ['Réseau', 'DHCP', 'Packet Tracer'], cat: 'cisco' },
+  { slug: 'procedure-ssh-packet-tracer', icon: '🔑', title: 'SSH sur Packet Tracer', desc: 'Accès distant chiffré à un routeur/switch Cisco : domaine, clés RSA, compte, VTY, test.', tags: ['Cisco', 'Packet Tracer', 'Sécurité'], cat: 'cisco' },
 ];
 
-const PER_PAGE = 20;
-function chunk<T>(arr: T[], n: number): T[][] { const out: T[][] = []; for (let i = 0; i < arr.length; i += n) out.push(arr.slice(i, i + n)); return out; }
 function pill(t: string) { return `<span style="display:inline-block;font-size:10.5px;font-weight:600;color:var(--text-muted);background:var(--surface-3);border:1px solid var(--border);border-radius:999px;padding:1px 9px;margin:4px 4px 0 0">${t}</span>`; }
 function card(p: Proc) {
   return `<a class="dir-card" href="/pages/${p.slug}"><div class="dc-ico">${p.icon}</div>`
@@ -36,30 +42,36 @@ function card(p: Proc) {
     + `<div class="dc-go">Voir →</div></a>`;
 }
 function buildDirectory(items: Proc[]): string {
-  const pages = chunk(items, PER_PAGE);
-  const radios = pages.map((_, i) => `<input class="dp-radio" type="radio" name="dp" id="dp-${i + 1}"${i === 0 ? ' checked' : ''}>`).join('');
-  let css = '.dir{position:relative}'
-    + '.dir input.dp-radio{position:absolute;width:0;height:0;opacity:0;pointer-events:none}'
-    + '.dir .dp-page{display:none}'
-    + '.dir-card{display:flex;gap:14px;align-items:center;padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--surface);text-decoration:none;margin:10px 0;transition:border-color .15s,transform .15s}'
+  const cats = CATEGORIES.filter(c => items.some(p => p.cat === c.id));
+  const css = '.dir{position:relative}'
+    + '.dir .pd-nav{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 24px}'
+    + '.dir .pd-chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--text-soft);text-decoration:none;border:1px solid var(--border);border-radius:999px;padding:5px 13px;background:var(--surface);transition:border-color .15s,color .15s}'
+    + '.dir .pd-chip:hover{border-color:var(--accent);color:var(--accent)}'
+    + '.dir .pd-chip .pd-n{font-size:11px;color:var(--text-muted);background:var(--surface-3);border-radius:999px;padding:0 7px}'
+    + '.dir .pd-sec{margin:0 0 30px;scroll-margin-top:84px}'
+    + '.dir .pd-h{font-size:16.5px;font-weight:800;color:var(--text);margin:0 0 13px;display:flex;align-items:center;gap:9px;padding-bottom:8px;border-bottom:1px solid var(--border)}'
+    + '.dir .pd-h .pd-count{font-size:12px;font-weight:700;color:var(--text-muted);background:var(--surface-3);border:1px solid var(--border);border-radius:999px;padding:1px 9px}'
+    + '.dir .pd-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}'
+    + '.dir-card{display:flex;gap:14px;align-items:center;padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--surface);text-decoration:none;transition:border-color .15s,transform .15s}'
     + '.dir-card:hover{border-color:var(--accent);transform:translateY(-1px)}'
     + '.dir-card .dc-ico{font-size:30px;line-height:1}'
     + '.dir-card .dc-body{flex:1;min-width:0}'
     + '.dir-card .dc-title{font-weight:700;font-size:15px;color:var(--text)}'
     + '.dir-card .dc-desc{font-size:13px;margin-top:2px}'
     + '.dir-card .dc-go{color:var(--accent);font-weight:700;white-space:nowrap}'
-    + '.dir .dp-pager{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:14px}'
-    + '.dir .dp-pager label{cursor:pointer;border:1px solid var(--border);border-radius:8px;padding:4px 11px;font-size:13px;font-weight:600;color:var(--text-soft)}';
-  pages.forEach((_, i) => { css += `#dp-${i + 1}:checked~.dp-pages .dp-page-${i + 1}{display:block}`; });
-  pages.forEach((_, i) => { css += `#dp-${i + 1}:checked~.dp-pager label[for="dp-${i + 1}"]{background:var(--accent);color:#fff;border-color:var(--accent)}`; });
-  const body = `<div class="dp-pages">${pages.map((pg, i) => `<div class="dp-page dp-page-${i + 1}">${pg.map(card).join('')}</div>`).join('')}</div>`;
-  const pager = pages.length > 1 ? `<div class="dp-pager">${pages.map((_, i) => `<label for="dp-${i + 1}">${i + 1}</label>`).join('')}</div>` : '';
-  return `<div class="dir"><style>${css}</style>${radios}${body}${pager}</div>`;
+    + '@media (max-width:640px){.dir .pd-grid{grid-template-columns:1fr}}';
+  const nav = cats.map(c => `<a class="pd-chip" href="#sec-${c.id}">${c.icon} ${c.label} <span class="pd-n">${items.filter(p => p.cat === c.id).length}</span></a>`).join('');
+  const sections = cats.map(c => {
+    const group = items.filter(p => p.cat === c.id);
+    return `<section class="pd-sec" id="sec-${c.id}"><h2 class="pd-h">${c.icon} ${c.label} <span class="pd-count">${group.length}</span></h2>`
+      + `<div class="pd-grid">${group.map(card).join('')}</div></section>`;
+  }).join('');
+  return `<div class="dir"><style>${css}</style><nav class="pd-nav">${nav}</nav>${sections}</div>`;
 }
 
 const dirBlocks: PageBlock[] = [
   block('hero', { eyebrow: 'TSSR', title: 'Procédures', subtitle: 'Modes opératoires pas-à-pas, prêts à suivre en TP ou en production.' }),
-  block('html', { html: `<p class="meta">${PROCEDURES.length} procédure(s) · affichées par pages de ${PER_PAGE}. Clique sur une carte pour ouvrir la procédure.</p>` }),
+  block('html', { html: `<p class="meta">${PROCEDURES.length} procédures, classées par domaine. Utilise le sommaire pour sauter à une catégorie, puis clique sur une carte pour ouvrir le mode opératoire.</p>` }),
   block('html', { html: buildDirectory(PROCEDURES) }),
 ];
 

@@ -113,8 +113,8 @@ function buildDirectory(scripts: Script[]): string {
 }
 
 const dirBlocks: PageBlock[] = [
-  block('hero', { eyebrow: 'TSSR', title: 'Scripts', subtitle: 'Annuaire de scripts prêts à l’emploi pour automatiser les tâches courantes.' }),
-  block('html', { html: `<p class="meta">${SCRIPTS.length} script(s) · affichés par pages de ${PER_PAGE}. Clique sur une carte pour ouvrir la fiche (script + explications).</p>` }),
+  block('hero', { eyebrow: 'TSSR', title: 'Outils', subtitle: 'Outils interactifs et scripts prêts à l’emploi pour automatiser les tâches courantes.' }),
+  block('html', { html: `<p class="meta">${SCRIPTS.length} outil(s) · affichés par pages de ${PER_PAGE}. Clique sur une carte pour ouvrir l’outil (générateur ou script + explications).</p>` }),
   block('html', { html: buildDirectory(SCRIPTS) }),
 ];
 
@@ -329,15 +329,19 @@ async function main() {
     'Configurateur interactif : génère le script PowerShell de mise en service d’une VM serveur (vCPU/RAM, rôles, IP/masque/passerelle .254/DNS, nom Client_xx / SRV_rôle_xx, commutateur privé COM_private).', configBlocks);
   await upsertPage(h, cookie, existing, 'script-config-vm', 'Configuration standard d’une VM',
     'Script PowerShell : renommer le PC (Client_xx / SRV_rôle_xx) et configurer l’IP fixe (IP, masque, passerelle .254, DNS) sur le commutateur privé COM_private.', ficheBlocks);
-  await upsertPage(h, cookie, existing, 'scripts', 'Scripts',
-    'Annuaire de scripts prêts à l’emploi (PowerShell, Hyper-V, réseau).', dirBlocks);
+  await upsertPage(h, cookie, existing, 'scripts', 'Outils',
+    'Annuaire d’outils interactifs et de scripts prêts à l’emploi (générateurs Cisco/AD, PowerShell, Hyper-V, réseau).', dirBlocks);
 
-  // Entrée de menu « Scripts » (idempotent)
-  const menus = await (await fetch(`${BASE}/api/admin/menus`, { headers: { Cookie: cookie } })).json() as Array<{ id: number; label: string; url: string }>;
-  if (!menus.some(m => m.url === '/pages/scripts' || m.label === 'Scripts')) {
-    const r = await fetch(`${BASE}/api/admin/menus`, { method: 'POST', headers: h, body: JSON.stringify({ label: 'Scripts', url: '/pages/scripts', sort_order: 5 }) });
-    console.log('MENU Scripts', r.status, r.ok ? '(ajouté)' : await r.text());
-  } else console.log('MENU Scripts déjà présent');
+  // Entrée de menu « Outils » (renomme l’ancienne « Scripts » si présente, sinon crée — URL conservée)
+  const menus = await (await fetch(`${BASE}/api/admin/menus`, { headers: { Cookie: cookie } })).json() as Array<{ id: number; label: string; url: string; sort_order?: number }>;
+  const existingMenu = menus.find(m => m.url === '/pages/scripts' || m.label === 'Scripts' || m.label === 'Outils');
+  if (existingMenu) {
+    const r = await fetch(`${BASE}/api/admin/menus/${existingMenu.id}`, { method: 'PUT', headers: h, body: JSON.stringify({ label: 'Outils', url: '/pages/scripts', sort_order: existingMenu.sort_order ?? 5 }) });
+    console.log('MENU Outils', r.status, r.ok ? '(renommé)' : await r.text());
+  } else {
+    const r = await fetch(`${BASE}/api/admin/menus`, { method: 'POST', headers: h, body: JSON.stringify({ label: 'Outils', url: '/pages/scripts', sort_order: 5 }) });
+    console.log('MENU Outils', r.status, r.ok ? '(ajouté)' : await r.text());
+  }
 
   const cc = await fetch(`${BASE}/api/admin/cache/clear`, { method: 'POST', headers: { Cookie: cookie } });
   console.log('cache clear', cc.status);
