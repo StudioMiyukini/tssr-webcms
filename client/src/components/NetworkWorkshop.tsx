@@ -578,7 +578,7 @@ export function NetworkWorkshop() {
           <div style={group}>
             <div style={legend}>🗺️ Schéma du réseau</div>
             <SchemaSvg ctx={ctx} plan={plan} />
-            <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>Routeurs (avec modèle) reliés par leurs liaisons ; chaque LAN sous son routeur-passerelle, avec interface, idSR/CIDR, passerelle et IP de gestion du switch.</div>
+            <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>Vue topologie : une <strong>dorsale</strong> de routeurs reliés par leurs <strong>segments/switches</strong> ; chaque sous-réseau est un <strong>nuage</strong> (switch + machines) rattaché à son routeur-passerelle, avec l’interface, l’idSR/CIDR, la passerelle et l’IP du switch.</div>
           </div>
 
           <div style={group}>
@@ -693,80 +693,110 @@ function clientRange(ctx: Ctx, s: Sub): [number, number] | null {
   return lo <= s.last ? [lo, s.last] : null;
 }
 
+const CLOUD_COLORS = ['#ec4899', '#22c55e', '#eab308', '#38bdf8', '#a855f7', '#f97316', '#14b8a6', '#f43f5e'];
+
 function SchemaSvg({ ctx, plan }: { ctx: Ctx; plan: Plan }) {
   const routers = ctx.routers;
   if (!routers.length) return <div className="meta">Ajoute des routeurs (étape 3) pour afficher le schéma.</div>;
-  const lanW = 188, lanH = 58, lanGap = 20, routerW = 132, routerH = 46, colGap = 40, marginX = 16;
-  const linkSubs = plan.subs.filter(s => s.kind === 'link');
-  const topPad = linkSubs.length ? (12 + Math.min(3, linkSubs.length) * 30 + 28) : 20;
-  const routerY = topPad;
-  const firstLanY = routerY + routerH + 30;
-  const pitch = lanW + colGap;
-  const cx = (i: number) => marginX + lanW / 2 + i * pitch;
-  const lansByRouter = routers.map(r => plan.subs.filter(s => s.kind === 'lan' && s.routerId === r.id));
-  const maxLans = Math.max(1, ...lansByRouter.map(a => a.length));
-  const width = Math.max(320, marginX * 2 + routers.length * lanW + (routers.length - 1) * colGap);
-  const height = firstLanY + maxLans * (lanH + lanGap) + 8;
   const idx = new Map(routers.map((r, i) => [r.id, i] as const));
+  const lanSubs = plan.subs.filter(s => s.kind === 'lan');
+  const linkSubs = plan.subs.filter(s => s.kind === 'link');
+
+  // Répartition des LAN de chaque routeur : alternance dessus / dessous la dorsale.
+  const lansByRouter = routers.map(r => lanSubs.filter(s => s.routerId === r.id));
+  let aboveMax = 0, belowMax = 0;
+  lansByRouter.forEach(list => {
+    const ab = list.filter((_, j) => j % 2 === 0).length;
+    const be = list.length - ab;
+    aboveMax = Math.max(aboveMax, ab); belowMax = Math.max(belowMax, be);
+  });
+
+  const rPitch = 300, rW = 84, rH = 46, marginX = 130;
+  const cloudRx = 110, cloudRy = 72, lvl0 = 158, lvlGap = 176;
+  const segRx = 92, segRy = 50;
+  const routerX = (i: number) => marginX + i * rPitch;
+  const topSpace = aboveMax > 0 ? (lvl0 + (aboveMax - 1) * lvlGap + cloudRy + 24) : 78;
+  const bottomSpace = belowMax > 0 ? (lvl0 + (belowMax - 1) * lvlGap + cloudRy + 24) : 78;
+  const backboneY = topSpace;
+  const height = backboneY + bottomSpace;
+  const width = Math.max(380, routerX(routers.length - 1) + marginX);
+
+  // Un « nuage » de sous-réseau : ellipse colorée + switch central + 3 machines + libellés.
+  const cloud = (cx: number, cy: number, color: string, title: string, subtitle: string, info: string) => (
+    <g>
+      <ellipse cx={cx} cy={cy} rx={cloudRx} ry={cloudRy} fill={color} fillOpacity={0.15} stroke={color} strokeWidth={1.4} />
+      <text x={cx} y={cy - cloudRy + 17} textAnchor="middle" fontSize={12} fontWeight={800} fill="var(--text)">{title}</text>
+      <text x={cx} y={cy - cloudRy + 31} textAnchor="middle" fontSize={9.5} fill="var(--text-muted)">{subtitle}</text>
+      <rect x={cx - 22} y={cy - 12} width={44} height={22} rx={5} fill="var(--surface)" stroke={color} strokeWidth={1.3} />
+      <text x={cx} y={cy + 3} textAnchor="middle" fontSize={11}>🔀</text>
+      {[-44, 0, 44].map((dx, k) => (
+        <g key={k}>
+          <line x1={cx} y1={cy + 10} x2={cx + dx} y2={cy + 34} stroke={color} strokeWidth={1} />
+          <rect x={cx + dx - 9} y={cy + 34} width={18} height={13} rx={2} fill="var(--surface)" stroke={color} strokeWidth={1} />
+        </g>
+      ))}
+      <text x={cx} y={cy + cloudRy - 8} textAnchor="middle" fontSize={9} fill="var(--text-muted)">{info}</text>
+    </g>
+  );
 
   return (
     <div style={{ overflowX: 'auto' }}>
       <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ maxWidth: 'none', display: 'block' }}>
-        {linkSubs.map((s, k) => {
-          const idxs = (s.routerIds || []).map(id => idx.get(id)).filter((v): v is number => v !== undefined);
+        {/* dorsale */}
+        <line x1={marginX - 34} y1={backboneY} x2={routerX(routers.length - 1) + 34} y2={backboneY} stroke="var(--border)" strokeWidth={2} />
+
+        {/* segments inter-routeurs (sur la dorsale) */}
+        {linkSubs.map(s => {
+          const idxs = (s.routerIds || []).map(id => idx.get(id)).filter((v): v is number => v !== undefined).sort((a, b) => a - b);
           if (idxs.length < 2) return null;
-          const xs = idxs.map(cx);
+          const xs = idxs.map(routerX);
           if (s.media === 'serial') {
-            const x1 = xs[0], x2 = xs[1];
-            const apexY = Math.max(8, routerY - 40 - (k % 2) * 12);
-            const midX = (x1 + x2) / 2;
+            const x1 = Math.min(...xs), x2 = Math.max(...xs);
             return (
               <g key={s.id}>
-                <path d={`M ${x1} ${routerY} Q ${midX} ${apexY} ${x2} ${routerY}`} fill="none" stroke="var(--accent)" strokeWidth={1.6} strokeDasharray="5 4" />
-                <text x={midX} y={apexY - 2} textAnchor="middle" fontSize={9.5} fill="var(--text-muted)">{ipToStr(s.net)}/{s.cidr} · série</text>
+                <line x1={x1} y1={backboneY} x2={x2} y2={backboneY} stroke="var(--accent)" strokeWidth={2.4} strokeDasharray="7 4" />
+                <text x={(x1 + x2) / 2} y={backboneY - 11} textAnchor="middle" fontSize={9.5} fontWeight={600} fill="var(--text-muted)">série · {ipToStr(s.net)}/{s.cidr}</text>
               </g>
             );
           }
-          const nodeX = xs.reduce((a, b) => a + b, 0) / xs.length;
-          const nodeY = 12 + (k % 3) * 30;
-          const nodeW = 120, nodeH = 20;
+          const cxS = xs.reduce((a, b) => a + b, 0) / xs.length;
           return (
             <g key={s.id}>
-              {xs.map((x, j) => <line key={j} x1={nodeX} y1={nodeY + nodeH} x2={x} y2={routerY} stroke="var(--accent)" strokeWidth={1.3} strokeDasharray="4 3" />)}
-              <rect x={nodeX - nodeW / 2} y={nodeY} width={nodeW} height={nodeH} rx={5} fill="var(--surface-3)" stroke="var(--accent)" />
-              <text x={nodeX} y={nodeY + 14} textAnchor="middle" fontSize={9.5} fontWeight={600} fill="var(--text)">🔀 {ipToStr(s.net)}/{s.cidr}</text>
+              {xs.map((x, j) => <line key={j} x1={x} y1={backboneY} x2={cxS} y2={backboneY} stroke="var(--accent)" strokeWidth={1.8} />)}
+              <ellipse cx={cxS} cy={backboneY} rx={segRx} ry={segRy} fill="var(--accent)" fillOpacity={0.08} stroke="var(--accent)" strokeWidth={1.3} strokeDasharray="4 4" />
+              <text x={cxS} y={backboneY - segRy + 14} textAnchor="middle" fontSize={10} fontWeight={700} fill="var(--text)">Dorsale</text>
+              <rect x={cxS - 20} y={backboneY - 11} width={40} height={22} rx={5} fill="var(--surface)" stroke="var(--accent)" strokeWidth={1.3} />
+              <text x={cxS} y={backboneY + 4} textAnchor="middle" fontSize={11}>🔀</text>
+              <text x={cxS} y={backboneY + segRy - 6} textAnchor="middle" fontSize={9.5} fill="var(--text-muted)">{ipToStr(s.net)}/{s.cidr}</text>
             </g>
           );
         })}
+
+        {/* LAN (nuages) + routeurs */}
         {routers.map((r, i) => {
-          const rx = cx(i) - routerW / 2;
+          const x = routerX(i);
           const lans = lansByRouter[i];
-          const lx = cx(i) - lanW / 2;
-          const railX = lx - 14;
-          const lastCY = lans.length ? firstLanY + (lans.length - 1) * (lanH + lanGap) + lanH / 2 : routerY + routerH;
+          let ab = 0, be = 0;
           return (
             <g key={r.id}>
-              {/* rail : routeur → chacun de ses LAN (à gauche des boîtes, sans traverser) */}
-              {lans.length > 0 && <path d={`M ${cx(i)} ${routerY + routerH} V ${routerY + routerH + 14} H ${railX} V ${lastCY}`} fill="none" stroke="var(--border)" strokeWidth={1.4} />}
-              <rect x={rx} y={routerY} width={routerW} height={routerH} rx={9} fill="var(--accent)" />
-              <text x={cx(i)} y={routerY + 19} textAnchor="middle" fontSize={13} fontWeight={700} fill="#fff">{r.name}</text>
-              <text x={cx(i)} y={routerY + 34} textAnchor="middle" fontSize={9.5} fill="rgba(255,255,255,.85)">routeur {r.model}</text>
               {lans.map((s, j) => {
-                const ly = firstLanY + j * (lanH + lanGap);
-                const cyB = ly + lanH / 2;
+                const above = j % 2 === 0;
+                const lvl = above ? ab++ : be++;
+                const cy = above ? backboneY - (lvl0 + lvl * lvlGap) : backboneY + (lvl0 + lvl * lvlGap);
+                const color = CLOUD_COLORS[Math.max(0, lanSubs.indexOf(s)) % CLOUD_COLORS.length];
                 const ifc = s.gw !== null ? plan.ifaces.find(f => f.routerId === r.id && f.ip === s.gw) : undefined;
+                const info = `gw ${s.gw !== null ? ipToStr(s.gw) : '-'}${s.switchIp !== null ? ' · sw ' + ipToStr(s.switchIp) : ''}${s.dhcp ? ' · DHCP' : ''}`;
                 return (
                   <g key={s.id}>
-                    <line x1={railX} y1={cyB} x2={lx} y2={cyB} stroke="var(--border)" strokeWidth={1.4} />
-                    {ifc && <text x={lx + 2} y={ly - 5} fontSize={9} fontWeight={600} fill="var(--accent)">{ifAbbr(ifc.iface)}</text>}
-                    <rect x={lx} y={ly} width={lanW} height={lanH} rx={8} fill="var(--surface-2)" stroke="var(--border)" />
-                    <text x={cx(i)} y={ly + 17} textAnchor="middle" fontSize={11.5} fontWeight={700} fill="var(--text)">{s.name}</text>
-                    <text x={cx(i)} y={ly + 32} textAnchor="middle" fontSize={9.5} fill="var(--text-muted)">{ipToStr(s.net)}/{s.cidr}</text>
-                    <text x={cx(i)} y={ly + 46} textAnchor="middle" fontSize={9.5} fill="var(--text-muted)">gw {s.gw !== null ? ipToStr(s.gw) : '-'}{s.switchIp !== null ? ' · sw ' + ipToStr(s.switchIp) : ''}</text>
+                    <line x1={x} y1={backboneY} x2={x} y2={cy} stroke={color} strokeWidth={1.8} />
+                    {ifc && <text x={x + 6} y={(backboneY + cy) / 2 + 3} fontSize={9} fontWeight={600} fill={color}>{ifAbbr(ifc.iface)}</text>}
+                    {cloud(x, cy, color, s.name, `${ipToStr(s.net)}/${s.cidr} · ${s.usable} h`, info)}
                   </g>
                 );
               })}
-              {!lans.length && <text x={cx(i)} y={firstLanY + 16} textAnchor="middle" fontSize={9.5} fill="var(--text-muted)">(aucun LAN)</text>}
+              <rect x={x - rW / 2} y={backboneY - rH / 2} width={rW} height={rH} rx={9} fill="var(--accent)" />
+              <text x={x} y={backboneY - 2} textAnchor="middle" fontSize={13} fontWeight={700} fill="#fff">🧭 {r.name}</text>
+              <text x={x} y={backboneY + 13} textAnchor="middle" fontSize={9} fill="rgba(255,255,255,.85)">{r.model}</text>
             </g>
           );
         })}
