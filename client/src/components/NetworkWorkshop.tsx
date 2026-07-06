@@ -15,6 +15,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 // ─────────────────────────────────────────── Helpers IP ───────────────────────────────────────────
 const ipToStr = (n: number) => [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
 function strToIp(s: string): number | null {
+  if (typeof s !== 'string') return null;
   const m = s.trim().match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
   if (!m) return null;
   const o = m.slice(1, 5).map(Number);
@@ -71,6 +72,21 @@ export const DEFAULT_CTX: Ctx = {
   gwPos: 'last', switchPos: 'beforeRouter', linkCidr: '30', dnsServer: '', leaseDays: '7',
 };
 
+// Normalise un contexte issu du localStorage (tolère les anciens formats, ex. liens {aId,bId}).
+function migrateCtx(raw: unknown): Ctx {
+  const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, any>;
+  const c = { ...DEFAULT_CTX, ...r } as Ctx;
+  c.routers = Array.isArray(c.routers) ? c.routers : DEFAULT_CTX.routers;
+  c.services = Array.isArray(c.services) ? c.services.map(s => ({ ...s, routerId: typeof s.routerId === 'string' ? s.routerId : '' })) : DEFAULT_CTX.services;
+  c.links = (Array.isArray(r.links) ? r.links : []).map((l: any) => ({
+    id: typeof l?.id === 'string' ? l.id : uid('l'),
+    routerIds: Array.isArray(l?.routerIds) ? l.routerIds.filter((x: any) => typeof x === 'string') : [l?.aId, l?.bId].filter((x: any) => typeof x === 'string'),
+    media: (l?.media === 'serial' ? 'serial' : 'gig') as LinkMedia,
+    hasSwitch: typeof l?.hasSwitch === 'boolean' ? l.hasSwitch : l?.media !== 'serial',
+  })).filter((l: LinkDef) => l.routerIds.length >= 2);
+  return c;
+}
+
 // ─────────────────────────────────────────── Interfaces Cisco ───────────────────────────────────────────
 const ethName = (m: RouterModel, i: number) => (m === '2811' ? `FastEthernet0/${i}` : `GigabitEthernet0/${i}`);
 const ethMax = (m: RouterModel) => (m === '2811' ? 2 : 3);
@@ -94,6 +110,7 @@ export type Plan = {
 };
 
 export function computePlan(ctx: Ctx): Plan {
+  ctx = { ...ctx, services: Array.isArray(ctx.services) ? ctx.services : [], routers: Array.isArray(ctx.routers) ? ctx.routers : [], links: Array.isArray(ctx.links) ? ctx.links : [] };
   const warnings: string[] = [];
   const baseNum = strToIp(ctx.baseIp);
   const cidr = clampNum(Number(ctx.baseCidr) || 24, 1, 30);
@@ -106,7 +123,8 @@ export function computePlan(ctx: Ctx): Plan {
   const items: Item[] = [];
   for (const s of ctx.services) { const need = Math.max(1, Number(s.hosts) || 0); items.push({ id: 'svc:' + s.id, kind: 'lan', need, cidr: 32 - hostBitsFor(need) }); }
   for (const l of ctx.links) {
-    const n = l.media === 'serial' ? 2 : Math.max(2, l.routerIds.length + (l.hasSwitch ? 1 : 0));
+    const rids = Array.isArray(l.routerIds) ? l.routerIds : [];
+    const n = l.media === 'serial' ? 2 : Math.max(2, rids.length + (l.hasSwitch ? 1 : 0));
     items.push({ id: 'lnk:' + l.id, kind: 'link', need: n, cidr: l.media === 'serial' ? linkCidr : 32 - hostBitsFor(n) });
   }
 
@@ -150,7 +168,7 @@ export function computePlan(ctx: Ctx): Plan {
   for (const l of ctx.links) {
     const a = alloc.get('lnk:' + l.id); if (!a) continue;
     const isSerial = l.media === 'serial';
-    const all = l.routerIds.map(id => ctx.routers.find(r => r.id === id)).filter((r): r is RouterDef => !!r);
+    const all = (Array.isArray(l.routerIds) ? l.routerIds : []).map(id => ctx.routers.find(r => r.id === id)).filter((r): r is RouterDef => !!r);
     const parts = isSerial ? all.slice(0, 2) : all;
     const label = `Segment ${parts.map(r => r.name).join('–') || '?'}`;
     const swIp = (!isSerial && l.hasSwitch) ? (a.first + parts.length) >>> 0 : null;
@@ -261,7 +279,7 @@ const STORAGE_KEY = 'net_workshop_v1';
 // ─────────────────────────────────────────── Composant principal ───────────────────────────────────────────
 export function NetworkWorkshop() {
   const [ctx, setCtx] = useState<Ctx>(() => {
-    try { const v = localStorage.getItem(STORAGE_KEY); if (v) return { ...DEFAULT_CTX, ...JSON.parse(v) } as Ctx; } catch { /* */ }
+    try { const v = localStorage.getItem(STORAGE_KEY); if (v) return migrateCtx(JSON.parse(v)); } catch { /* */ }
     return DEFAULT_CTX;
   });
   const [step, setStep] = useState(1);
