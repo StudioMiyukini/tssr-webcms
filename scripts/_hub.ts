@@ -151,7 +151,7 @@ export function buildHubBlocks(): PageBlock[] {
   const count = (d: Domain) => d.subcats.reduce((m, s) => m + s.courses.length, 0);
 
   const style = '<style>'
-    + '.crs-nav{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px}'
+    + '.crs-nav{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 4px;scroll-margin-top:76px}'
     + '.crs-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 13px;border-radius:999px;border:1px solid var(--border);background:var(--surface);text-decoration:none;font-size:13px;font-weight:600;color:var(--text);transition:transform .12s,box-shadow .12s}'
     + '.crs-chip:hover{transform:translateY(-1px);box-shadow:0 3px 10px rgba(0,0,0,.08)}'
     + '.crs-chip .crs-dot{width:10px;height:10px;border-radius:50%;flex:0 0 auto}'
@@ -169,22 +169,32 @@ export function buildHubBlocks(): PageBlock[] {
     + '.crs-ct .crs-a{color:var(--text-muted);transition:transform .12s}'
     + '.crs-card:hover .crs-ct .crs-a{transform:translateX(3px)}'
     + '.crs-cd{font-size:12.5px;color:var(--text-muted);margin-top:4px;line-height:1.4}'
+    + 'summary.crs-dhead{list-style:none;cursor:pointer;user-select:none}'
+    + 'summary.crs-dhead::-webkit-details-marker{display:none}'
+    + '.crs-chev{margin-left:12px;font-size:18px;line-height:1;opacity:.9;transition:transform .18s}'
+    + 'details[open]>summary .crs-chev{transform:rotate(180deg)}'
+    + '.crs-subn{margin-left:8px;font-size:10.5px;color:var(--text-muted);font-weight:700}'
+    + '.crs-back{margin:16px 0 2px;text-align:right}'
+    + '.crs-back a{font-size:12px;font-weight:600;color:var(--text-muted);text-decoration:none;border:1px solid var(--border);border-radius:999px;padding:3px 11px}'
+    + '.crs-back a:hover{color:var(--accent);border-color:var(--accent)}'
     + '</style>';
-  const nav = `<div class="crs-nav">${DOMAINS.map(d => `<a class="crs-chip" href="#${idOf(d.name)}"><span class="crs-dot" style="background:${col(d)}"></span>${d.icon} ${esc(d.name)}<span class="crs-n">${count(d)}</span></a>`).join('')}</div>`;
+  const nav = `<div class="crs-nav" id="cours-top">${DOMAINS.map(d => `<a class="crs-chip" href="#${idOf(d.name)}"><span class="crs-dot" style="background:${col(d)}"></span>${d.icon} ${esc(d.name)}<span class="crs-n">${count(d)}</span></a>`).join('')}</div>`;
 
   const blocks: PageBlock[] = [
     block('hero', { eyebrow: 'TSSR', title: 'Cours', subtitle: 'Tous les supports, classés par catégorie et par thème.' }),
-    block('html', { html: `${style}<p class="meta" style="margin:2px 0 0">${total} cours dans ${DOMAINS.length} catégories — clique sur une pastille pour aller directement à une catégorie.</p>${nav}` }),
+    block('html', { html: `${style}<p class="meta" style="margin:2px 0 0">${total} cours dans ${DOMAINS.length} catégories — clique sur une pastille pour aller à une catégorie ; chaque catégorie est <strong>repliable</strong>.</p>${nav}` }),
   ];
   for (const d of DOMAINS) {
     const c = col(d);
-    let html = `<section class="crs-domain" id="${idOf(d.name)}">`;
-    html += `<div class="crs-dhead" style="background:${c}"><span style="font-size:22px">${d.icon}</span><div><div class="crs-t">${esc(d.name)}</div><div class="crs-i">${esc(d.intro)}</div></div><span class="crs-b">${count(d)} cours</span></div>`;
+    let html = `<details class="crs-domain" id="${idOf(d.name)}" open>`;
+    html += `<summary class="crs-dhead" style="background:${c}"><span style="font-size:22px">${d.icon}</span><div><div class="crs-t">${esc(d.name)}</div><div class="crs-i">${esc(d.intro)}</div></div><span class="crs-b">${count(d)} cours</span><span class="crs-chev">⌄</span></summary>`;
+    html += '<div class="crs-dbody">';
     for (const sc of d.subcats) {
-      html += `<div class="crs-sub" style="border-color:${c};color:${c}">${esc(sc.name)}</div>`;
+      html += `<div class="crs-sub" style="border-color:${c};color:${c}">${esc(sc.name)}<span class="crs-subn">${sc.courses.length}</span></div>`;
       html += `<div class="crs-grid">${sc.courses.map(co => `<a class="crs-card" style="border-left-color:${c}" href="${co.href}"><div class="crs-ct">${esc(co.title)}<span class="crs-a">→</span></div><div class="crs-cd">${esc(co.desc)}</div></a>`).join('')}</div>`;
     }
-    html += '</section>';
+    html += '<div class="crs-back"><a href="#cours-top">↑ Sommaire</a></div>';
+    html += '</div></details>';
     blocks.push(block('html', { html }));
   }
   return blocks;
