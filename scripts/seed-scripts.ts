@@ -29,6 +29,12 @@ const SCRIPTS: Script[] = [
     tags: ['Interactif', 'PowerShell', 'Réseau', 'Dépannage'],
   },
   {
+    slug: 'generateur-routes-statiques', icon: '🛣️',
+    title: 'Générateur — Routes statiques multi-routeurs (CLI)',
+    desc: 'Décris la topologie (routeurs, liaisons, LAN) : l’outil calcule pour chaque routeur les routes statiques (ip route) vers tous les réseaux, avec le bon prochain saut. CLI prête à coller.',
+    tags: ['Interactif', 'Cisco', 'Packet Tracer', 'Routage'],
+  },
+  {
     slug: 'configurateur-dhcp-cisco', icon: '📶',
     title: 'Générateur — DHCP routeur (Packet Tracer)',
     desc: 'Outil interactif : pools DHCP (réseau, passerelle, DNS, domaine, bail) et adresses exclues → configuration CLI IOS (ip dhcp pool) prête à coller dans Packet Tracer.',
@@ -222,6 +228,16 @@ const adBulkBlocks: PageBlock[] = [
 ];
 
 // ===================================================================================
+// PAGE — Générateur de routes statiques (îlot React : data-block="static-route-generator")
+// ===================================================================================
+const staticRouteBlocks: PageBlock[] = [
+  block('hero', { eyebrow: 'Script · Cisco / Packet Tracer', title: 'Générateur — Routes statiques', subtitle: 'Décris ta topologie : les routes statiques de chaque routeur sont calculées automatiquement.' }),
+  block('html', { html: '<p>Cet outil calcule les <strong>routes statiques</strong> (<code>ip route</code>) de <strong>plusieurs routeurs</strong>. Tu décris la <strong>topologie</strong> : les <strong>routeurs</strong>, les <strong>liaisons</strong> qui les relient (réseau + IP de chaque extrémité) et les <strong>LAN</strong> derrière chacun. Pour chaque routeur, l’outil génère les routes vers <strong>tous les réseaux non directement connectés</strong>, avec le <strong>prochain saut correct</strong> (calculé par plus court chemin). Route par défaut optionnelle par routeur.</p>' }),
+  block('html', { html: '<div class="pb-dynamic" data-block="static-route-generator"></div>' }),
+  note('blue', 'ℹ️ Comment l’utiliser', '<p>Configure d’abord les <strong>interfaces</strong> (IP + <code>no shutdown</code>) de chaque routeur avec le <a href="/pages/configurateur-routeur-cisco">configurateur routeur</a>, puis colle les routes statiques générées ici. Rappel : une route statique indique <em>« pour atteindre CE réseau, envoie au routeur suivant »</em>. Cours : <a href="/pages/cisco-route-statique">Les routes statiques en CLI</a>.</p>'),
+];
+
+// ===================================================================================
 // PAGE — Générateur DHCP routeur (îlot React : data-block="dhcp-configurator")
 // ===================================================================================
 const dhcpBlocks: PageBlock[] = [
@@ -297,6 +313,8 @@ async function main() {
     'Outil de dépannage interactif : saisir le contexte réseau (IP, passerelle, DNS, cible, port, partage) et générer un script PowerShell qui teste couche par couche (modèle OSI) pour réduire le périmètre de la panne.', netDiagBlocks);
   await upsertPage(h, cookie, existing, 'constructeur-ad', 'Constructeur AD (masse)',
     'Constructeur AD graphique : définir UO, groupes (imbriqués) et utilisateurs, créer des comptes en masse (collage de liste) et générer le script PowerShell complet (module ActiveDirectory).', adBulkBlocks);
+  await upsertPage(h, cookie, existing, 'generateur-routes-statiques', 'Générateur — Routes statiques multi-routeurs (CLI)',
+    'Générateur de routes statiques Cisco : décrire la topologie (routeurs, liaisons, LAN) → calcul automatique des routes ip route de chaque routeur avec le bon prochain saut (plus court chemin).', staticRouteBlocks);
   await upsertPage(h, cookie, existing, 'configurateur-dhcp-cisco', 'Générateur — DHCP routeur (Packet Tracer)',
     'Générateur interactif de configuration DHCP pour routeur Cisco (Packet Tracer) : pools (réseau, passerelle, DNS, domaine, bail) et adresses exclues → configuration CLI IOS prête à coller.', dhcpBlocks);
   await upsertPage(h, cookie, existing, 'segmentation-reseau', 'Outil de segmentation réseau (VLSM / FLSM)',
