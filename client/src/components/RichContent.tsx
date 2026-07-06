@@ -17,6 +17,7 @@ import { RouterConfigurator } from './RouterConfigurator';
 import { SubnetPlanner } from './SubnetPlanner';
 import { DhcpConfigurator } from './DhcpConfigurator';
 import { StaticRouteGenerator } from './StaticRouteGenerator';
+import { SshConfigurator } from './SshConfigurator';
 import { GLOSSARY, glossarySlug } from '@/lib/glossary-data';
 import type { PostsMode } from '@/lib/page-blocks';
 
@@ -179,6 +180,11 @@ export function RichContent({ html, className = 'rich' }: { html: string; classN
     el.querySelectorAll('[data-block="static-route-generator"]').forEach(node => {
       const root = createRoot(node);
       root.render(<StaticRouteGenerator />);
+      roots.push(root);
+    });
+    el.querySelectorAll('[data-block="ssh-configurator"]').forEach(node => {
+      const root = createRoot(node);
+      root.render(<SshConfigurator />);
       roots.push(root);
     });
     el.querySelectorAll('[data-block="note"]').forEach(node => {

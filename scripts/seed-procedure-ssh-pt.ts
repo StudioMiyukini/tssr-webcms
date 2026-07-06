@@ -15,6 +15,46 @@ const blocks: PageBlock[] = [
   block('hero', { eyebrow: 'Procédure · Cisco / Packet Tracer', title: 'Configurer le SSH sur Packet Tracer', subtitle: 'Administrer un routeur ou un switch à distance, de façon chiffrée (remplace Telnet).' }),
   note('blue', '🎯 Pourquoi SSH', '<p><strong>SSH</strong> (port <strong>22</strong>) chiffre la session d’administration à distance, contrairement à <strong>Telnet</strong> (port 23, en clair). Sur un équipement Cisco, activer SSH demande : un <strong>nom d’hôte</strong>, un <strong>nom de domaine</strong>, des <strong>clés RSA</strong>, un <strong>compte local</strong> et l’activation sur les <strong>lignes VTY</strong>.</p>'),
 
+  block('heading', { level: 2, text: '⚡ Configuration rapide' }),
+  block('html', { html: '<p>Renseigne tes valeurs dans le <strong>générateur</strong> : la configuration SSH (routeur ou switch) est produite, prête à coller.</p>' }),
+  block('html', { html: '<div class="pb-dynamic" data-block="ssh-configurator"></div>' }),
+
+  block('heading', { level: 3, text: '📋 Modèles à recopier' }),
+  block('html', { html: '<p><strong>Routeur</strong> (remplace <code>[Rx]</code>, <code>[xx.yy]</code>…) :</p>' }),
+  cmd(`enable
+configure terminal
+hostname [Rx]
+ip domain-name [xx.yy]
+username admin secret Azerty77
+crypto key generate rsa
+1024
+ip ssh version 2
+line vty 0 4
+transport input ssh
+login local
+end
+write memory`),
+  block('html', { html: '<p><strong>Switch</strong> (ajoute l’IP de gestion sur la VLAN + la passerelle) :</p>' }),
+  cmd(`enable
+configure terminal
+hostname [switchx]
+ip domain-name [xx.yy]
+interface vlan 1
+ip address [ip] [subnet]
+no shutdown
+exit
+ip default-gateway [ip]
+username admin secret [Xx]
+crypto key generate rsa
+1024
+ip ssh version 2
+line vty 0 4
+transport input ssh
+login local
+end
+write memory`),
+  note('gray', '📝 Note', '<p>Le <code>1024</code> sur sa propre ligne est la <strong>réponse</strong> à la question de longueur de clé posée par <code>crypto key generate rsa</code> (colle-le tel quel). Les sections ci-dessous détaillent chaque commande.</p>'),
+
   block('heading', { level: 2, text: '✅ Prérequis' }),
   block('html', { html: `<ul>
     <li>L’équipement a une <strong>adresse IP</strong> joignable (interface configurée, <code>no shutdown</code>) — voir le <a href="/configurateur-routeur-cisco">configurateur routeur</a>.</li>
