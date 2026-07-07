@@ -41,6 +41,12 @@ const SCRIPTS: Script[] = [
     tags: ['Interactif', 'PowerShell', 'Réseau', 'Dépannage'], cat: 'reseau',
   },
   {
+    slug: 'convertisseur-hexa', icon: '🔢',
+    title: 'Convertisseur hexadécimal ↔ texte / décimal',
+    desc: 'Coller un dump hexa (trame Wireshark) → texte UTF-8/ASCII, décimal, binaire. Fait aussi Texte → hexa et décode le Base64 (Authorization: Basic).',
+    tags: ['Interactif', 'Réseau', 'Analyse de trames', 'Hexadécimal'], cat: 'reseau',
+  },
+  {
     slug: 'generateur-routes-statiques', icon: '🛣️',
     title: 'Générateur — Routes statiques multi-routeurs (CLI)',
     desc: 'Décris la topologie (routeurs, liaisons, LAN) : l’outil calcule pour chaque routeur les routes statiques (ip route) vers tous les réseaux, avec le bon prochain saut. CLI prête à coller.',

@@ -26,6 +26,7 @@ const BLOCKS: Record<string, BlockDef> = {
   'static-route-generator': { load: () => named(import('./StaticRouteGenerator'), 'StaticRouteGenerator') },
   'ssh-configurator': { load: () => named(import('./SshConfigurator'), 'SshConfigurator') },
   'network-workshop': { load: () => named(import('./NetworkWorkshop'), 'NetworkWorkshop') },
+  'hex-converter': { load: () => named(import('./HexConverter'), 'HexConverter') },
 };
 const LAZY: Record<string, ComponentType<any>> = Object.fromEntries(Object.entries(BLOCKS).map(([k, d]) => [k, lazy(d.load)]));
 
