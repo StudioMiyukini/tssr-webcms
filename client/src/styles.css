@@ -24,8 +24,8 @@
   --shadow-sm: 0 1px 2px rgba(0,0,0,.04);
   --shadow-md: 0 4px 14px rgba(0,0,0,.06);
   --shadow-lg: 0 18px 40px rgba(0,0,0,.18);
-  --radius: 6px;
-  --radius-lg: 10px;
+  --radius: 8px;
+  --radius-lg: 13px;
   --sidebar-w: 224px;
   --sidebar-w-collapsed: 56px;
   --topbar-h: 48px;
@@ -489,7 +489,7 @@ table.wp-list .column-primary { font-weight: 600; }
 .rte .note-body { max-height: 360px; padding: 12px 14px; font-size: 14px; }
 /* Notes embarquées (bloc note du page builder) */
 .notes-layout.embedded { height: 560px; min-height: 0; }
-.notes-embed-bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--surface2); }
+.notes-embed-bar { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-bottom: 1px solid var(--border); background: var(--surface-2); }
 .notes-embed-bar .on { color: #00a32a; font-weight: 600; }
 .note-embed-badge { font-size: 11px; color: var(--accent); font-weight: 600; margin-left: auto; white-space: nowrap; }
 
@@ -602,9 +602,9 @@ table.wp-list .column-primary { font-weight: 600; }
 .pb-latest h2 { margin-bottom: 12px; }
 .pb-post-picker { display: flex; flex-direction: column; gap: 2px; max-height: 260px; overflow: auto; padding: 4px; border: 1px solid var(--border); border-radius: 8px; }
 .pb-post-pick { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 6px; cursor: pointer; }
-.pb-post-pick:hover { background: var(--surface2); }
+.pb-post-pick:hover { background: var(--surface-2); }
 .pb-post-pick input { width: auto; margin: 0; }
-.pb-note { margin: 16px 0; padding: 14px 18px; border-radius: 10px; border: 1px solid var(--border); border-left: 4px solid var(--accent); background: var(--surface2); }
+.pb-note { margin: 18px 0; padding: 14px 18px; border-radius: 12px; border: 1px solid var(--border); border-left: 4px solid var(--accent); background: var(--surface-2); }
 .pb-note-title { font-weight: 600; margin: 0 0 8px; }
 .pb-note > .rich > :first-child { margin-top: 0; }
 .pb-note > .rich > :last-child { margin-bottom: 0; }
@@ -627,7 +627,7 @@ table.wp-list .column-primary { font-weight: 600; }
 .planning-scroll { overflow-x: auto; }
 .planning-grid { border-collapse: collapse; width: 100%; font-size: 13px; }
 .planning-grid th, .planning-grid td { border: 1px solid var(--border); padding: 4px 8px; text-align: center; white-space: nowrap; }
-.planning-daycol { background: var(--surface2); font-weight: 600; display: flex; gap: 6px; justify-content: center; min-width: 56px; }
+.planning-daycol { background: var(--surface-2); font-weight: 600; display: flex; gap: 6px; justify-content: center; min-width: 56px; }
 .planning-wd { color: var(--text-muted); }
 .planning-weekend td, .planning-weekend .planning-daycol { background: var(--surface3); color: var(--text-muted); }
 .planning-legend { display: flex; flex-wrap: wrap; gap: 12px; padding: 8px 12px; border-top: 1px solid var(--border); font-size: 12px; }
@@ -896,6 +896,33 @@ a.blog-tag:hover { background: var(--accent); color: #fff; }
 .qa-icon { width: 34px; height: 34px; border-radius: 8px; background: var(--accent-light); color: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 17px; flex-shrink: 0; }
 .qa-title { font-weight: 600; font-size: 13px; color: var(--text); }
 .qa-desc { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
+
+/* ===== Modernisation UI : lisibilité, polish, accessibilité ===== */
+
+/* Lecture confortable des pages de contenu (cours & procédures) */
+.public-content article.rich { font-size: 15px; line-height: 1.72; }
+.public-content article.rich h2 { font-size: 20px; margin-top: 30px; margin-bottom: 4px; letter-spacing: -.01em; }
+.public-content article.rich h3 { font-size: 16.5px; margin-top: 22px; }
+.public-content article.rich ul, .public-content article.rich ol { padding-left: 22px; margin-bottom: 10px; }
+.public-content article.rich li { margin-bottom: 6px; }
+.public-content article.card.rich { padding: 26px clamp(16px, 4vw, 30px) 34px; box-shadow: var(--shadow-md); }
+
+/* Liens dans le corps de texte : soulignement discret (hors glossaire / boutons) */
+.public-content article.rich a:not(.gloss-ref):not([class]) { text-decoration: underline; text-decoration-color: color-mix(in srgb, var(--accent) 30%, transparent); text-underline-offset: 2px; transition: text-decoration-color .15s; }
+.public-content article.rich a:not(.gloss-ref):not([class]):hover { text-decoration-color: var(--accent); }
+
+/* Hero : respiration autour de la pastille */
+.hero .pill { margin-bottom: 14px; }
+
+/* Micro-interactions : transitions douces */
+.card, .quick-action-card { transition: border-color .15s, box-shadow .18s, transform .18s; }
+
+/* Accessibilité : focus clavier visible */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 5px; }
+
+/* Sélection de texte aux couleurs du site + défilement fluide vers les ancres */
+::selection { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+html { scroll-behavior: smooth; }
 
 /* ===== Responsive ===== */
 @media (max-width: 1100px) {
