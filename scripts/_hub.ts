@@ -88,6 +88,9 @@ export const DOMAINS: Domain[] = [
         { href: '/pages/tcp-et-udp', title: 'TCP & UDP', desc: 'Fiable ou rapide : les deux protocoles de transport.' },
         { href: '/pages/le-ssh', title: 'SSH (Secure Shell)', desc: 'Accès distant chiffré (port 22, vs Telnet) et les commandes (ssh, scp, sftp, clés).' },
       ] },
+      { name: 'Analyse & capture', courses: [
+        { href: '/pages/le-wireshark', title: 'Wireshark : analyser une trame', desc: 'Capturer et décoder le trafic : filtres, les 3 volets, encapsulation Ethernet/IP/ICMP/UDP/DNS, relation MAC/IP, ports et hexa/ASCII (avec TP guidé).' },
+      ] },
       { name: 'Schémas & doc', courses: [
         { href: '/pages/schemas-infrastructure', title: 'Les schémas d’infrastructure', desc: 'Dessiner un réseau avec draw.io, selon la taille de l’infra.' },
       ] },
