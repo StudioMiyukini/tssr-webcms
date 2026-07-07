@@ -40,6 +40,9 @@ const mkStyle = block('html', { html: `<style>
 .mk-btn.pri{border-color:var(--accent);color:var(--accent);font-weight:600}
 .mk-grid{display:flex;flex-wrap:wrap;gap:16px;margin:10px 0}
 .mk-cap{font-size:11.5px;color:var(--text-muted);margin:14px 0 2px}
+.mk-menu{padding:4px}
+.mk-mi{padding:6px 12px;border-radius:5px;font-size:12.5px}
+.mk-mi.sel{background:color-mix(in srgb,var(--accent) 16%,transparent);font-weight:600;border:1px solid color-mix(in srgb,var(--accent) 45%,transparent)}
 </style>` });
 const mkWin = (title: string, body: string, btns = '< Précédent,Suivant >,Annuler') => `<div class="mk"><div class="mk-bar">🪟 ${title}<span class="mk-dots"><i></i><i></i><i></i></span></div><div class="mk-body">${body}</div><div class="mk-btns">${btns.split(',').map(b => `<span class="mk-btn${/Suivant|Ajouter|Terminer/.test(b) ? ' pri' : ''}">${b}</span>`).join('')}</div></div>`;
 const mkOpt = (sel: boolean, label: string, desc = '') => `<div class="mk-opt${sel ? ' sel' : ''}"><span class="mk-rad"></span><div>${label}${desc ? `<small>${desc}</small>` : ''}</div></div>`;
@@ -47,6 +50,7 @@ const mkFld = (label: string, val: string) => `<div class="mk-fld"><label>${labe
 const mkChk = (on: boolean, label: string) => `<div class="mk-chk${on ? ' on' : ''}"><span class="mk-box"></span><span>${label}</span></div>`;
 const mkGrid = (wins: string[]) => block('html', { html: `<div class="mk-grid">${wins.join('')}</div>` });
 const mkCap = (t: string) => block('html', { html: `<p class="mk-cap">${t}</p>` });
+const mkMenu = (title: string, items: { label: string; sel?: boolean; sub?: boolean }[]) => `<div class="mk" style="max-width:290px"><div class="mk-bar">🪟 ${title}</div><div class="mk-menu">${items.map(i => `<div class="mk-mi${i.sel ? ' sel' : ''}">${i.label}${i.sub ? ' ▸' : ''}</div>`).join('')}</div></div>`;
 const nameGuard = note('yellow', '🏷️ Nommage des machines', '<p>Respecte la <strong>convention de nommage</strong> du sujet (préfixe par rôle + n° : <code>SRV-HYPV01</code>, <code>SRV-AD01</code>, <code>SRV-WEB01</code>, <code>PC-CLIENT01</code>…). À faire <strong>avant</strong> toute jointure au domaine. Voir <a href="/procedure-renommer-poste">Renommer un poste</a>.</p>');
 
 type Page = { slug: string; title: string; excerpt: string; blocks: PageBlock[] };
@@ -170,6 +174,8 @@ const dns: Page = {
     note('blue', 'ℹ️ Contexte', '<p>Le rôle <strong>DNS</strong> est généralement installé <strong>avec Active Directory</strong> (le domaine a besoin du DNS). Sinon, ajoute-le via le Gestionnaire de serveur. Console : <code>dnsmgmt.msc</code>.</p>'),
     block('heading', { level: 2, text: '① Créer une zone de recherche directe (assistant Nouvelle zone)' }),
     block('html', { html: '<p>Une <strong>zone de recherche directe</strong> traduit un <strong>nom → IP</strong>. Console DNS (<code>dnsmgmt.msc</code>) → clic droit <strong>Zones de recherche directe</strong> → <strong>Nouvelle zone…</strong>, puis déroule l’assistant, écran par écran :</p>' }),
+    mkCap('🖼️ Clic droit sur « Zones de recherche directes » (reconstitution) :'),
+    mkGrid([mkMenu('Zones de recherche directes', [{ label: 'Nouvelle zone…', sel: true }, { label: 'Affichage', sub: true }, { label: 'Actualiser' }, { label: 'Exporter la liste…' }, { label: 'Aide' }])]),
     block('html', { html: `<ol class="proc-steps">
       <li><strong>Type de zone</strong> → <strong>Zone principale</strong> (crée la copie <em>maîtresse</em>, modifiable directement sur ce serveur). Garde cochée « <strong>Enregistrer la zone dans Active Directory</strong> » si le serveur est contrôleur de domaine → zone <strong>intégrée AD</strong> (répliquée et sécurisée).</li>
       <li><strong>Étendue de la zone de réplication AD</strong> → choisis où la zone est copiée :
