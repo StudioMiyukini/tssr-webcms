@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { eq, asc, desc, sql } from 'drizzle-orm';
+import { eq, asc, desc, sql, inArray } from 'drizzle-orm';
 import { db, rawDb } from '../db/client';
 import { forum_categories, forum_topics, forum_replies } from '../db/schema';
 import { requireAuth } from '../lib/auth';
@@ -34,8 +34,8 @@ router.put('/api/admin/forum/categories/:id', requireAuth, (req, res) => {
 });
 router.delete('/api/admin/forum/categories/:id', requireAuth, (req, res) => {
   const id = parseId(String(req.params.id));
-  const topicIds = db.select({ id: forum_topics.id }).from(forum_topics).where(eq(forum_topics.category_id, id)).all().map(t => t.id);
-  for (const tid of topicIds) db.delete(forum_replies).where(eq(forum_replies.topic_id, tid)).run();
+  // Suppression en cascade sans N+1 : sous-requête sur les topics de la catégorie.
+  db.delete(forum_replies).where(inArray(forum_replies.topic_id, db.select({ id: forum_topics.id }).from(forum_topics).where(eq(forum_topics.category_id, id)))).run();
   db.delete(forum_topics).where(eq(forum_topics.category_id, id)).run();
   db.delete(forum_categories).where(eq(forum_categories.id, id)).run();
   res.json({ ok: true });

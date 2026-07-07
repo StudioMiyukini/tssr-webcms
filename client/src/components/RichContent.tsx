@@ -1,26 +1,33 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, lazy, Suspense, type ComponentType } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/query';
-import { LatestPosts } from './LatestPosts';
-import { LatestEvents } from './LatestEvents';
-import { PublicNoteBlock } from './PublicNoteBlock';
-import { Glossary } from './Glossary';
-import { PlanningEmbed } from './PlanningEmbed';
-import { VmConfigurator } from './VmConfigurator';
-import { AdConfigurator } from './AdConfigurator';
-import { AdBulkConfigurator } from './AdBulkConfigurator';
-import { NetDiagnostic } from './NetDiagnostic';
-import { SubnetTrainer } from './SubnetTrainer';
-import { AgdlpBuilder } from './AgdlpBuilder';
-import { RouterConfigurator } from './RouterConfigurator';
-import { SubnetPlanner } from './SubnetPlanner';
-import { DhcpConfigurator } from './DhcpConfigurator';
-import { StaticRouteGenerator } from './StaticRouteGenerator';
-import { SshConfigurator } from './SshConfigurator';
-import { NetworkWorkshop } from './NetworkWorkshop';
 import { GLOSSARY, glossarySlug } from '@/lib/glossary-data';
-import type { PostsMode } from '@/lib/page-blocks';
+
+// Îlots chargés à la demande (code-splitting) : seul l'îlot réellement présent sur la
+// page est téléchargé, au lieu d'embarquer tous les configurateurs sur chaque page.
+type BlockDef = { load: () => Promise<{ default: ComponentType<any> }>; query?: boolean; props?: (node: Element) => Record<string, unknown> };
+const named = (p: Promise<Record<string, any>>, key: string) => p.then(m => ({ default: m[key] as ComponentType<any> }));
+const BLOCKS: Record<string, BlockDef> = {
+  'latest-posts': { query: true, load: () => named(import('./LatestPosts'), 'LatestPosts'), props: n => ({ count: Number(n.getAttribute('data-count')) || 3, category: n.getAttribute('data-category') || '', title: n.getAttribute('data-title') || '', mode: n.getAttribute('data-mode') || 'latest', slugs: (n.getAttribute('data-slugs') || '').split(',').map(s => s.trim()).filter(Boolean) }) },
+  'events': { query: true, load: () => named(import('./LatestEvents'), 'LatestEvents'), props: n => ({ count: Number(n.getAttribute('data-count')) || 3, title: n.getAttribute('data-title') || '' }) },
+  'planning': { query: true, load: () => named(import('./PlanningEmbed'), 'PlanningEmbed'), props: n => ({ slug: n.getAttribute('data-slug') || '' }) },
+  'glossaire': { query: true, load: () => named(import('./Glossary'), 'Glossary') },
+  'note': { query: true, load: () => named(import('./PublicNoteBlock'), 'PublicNoteBlock'), props: n => ({ noteId: Number(n.getAttribute('data-note-id')) || 0, title: n.getAttribute('data-title') || '' }) },
+  'vm-configurator': { load: () => named(import('./VmConfigurator'), 'VmConfigurator') },
+  'ad-configurator': { load: () => named(import('./AdConfigurator'), 'AdConfigurator') },
+  'ad-bulk-configurator': { load: () => named(import('./AdBulkConfigurator'), 'AdBulkConfigurator') },
+  'net-diagnostic': { load: () => named(import('./NetDiagnostic'), 'NetDiagnostic') },
+  'subnet-trainer': { load: () => named(import('./SubnetTrainer'), 'SubnetTrainer') },
+  'agdlp-builder': { load: () => named(import('./AgdlpBuilder'), 'AgdlpBuilder') },
+  'router-configurator': { load: () => named(import('./RouterConfigurator'), 'RouterConfigurator') },
+  'subnet-planner': { load: () => named(import('./SubnetPlanner'), 'SubnetPlanner') },
+  'dhcp-configurator': { load: () => named(import('./DhcpConfigurator'), 'DhcpConfigurator') },
+  'static-route-generator': { load: () => named(import('./StaticRouteGenerator'), 'StaticRouteGenerator') },
+  'ssh-configurator': { load: () => named(import('./SshConfigurator'), 'SshConfigurator') },
+  'network-workshop': { load: () => named(import('./NetworkWorkshop'), 'NetworkWorkshop') },
+};
+const LAZY: Record<string, ComponentType<any>> = Object.fromEntries(Object.entries(BLOCKS).map(([k, d]) => [k, lazy(d.load)]));
 
 // --- Auto-liens vers le glossaire : acronymes « en majuscules » (2 à 6 car., + / optionnel). ---
 const GLOSS_MAP: Record<string, string> = (() => {
@@ -97,113 +104,18 @@ export function RichContent({ html, className = 'rich' }: { html: string; classN
     if (!el) return;
     linkifyAcronyms(el); // acronymes → liens vers le glossaire (avant le montage des îlots)
     const roots: Root[] = [];
-    el.querySelectorAll('[data-block="latest-posts"]').forEach(node => {
-      const count = Number(node.getAttribute('data-count')) || 3;
-      const category = node.getAttribute('data-category') || '';
-      const title = node.getAttribute('data-title') || '';
-      const mode = (node.getAttribute('data-mode') || 'latest') as PostsMode;
-      const slugs = (node.getAttribute('data-slugs') || '').split(',').map(s => s.trim()).filter(Boolean);
-      const root = createRoot(node);
-      root.render(
-        <QueryClientProvider client={queryClient}>
-          <LatestPosts count={count} category={category} title={title} mode={mode} slugs={slugs} />
-        </QueryClientProvider>,
-      );
-      roots.push(root);
-    });
-    el.querySelectorAll('[data-block="events"]').forEach(node => {
-      const count = Number(node.getAttribute('data-count')) || 3;
-      const title = node.getAttribute('data-title') || '';
-      const root = createRoot(node);
-      root.render(
-        <QueryClientProvider client={queryClient}>
-          <LatestEvents count={count} title={title} />
-        </QueryClientProvider>,
-      );
-      roots.push(root);
-    });
-    el.querySelectorAll('[data-block="planning"]').forEach(node => {
-      const slug = node.getAttribute('data-slug') || '';
-      const root = createRoot(node);
-      root.render(<QueryClientProvider client={queryClient}><PlanningEmbed slug={slug} /></QueryClientProvider>);
-      roots.push(root);
-    });
-    el.querySelectorAll('[data-block="glossaire"]').forEach(node => {
-      const root = createRoot(node);
-      root.render(<QueryClientProvider client={queryClient}><Glossary /></QueryClientProvider>);
-      roots.push(root);
-    });
-    el.querySelectorAll('[data-block="vm-configurator"]').forEach(node => {
-      const root = createRoot(node);
-      root.render(<VmConfigurator />);
-      roots.push(root);
-    });
-    el.querySelectorAll('[data-block="ad-configurator"]').forEach(node => {
-      const root = createRoot(node);
-      root.render(<AdConfigurator />);
-      roots.push(root);
-    });
-    el.querySelectorAll('[data-block="ad-bulk-configurator"]').forEach(node => {
-      const root = createRoot(node);
-      root.render(<AdBulkConfigurator />);
-      roots.push(root);
-    });
-    el.querySelectorAll('[data-block="net-diagnostic"]').forEach(node => {
-      const root = createRoot(node);
-      root.render(<NetDiagnostic />);
-      roots.push(root);
-    });
-    el.querySelectorAll('[data-block="subnet-trainer"]').forEach(node => {
-      const root = createRoot(node);
-      root.render(<SubnetTrainer />);
-      roots.push(root);
-    });
-    el.querySelectorAll('[data-block="agdlp-builder"]').forEach(node => {
-      const root = createRoot(node);
-      root.render(<AgdlpBuilder />);
-      roots.push(root);
-    });
-    el.querySelectorAll('[data-block="router-configurator"]').forEach(node => {
-      const root = createRoot(node);
-      root.render(<RouterConfigurator />);
-      roots.push(root);
-    });
-    el.querySelectorAll('[data-block="subnet-planner"]').forEach(node => {
-      const root = createRoot(node);
-      root.render(<SubnetPlanner />);
-      roots.push(root);
-    });
-    el.querySelectorAll('[data-block="dhcp-configurator"]').forEach(node => {
-      const root = createRoot(node);
-      root.render(<DhcpConfigurator />);
-      roots.push(root);
-    });
-    el.querySelectorAll('[data-block="static-route-generator"]').forEach(node => {
-      const root = createRoot(node);
-      root.render(<StaticRouteGenerator />);
-      roots.push(root);
-    });
-    el.querySelectorAll('[data-block="ssh-configurator"]').forEach(node => {
-      const root = createRoot(node);
-      root.render(<SshConfigurator />);
-      roots.push(root);
-    });
-    el.querySelectorAll('[data-block="network-workshop"]').forEach(node => {
-      const root = createRoot(node);
-      root.render(<NetworkWorkshop />);
-      roots.push(root);
-    });
-    el.querySelectorAll('[data-block="note"]').forEach(node => {
-      const noteId = Number(node.getAttribute('data-note-id')) || 0;
-      const title = node.getAttribute('data-title') || '';
-      const root = createRoot(node);
-      root.render(
-        <QueryClientProvider client={queryClient}>
-          <PublicNoteBlock noteId={noteId} title={title} />
-        </QueryClientProvider>,
-      );
-      roots.push(root);
-    });
+    for (const [name, def] of Object.entries(BLOCKS)) {
+      const nodes = el.querySelectorAll(`[data-block="${name}"]`);
+      if (!nodes.length) continue;
+      const Lazy = LAZY[name];
+      nodes.forEach(node => {
+        const props = def.props ? def.props(node) : {};
+        const root = createRoot(node);
+        const content = <Suspense fallback={<span className="meta" style={{ fontSize: 12 }}>Chargement…</span>}><Lazy {...props} /></Suspense>;
+        root.render(def.query ? <QueryClientProvider client={queryClient}>{content}</QueryClientProvider> : content);
+        roots.push(root);
+      });
+    }
     // Démontage différé pour éviter un unmount synchrone pendant le rendu de React.
     return () => { roots.forEach(r => setTimeout(() => { try { r.unmount(); } catch { /* ignore */ } }, 0)); };
   }, [html]);
