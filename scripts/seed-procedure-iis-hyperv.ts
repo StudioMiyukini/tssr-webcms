@@ -50,52 +50,11 @@ const mkGrid = (wins: string[]) => block('html', { html: `<div class="mk-grid">$
 const mkCap = (t: string) => block('html', { html: `<p class="mk-cap">${t}</p>` });
 
 const blocks: PageBlock[] = [
-  block('hero', { eyebrow: 'Procédure · Hébergement', title: 'Installer un serveur IIS sur une VM Hyper-V', subtitle: 'De la création de la machine virtuelle à la publication d’un site web, étape par étape.' }),
-  note('blue', '🎯 Objectif & vue d’ensemble', '<p>On part de zéro : on <strong>crée une VM</strong> sur Hyper-V, on y <strong>installe Windows Server</strong>, on la <strong>configure</strong> (nom + IP fixe), on installe le <strong>rôle IIS</strong>, puis on <strong>publie un site</strong> et on le teste depuis un client. Chaque étape renvoie vers la procédure détaillée correspondante.</p>'),
+  block('hero', { eyebrow: 'Procédure · Hébergement', title: 'Installer un serveur IIS sur une VM Hyper-V', subtitle: 'Sur une VM Windows Server déjà prête : installer le rôle IIS, publier un site et le tester.' }),
+  note('blue', '🎯 Objectif', '<p>On part d’une VM Hyper-V <strong>déjà prête</strong> (Windows Server installé, nom et IP fixe configurés) et on couvre l’<strong>installation du rôle IIS</strong>, la <strong>publication d’un site</strong> et son <strong>test</strong>. Pour créer la VM et installer Windows Server au préalable : <a href="/procedure-vm-hyperv">Créer & configurer une VM (ISO) sur Hyper-V</a>.</p>'),
   mkStyle,
 
-  block('heading', { level: 2, text: '✅ Prérequis' }),
-  block('html', { html: `<ul>
-    <li>Le rôle <strong>Hyper-V</strong> est installé sur l’hôte.</li>
-    <li>Une <strong>image ISO de Windows Server</strong> (ex. 2019/2022) est disponible.</li>
-    <li>Un <strong>commutateur virtuel</strong> existe (ex. <code>COM_private</code> ou externe) — voir <a href="/procedure-hyperv-ressources">Hyper-V : ressources</a>.</li>
-    <li>Un plan d’adressage : IP fixe du serveur, passerelle en <code>.254</code>, DNS (l’<strong>IP du DC</strong> si domaine).</li>
-  </ul>` }),
-
-  block('heading', { level: 2, text: '① Créer la VM (Hyper-V)' }),
-  block('html', { html: `<ol class="proc-steps">
-    <li><strong>Gestionnaire Hyper-V</strong> → <em>Action</em> → <strong>Nouvel ordinateur virtuel</strong>.</li>
-    <li>Nom : <code>SRV-WEB01</code> (respecte la <strong>convention de nommage</strong>). Génération <strong>2</strong> (UEFI).</li>
-    <li><strong>Mémoire</strong> : ex. 4096 Mo. <strong>Réseau</strong> : connecter au commutateur virtuel.</li>
-    <li><strong>Disque dur</strong> : créer un <strong>VHDX</strong> (ex. 60 Go, dynamique).</li>
-    <li><strong>Options d’installation</strong> : « Installer un système d’exploitation à partir d’un fichier image (.iso) » → sélectionner l’<strong>ISO Windows Server</strong> → Terminer.</li>
-  </ol>` }),
-  note('gray', 'ℹ️ Détail', '<p>Pas-à-pas complet de création/configuration d’une VM : <a href="/procedure-vm-hyperv">Créer & configurer une VM (ISO) sur Hyper-V</a>.</p>'),
-  mkCap('🖼️ Assistant « Nouvel ordinateur virtuel » (reconstitution des écrans) :'),
-  mkGrid([
-    mkWin('Spécifier le nom et l’emplacement', mkFld('Nom :', 'SRV-WEB01')),
-    mkWin('Spécifier la génération', mkOpt(false, 'Génération 1') + mkOpt(true, 'Génération 2', 'UEFI — recommandé pour Windows Server récent')),
-    mkWin('Affecter la mémoire', mkFld('Mémoire de démarrage :', '4096 Mo') + mkChk(true, 'Utiliser la mémoire dynamique pour cet ordinateur virtuel')),
-    mkWin('Options d’installation', mkOpt(true, 'Installer un système d’exploitation à partir d’un fichier image de démarrage (.iso)') + mkFld('Fichier image :', 'D:\\ISO\\WindowsServer2022.iso'), '< Précédent,Terminer,Annuler'),
-  ]),
-
-  block('heading', { level: 2, text: '② Installer Windows Server dans la VM' }),
-  block('html', { html: `<ol class="proc-steps">
-    <li><strong>Démarrer</strong> la VM et <strong>se connecter</strong> à sa console (double-clic).</li>
-    <li>Choisir l’édition <strong>« Expérience de bureau »</strong> (Desktop Experience) pour avoir l’interface graphique.</li>
-    <li>Installation <strong>personnalisée</strong> → sélectionner le disque → laisser l’installation se dérouler (la VM redémarre).</li>
-    <li>Définir le <strong>mot de passe administrateur</strong>, puis se connecter.</li>
-  </ol>` }),
-
-  block('heading', { level: 2, text: '③ Configuration de base (nom + réseau)' }),
-  block('html', { html: `<ol class="proc-steps">
-    <li><strong>Renommer</strong> le serveur : <code>sysdm.cpl</code> → <em>Modifier…</em> → <code>SRV-WEB01</code> → redémarrer. Voir <a href="/procedure-renommer-poste">Renommer un poste</a>.</li>
-    <li><strong>IP fixe</strong> : <code>ncpa.cpl</code> → carte → Propriétés → TCP/IPv4 → IP, masque, <strong>passerelle <code>.254</code></strong>, DNS (IP du DC). Voir <a href="/procedure-ip-fixe-windows">Configurer une IP fixe</a>.</li>
-    <li>Optionnel : <strong>joindre le domaine</strong> (si le site doit être résolu via le DNS du domaine).</li>
-  </ol>` }),
-  cmd('REM Verification\nhostname\nipconfig /all'),
-
-  block('heading', { level: 2, text: '④ Installer le rôle IIS' }),
+  block('heading', { level: 2, text: '① Installer le rôle IIS' }),
   block('html', { html: `<ol class="proc-steps">
     <li><strong>Gestionnaire de serveur</strong> → <em>Gérer</em> → <strong>Ajouter des rôles et fonctionnalités</strong>.</li>
     <li>Type : <em>Installation basée sur un rôle</em> → sélectionner ce serveur.</li>
@@ -109,7 +68,7 @@ const blocks: PageBlock[] = [
     mkBrowser('http://localhost', '<div style="font-size:44px">🌐</div><div style="font-weight:800;font-size:19px;margin-top:6px">Internet Information Services</div><div style="color:var(--text-muted);font-size:12.5px;margin-top:5px">Windows Server — page d’accueil par défaut d’IIS</div>'),
   ]),
 
-  block('heading', { level: 2, text: '⑤ Publier un site web' }),
+  block('heading', { level: 2, text: '② Publier un site web' }),
   block('html', { html: `<ol class="proc-steps">
     <li>Déposer les fichiers du site dans un dossier, ex. <code>C:\\inetpub\\wwwroot\\monsite</code>.</li>
     <li><strong>Gestionnaire IIS</strong> (<code>inetmgr</code>) → clic droit <strong>Sites</strong> → <strong>Ajouter un site Web</strong> : nom, <strong>chemin physique</strong>, <strong>liaison</strong> (type <code>http</code>, port <code>80</code>, nom d’hôte <code>www.domaine.local</code>).</li>
@@ -122,20 +81,20 @@ const blocks: PageBlock[] = [
     mkWin('Ajouter un site Web', mkFld('Nom du site :', 'SiteWeb') + mkFld('Chemin physique :', 'C:\\inetpub\\wwwroot\\monsite') + mkFld('Liaison — Type :', 'http') + mkFld('Adresse IP :', 'Toutes non attribuées') + mkFld('Port :', '80') + mkFld('Nom de l’hôte :', 'www.domaine.local'), 'OK,Annuler'),
   ]),
 
-  block('heading', { level: 2, text: '⑥ Tester' }),
+  block('heading', { level: 2, text: '③ Tester' }),
   block('html', { html: '<p>Depuis un <strong>poste client</strong> du réseau, ouvrir <code>http://www.domaine.local</code>. En cas d’échec, dérouler dans l’ordre :</p>' }),
   cmd('ping SRV-WEB01\nnslookup www.domaine.local\nREM puis tester http:// dans le navigateur'),
   mkCap('🖼️ Résultat attendu depuis un poste client (reconstitution) :'),
   mkGrid([mkBrowser('http://www.domaine.local', '<h2 style="margin:0 0 6px">Bienvenue sur www.domaine.local</h2><p style="color:var(--text-muted);margin:0">Le site hébergé sur SRV-WEB01 est en ligne 🎉</p>')]),
   note('yellow', '🛠️ Si ça ne s’affiche pas', '<ul><li>Nom non résolu → <strong>enregistrement DNS A</strong> manquant, ou mauvais DNS sur le client.</li><li>« 403/401 » → <strong>permissions NTFS</strong> (<code>IIS_IUSRS</code>) ou document par défaut.</li><li>Page injoignable → <strong>port 80</strong> bloqué par le pare-feu, ou site arrêté dans IIS.</li></ul><p>Détails : <a href="/depannage">Dépannage</a>.</p>'),
 
-  note('green', '🎯 À retenir', '<p><strong>VM Hyper-V</strong> (gén. 2, VHDX, commutateur, ISO) → <strong>Windows Server</strong> (Desktop Experience) → <strong>nom + IP fixe (.254)</strong> → rôle <strong>IIS</strong> → <strong>site + liaison</strong> + DNS + NTFS + pare-feu → test depuis un client. Procédures liées : <a href="/procedure-vm-hyperv">VM Hyper-V</a>, <a href="/procedure-iis">IIS</a>, <a href="/procedure-dns">DNS</a>, <a href="/hebergement-web">cours DNS + IIS</a>.</p>'),
+  note('green', '🎯 À retenir', '<p>Rôle <strong>IIS</strong> → <strong>site + liaison</strong> (http/80/hôte) + <strong>DNS</strong> (enregistrement A) + <strong>NTFS</strong> (<code>IIS_IUSRS</code>) + <strong>pare-feu</strong> (port 80) → test depuis un client. En amont : <a href="/procedure-vm-hyperv">créer la VM Hyper-V</a>. Voir aussi : <a href="/procedure-iis">IIS</a>, <a href="/procedure-dns">DNS</a>, <a href="/hebergement-web">cours DNS + IIS</a>.</p>'),
 ];
 
 const PAGE = {
   slug: SLUG,
   title: 'Installer un serveur IIS sur une VM Hyper-V',
-  excerpt: 'Procédure de bout en bout : créer une VM Hyper-V, installer Windows Server, configurer nom & IP fixe, installer le rôle IIS, publier un site (liaison, DNS, NTFS, pare-feu) et tester.',
+  excerpt: 'Sur une VM Windows Server déjà prête : installer le rôle IIS, publier un site (liaison, DNS, NTFS, pare-feu) et le tester depuis un client.',
 };
 
 // ===================================================================================
