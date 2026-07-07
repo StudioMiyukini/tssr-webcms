@@ -90,6 +90,11 @@ export const DOMAINS: Domain[] = [
       { name: 'Protocoles', courses: [
         { href: '/pages/tcp-et-udp', title: 'TCP & UDP', desc: 'Fiable ou rapide : les deux protocoles de transport.' },
         { href: '/pages/le-ssh', title: 'SSH (Secure Shell)', desc: 'Accès distant chiffré (port 22, vs Telnet) et les commandes (ssh, scp, sftp, clés).' },
+        { href: '/pages/la-messagerie', title: 'La messagerie (mail)', desc: 'SMTP / POP3 / IMAP, enregistrement MX, serveurs (Exchange/Postfix), SPF/DKIM/DMARC.' },
+      ] },
+      { name: 'Sécurité & accès distant', courses: [
+        { href: '/pages/le-vpn', title: 'Le VPN', desc: 'Tunnel chiffré : nomade vs site-à-site, IPsec / SSL / WireGuard.' },
+        { href: '/pages/radius-8021x', title: 'RADIUS & 802.1X', desc: 'Authentifier l’accès réseau (AAA, NPS, supplicant/authenticator/serveur).' },
       ] },
       { name: 'Analyse & capture', courses: [
         { href: '/pages/le-wireshark', title: 'Wireshark : analyser une trame', desc: 'Capturer et décoder le trafic : filtres, les 3 volets, encapsulation Ethernet/IP/ICMP/UDP/DNS, relation MAC/IP, ports et hexa/ASCII (avec TP guidé).' },
@@ -109,6 +114,11 @@ export const DOMAINS: Domain[] = [
       { name: 'Fondamentaux', courses: [
         { href: '/pages/linux-bases', title: 'Linux : les bases (Debian)', desc: 'Arborescence, commandes essentielles, utilisateurs & droits (rwx / chmod / chown), paquets (apt), services (systemctl) et réseau.' },
       ] },
+      { name: 'Services', courses: [
+        { href: '/pages/linux-ssh', title: 'SSH serveur sous Linux', desc: 'OpenSSH : service sshd, sshd_config, authentification par clé et durcissement.' },
+        { href: '/pages/linux-apache', title: 'Apache : héberger un site web', desc: 'apache2, racine /var/www, hôtes virtuels (a2ensite) — l’équivalent d’IIS.' },
+        { href: '/pages/linux-samba', title: 'Samba : partage vers Windows', desc: 'Partager un dossier Linux en SMB/CIFS, utilisateurs Samba et permissions.' },
+      ] },
     ],
   },
   {
@@ -117,6 +127,7 @@ export const DOMAINS: Domain[] = [
       { name: 'Méthode & support', courses: [
         { href: '/pages/les-7-couches-osi', title: 'Les 7 couches OSI', desc: 'La carte du réseau, pour dépanner.' },
         { href: '/pages/le-ticketing', title: 'Le ticketing', desc: 'Gérer les incidents et les demandes.' },
+        { href: '/pages/supervision', title: 'La supervision (monitoring)', desc: 'Surveiller hôtes et services (états, seuils, SNMP, alertes) — Nagios, Centreon, Zabbix.' },
       ] },
     ],
   },
