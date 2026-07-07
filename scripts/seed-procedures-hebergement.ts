@@ -14,6 +14,39 @@ const block = (type: Parameters<typeof makePageBlock>[0], patch: Partial<PageBlo
 const note = (cls: string, title: string, html: string) => block('html', { html: `<aside class="pb-note pb-note-${cls}"><p class="pb-note-title">${title}</p>${html}</aside>` });
 const stepsStyle = block('html', { html: `<style>.proc-steps{padding-left:22px;line-height:1.75}.proc-steps>li{margin:7px 0}.proc-steps code,.proc-steps kbd{font-family:ui-monospace,'Space Mono',monospace}.proc-steps kbd{border:1px solid var(--border);border-radius:5px;padding:1px 6px;background:var(--surface-2)}.proc-cmd{font-family:ui-monospace,'Space Mono',monospace;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:8px 0;white-space:pre-wrap;overflow-x:auto}.ref-table td{padding:7px 10px;border:1px solid var(--border)}</style>` });
 const cmd = (t: string) => block('html', { html: `<div class="proc-cmd">${t}</div>` });
+
+// Maquettes de boîtes de dialogue (reconstitution visuelle des écrans Windows).
+const mkStyle = block('html', { html: `<style>
+.mk{max-width:500px;margin:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--surface);box-shadow:0 4px 16px rgba(0,0,0,.14);font-size:13px}
+.mk-bar{display:flex;align-items:center;gap:8px;background:var(--surface-2);border-bottom:1px solid var(--border);padding:7px 11px;font-weight:600;font-size:12.5px}
+.mk-bar .mk-dots{margin-left:auto;display:flex;gap:5px}
+.mk-bar .mk-dots i{width:11px;height:11px;border-radius:3px;background:var(--surface-3)}
+.mk-body{padding:12px 14px}
+.mk-opt{display:flex;gap:9px;align-items:flex-start;padding:7px 9px;border-radius:6px;margin:3px 0}
+.mk-opt.sel{background:color-mix(in srgb,var(--accent) 13%,transparent);border:1px solid color-mix(in srgb,var(--accent) 45%,transparent)}
+.mk-rad{width:14px;height:14px;border-radius:50%;border:2px solid var(--text-muted);flex:0 0 auto;margin-top:2px;position:relative}
+.mk-opt.sel .mk-rad{border-color:var(--accent)}
+.mk-opt.sel .mk-rad::after{content:"";position:absolute;inset:2px;border-radius:50%;background:var(--accent)}
+.mk-opt small{display:block;color:var(--text-muted);font-size:11.5px;margin-top:2px}
+.mk-fld{margin:9px 0}
+.mk-fld label{display:block;font-size:11.5px;color:var(--text-muted);margin-bottom:3px}
+.mk-in{border:1px solid var(--border);border-radius:5px;padding:6px 9px;background:var(--surface-2);font-family:ui-monospace,monospace;font-size:12.5px}
+.mk-chk{display:flex;gap:8px;align-items:flex-start;margin:7px 0;font-size:12.5px}
+.mk-chk .mk-box{width:14px;height:14px;border:1px solid var(--text-muted);border-radius:3px;flex:0 0 auto;position:relative;margin-top:1px}
+.mk-chk.on .mk-box{background:var(--accent);border-color:var(--accent)}
+.mk-chk.on .mk-box::after{content:"✓";color:#fff;font-size:10px;line-height:1;position:absolute;top:0;left:2px}
+.mk-btns{display:flex;gap:8px;justify-content:flex-end;border-top:1px solid var(--border);padding:9px 12px;background:var(--surface-2)}
+.mk-btn{border:1px solid var(--border);border-radius:5px;padding:4px 14px;font-size:12px;background:var(--surface);color:var(--text-soft)}
+.mk-btn.pri{border-color:var(--accent);color:var(--accent);font-weight:600}
+.mk-grid{display:flex;flex-wrap:wrap;gap:16px;margin:10px 0}
+.mk-cap{font-size:11.5px;color:var(--text-muted);margin:14px 0 2px}
+</style>` });
+const mkWin = (title: string, body: string, btns = '< Précédent,Suivant >,Annuler') => `<div class="mk"><div class="mk-bar">🪟 ${title}<span class="mk-dots"><i></i><i></i><i></i></span></div><div class="mk-body">${body}</div><div class="mk-btns">${btns.split(',').map(b => `<span class="mk-btn${/Suivant|Ajouter|Terminer/.test(b) ? ' pri' : ''}">${b}</span>`).join('')}</div></div>`;
+const mkOpt = (sel: boolean, label: string, desc = '') => `<div class="mk-opt${sel ? ' sel' : ''}"><span class="mk-rad"></span><div>${label}${desc ? `<small>${desc}</small>` : ''}</div></div>`;
+const mkFld = (label: string, val: string) => `<div class="mk-fld"><label>${label}</label><div class="mk-in">${val}</div></div>`;
+const mkChk = (on: boolean, label: string) => `<div class="mk-chk${on ? ' on' : ''}"><span class="mk-box"></span><span>${label}</span></div>`;
+const mkGrid = (wins: string[]) => block('html', { html: `<div class="mk-grid">${wins.join('')}</div>` });
+const mkCap = (t: string) => block('html', { html: `<p class="mk-cap">${t}</p>` });
 const nameGuard = note('yellow', '🏷️ Nommage des machines', '<p>Respecte la <strong>convention de nommage</strong> du sujet (préfixe par rôle + n° : <code>SRV-HYPV01</code>, <code>SRV-AD01</code>, <code>SRV-WEB01</code>, <code>PC-CLIENT01</code>…). À faire <strong>avant</strong> toute jointure au domaine. Voir <a href="/procedure-renommer-poste">Renommer un poste</a>.</p>');
 
 type Page = { slug: string; title: string; excerpt: string; blocks: PageBlock[] };
@@ -133,6 +166,7 @@ const dns: Page = {
   blocks: [
     block('hero', { eyebrow: 'Procédure · Hébergement', title: 'DNS : zones & enregistrements', subtitle: 'Faire résoudre les noms : zones directe et inversée, enregistrements, tests.' }),
     stepsStyle,
+    mkStyle,
     note('blue', 'ℹ️ Contexte', '<p>Le rôle <strong>DNS</strong> est généralement installé <strong>avec Active Directory</strong> (le domaine a besoin du DNS). Sinon, ajoute-le via le Gestionnaire de serveur. Console : <code>dnsmgmt.msc</code>.</p>'),
     block('heading', { level: 2, text: '① Créer une zone de recherche directe (assistant Nouvelle zone)' }),
     block('html', { html: '<p>Une <strong>zone de recherche directe</strong> traduit un <strong>nom → IP</strong>. Console DNS (<code>dnsmgmt.msc</code>) → clic droit <strong>Zones de recherche directe</strong> → <strong>Nouvelle zone…</strong>, puis déroule l’assistant, écran par écran :</p>' }),
@@ -149,6 +183,13 @@ const dns: Page = {
       <li><strong>Mise à niveau dynamique</strong> → <strong>N’autoriser que les mises à jour dynamiques sécurisées</strong> (recommandé pour AD : les clients et DC enregistrent automatiquement leurs enregistrements, de façon authentifiée). « <em>Ne pas autoriser</em> » impose une saisie <strong>manuelle</strong> de tous les enregistrements.</li>
       <li><strong>Terminer</strong> → la zone apparaît dans la console, prête à recevoir des enregistrements.</li>
     </ol>` }),
+    mkCap('🖼️ Aperçu des écrans de l’assistant (reconstitution — l’option retenue est surlignée) :'),
+    mkGrid([
+      mkWin('Assistant Nouvelle zone — Type de zone', mkOpt(true, '<b>Zone principale</b>', 'Crée une copie d’une zone qui peut être mise à jour directement sur ce serveur.') + mkOpt(false, 'Zone secondaire') + mkOpt(false, 'Zone de stub') + mkChk(true, 'Enregistrer la zone dans Active Directory (contrôleur de domaine)')),
+      mkWin('Étendue de la zone de réplication AD', mkOpt(false, 'Vers tous les serveurs DNS de cette <b>forêt</b>', 'miyukini.lan') + mkOpt(true, 'Vers tous les serveurs DNS de ce <b>domaine</b>', 'miyukini.lan') + mkOpt(false, 'Vers tous les DC (compatibilité Windows 2000)')),
+      mkWin('Assistant Nouvelle zone — Nom de la zone', mkFld('Nom de la zone :', 'scooter.tamr')),
+      mkWin('Assistant Nouvelle zone — Mise à niveau dynamique', mkOpt(true, 'N’autoriser que les mises à jour dynamiques <b>sécurisées</b>', 'Recommandé pour Active Directory.') + mkOpt(false, 'Sécurisées et non sécurisées') + mkOpt(false, 'Ne pas autoriser les mises à jour dynamiques', 'Enregistrements ajoutés manuellement.'), '< Précédent,Terminer,Annuler'),
+    ]),
     note('yellow', '⚠️ Les choix qui comptent (écrans de l’assistant)', '<p><strong>Principale</strong> (maîtresse, modifiable) vs <strong>Secondaire</strong> (copie en lecture seule alimentée par transfert — voir <a href="/procedure-dns-redondance">Redondance DNS</a>) vs <strong>Stub</strong> (uniquement les NS). · <strong>Intégrée AD</strong> = réplication multi-maître + mises à jour <em>sécurisées</em> possibles (option grisée pour une zone non intégrée). · <strong>Mises à jour sécurisées</strong> = seuls les membres du domaine authentifiés créent/modifient leurs enregistrements (anti-usurpation).</p>'),
     block('heading', { level: 2, text: '② Ajouter des enregistrements' }),
     block('html', { html: '<p><strong>Clic droit sur la zone</strong> (ex. <code>scooter.tamr</code>) → le menu propose <strong>Nouvel hôte (A ou AAAA)…</strong>, <strong>Nouvel alias (CNAME)…</strong>, <strong>Nouveau serveur de messagerie (MX)…</strong>, <strong>Nouveau domaine…</strong></p>' }),
@@ -161,6 +202,10 @@ const dns: Page = {
       <li>Laisse <em>« Autoriser tout utilisateur identifié à mettre à jour les enregistrements… »</em> <strong>décoché</strong> (réservé aux mises à jour dynamiques).</li>
       <li><strong>Ajouter un hôte</strong> → l’enregistrement apparaît dans la zone.</li>
     </ol>` }),
+    mkCap('🖼️ Boîte « Nouvel hôte » (reconstitution) :'),
+    mkGrid([
+      mkWin('Nouvel hôte', mkFld('Nom (utilise le domaine parent si ce champ est vide) :', 'www') + mkFld('Nom de domaine pleinement qualifié (FQDN) :', 'www.scooter.tamr.') + mkFld('Adresse IP :', '192.168.10.20   ← IP du serveur IIS') + mkChk(true, 'Créer un pointeur d’enregistrement PTR associé') + mkChk(false, 'Autoriser tout utilisateur identifié à mettre à jour les enregistrements DNS'), 'Ajouter un hôte,Annuler'),
+    ]),
     block('html', { html: `<ul>
       <li><strong>CNAME (alias)</strong> : clic droit → <strong>Nouvel alias</strong> → ex. <code>www</code> → cible <code>srv-web01.miyukini.lan</code> (un nom qui pointe vers un autre nom).</li>
       <li><strong>MX</strong> : clic droit → <strong>Nouveau serveur de messagerie</strong> → serveur de mail + priorité.</li>
