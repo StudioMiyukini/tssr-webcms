@@ -21,6 +21,7 @@ const blocks: PageBlock[] = [
     '⑥ DNS — enregistrements A/PTR, résolution locale (ip host) et tests (nslookup/ping).',
     '⑦ SSH — configuration d’accès distant chiffré prête à coller pour chaque routeur et chaque switch (SVI de gestion inclus).',
   ] }),
+  note('green', '🎓 Se justifier sans l’outil', '<p>Pour un examen « Réalisation », tu dois savoir <strong>refaire à la main</strong> ce que cet assistant génère. Suis la procédure maîtresse : <a href="/pages/procedure-atelier-reseau-az">Construire un réseau multi-routeurs de A à Z</a> (elle renvoie à chaque procédure détaillée : interfaces, routes statiques, DHCP relais, DNS, SSH).</p>'),
   block('html', { html: '<div class="pb-dynamic" data-block="network-workshop"></div>' }),
   note('blue', 'ℹ️ Comment ça marche', '<p>Renseigne les <strong>étapes 1 et 2</strong>, puis déroule les étapes 3 à 6 : le plan d’adressage, le schéma, les pools DHCP et le DNS se calculent en direct à partir du <strong>même contexte</strong> et sont <strong>copiables</strong>. Les avertissements signalent un manque de place dans le réseau de base ou un routeur à court d’interfaces. Outils liés : <a href="/pages/segmentation-reseau">segmentation VLSM/FLSM</a>, <a href="/pages/configurateur-routeur-cisco">configurateur routeur</a>, <a href="/pages/generateur-routes-statiques">routes statiques</a>, <a href="/pages/configurateur-dhcp-cisco">DHCP routeur</a>. Procédures : <a href="/pages/procedure-plan-adressage">plan d’adressage</a>, <a href="/pages/procedure-ssh-packet-tracer">SSH sur Packet Tracer</a>.</p>'),
 ];
