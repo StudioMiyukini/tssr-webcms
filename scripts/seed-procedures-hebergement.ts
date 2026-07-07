@@ -134,11 +134,22 @@ const dns: Page = {
     block('hero', { eyebrow: 'Procédure · Hébergement', title: 'DNS : zones & enregistrements', subtitle: 'Faire résoudre les noms : zones directe et inversée, enregistrements, tests.' }),
     stepsStyle,
     note('blue', 'ℹ️ Contexte', '<p>Le rôle <strong>DNS</strong> est généralement installé <strong>avec Active Directory</strong> (le domaine a besoin du DNS). Sinon, ajoute-le via le Gestionnaire de serveur. Console : <code>dnsmgmt.msc</code>.</p>'),
-    block('heading', { level: 2, text: '① Zone de recherche directe (nom → IP)' }),
+    block('heading', { level: 2, text: '① Créer une zone de recherche directe (assistant Nouvelle zone)' }),
+    block('html', { html: '<p>Une <strong>zone de recherche directe</strong> traduit un <strong>nom → IP</strong>. Console DNS (<code>dnsmgmt.msc</code>) → clic droit <strong>Zones de recherche directe</strong> → <strong>Nouvelle zone…</strong>, puis déroule l’assistant, écran par écran :</p>' }),
     block('html', { html: `<ol class="proc-steps">
-      <li>Console DNS → développe le serveur → clic droit <strong>Zones de recherche directe</strong> → <strong>Nouvelle zone</strong>.</li>
-      <li>Type <strong>Zone principale</strong> (intégrée à AD si domaine) → nom : <code>domaine.local</code> → terminer.</li>
+      <li><strong>Type de zone</strong> → <strong>Zone principale</strong> (crée la copie <em>maîtresse</em>, modifiable directement sur ce serveur). Garde cochée « <strong>Enregistrer la zone dans Active Directory</strong> » si le serveur est contrôleur de domaine → zone <strong>intégrée AD</strong> (répliquée et sécurisée).</li>
+      <li><strong>Étendue de la zone de réplication AD</strong> → choisis où la zone est copiée :
+        <ul>
+          <li><em>Vers tous les serveurs DNS de cette <strong>forêt</strong></em> — le plus large (utile en multi-domaines).</li>
+          <li><em>Vers tous les serveurs DNS de ce <strong>domaine</strong></em> — le choix courant (réplication sur les DC-DNS du domaine).</li>
+          <li><em>Vers tous les DC (compatibilité Windows 2000)</em> — hérité, à éviter.</li>
+        </ul>
+      </li>
+      <li><strong>Nom de la zone</strong> → le nom DNS pour lequel le serveur fait autorité (ex. <code>miyukini.lan</code>, ou une zone dédiée comme <code>scooter.tamr</code>).</li>
+      <li><strong>Mise à niveau dynamique</strong> → <strong>N’autoriser que les mises à jour dynamiques sécurisées</strong> (recommandé pour AD : les clients et DC enregistrent automatiquement leurs enregistrements, de façon authentifiée). « <em>Ne pas autoriser</em> » impose une saisie <strong>manuelle</strong> de tous les enregistrements.</li>
+      <li><strong>Terminer</strong> → la zone apparaît dans la console, prête à recevoir des enregistrements.</li>
     </ol>` }),
+    note('yellow', '⚠️ Les choix qui comptent (écrans de l’assistant)', '<p><strong>Principale</strong> (maîtresse, modifiable) vs <strong>Secondaire</strong> (copie en lecture seule alimentée par transfert — voir <a href="/procedure-dns-redondance">Redondance DNS</a>) vs <strong>Stub</strong> (uniquement les NS). · <strong>Intégrée AD</strong> = réplication multi-maître + mises à jour <em>sécurisées</em> possibles (option grisée pour une zone non intégrée). · <strong>Mises à jour sécurisées</strong> = seuls les membres du domaine authentifiés créent/modifient leurs enregistrements (anti-usurpation).</p>'),
     block('heading', { level: 2, text: '② Ajouter des enregistrements' }),
     block('html', { html: `<ul>
       <li><strong>A (hôte)</strong> : clic droit sur la zone → <strong>Nouvel hôte (A)</strong> → nom (ex. <code>srv-web01</code>) + IP → coche <em>Créer un pointeur PTR associé</em>.</li>
