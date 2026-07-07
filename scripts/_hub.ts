@@ -84,6 +84,9 @@ export const DOMAINS: Domain[] = [
         { href: '/pages/le-switch', title: 'Le switch', desc: 'Connecte les appareils d’un même réseau.' },
         { href: '/pages/le-pare-feu', title: 'Le pare-feu', desc: 'Filtre le trafic selon des règles.' },
       ] },
+      { name: 'Commutation & VLAN', courses: [
+        { href: '/pages/les-vlan', title: 'Les VLAN & le routage inter-VLAN', desc: 'Segmenter (access/trunk, 802.1Q, VLAN natif) et faire communiquer les VLAN (router-on-a-stick, switch L3). Config CLI Cisco.' },
+      ] },
       { name: 'Protocoles', courses: [
         { href: '/pages/tcp-et-udp', title: 'TCP & UDP', desc: 'Fiable ou rapide : les deux protocoles de transport.' },
         { href: '/pages/le-ssh', title: 'SSH (Secure Shell)', desc: 'Accès distant chiffré (port 22, vs Telnet) et les commandes (ssh, scp, sftp, clés).' },
@@ -97,6 +100,14 @@ export const DOMAINS: Domain[] = [
       { name: 'Projet', courses: [
         { href: '/pages/reseau-entreprise', title: 'Réseau d’entreprise (A→Z)', desc: 'Concevoir, installer et déployer un réseau multi-services.' },
         { href: '/pages/tp1-presentation-cybercafe', title: 'TP1 — Présentation cybercafé', desc: 'Réussir le devis et la présentation du TP1 (eSport).' },
+      ] },
+    ],
+  },
+  {
+    icon: '🐧', name: 'Linux', intro: 'Administrer un serveur Linux en ligne de commande.',
+    subcats: [
+      { name: 'Fondamentaux', courses: [
+        { href: '/pages/linux-bases', title: 'Linux : les bases (Debian)', desc: 'Arborescence, commandes essentielles, utilisateurs & droits (rwx / chmod / chown), paquets (apt), services (systemctl) et réseau.' },
       ] },
     ],
   },
@@ -145,7 +156,7 @@ export function buildHubBlocks(): PageBlock[] {
   // Code couleur par catégorie (domaine).
   const COLORS: Record<string, string> = {
     'Hardware': '#ea580c', 'Software': '#2563eb', 'Réseau': '#059669', 'Maintenance': '#dc2626',
-    'Anglais': '#7c3aed', 'Procédures': '#0d9488', 'Astuces': '#ca8a04', 'Cisco Packet Tracer': '#0891b2',
+    'Anglais': '#7c3aed', 'Procédures': '#0d9488', 'Astuces': '#ca8a04', 'Cisco Packet Tracer': '#0891b2', 'Linux': '#f59e0b',
   };
   const FALLBACK = '#64748b';
   const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
