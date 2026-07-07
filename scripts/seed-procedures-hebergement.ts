@@ -164,6 +164,7 @@ const dns: Page = {
     block('heading', { level: 2, text: '④ Tester' }),
     cmd('nslookup srv-web01.domaine.local\nnslookup 192.168.10.20\nping srv-web01.domaine.local'),
     note('yellow', '⚠️ À retenir', '<p>Sur les <strong>clients</strong>, le <strong>DNS préféré</strong> doit être l’<strong>IP du serveur DNS/DC</strong> (jamais la box), sinon la résolution du domaine échoue. Voir <a href="/procedure-ip-fixe-windows">Configurer une IP fixe</a>.</p>'),
+    note('purple', '🔁 Haute disponibilité', '<p>Le DNS est <strong>critique</strong> (résolution + ouverture de session AD) : prévois-en <strong>au moins deux</strong>. Procédure dédiée : <a href="/procedure-dns-redondance">Redondance DNS</a> (zone intégrée AD ou zone secondaire).</p>'),
   ],
 };
 
@@ -194,7 +195,17 @@ const iis: Page = {
     </ol>` }),
     block('heading', { level: 2, text: '④ Tester' }),
     block('html', { html: '<p>Depuis un <strong>client</strong> du réseau, ouvre <code>http://www.domaine.local</code>. Si erreur : vérifie DNS (<code>nslookup www.domaine.local</code>), la liaison IIS, les permissions NTFS et le pare-feu.</p>' }),
-    note('green', '🔗 Lien', '<p>Cours complet : <a href="/hebergement-web">L’hébergement web (DNS + IIS)</a>.</p>'),
+    block('heading', { level: 2, text: '⑤ Haute disponibilité (ferme Web + NLB)' }),
+    block('html', { html: '<p>Pour tenir la charge et survivre à la panne d’un serveur, on place <strong>plusieurs serveurs IIS identiques</strong> derrière un <strong>point d’entrée unique</strong>. Trois briques :</p>' }),
+    block('html', { html: `<ol class="proc-steps">
+      <li><strong>Contenu identique</strong> sur chaque nœud : héberge le site sur un <strong>partage commun</strong> (UNC) ou <strong>réplique</strong> le dossier entre serveurs avec <a href="/procedure-dfs">DFS-R</a>.</li>
+      <li><strong>Répartition de charge</strong> : installe l’<strong>équilibrage de charge réseau (NLB)</strong> sur les serveurs web, avec une <strong>IP virtuelle (VIP)</strong> commune vers laquelle pointe l’enregistrement DNS <code>www</code> (alternative : un répartiteur / reverse-proxy externe).</li>
+      <li><strong>Cohérence des sessions</strong> : mets la <strong>même</strong> <code>&lt;machineKey&gt;</code> (clés de validation/chiffrement) dans le <code>web.config</code> de tous les nœuds, sinon les cookies d’authentification et le ViewState cassent au basculement ; pour l’état de session, utilise un <strong>StateServer</strong> ou <strong>SQL</strong> (hors-process).</li>
+    </ol>` }),
+    block('html', { html: '<p>Créer le cluster NLB (puis ajouter chaque nœud) :</p>' }),
+    cmd('Install-WindowsFeature NLB -IncludeManagementTools\nNew-NlbCluster -InterfaceName "Ethernet" -ClusterName "WEB" -ClusterPrimaryIP 192.168.10.30 -SubnetMask 255.255.255.0 -OperationMode Multicast\nAdd-NlbClusterNode -InterfaceName "Ethernet" -NewNodeName "SRV-WEB02"\nAdd-NlbClusterPortRule -Protocol Tcp -StartPort 80 -EndPort 80 -Affinity Single'),
+    note('yellow', '⚠️ NLB : points d’attention', '<p>Le <strong>mode</strong> (unicast/multicast) doit être compatible avec le commutateur ; l’<strong>affinité « Single »</strong> garde un client sur le même nœud (utile si sessions locales). NLB répartit mais ne teste pas la santé <em>applicative</em> : un site planté sur un nœud qui répond encore au réseau continue de recevoir du trafic.</p>'),
+    note('green', '🔗 Lien', '<p>Cours complet : <a href="/hebergement-web">L’hébergement web (DNS + IIS)</a>. Redondance des données : <a href="/procedure-dfs">DFS</a>.</p>'),
     nameGuard,
   ],
 };
