@@ -31,9 +31,9 @@ const clampNum = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi
 export type RouterModel = '2811' | '2911';
 export type LinkMedia = 'serial' | 'gig';
 
-export type Service = { id: string; name: string; hosts: string; routerId: string; hasSwitch: boolean; dhcp: boolean };
+// Un sous-réseau : 1 routeur = LAN (passerelle), 2+ routeurs = segment d'interconnexion.
+export type Service = { id: string; name: string; hosts: string; routerIds: string[]; hasSwitch: boolean; dhcp: boolean; media?: LinkMedia };
 export type RouterDef = { id: string; name: string; model: RouterModel };
-export type LinkDef = { id: string; routerIds: string[]; media: LinkMedia; hasSwitch: boolean };
 
 export type Ctx = {
   // 1. Contexte
@@ -42,7 +42,6 @@ export type Ctx = {
   services: Service[];
   // 3. Topologie
   routers: RouterDef[];
-  links: LinkDef[];
   // 2. Préférences
   login: string; mdp: string; secret: string;
   gwPos: 'last' | 'first';                 // position IP passerelle (routeur) dans le sous-réseau
@@ -59,31 +58,41 @@ export const DEFAULT_CTX: Ctx = {
   entreprise: 'Miyukini', domaine: 'miyukini.lan', mode: 'neuf',
   baseIp: '192.168.10.0', baseCidr: '24',
   services: [
-    { id: 'sA', name: 'Production', hosts: '100', routerId: 'rA', hasSwitch: true, dhcp: true },
-    { id: 'sB', name: 'Bureaux', hosts: '50', routerId: 'rA', hasSwitch: true, dhcp: true },
-    { id: 'sC', name: 'Wi-Fi', hosts: '20', routerId: 'rB', hasSwitch: true, dhcp: true },
+    { id: 'sA', name: 'Production', hosts: '100', routerIds: ['rA'], hasSwitch: true, dhcp: true },
+    { id: 'sB', name: 'Bureaux', hosts: '50', routerIds: ['rA'], hasSwitch: true, dhcp: true },
+    { id: 'sC', name: 'Wi-Fi', hosts: '20', routerIds: ['rB'], hasSwitch: true, dhcp: true },
+    { id: 'sD', name: 'Dorsale R1-R2', hosts: '2', routerIds: ['rA', 'rB'], hasSwitch: true, dhcp: false, media: 'gig' },
   ],
   routers: [
     { id: 'rA', name: 'R1', model: '2911' },
     { id: 'rB', name: 'R2', model: '2811' },
   ],
-  links: [{ id: 'lA', routerIds: ['rA', 'rB'], media: 'gig', hasSwitch: true }],
   login: 'admin', mdp: 'Azerty77', secret: 'MonSecretEnable',
   gwPos: 'last', switchPos: 'beforeRouter', linkCidr: '30', dnsServer: '', leaseDays: '7',
 };
 
-// Normalise un contexte issu du localStorage (tolère les anciens formats, ex. liens {aId,bId}).
+// Normalise un contexte issu du localStorage (tolère les anciens formats :
+// services {routerId} → {routerIds}, et anciens links → sous-réseaux d'interconnexion).
 function migrateCtx(raw: unknown): Ctx {
   const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, any>;
   const c = { ...DEFAULT_CTX, ...r } as Ctx;
+  delete (c as any).links;
   c.routers = Array.isArray(c.routers) ? c.routers : DEFAULT_CTX.routers;
-  c.services = Array.isArray(c.services) ? c.services.map(s => ({ ...s, routerId: typeof s.routerId === 'string' ? s.routerId : '' })) : DEFAULT_CTX.services;
-  c.links = (Array.isArray(r.links) ? r.links : []).map((l: any) => ({
-    id: typeof l?.id === 'string' ? l.id : uid('l'),
-    routerIds: Array.isArray(l?.routerIds) ? l.routerIds.filter((x: any) => typeof x === 'string') : [l?.aId, l?.bId].filter((x: any) => typeof x === 'string'),
-    media: (l?.media === 'serial' ? 'serial' : 'gig') as LinkMedia,
-    hasSwitch: typeof l?.hasSwitch === 'boolean' ? l.hasSwitch : l?.media !== 'serial',
-  })).filter((l: LinkDef) => l.routerIds.length >= 2);
+  c.services = (Array.isArray(r.services) ? r.services : []).map((s: any) => ({
+    id: typeof s?.id === 'string' ? s.id : uid('s'),
+    name: typeof s?.name === 'string' ? s.name : 'Sous-réseau',
+    hosts: String(s?.hosts ?? '10'),
+    routerIds: Array.isArray(s?.routerIds) ? s.routerIds.filter((x: any) => typeof x === 'string') : (typeof s?.routerId === 'string' && s.routerId ? [s.routerId] : []),
+    hasSwitch: typeof s?.hasSwitch === 'boolean' ? s.hasSwitch : true,
+    dhcp: typeof s?.dhcp === 'boolean' ? s.dhcp : true,
+    media: s?.media === 'serial' ? ('serial' as LinkMedia) : undefined,
+  }));
+  // Anciens liens inter-routeurs → sous-réseaux d'interconnexion (2+ routeurs).
+  for (const l of (Array.isArray(r.links) ? r.links : [])) {
+    const rids = (Array.isArray(l?.routerIds) ? l.routerIds : [l?.aId, l?.bId]).filter((x: any) => typeof x === 'string');
+    if (rids.length >= 2) c.services.push({ id: typeof l?.id === 'string' ? 'seg' + l.id : uid('s'), name: 'Interconnexion', hosts: '2', routerIds: rids, hasSwitch: typeof l?.hasSwitch === 'boolean' ? l.hasSwitch : true, dhcp: false, media: l?.media === 'serial' ? 'serial' : undefined });
+  }
+  if (!c.services.length) c.services = DEFAULT_CTX.services;
   return c;
 }
 
@@ -112,7 +121,7 @@ export type Plan = {
 };
 
 export function computePlan(ctx: Ctx): Plan {
-  ctx = { ...ctx, services: Array.isArray(ctx.services) ? ctx.services : [], routers: Array.isArray(ctx.routers) ? ctx.routers : [], links: Array.isArray(ctx.links) ? ctx.links : [] };
+  ctx = { ...ctx, services: Array.isArray(ctx.services) ? ctx.services : [], routers: Array.isArray(ctx.routers) ? ctx.routers : [] };
   const warnings: string[] = [];
   const baseNum = strToIp(ctx.baseIp);
   const cidr = clampNum(Number(ctx.baseCidr) || 24, 1, 30);
@@ -121,13 +130,20 @@ export function computePlan(ctx: Ctx): Plan {
   const baseBc = (baseNet | wildcardFromCidr(cidr)) >>> 0;
   const linkCidr = clampNum(Number(ctx.linkCidr) || 30, 8, 30);
 
-  type Item = { id: string; kind: 'lan' | 'link'; need: number; cidr: number };
+  // Métadonnées par sous-réseau : LAN (1 routeur) ou interconnexion (2+ routeurs).
+  type Meta = { s: Service; rs: RouterDef[]; transit: boolean; serial: boolean };
+  const meta = new Map<string, Meta>();
+  type Item = { id: string; need: number; cidr: number };
   const items: Item[] = [];
-  for (const s of ctx.services) { const need = Math.max(1, Number(s.hosts) || 0); items.push({ id: 'svc:' + s.id, kind: 'lan', need, cidr: 32 - hostBitsFor(need) }); }
-  for (const l of ctx.links) {
-    const rids = Array.isArray(l.routerIds) ? l.routerIds : [];
-    const n = l.media === 'serial' ? 2 : Math.max(2, rids.length + (l.hasSwitch ? 1 : 0));
-    items.push({ id: 'lnk:' + l.id, kind: 'link', need: n, cidr: l.media === 'serial' ? linkCidr : 32 - hostBitsFor(n) });
+  for (const s of ctx.services) {
+    const rs = (Array.isArray(s.routerIds) ? s.routerIds : []).map(id => ctx.routers.find(r => r.id === id)).filter((r): r is RouterDef => !!r);
+    const transit = rs.length >= 2;
+    const serial = transit && s.media === 'serial';
+    const hostsNeed = Math.max(1, Number(s.hosts) || 0);
+    const need = serial ? 2 : transit ? Math.max(hostsNeed, rs.length + (s.hasSwitch ? 1 : 0)) : hostsNeed;
+    const c = serial ? linkCidr : 32 - hostBitsFor(need);
+    meta.set('svc:' + s.id, { s, rs, transit, serial });
+    items.push({ id: 'svc:' + s.id, need, cidr: c });
   }
 
   // Allocation VLSM : les plus gros blocs d'abord.
@@ -155,34 +171,32 @@ export function computePlan(ctx: Ctx): Plan {
     const name = SER_SLOTS[c.ser]; c.ser++; return name;
   };
 
-  // LAN (dans l'ordre des services)
   for (const s of ctx.services) {
     const a = alloc.get('svc:' + s.id); if (!a) continue;
-    const gw = ctx.gwPos === 'last' ? a.last : a.first;
-    const switchIp = s.hasSwitch ? (ctx.gwPos === 'last' ? (a.last - 1) >>> 0 : (a.first + 1) >>> 0) : null;
-    subs.push({ kind: 'lan', id: 'svc:' + s.id, name: s.name || 'LAN', net: a.net, first: a.first, last: a.last, bc: a.bc, usable: a.usable, mask: a.mask, cidr: a.cidr, gw, switchIp, routerId: s.routerId, dhcp: s.dhcp });
-    const r = ctx.routers.find(x => x.id === s.routerId);
-    if (!r) { warnings.push(`« ${s.name || 'LAN'} » n'a pas de routeur passerelle assigné.`); continue; }
-    const ifc = nextEth(r);
-    if (ifc) ifaces.push({ routerId: r.id, routerName: r.name, iface: ifc, target: `LAN ${s.name || ''}`.trim(), ip: gw, mask: a.mask, cidr: a.cidr, role: 'Passerelle LAN', clock: false });
-  }
-  // Liaisons / segments inter-routeurs (dans l'ordre des liens)
-  for (const l of ctx.links) {
-    const a = alloc.get('lnk:' + l.id); if (!a) continue;
-    const isSerial = l.media === 'serial';
-    const all = (Array.isArray(l.routerIds) ? l.routerIds : []).map(id => ctx.routers.find(r => r.id === id)).filter((r): r is RouterDef => !!r);
-    const parts = isSerial ? all.slice(0, 2) : all;
-    const label = `Segment ${parts.map(r => r.name).join('–') || '?'}`;
-    const swIp = (!isSerial && l.hasSwitch) ? (a.first + parts.length) >>> 0 : null;
-    subs.push({ kind: 'link', id: 'lnk:' + l.id, name: label, net: a.net, first: a.first, last: a.last, bc: a.bc, usable: a.usable, mask: a.mask, cidr: a.cidr, gw: null, switchIp: (swIp !== null && swIp <= a.last) ? swIp : null, media: l.media, routerIds: parts.map(r => r.id) });
-    if (isSerial && all.length > 2) warnings.push(`${label} : une liaison série relie exactement 2 routeurs — bascule en « Ethernet (switch) » pour en relier davantage.`);
-    parts.forEach((r, k) => {
-      const ip = (a.first + k) >>> 0;
-      const ifc = isSerial ? nextSer(r) : nextEth(r);
-      if (!ifc) return;
-      const role = isSerial ? (k === 0 ? 'Liaison série (DCE)' : 'Liaison série (DTE)') : 'Interconnexion';
-      ifaces.push({ routerId: r.id, routerName: r.name, iface: ifc, target: label, ip, mask: a.mask, cidr: a.cidr, role, clock: isSerial && k === 0 });
-    });
+    const m = meta.get('svc:' + s.id)!;
+    if (!m.transit) {
+      // LAN : 1 routeur passerelle + clients (DHCP)
+      const r = m.rs[0];
+      const gw = ctx.gwPos === 'last' ? a.last : a.first;
+      const switchIp = s.hasSwitch ? (ctx.gwPos === 'last' ? (a.last - 1) >>> 0 : (a.first + 1) >>> 0) : null;
+      subs.push({ kind: 'lan', id: 'svc:' + s.id, name: s.name || 'LAN', net: a.net, first: a.first, last: a.last, bc: a.bc, usable: a.usable, mask: a.mask, cidr: a.cidr, gw, switchIp, routerId: r?.id, routerIds: r ? [r.id] : [], dhcp: s.dhcp });
+      if (!r) { warnings.push(`« ${s.name || 'LAN'} » n'a pas de routeur passerelle assigné.`); continue; }
+      const ifc = nextEth(r);
+      if (ifc) ifaces.push({ routerId: r.id, routerName: r.name, iface: ifc, target: `LAN ${s.name || ''}`.trim(), ip: gw, mask: a.mask, cidr: a.cidr, role: 'Passerelle LAN', clock: false });
+    } else {
+      // Interconnexion : 2+ routeurs, une IP par routeur (pas de DHCP)
+      const parts = m.serial ? m.rs.slice(0, 2) : m.rs;
+      const swIp = s.hasSwitch ? (a.first + parts.length) >>> 0 : null;
+      subs.push({ kind: 'link', id: 'svc:' + s.id, name: s.name || 'Interconnexion', net: a.net, first: a.first, last: a.last, bc: a.bc, usable: a.usable, mask: a.mask, cidr: a.cidr, gw: null, switchIp: (swIp !== null && swIp <= a.last) ? swIp : null, media: m.serial ? 'serial' : 'gig', routerIds: parts.map(r => r.id) });
+      if (m.serial && m.rs.length > 2) warnings.push(`« ${s.name} » : une liaison série relie exactement 2 routeurs — passe en Ethernet pour en relier davantage.`);
+      parts.forEach((r, k) => {
+        const ip = (a.first + k) >>> 0;
+        const ifc = m.serial ? nextSer(r) : nextEth(r);
+        if (!ifc) return;
+        const role = m.serial ? (k === 0 ? 'Liaison série (DCE)' : 'Liaison série (DTE)') : 'Interconnexion';
+        ifaces.push({ routerId: r.id, routerName: r.name, iface: ifc, target: s.name || 'Interconnexion', ip, mask: a.mask, cidr: a.cidr, role, clock: m.serial && k === 0 });
+      });
+    }
   }
 
   return { ok: !error, error, warnings, baseNet, baseBc, cidr, totalAddr: (baseBc - baseNet + 1) >>> 0, used: (ptr - baseNet) >>> 0, subs, ifaces };
@@ -294,21 +308,15 @@ export function NetworkWorkshop() {
 
   const copy = (key: string, text: string) => { navigator.clipboard?.writeText(text).then(() => { setCopied(key); setTimeout(() => setCopied(''), 1600); }).catch(() => {}); };
 
-  // — services —
+  // — sous-réseaux —
   const setSvc = (id: string, p: Partial<Service>) => set({ services: ctx.services.map(s => s.id === id ? { ...s, ...p } : s) });
-  const addSvc = () => set({ services: [...ctx.services, { id: uid('s'), name: 'Nouveau LAN', hosts: '10', routerId: ctx.routers[0]?.id || '', hasSwitch: true, dhcp: true }] });
+  const addSvc = () => set({ services: [...ctx.services, { id: uid('s'), name: 'Nouveau sous-réseau', hosts: '10', routerIds: ctx.routers[0] ? [ctx.routers[0].id] : [], hasSwitch: true, dhcp: true }] });
   const delSvc = (id: string) => set({ services: ctx.services.filter(s => s.id !== id) });
+  const toggleSvcRouter = (id: string, rid: string) => set({ services: ctx.services.map(s => s.id === id ? { ...s, routerIds: s.routerIds.includes(rid) ? s.routerIds.filter(x => x !== rid) : [...s.routerIds, rid] } : s) });
   // — routers —
   const setRtr = (id: string, p: Partial<RouterDef>) => set({ routers: ctx.routers.map(r => r.id === id ? { ...r, ...p } : r) });
   const addRtr = () => set({ routers: [...ctx.routers, { id: uid('r'), name: 'R' + (ctx.routers.length + 1), model: '2911' }] });
-  const delRtr = (id: string) => set({ routers: ctx.routers.filter(r => r.id !== id), links: ctx.links.map(l => ({ ...l, routerIds: l.routerIds.filter(x => x !== id) })).filter(l => l.routerIds.length >= 2), services: ctx.services.map(s => s.routerId === id ? { ...s, routerId: '' } : s) });
-  // — links / segments —
-  const setLink = (id: string, p: Partial<LinkDef>) => set({ links: ctx.links.map(l => l.id === id ? { ...l, ...p } : l) });
-  const addLink = () => set({ links: [...ctx.links, { id: uid('l'), routerIds: ctx.routers.slice(0, 2).map(r => r.id), media: 'gig', hasSwitch: true }] });
-  const delLink = (id: string) => set({ links: ctx.links.filter(l => l.id !== id) });
-  const toggleLinkRouter = (id: string, rid: string) => set({ links: ctx.links.map(l => l.id === id ? { ...l, routerIds: l.routerIds.includes(rid) ? l.routerIds.filter(x => x !== rid) : [...l.routerIds, rid] } : l) });
-
-  const rname = (id: string) => ctx.routers.find(r => r.id === id)?.name || '—';
+  const delRtr = (id: string) => set({ routers: ctx.routers.filter(r => r.id !== id), services: ctx.services.map(s => ({ ...s, routerIds: s.routerIds.filter(x => x !== id) })) });
 
   // Texte exportable du plan (étapes 3/4).
   const planText = useMemo(() => {
@@ -458,54 +466,40 @@ export function NetworkWorkshop() {
 
           <div style={group}>
             <div style={legend}>🔀 Assignation des sous-réseaux</div>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 460 }}>
-                <thead><tr><th style={th}>Sous-réseau</th><th style={th}>Hôtes</th><th style={th}>Routeur (passerelle)</th><th style={th}>Switch</th><th style={th}>DHCP</th></tr></thead>
-                <tbody>
-                  {ctx.services.map(s => (
-                    <tr key={s.id}>
-                      <td style={td}>{s.name}</td>
-                      <td style={{ ...td, ...mono }}>{s.hosts}</td>
-                      <td style={td}>
-                        <select style={{ ...field, width: 100 }} value={s.routerId} onChange={e => setSvc(s.id, { routerId: e.target.value })}>
-                          <option value="">— aucun —</option>
-                          {ctx.routers.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
-                        </select>
-                      </td>
-                      <td style={{ ...td, textAlign: 'center' }}><input type="checkbox" checked={s.hasSwitch} onChange={e => setSvc(s.id, { hasSwitch: e.target.checked })} /></td>
-                      <td style={{ ...td, textAlign: 'center' }}><input type="checkbox" checked={s.dhcp} onChange={e => setSvc(s.id, { dhcp: e.target.checked })} /></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          <div style={group}>
-            <div style={legend}>🔗 Liaisons / segments entre routeurs</div>
-            {ctx.links.map(l => (
-              <div key={l.id} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', marginBottom: 10, background: 'var(--surface)' }}>
-                <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginBottom: 8 }}>
-                  <select style={{ ...field, width: 190 }} value={l.media} onChange={e => setLink(l.id, { media: e.target.value as LinkMedia })}>
-                    <option value="gig">Ethernet (via switch)</option>
-                    <option value="serial">Série (point à point)</option>
-                  </select>
-                  {l.media === 'gig' && <label style={{ fontSize: 12.5, display: 'flex', gap: 6, alignItems: 'center', cursor: 'pointer' }}><input type="checkbox" checked={l.hasSwitch} onChange={e => setLink(l.id, { hasSwitch: e.target.checked })} /> switch dans le segment</label>}
-                  <span style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{l.media === 'serial' ? '2 routeurs (1er = DCE)' : `${l.routerIds.length} routeur(s) sur le segment`}</span>
-                  <button type="button" onClick={() => delLink(l.id)} style={{ ...smallBtn, marginLeft: 'auto', color: '#dc2626', borderColor: 'transparent' }} title="Supprimer">✕</button>
+            <div className="meta" style={{ fontSize: 11.5, margin: '0 0 12px' }}>Sélectionne les routeurs connectés à chaque sous-réseau : <strong>1 routeur</strong> = LAN (passerelle + DHCP possible) ; <strong>2 routeurs ou plus</strong> = segment d’interconnexion (une IP par routeur, via un switch — comme « Switch 1 »).</div>
+            {ctx.services.map(s => {
+              const transit = s.routerIds.length >= 2;
+              const badge = transit ? { t: `🔗 interconnexion · ${s.routerIds.length} routeurs`, c: 'var(--accent)', bg: 'color-mix(in srgb,var(--accent) 15%,transparent)' }
+                : s.routerIds.length === 1 ? { t: '🖥️ LAN', c: 'var(--text-muted)', bg: 'var(--surface-3)' }
+                : { t: '⚠ aucun routeur', c: '#dc2626', bg: 'color-mix(in srgb,#dc2626 12%,transparent)' };
+              return (
+                <div key={s.id} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', marginBottom: 10, background: 'var(--surface)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
+                    <strong style={{ fontSize: 13.5 }}>{s.name}</strong>
+                    <span style={{ fontSize: 11.5, color: 'var(--text-muted)', ...mono }}>{s.hosts} hôtes</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, padding: '1px 9px', borderRadius: 999, color: badge.c, background: badge.bg }}>{badge.t}</span>
+                    <div style={{ marginLeft: 'auto', display: 'flex', gap: 14, alignItems: 'center' }}>
+                      <label style={{ fontSize: 12, display: 'flex', gap: 5, alignItems: 'center', cursor: 'pointer' }}><input type="checkbox" checked={s.hasSwitch} onChange={e => setSvc(s.id, { hasSwitch: e.target.checked })} /> switch</label>
+                      <label style={{ fontSize: 12, display: 'flex', gap: 5, alignItems: 'center', cursor: transit ? 'not-allowed' : 'pointer', opacity: transit ? .4 : 1 }} title={transit ? 'Pas de DHCP sur un segment d’interconnexion' : ''}><input type="checkbox" disabled={transit} checked={s.dhcp && !transit} onChange={e => setSvc(s.id, { dhcp: e.target.checked })} /> DHCP</label>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                    {ctx.routers.map(r => {
+                      const on = s.routerIds.includes(r.id);
+                      const ord = s.routerIds.indexOf(r.id);
+                      const tag = on && transit && s.media === 'serial' ? (ord === 0 ? 'DCE · ' : 'DTE · ') : '';
+                      return <button key={r.id} type="button" onClick={() => toggleSvcRouter(s.id, r.id)} style={{ padding: '4px 11px', borderRadius: 999, cursor: 'pointer', fontSize: 12, fontWeight: 600, border: `1px solid ${on ? 'var(--accent)' : 'var(--border)'}`, background: on ? 'var(--accent)' : 'var(--surface)', color: on ? '#fff' : 'var(--text)' }}>{tag}{r.name}</button>;
+                    })}
+                    {ctx.routers.length === 0 && <span className="meta" style={{ fontSize: 11.5 }}>Ajoute d’abord des routeurs ci-dessus.</span>}
+                    {transit && <select style={{ ...field, width: 165, marginLeft: 6 }} value={s.media || 'gig'} onChange={e => setSvc(s.id, { media: e.target.value as LinkMedia })}>
+                      <option value="gig">Ethernet (switch)</option>
+                      <option value="serial" disabled={s.routerIds.length !== 2}>Série (2 routeurs)</option>
+                    </select>}
+                  </div>
                 </div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {ctx.routers.map(r => {
-                    const on = l.routerIds.includes(r.id);
-                    const ord = l.routerIds.indexOf(r.id);
-                    const tag = on && l.media === 'serial' ? (ord === 0 ? 'DCE · ' : 'DTE · ') : '';
-                    return <button key={r.id} type="button" onClick={() => toggleLinkRouter(l.id, r.id)} style={{ padding: '4px 11px', borderRadius: 999, cursor: 'pointer', fontSize: 12, fontWeight: 600, border: `1px solid ${on ? 'var(--accent)' : 'var(--border)'}`, background: on ? 'var(--accent)' : 'var(--surface)', color: on ? '#fff' : 'var(--text)' }}>{tag}{r.name}</button>;
-                  })}
-                </div>
-              </div>
-            ))}
-            <button type="button" onClick={addLink} style={{ ...btn }} disabled={ctx.routers.length < 2}>+ Ajouter une liaison / un segment</button>
-            <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>Un <strong>segment Ethernet</strong> relie <strong>plusieurs routeurs</strong> sur le même sous-réseau (via un switch, comme dans Packet Tracer). Une <strong>liaison série</strong> relie exactement 2 routeurs (DCE = clock rate).</div>
+              );
+            })}
+            {!ctx.services.length && <div className="meta">Ajoute des sous-réseaux à l’étape 1.</div>}
           </div>
 
           {/* Résultats */}
@@ -764,7 +758,7 @@ function SchemaSvg({ ctx, plan }: { ctx: Ctx; plan: Plan }) {
             <g key={s.id}>
               {xs.map((x, j) => <line key={j} x1={x} y1={backboneY} x2={cxS} y2={backboneY} stroke="var(--accent)" strokeWidth={1.8} />)}
               <ellipse cx={cxS} cy={backboneY} rx={segRx} ry={segRy} fill="var(--accent)" fillOpacity={0.08} stroke="var(--accent)" strokeWidth={1.3} strokeDasharray="4 4" />
-              <text x={cxS} y={backboneY - segRy + 14} textAnchor="middle" fontSize={10} fontWeight={700} fill="var(--text)">Dorsale</text>
+              <text x={cxS} y={backboneY - segRy + 14} textAnchor="middle" fontSize={10} fontWeight={700} fill="var(--text)">{s.name}</text>
               <rect x={cxS - 20} y={backboneY - 11} width={40} height={22} rx={5} fill="var(--surface)" stroke="var(--accent)" strokeWidth={1.3} />
               <text x={cxS} y={backboneY + 4} textAnchor="middle" fontSize={11}>🔀</text>
               <text x={cxS} y={backboneY + segRy - 6} textAnchor="middle" fontSize={9.5} fill="var(--text-muted)">{ipToStr(s.net)}/{s.cidr}</text>
