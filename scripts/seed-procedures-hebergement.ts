@@ -151,10 +151,21 @@ const dns: Page = {
     </ol>` }),
     note('yellow', '⚠️ Les choix qui comptent (écrans de l’assistant)', '<p><strong>Principale</strong> (maîtresse, modifiable) vs <strong>Secondaire</strong> (copie en lecture seule alimentée par transfert — voir <a href="/procedure-dns-redondance">Redondance DNS</a>) vs <strong>Stub</strong> (uniquement les NS). · <strong>Intégrée AD</strong> = réplication multi-maître + mises à jour <em>sécurisées</em> possibles (option grisée pour une zone non intégrée). · <strong>Mises à jour sécurisées</strong> = seuls les membres du domaine authentifiés créent/modifient leurs enregistrements (anti-usurpation).</p>'),
     block('heading', { level: 2, text: '② Ajouter des enregistrements' }),
+    block('html', { html: '<p><strong>Clic droit sur la zone</strong> (ex. <code>scooter.tamr</code>) → le menu propose <strong>Nouvel hôte (A ou AAAA)…</strong>, <strong>Nouvel alias (CNAME)…</strong>, <strong>Nouveau serveur de messagerie (MX)…</strong>, <strong>Nouveau domaine…</strong></p>' }),
+    block('html', { html: `<p><strong>Nouvel hôte (A)</strong> — l’enregistrement le plus courant (nom → IPv4) :</p>
+    <ol class="proc-steps">
+      <li><strong>Nom</strong> : le nom court de l’hôte (ex. <code>www</code>). <strong>Laissé vide</strong>, l’enregistrement porte le nom de la <strong>zone elle-même</strong> (le domaine racine).</li>
+      <li><strong>FQDN</strong> : se remplit automatiquement (nom + zone), ex. <code>www.scooter.tamr.</code> — ou <code>scooter.tamr.</code> si le nom est vide.</li>
+      <li><strong>Adresse IP</strong> : l’IP de la machine cible — ex. l’<strong>IP du serveur IIS</strong> qui héberge le site.</li>
+      <li>Coche <strong>« Créer un pointeur d’enregistrement PTR associé »</strong> pour créer en même temps la résolution inverse (nécessite que la <strong>zone inversée</strong> existe — voir ③).</li>
+      <li>Laisse <em>« Autoriser tout utilisateur identifié à mettre à jour les enregistrements… »</em> <strong>décoché</strong> (réservé aux mises à jour dynamiques).</li>
+      <li><strong>Ajouter un hôte</strong> → l’enregistrement apparaît dans la zone.</li>
+    </ol>` }),
     block('html', { html: `<ul>
-      <li><strong>A (hôte)</strong> : clic droit sur la zone → <strong>Nouvel hôte (A)</strong> → nom (ex. <code>srv-web01</code>) + IP → coche <em>Créer un pointeur PTR associé</em>.</li>
-      <li><strong>CNAME (alias)</strong> : clic droit → <strong>Nouvel alias</strong> → ex. <code>www</code> → cible <code>srv-web01.domaine.local</code>.</li>
+      <li><strong>CNAME (alias)</strong> : clic droit → <strong>Nouvel alias</strong> → ex. <code>www</code> → cible <code>srv-web01.miyukini.lan</code> (un nom qui pointe vers un autre nom).</li>
+      <li><strong>MX</strong> : clic droit → <strong>Nouveau serveur de messagerie</strong> → serveur de mail + priorité.</li>
     </ul>` }),
+    note('gray', '🌐 Astuce hébergement web', '<p>Pour publier un site : crée un <strong>hôte (A)</strong> <code>www</code> (ou <strong>nom vide</strong> pour le domaine racine) pointant vers l’<strong>IP du serveur IIS</strong>. Le client tape <code>http://www.scooter.tamr</code> et arrive sur le site. Voir <a href="/procedure-iis">IIS : héberger un site web</a>.</p>'),
     block('html', { html: `<p>Les principaux types d’enregistrements :</p><div style="overflow-x:auto;margin:6px 0 12px"><table style="border-collapse:collapse;width:100%;min-width:520px;font-size:13.5px" class="ref-table"><thead><tr style="background:var(--surface-2)">${['Type', 'Rôle'].map(h => `<th style="text-align:left;padding:8px 10px;border:1px solid var(--border)">${h}</th>`).join('')}</tr></thead><tbody>`
       + [
         ['A', 'Nom → adresse IPv4'],
