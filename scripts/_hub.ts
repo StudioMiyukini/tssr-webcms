@@ -146,6 +146,10 @@ export const DOMAINS: Domain[] = [
         { href: '/pages/cisco-routeur-cli', title: 'Configurer un routeur en CLI', desc: 'Modes Cisco et configuration d’une interface (IP, masque, no shutdown).' },
         { href: '/pages/cisco-route-statique', title: 'Les routes statiques en CLI', desc: 'Indiquer manuellement le chemin vers un réseau distant (ip route).' },
       ] },
+      { name: 'NAT & filtrage', courses: [
+        { href: '/pages/cisco-nat', title: 'NAT / PAT : translation d’adresses', desc: 'Sortir un réseau privé sur Internet : NAT statique, dynamique, et PAT/overload (une IP publique pour tout le LAN).' },
+        { href: '/pages/cisco-acl', title: 'Les ACL (filtrage du trafic)', desc: 'Autoriser/bloquer : ACL standard vs étendue, wildcard, deny implicite, sens et placement.' },
+      ] },
     ],
   },
 ];
