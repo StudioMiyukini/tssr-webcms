@@ -11,6 +11,9 @@ const note = (cls: string, title: string, html: string) => block('html', { html:
 const th = (t: string) => `<th style="border:1px solid var(--border);padding:7px 10px;text-align:left;background:var(--surface-2)">${t}</th>`;
 const td = (t: string) => `<td style="border:1px solid var(--border);padding:7px 10px">${t}</td>`;
 const tbl = (head: string[], rows: string[][]) => `<div style="overflow-x:auto;margin:6px 0"><table style="border-collapse:collapse;width:100%;min-width:440px;font-size:13px"><thead><tr>${head.map(th).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(td).join('')}</tr>`).join('')}</tbody></table></div>`;
+const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const stepsStyle = block('html', { html: `<style>.proc-cmd{font-family:ui-monospace,'Space Mono',monospace;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:8px 0;white-space:pre-wrap;overflow-x:auto;font-size:12.5px;line-height:1.55}</style>` });
+const cmd = (t: string) => block('html', { html: `<div class="proc-cmd">${esc(t)}</div>` });
 
 // ── Contenu ──
 const annexe1 = `<div style="overflow-x:auto;margin:6px 0"><table style="border-collapse:collapse;width:100%;min-width:560px;font-size:13px">
@@ -30,6 +33,7 @@ ${[
 
 const blocks: PageBlock[] = [
   block('hero', { eyebrow: 'Procédure · Projet', title: 'Plateforme 1 — infrastructure EDIVN', subtitle: 'Restructurer et monter le réseau de l’École de Développement Informatique (EDIVN).' }),
+  stepsStyle,
 
   note('blue', '🏫 Contexte', '<p>L’<strong>École de Développement Informatique EDIVN</strong> forme des développeurs et souhaite <strong>restructurer son réseau</strong> pour gagner en efficacité et en sécurité. Dans le cadre de son agrandissement, chaque site dispose d’une équipe pour restructurer le réseau. M. Dupont nous confie cette mission.</p>'),
 
@@ -118,7 +122,49 @@ const blocks: PageBlock[] = [
   block('html', { html: annexe1 }),
   note('gray', 'ℹ️ Remarques', '<p>Toutes les VM sont sur le commutateur <strong>Privé/Interne</strong> et pointent vers <strong>SRV-DNS</strong> comme serveur DNS. Le <strong>nom de domaine</strong> reste à définir (ex. <code>GroupeXX-EDIVN.lan</code>) ; remplace <code>XX</code> par ton numéro de groupe partout.</p>'),
 
-  note('yellow', '🚧 Suite : réalisation pas à pas', '<p>La partie <strong>« ce que nous avons fait »</strong> (montage étape par étape) sera ajoutée ci-dessous au fur et à mesure : VM &amp; réseau, adressage, DHCP, DNS, serveur Web (IIS, 2 sites), routage inter-réseaux, SSH switch/routeur, point d’accès Wi-Fi, puis tests.</p>'),
+  block('heading', { level: 2, text: '🔧 Réalisation pas à pas' }),
+  block('html', { html: '<p>Ce que nous avons effectué, dans l’ordre. Cette partie s’étoffe au fur et à mesure du montage.</p>' }),
+
+  block('heading', { level: 3, text: 'Étape 1 — Routeur R_IT_G5 : interfaces + SSH' }),
+  block('html', { html: '<p>Configuration des <strong>deux interfaces</strong> du routeur interne (côté Admin/IT et côté Utilisateurs) puis de l’<strong>accès de management à distance en SSH</strong> (mot de passe <code>cisco</code>, comme demandé dans le cahier des charges).</p>' }),
+  cmd(`enable
+configure terminal
+hostname R_IT_G5
+!
+! --- Interfaces ---
+interface GigabitEthernet0/0
+ description Reseau Admin/IT
+ ip address 192.5.10.14 255.255.255.240
+ no shutdown
+ exit
+interface GigabitEthernet0/1
+ description Reseau Utilisateurs
+ ip address 192.5.50.254 255.255.255.0
+ no shutdown
+ exit
+!
+! --- Acces distant SSH (mot de passe : cisco) ---
+ip domain-name G5-EDIVN.lan
+enable secret cisco
+username admin privilege 15 secret cisco
+crypto key generate rsa
+1024
+ip ssh version 2
+line vty 0 4
+ transport input ssh
+ login local
+ exit
+!
+end
+write memory`),
+  note('gray', 'ℹ️ Points clés', '<ul><li><code>Gi0/0</code> = passerelle du réseau <strong>Admin/IT</strong> (<code>192.5.10.14/28</code>), <code>Gi0/1</code> = passerelle du réseau <strong>Utilisateurs</strong> (<code>192.5.50.254/24</code>).</li><li>SSH exige un <strong>hostname</strong>, un <strong>ip domain-name</strong> et des <strong>clés RSA</strong> (le <code>1024</code> seul répond à la question de longueur de clé). <code>login local</code> utilise le compte <code>username</code>.</li><li>Nom de domaine <code>G5-EDIVN.lan</code> à ajuster selon le domaine retenu.</li></ul>'),
+  block('html', { html: '<p><strong>Vérification :</strong></p>' }),
+  cmd(`do show ip interface brief
+! Gi0/0 -> 192.5.10.14  up/up  |  Gi0/1 -> 192.5.50.254  up/up
+! puis, depuis un client : ssh -l admin 192.5.10.14`),
+  note('gray', '🔗 Rappels', '<p>Détails : <a href="/pages/procedure-cisco-routeur-cli">Configurer un routeur en CLI</a> · <a href="/pages/procedure-ssh-packet-tracer">SSH sur Packet Tracer</a>. Si <code>enable</code> refuse après SSH : voir <a href="/depannage">Dépannage</a>.</p>'),
+
+  note('yellow', '🚧 Suite', '<p>Prochaines étapes à documenter : routage (R_IT_G5 ↔ Routeur_G5 ↔ extérieur), switches (renommage + SSH), serveur DHCP-DNS-Web, sites Web (2), point d’accès Wi-Fi, puis tests.</p>'),
 ];
 
 function cookieFrom(res: Response): string {
