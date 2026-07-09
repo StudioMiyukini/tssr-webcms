@@ -5,14 +5,83 @@ import { makePageBlock, renderPageBlocksToHtml, serializePageBlocks, type PageBl
 
 const BASE = process.env.BASE || 'https://tssr.miyukini.com';
 const PW = process.env.ADMIN_PW || 'changeme';
-const PAGE = { slug: 'procedure-plateforme-1', title: 'Plateforme 1 — montage de l’infrastructure', excerpt: 'Procédure de bout en bout du montage de notre infrastructure « Plateforme 1 » réalisée pendant l’exercice : rédigée étape par étape.' };
+const PAGE = { slug: 'procedure-plateforme-1', title: 'Plateforme 1 — infrastructure EDIVN', excerpt: 'Montage de l’infrastructure de l’École de Développement Informatique (EDIVN) : cahier des charges (contexte, mission, sous-réseaux, DHCP, Wi-Fi, serveurs DNS/Web, SSH), livrables attendus et Annexe 1 (configuration des VM). La réalisation pas-à-pas suit.' };
 const block = (type: Parameters<typeof makePageBlock>[0], patch: Partial<PageBlock>) => Object.assign(makePageBlock(type), patch);
 const note = (cls: string, title: string, html: string) => block('html', { html: `<aside class="pb-note pb-note-${cls}"><p class="pb-note-title">${title}</p>${html}</aside>` });
+const th = (t: string) => `<th style="border:1px solid var(--border);padding:7px 10px;text-align:left;background:var(--surface-2)">${t}</th>`;
+const td = (t: string) => `<td style="border:1px solid var(--border);padding:7px 10px">${t}</td>`;
 
-// ── Contenu ── (les étapes seront ajoutées ici au fur et à mesure)
+// ── Contenu ──
+const annexe1 = `<div style="overflow-x:auto;margin:6px 0"><table style="border-collapse:collapse;width:100%;min-width:560px;font-size:13px">
+<thead><tr>${['Caractéristique', 'VM Serveur 1', 'VM Serveur 2', 'VM Client'].map(th).join('')}</tr></thead>
+<tbody>
+${[
+  ['Nom de la VM', '<strong>SRV-DNS</strong>', '<strong>SRV-IIS</strong>', '<strong>CLIENT-W</strong>'],
+  ['Mémoire (RAM)', '2048 Mo', '2048 Mo', '1024 Mo'],
+  ['Stockage', 'C : 30 Go', 'C : 30 Go', 'C : 20 Go'],
+  ['Commutateur', 'Privé / Interne', 'Privé / Interne', 'Privé / Interne'],
+  ['Adresse IP', '192.168.10.11', '192.168.10.12', '192.168.10.101'],
+  ['Masque', '255.255.255.0', '255.255.255.0', '255.255.255.0'],
+  ['Serveur DNS', 'SRV-DNS', 'SRV-DNS', 'SRV-DNS'],
+  ['Nom de domaine', '<em>GroupeXX-EDIVN.lan</em> (à définir)', '—', '—'],
+].map(r => `<tr>${td(`<strong>${r[0]}</strong>`)}${td(r[1])}${td(r[2])}${td(r[3])}</tr>`).join('')}
+</tbody></table></div>`;
+
 const blocks: PageBlock[] = [
-  block('hero', { eyebrow: 'Procédure · Projet', title: 'Plateforme 1', subtitle: 'Montage de notre infrastructure, étape par étape, tel que réalisé pendant l’exercice.' }),
-  note('yellow', '🚧 En cours de rédaction', '<p>Cette procédure sera <strong>complétée pas à pas</strong> : chaque étape du montage de la plateforme y sera ajoutée au fur et à mesure.</p>'),
+  block('hero', { eyebrow: 'Procédure · Projet', title: 'Plateforme 1 — infrastructure EDIVN', subtitle: 'Restructurer et monter le réseau de l’École de Développement Informatique (EDIVN).' }),
+
+  note('blue', '🏫 Contexte', '<p>L’<strong>École de Développement Informatique EDIVN</strong> forme des développeurs et souhaite <strong>restructurer son réseau</strong> pour gagner en efficacité et en sécurité. Dans le cadre de son agrandissement, chaque site dispose d’une équipe pour restructurer le réseau. M. Dupont nous confie cette mission.</p>'),
+
+  block('heading', { level: 2, text: '🎯 Mission' }),
+  block('list', { listItems: [
+    'Configurer les routeurs : routage entre les différents réseaux de la structure et vers les autres écoles.',
+    'Configurer les serveurs : mise en service du serveur DNS et du serveur Web.',
+    'Sécuriser le réseau : accès de management à distance en SSH sur le switch et le routeur (mot de passe : cisco).',
+    'Configurer le point d’accès sans-fil Cisco : Wi-Fi pour les utilisateurs.',
+    'Accès site Web : permettre l’accès au site web de chaque site.',
+  ] }),
+
+  block('heading', { level: 2, text: '📋 Cahier des charges (besoins)' }),
+
+  block('heading', { level: 3, text: 'Sous-réseaux' }),
+  block('list', { listItems: [
+    '<strong>Réseau Admin (IT)</strong> : postes de travail des administrateurs + serveur DNS/Web.',
+    '<strong>Réseau Utilisateurs</strong> : postes de travail des formateurs et stagiaires.',
+  ] }),
+
+  block('heading', { level: 3, text: 'Wi-Fi' }),
+  block('html', { html: '<p>Un point d’accès <strong>Cisco WAP 371</strong> fournit le Wi-Fi aux stagiaires et formateurs, avec un <strong>SSID</strong> spécifique <code>SSID-EDWINXX</code> et une attribution d’<strong>IP dynamiques par DHCP</strong>.</p>' }),
+
+  block('heading', { level: 3, text: 'DHCP' }),
+  block('html', { html: '<p>Un service <strong>DHCP</strong> (solution libre) gère l’attribution des configurations réseau pour <strong>l’ensemble du réseau</strong> de l’école.</p>' }),
+
+  block('heading', { level: 3, text: 'Serveur Web (réseau IT, IP fixe)' }),
+  block('html', { html: '<p>Hébergé dans le réseau IT, il héberge les sites de l’école. Deux sites à créer :</p>' }),
+  block('list', { listItems: [
+    'Site 1 : <code>www.GroupeXX-EDIVN.lan</code> sur le <strong>port 8080</strong>, accessible <strong>depuis l’extérieur</strong>.',
+    'Site 2 (intranet) : <code>Intranet.XX.EDIVN.lan</code>, accessible <strong>pour l’école</strong>, avec une page d’accueil affichant « <em>Bienvenue sur le site de l’école EDIVN</em> ».',
+  ] }),
+
+  block('heading', { level: 3, text: 'Switches & accès distant' }),
+  block('list', { listItems: [
+    'Renommer <strong>l’ensemble des switches</strong>.',
+    'Mettre en place une connexion à distance <strong>SSH</strong> sur le switch et le routeur (mot de passe : <code>cisco</code>).',
+  ] }),
+
+  block('heading', { level: 2, text: '📦 Dossier technique attendu (livrables)' }),
+  block('list', { listItems: [
+    '<strong>Schéma logique</strong> : architecture réseau (sous-réseaux, équipements, interconnexions).',
+    '<strong>Configuration des machines</strong> (Annexe 1) : matériel et logiciel de chaque machine.',
+    '<strong>Configuration des switches et du routeur</strong> (Annexe 2) : paramètres réseau.',
+    '<strong>Tables de routage</strong> : captures / listes des routes configurées.',
+    '<strong>Borne Wi-Fi</strong> : captures montrant son fonctionnement.',
+  ] }),
+
+  block('heading', { level: 2, text: '🖥️ Annexe 1 — configuration des machines virtuelles' }),
+  block('html', { html: annexe1 }),
+  note('gray', 'ℹ️ Remarques', '<p>Toutes les VM sont sur le commutateur <strong>Privé/Interne</strong> et pointent vers <strong>SRV-DNS</strong> comme serveur DNS. Le <strong>nom de domaine</strong> reste à définir (ex. <code>GroupeXX-EDIVN.lan</code>) ; remplace <code>XX</code> par ton numéro de groupe partout.</p>'),
+
+  note('yellow', '🚧 Suite : réalisation pas à pas', '<p>La partie <strong>« ce que nous avons fait »</strong> (montage étape par étape) sera ajoutée ci-dessous au fur et à mesure : VM &amp; réseau, adressage, DHCP, DNS, serveur Web (IIS, 2 sites), routage inter-réseaux, SSH switch/routeur, point d’accès Wi-Fi, puis tests.</p>'),
 ];
 
 function cookieFrom(res: Response): string {
