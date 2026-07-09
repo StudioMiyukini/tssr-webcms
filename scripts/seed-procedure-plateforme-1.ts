@@ -169,13 +169,14 @@ write memory`),
   block('list', { listItems: [
     'Créer les 2 VM (Gestionnaire Hyper-V → <strong>Nouvel ordinateur virtuel</strong>, génération 2), selon l’Annexe 1 : <strong>Serveur</strong> 2048 Mo / 30 Go, <strong>Poste</strong> 1024 Mo / 20 Go.',
     'Connecter les deux au <strong>même commutateur virtuel</strong> (privé / interne) = segment <strong>Admin/IT</strong>.',
-    'Installer Windows (<strong>Windows Server</strong> sur la VM serveur, <strong>Windows client</strong> sur le poste) et définir le mot de passe administrateur.',
+    'Installer les OS : <strong>Windows Server</strong> (édition Expérience de bureau) sur la VM serveur, <strong>Windows 10 Pro</strong> sur le poste admin ; définir le mot de passe administrateur.',
     'Renommer les machines et appliquer l’<strong>IP fixe</strong> (voir le tableau ci-dessous).',
   ] }),
   block('html', { html: tbl(['VM', 'Nom', 'IP / masque', 'Passerelle', 'DNS'], [
     ['Serveur', 'SRV (DHCP-DNS-Web)', '<strong>192.5.10.12</strong> /28', '192.5.10.14', '192.5.10.12 (lui-même)'],
     ['Poste admin', 'Poste-Admin-1', '192.5.10.1 /28', '192.5.10.14', '192.5.10.12'],
   ]) }),
+  note('blue', '🧩 Rôles du serveur SRV', '<p>Le serveur <strong>Windows Server</strong> (<code>192.5.10.12</code>) portera <strong>trois rôles</strong>, installés aux étapes suivantes : <strong>DHCP</strong> (attribution des IP aux postes du réseau Utilisateurs, via relais), <strong>DNS</strong> (résolution des noms + zones du domaine) et <strong>Serveur Web / IIS</strong> (les 2 sites : <code>www.Groupe5-EDIVN.lan</code> sur le port 8080 et l’intranet). Le poste admin est un simple client <strong>Windows 10 Pro</strong>.</p>'),
   note('gray', 'ℹ️ Points clés', '<ul><li>Les deux VM sont sur le <strong>même hôte</strong> et le <strong>même commutateur virtuel</strong> (privé/interne) → elles communiquent sur le réseau Admin/IT <code>192.5.10.0/28</code>.</li><li>Le poste et (plus tard) les serveurs pointent vers le <strong>serveur DNS = 192.5.10.12</strong>.</li><li>Masque <code>/28</code> = <code>255.255.255.240</code>, passerelle <code>192.5.10.14</code> (interface Gi0/0 du routeur).</li></ul>'),
   note('gray', '🔗 Détails', '<p><a href="/pages/procedure-vm-hyperv">Créer & configurer une VM (ISO) sur Hyper-V</a> · <a href="/pages/procedure-hyperv-ressources">Hyper-V : ressources</a> · <a href="/pages/procedure-ip-fixe-windows">Configurer une IP fixe</a> · <a href="/pages/procedure-renommer-poste">Renommer un poste</a>.</p>'),
 
