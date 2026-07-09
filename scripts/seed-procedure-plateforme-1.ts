@@ -126,7 +126,7 @@ const blocks: PageBlock[] = [
   block('html', { html: '<p>Ce que nous avons effectué, dans l’ordre. Cette partie s’étoffe au fur et à mesure du montage.</p>' }),
 
   block('heading', { level: 3, text: 'Étape 1 — Routeur R_IT_G5 : interfaces + SSH' }),
-  block('html', { html: '<p>Configuration des <strong>deux interfaces</strong> du routeur interne (côté Admin/IT et côté Utilisateurs) puis de l’<strong>accès de management à distance en SSH</strong> (mot de passe <code>cisco</code>, comme demandé dans le cahier des charges).</p>' }),
+  block('html', { html: '<p>Configuration des <strong>deux interfaces</strong> du routeur interne (côté Admin/IT et côté Utilisateurs) puis de l’<strong>accès de management à distance en SSH</strong> (mot de passe <code>cisco</code>, comme demandé dans le cahier des charges). Toute cette configuration se fait <strong>depuis la console</strong> (onglet <code>CLI</code> sous Packet Tracer, ou câble console sur un équipement réel) — le SSH n’étant pas encore actif.</p>' }),
   cmd(`enable
 configure terminal
 hostname R_IT_G5
@@ -164,7 +164,22 @@ write memory`),
 ! puis, depuis un client : ssh -l admin 192.5.10.14`),
   note('gray', '🔗 Rappels', '<p>Détails : <a href="/pages/procedure-cisco-routeur-cli">Configurer un routeur en CLI</a> · <a href="/pages/procedure-ssh-packet-tracer">SSH sur Packet Tracer</a>. Si <code>enable</code> refuse après SSH : voir <a href="/depannage">Dépannage</a>.</p>'),
 
-  note('yellow', '🚧 Suite', '<p>Prochaines étapes à documenter : routage (R_IT_G5 ↔ Routeur_G5 ↔ extérieur), switches (renommage + SSH), serveur DHCP-DNS-Web, sites Web (2), point d’accès Wi-Fi, puis tests.</p>'),
+  block('heading', { level: 3, text: 'Étape 2 (en parallèle) — Préparation des VM sur l’hôte Hyper-V' }),
+  block('html', { html: '<p>Pendant la configuration du routeur, on prépare les deux machines Windows du réseau Admin/IT — le <strong>Poste Admin 1</strong> et le <strong>Serveur DHCP-DNS-Web</strong> — <strong>sur le même hôte Hyper-V</strong>.</p>' }),
+  block('list', { listItems: [
+    'Créer les 2 VM (Gestionnaire Hyper-V → <strong>Nouvel ordinateur virtuel</strong>, génération 2), selon l’Annexe 1 : <strong>Serveur</strong> 2048 Mo / 30 Go, <strong>Poste</strong> 1024 Mo / 20 Go.',
+    'Connecter les deux au <strong>même commutateur virtuel</strong> (privé / interne) = segment <strong>Admin/IT</strong>.',
+    'Installer Windows (<strong>Windows Server</strong> sur la VM serveur, <strong>Windows client</strong> sur le poste) et définir le mot de passe administrateur.',
+    'Renommer les machines et appliquer l’<strong>IP fixe</strong> (voir le tableau ci-dessous).',
+  ] }),
+  block('html', { html: tbl(['VM', 'Nom', 'IP / masque', 'Passerelle', 'DNS'], [
+    ['Serveur', 'SRV (DHCP-DNS-Web)', '<strong>192.5.10.12</strong> /28', '192.5.10.14', '192.5.10.12 (lui-même)'],
+    ['Poste admin', 'Poste-Admin-1', '192.5.10.1 /28', '192.5.10.14', '192.5.10.12'],
+  ]) }),
+  note('gray', 'ℹ️ Points clés', '<ul><li>Les deux VM sont sur le <strong>même hôte</strong> et le <strong>même commutateur virtuel</strong> (privé/interne) → elles communiquent sur le réseau Admin/IT <code>192.5.10.0/28</code>.</li><li>Le poste et (plus tard) les serveurs pointent vers le <strong>serveur DNS = 192.5.10.12</strong>.</li><li>Masque <code>/28</code> = <code>255.255.255.240</code>, passerelle <code>192.5.10.14</code> (interface Gi0/0 du routeur).</li></ul>'),
+  note('gray', '🔗 Détails', '<p><a href="/pages/procedure-vm-hyperv">Créer & configurer une VM (ISO) sur Hyper-V</a> · <a href="/pages/procedure-hyperv-ressources">Hyper-V : ressources</a> · <a href="/pages/procedure-ip-fixe-windows">Configurer une IP fixe</a> · <a href="/pages/procedure-renommer-poste">Renommer un poste</a>.</p>'),
+
+  note('yellow', '🚧 Suite', '<p>Prochaines étapes à documenter : promotion du serveur (rôles DHCP / DNS / Web), routage (R_IT_G5 ↔ Routeur_G5 ↔ extérieur), switches (renommage + SSH), sites Web (2), point d’accès Wi-Fi, puis tests.</p>'),
 ];
 
 function cookieFrom(res: Response): string {
