@@ -31,14 +31,17 @@ const clampNum = (v: number, lo: number, hi: number) => Math.max(lo, Math.min(hi
 export type RouterModel = '2811' | '2911';
 export type LinkMedia = 'serial' | 'gig';
 
-// Un sous-réseau : 1 routeur = LAN (passerelle), 2+ routeurs = segment d'interconnexion.
-export type Service = { id: string; name: string; hosts: string; routerIds: string[]; hasSwitch: boolean; dhcp: boolean; media?: LinkMedia };
+// Un réseau de base à découper (on peut en avoir plusieurs, distincts).
+export type BaseNet = { id: string; name: string; ip: string; cidr: string };
+// Un sous-réseau : 1 routeur = LAN (passerelle), 2+ routeurs = segment d'interconnexion. baseId = bloc d'adresses.
+export type Service = { id: string; name: string; hosts: string; routerIds: string[]; hasSwitch: boolean; dhcp: boolean; media?: LinkMedia; baseId?: string };
 export type RouterDef = { id: string; name: string; model: RouterModel };
 
 export type Ctx = {
   // 1. Contexte
   entreprise: string; domaine: string; mode: 'neuf' | 'extension';
-  baseIp: string; baseCidr: string;
+  baseIp: string; baseCidr: string;             // rétro-compat (migré vers bases[0])
+  bases: BaseNet[];                              // un ou plusieurs réseaux de base distincts
   services: Service[];
   // 3. Topologie
   routers: RouterDef[];
@@ -58,11 +61,12 @@ const uid = (p: string) => `${p}${++_uid}`;
 export const DEFAULT_CTX: Ctx = {
   entreprise: 'Miyukini', domaine: 'miyukini.lan', mode: 'neuf',
   baseIp: '192.168.10.0', baseCidr: '24',
+  bases: [{ id: 'b1', name: 'Réseau principal', ip: '192.168.10.0', cidr: '24' }],
   services: [
-    { id: 'sA', name: 'Production', hosts: '100', routerIds: ['rA'], hasSwitch: true, dhcp: true },
-    { id: 'sB', name: 'Bureaux', hosts: '50', routerIds: ['rA'], hasSwitch: true, dhcp: true },
-    { id: 'sC', name: 'Wi-Fi', hosts: '20', routerIds: ['rB'], hasSwitch: true, dhcp: true },
-    { id: 'sD', name: 'Dorsale R1-R2', hosts: '2', routerIds: ['rA', 'rB'], hasSwitch: true, dhcp: false, media: 'gig' },
+    { id: 'sA', name: 'Production', hosts: '100', routerIds: ['rA'], hasSwitch: true, dhcp: true, baseId: 'b1' },
+    { id: 'sB', name: 'Bureaux', hosts: '50', routerIds: ['rA'], hasSwitch: true, dhcp: true, baseId: 'b1' },
+    { id: 'sC', name: 'Wi-Fi', hosts: '20', routerIds: ['rB'], hasSwitch: true, dhcp: true, baseId: 'b1' },
+    { id: 'sD', name: 'Dorsale R1-R2', hosts: '2', routerIds: ['rA', 'rB'], hasSwitch: true, dhcp: false, media: 'gig', baseId: 'b1' },
   ],
   routers: [
     { id: 'rA', name: 'R1', model: '2911' },
@@ -79,6 +83,11 @@ function migrateCtx(raw: unknown): Ctx {
   const c = { ...DEFAULT_CTX, ...r } as Ctx;
   delete (c as any).links;
   c.routers = Array.isArray(c.routers) ? c.routers : DEFAULT_CTX.routers;
+  // Réseaux de base : depuis bases[] si présent, sinon depuis l'ancien baseIp/baseCidr.
+  c.bases = (Array.isArray(r.bases) && r.bases.length ? r.bases : [{ id: 'b1', name: 'Réseau principal', ip: (typeof r.baseIp === 'string' && r.baseIp) || DEFAULT_CTX.baseIp, cidr: String(r.baseCidr ?? DEFAULT_CTX.baseCidr) }])
+    .map((b: any, i: number) => ({ id: typeof b?.id === 'string' ? b.id : 'b' + (i + 1), name: typeof b?.name === 'string' ? b.name : `Réseau ${i + 1}`, ip: typeof b?.ip === 'string' ? b.ip : '192.168.10.0', cidr: String(b?.cidr ?? '24') }));
+  const baseIds = new Set(c.bases.map(b => b.id));
+  const firstBase = c.bases[0].id;
   c.services = (Array.isArray(r.services) ? r.services : []).map((s: any) => ({
     id: typeof s?.id === 'string' ? s.id : uid('s'),
     name: typeof s?.name === 'string' ? s.name : 'Sous-réseau',
@@ -87,11 +96,12 @@ function migrateCtx(raw: unknown): Ctx {
     hasSwitch: typeof s?.hasSwitch === 'boolean' ? s.hasSwitch : true,
     dhcp: typeof s?.dhcp === 'boolean' ? s.dhcp : true,
     media: s?.media === 'serial' ? ('serial' as LinkMedia) : undefined,
+    baseId: (typeof s?.baseId === 'string' && baseIds.has(s.baseId)) ? s.baseId : firstBase,
   }));
   // Anciens liens inter-routeurs → sous-réseaux d'interconnexion (2+ routeurs).
   for (const l of (Array.isArray(r.links) ? r.links : [])) {
     const rids = (Array.isArray(l?.routerIds) ? l.routerIds : [l?.aId, l?.bId]).filter((x: any) => typeof x === 'string');
-    if (rids.length >= 2) c.services.push({ id: typeof l?.id === 'string' ? 'seg' + l.id : uid('s'), name: 'Interconnexion', hosts: '2', routerIds: rids, hasSwitch: typeof l?.hasSwitch === 'boolean' ? l.hasSwitch : true, dhcp: false, media: l?.media === 'serial' ? 'serial' : undefined });
+    if (rids.length >= 2) c.services.push({ id: typeof l?.id === 'string' ? 'seg' + l.id : uid('s'), name: 'Interconnexion', hosts: '2', routerIds: rids, hasSwitch: typeof l?.hasSwitch === 'boolean' ? l.hasSwitch : true, dhcp: false, media: l?.media === 'serial' ? 'serial' : undefined, baseId: firstBase });
   }
   if (!c.services.length) c.services = DEFAULT_CTX.services;
   return c;
@@ -115,26 +125,36 @@ export type Iface = {
   routerId: string; routerName: string; iface: string; target: string;
   ip: number; mask: number; cidr: number; role: string; clock: boolean;
 };
+export type BaseSummary = { id: string; name: string; net: number; cidr: number; used: number; total: number };
 export type Plan = {
   ok: boolean; error: string; warnings: string[];
   baseNet: number; baseBc: number; cidr: number; totalAddr: number; used: number;
+  bases: BaseSummary[];
   subs: Sub[]; ifaces: Iface[];
 };
 
 export function computePlan(ctx: Ctx): Plan {
-  ctx = { ...ctx, services: Array.isArray(ctx.services) ? ctx.services : [], routers: Array.isArray(ctx.routers) ? ctx.routers : [] };
+  ctx = { ...ctx, services: Array.isArray(ctx.services) ? ctx.services : [], routers: Array.isArray(ctx.routers) ? ctx.routers : [], bases: Array.isArray(ctx.bases) && ctx.bases.length ? ctx.bases : [{ id: 'b1', name: 'Réseau', ip: ctx.baseIp || '192.168.10.0', cidr: ctx.baseCidr || '24' }] };
   const warnings: string[] = [];
-  const baseNum = strToIp(ctx.baseIp);
-  const cidr = clampNum(Number(ctx.baseCidr) || 24, 1, 30);
-  if (baseNum === null) return { ok: false, error: 'Adresse réseau de base invalide.', warnings, baseNet: 0, baseBc: 0, cidr, totalAddr: 0, used: 0, subs: [], ifaces: [] };
-  const baseNet = (baseNum & maskFromCidr(cidr)) >>> 0;
-  const baseBc = (baseNet | wildcardFromCidr(cidr)) >>> 0;
   const linkCidr = clampNum(Number(ctx.linkCidr) || 30, 8, 30);
+
+  // Réseaux de base valides (un ou plusieurs blocs distincts).
+  type BInfo = { id: string; name: string; net: number; bc: number; cidr: number; ptr: number };
+  const binfo: BInfo[] = [];
+  for (const b of ctx.bases) {
+    const n = strToIp(b.ip); if (n === null) { warnings.push(`Réseau de base « ${b.name || b.ip} » invalide.`); continue; }
+    const c = clampNum(Number(b.cidr) || 24, 1, 30);
+    const net = (n & maskFromCidr(c)) >>> 0; const bc = (net | wildcardFromCidr(c)) >>> 0;
+    binfo.push({ id: b.id, name: b.name || b.ip, net, bc, cidr: c, ptr: net });
+  }
+  if (!binfo.length) return { ok: false, error: 'Aucun réseau de base valide.', warnings, baseNet: 0, baseBc: 0, cidr: 24, totalAddr: 0, used: 0, bases: [], subs: [], ifaces: [] };
+  const binfoById = new Map(binfo.map(b => [b.id, b] as const));
+  const firstBaseId = binfo[0].id;
 
   // Métadonnées par sous-réseau : LAN (1 routeur) ou interconnexion (2+ routeurs).
   type Meta = { s: Service; rs: RouterDef[]; transit: boolean; serial: boolean };
   const meta = new Map<string, Meta>();
-  type Item = { id: string; need: number; cidr: number };
+  type Item = { id: string; need: number; cidr: number; baseId: string };
   const items: Item[] = [];
   for (const s of ctx.services) {
     const rs = (Array.isArray(s.routerIds) ? s.routerIds : []).map(id => ctx.routers.find(r => r.id === id)).filter((r): r is RouterDef => !!r);
@@ -143,20 +163,23 @@ export function computePlan(ctx: Ctx): Plan {
     const hostsNeed = Math.max(1, Number(s.hosts) || 0);
     const need = serial ? 2 : transit ? Math.max(hostsNeed, rs.length + (s.hasSwitch ? 1 : 0)) : hostsNeed;
     const c = serial ? linkCidr : 32 - hostBitsFor(need);
+    const baseId = binfoById.has(s.baseId || '') ? (s.baseId as string) : firstBaseId;
     meta.set('svc:' + s.id, { s, rs, transit, serial });
-    items.push({ id: 'svc:' + s.id, need, cidr: c });
+    items.push({ id: 'svc:' + s.id, need, cidr: c, baseId });
   }
 
-  // Allocation VLSM : les plus gros blocs d'abord.
+  // Allocation VLSM par réseau de base (les plus gros blocs d'abord dans chaque bloc).
   const alloc = new Map<string, { net: number; first: number; last: number; bc: number; usable: number; mask: number; cidr: number }>();
-  const order = [...items].sort((x, y) => Math.pow(2, 32 - y.cidr) - Math.pow(2, 32 - x.cidr));
-  let ptr = baseNet; let error = '';
-  for (const it of order) {
-    const size = Math.pow(2, 32 - it.cidr);
-    const net = ptr >>> 0; const bc = (net + size - 1) >>> 0;
-    if (bc > baseBc) { error = `Plus de place dans ${ipToStr(baseNet)}/${cidr} pour allouer un bloc /${it.cidr}. Réduis les besoins ou élargis le réseau de base.`; break; }
-    alloc.set(it.id, { net, first: (net + 1) >>> 0, last: (bc - 1) >>> 0, bc, usable: size - 2, mask: maskFromCidr(it.cidr), cidr: it.cidr });
-    ptr = (bc + 1) >>> 0;
+  let error = '';
+  for (const b of binfo) {
+    const list = items.filter(it => it.baseId === b.id).sort((x, y) => Math.pow(2, 32 - y.cidr) - Math.pow(2, 32 - x.cidr));
+    for (const it of list) {
+      const size = Math.pow(2, 32 - it.cidr);
+      const net = b.ptr >>> 0; const bc = (net + size - 1) >>> 0;
+      if (bc > b.bc) { if (!error) error = `Plus de place dans ${ipToStr(b.net)}/${b.cidr} (${b.name}) pour un bloc /${it.cidr}. Réduis les besoins ou élargis ce réseau.`; continue; }
+      alloc.set(it.id, { net, first: (net + 1) >>> 0, last: (bc - 1) >>> 0, bc, usable: size - 2, mask: maskFromCidr(it.cidr), cidr: it.cidr });
+      b.ptr = (bc + 1) >>> 0;
+    }
   }
 
   const subs: Sub[] = [];
@@ -200,7 +223,8 @@ export function computePlan(ctx: Ctx): Plan {
     }
   }
 
-  return { ok: !error, error, warnings, baseNet, baseBc, cidr, totalAddr: (baseBc - baseNet + 1) >>> 0, used: (ptr - baseNet) >>> 0, subs, ifaces };
+  const basesSum: BaseSummary[] = binfo.map(b => ({ id: b.id, name: b.name, net: b.net, cidr: b.cidr, used: (b.ptr - b.net) >>> 0, total: (b.bc - b.net + 1) >>> 0 }));
+  return { ok: !error, error, warnings, baseNet: binfo[0].net, baseBc: binfo[0].bc, cidr: binfo[0].cidr, totalAddr: basesSum.reduce((a, s) => a + s.total, 0), used: basesSum.reduce((a, s) => a + s.used, 0), bases: basesSum, subs, ifaces };
 }
 
 // Nom de pool DHCP Cisco (majuscules, sans accents ni espaces).
@@ -380,9 +404,14 @@ export function NetworkWorkshop() {
 
   const copy = (key: string, text: string) => { navigator.clipboard?.writeText(text).then(() => { setCopied(key); setTimeout(() => setCopied(''), 1600); }).catch(() => {}); };
 
+  // — réseaux de base —
+  const bases = Array.isArray(ctx.bases) && ctx.bases.length ? ctx.bases : [{ id: 'b1', name: 'Réseau principal', ip: ctx.baseIp || '192.168.10.0', cidr: ctx.baseCidr || '24' }];
+  const setBase = (id: string, p: Partial<BaseNet>) => set({ bases: bases.map(b => b.id === id ? { ...b, ...p } : b) });
+  const addBase = () => set({ bases: [...bases, { id: uid('b'), name: 'Réseau ' + (bases.length + 1), ip: '10.0.0.0', cidr: '24' }] });
+  const delBase = (id: string) => { if (bases.length <= 1) return; const rest = bases.filter(b => b.id !== id); const fb = rest[0].id; set({ bases: rest, services: ctx.services.map(s => (s.baseId === id ? { ...s, baseId: fb } : s)) }); };
   // — sous-réseaux —
   const setSvc = (id: string, p: Partial<Service>) => set({ services: ctx.services.map(s => s.id === id ? { ...s, ...p } : s) });
-  const addSvc = () => set({ services: [...ctx.services, { id: uid('s'), name: 'Nouveau sous-réseau', hosts: '10', routerIds: ctx.routers[0] ? [ctx.routers[0].id] : [], hasSwitch: true, dhcp: true }] });
+  const addSvc = () => set({ services: [...ctx.services, { id: uid('s'), name: 'Nouveau sous-réseau', hosts: '10', routerIds: ctx.routers[0] ? [ctx.routers[0].id] : [], hasSwitch: true, dhcp: true, baseId: bases[0].id }] });
   const delSvc = (id: string) => set({ services: ctx.services.filter(s => s.id !== id) });
   const toggleSvcRouter = (id: string, rid: string) => set({ services: ctx.services.map(s => s.id === id ? { ...s, routerIds: s.routerIds.includes(rid) ? s.routerIds.filter(x => x !== rid) : [...s.routerIds, rid] } : s) });
   // — routers —
@@ -393,7 +422,9 @@ export function NetworkWorkshop() {
   // Texte exportable du plan (étapes 3/4).
   const planText = useMemo(() => {
     if (!plan.subs.length) return '';
-    const head = `Reseau de base : ${ipToStr(plan.baseNet)}/${plan.cidr}  (${plan.totalAddr} adresses, ${plan.used} utilisees)`;
+    const head = plan.bases.length > 1
+      ? 'Reseaux de base :\n' + plan.bases.map(b => `  ${b.name} : ${ipToStr(b.net)}/${b.cidr}  (${b.total} adr., ${b.used} utilisees)`).join('\n')
+      : `Reseau de base : ${ipToStr(plan.baseNet)}/${plan.cidr}  (${plan.totalAddr} adresses, ${plan.used} utilisees)`;
     const subLines = plan.subs.map(s => `${s.name}\t${ipToStr(s.net)}/${s.cidr}\t${ipToStr(s.mask)}\t${ipToStr(s.first)} - ${ipToStr(s.last)}\tbc ${ipToStr(s.bc)}\t${s.gw !== null ? 'gw ' + ipToStr(s.gw) : '(lien)'}\t${s.usable} hotes`);
     const ifLines = plan.ifaces.map(i => `${i.routerName}\t${i.iface}\t${i.target}\t${ipToStr(i.ip)}\t${ipToStr(i.mask)}\t${i.role}${i.clock ? '  [clock rate 64000]' : ''}`);
     return [head, '', 'Sous-reseaux :', 'Nom\tReseau/CIDR\tMasque\tPlage utilisable\tBroadcast\tPasserelle\tHotes', ...subLines,
@@ -441,21 +472,41 @@ export function NetworkWorkshop() {
                   ))}
                 </div>
               </div>
-              <div><label style={label}>Réseau de base (IP)</label><input style={{ ...field, ...mono }} value={ctx.baseIp} onChange={e => set({ baseIp: e.target.value })} placeholder="192.168.10.0" /></div>
-              <div><label style={label}>Masque (CIDR)</label><input style={{ ...field, ...mono }} value={ctx.baseCidr} onChange={e => set({ baseCidr: e.target.value.replace(/\D/g, '') })} placeholder="24" /></div>
             </div>
+          </div>
+
+          <div style={group}>
+            <div style={legend}>🌐 Réseaux de base (blocs d’adresses à découper)</div>
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 420 }}>
+                <thead><tr><th style={th}>Nom</th><th style={th}>Réseau (IP)</th><th style={th}>CIDR</th><th style={th}></th></tr></thead>
+                <tbody>
+                  {bases.map(b => (
+                    <tr key={b.id}>
+                      <td style={td}><input style={field} value={b.name} onChange={e => setBase(b.id, { name: e.target.value })} placeholder="Site A" /></td>
+                      <td style={td}><input style={{ ...field, ...mono, width: 150 }} value={b.ip} onChange={e => setBase(b.id, { ip: e.target.value })} placeholder="192.168.10.0" /></td>
+                      <td style={{ ...td, width: 80 }}><input style={{ ...field, ...mono }} value={b.cidr} onChange={e => setBase(b.id, { cidr: e.target.value.replace(/\D/g, '') })} placeholder="24" /></td>
+                      <td style={{ ...td, width: 40 }}><button type="button" onClick={() => delBase(b.id)} disabled={bases.length <= 1} style={{ ...smallBtn, color: bases.length <= 1 ? 'var(--text-muted)' : '#dc2626', borderColor: 'transparent', opacity: bases.length <= 1 ? .4 : 1 }} title="Supprimer">✕</button></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <button type="button" onClick={addBase} style={{ ...btn, marginTop: 10 }}>+ Ajouter un réseau de base</button>
+            <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>Ajoute plusieurs blocs distincts (ex. un par site : <code>192.168.10.0/24</code>, <code>10.0.0.0/24</code>…). Chaque sous-réseau est ensuite découpé (VLSM) <strong>dans le bloc que tu lui assignes</strong> ci-dessous.</div>
           </div>
 
           <div style={group}>
             <div style={legend}>🧩 Sous-réseaux / services (besoin en hôtes)</div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 380 }}>
-                <thead><tr><th style={th}>Service / sous-réseau</th><th style={th}>Hôtes</th><th style={th}></th></tr></thead>
+                <thead><tr><th style={th}>Service / sous-réseau</th><th style={th}>Hôtes</th>{bases.length > 1 && <th style={th}>Réseau de base</th>}<th style={th}></th></tr></thead>
                 <tbody>
                   {ctx.services.map(s => (
                     <tr key={s.id}>
                       <td style={td}><input style={field} value={s.name} onChange={e => setSvc(s.id, { name: e.target.value })} /></td>
                       <td style={{ ...td, width: 90 }}><input style={{ ...field, ...mono }} value={s.hosts} onChange={e => setSvc(s.id, { hosts: e.target.value.replace(/\D/g, '') })} /></td>
+                      {bases.length > 1 && <td style={{ ...td, width: 150 }}><select style={field} value={s.baseId || bases[0].id} onChange={e => setSvc(s.id, { baseId: e.target.value })}>{bases.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}</select></td>}
                       <td style={{ ...td, width: 40 }}><button type="button" onClick={() => delSvc(s.id)} style={{ ...smallBtn, color: '#dc2626', borderColor: 'transparent' }} title="Supprimer">✕</button></td>
                     </tr>
                   ))}
@@ -589,7 +640,7 @@ export function NetworkWorkshop() {
           <div style={group}>
             <div style={legend}>
               📋 Plan d’adressage — {plan.subs.length} sous-réseaux
-              <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 500, color: 'var(--text-muted)' }}>{ipToStr(plan.baseNet)}/{plan.cidr} · {plan.used}/{plan.totalAddr} adr.</span>
+              <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 500, color: 'var(--text-muted)' }}>{plan.bases.length > 1 ? `${plan.bases.length} réseaux · ${plan.used}/${plan.totalAddr} adr.` : `${ipToStr(plan.baseNet)}/${plan.cidr} · ${plan.used}/${plan.totalAddr} adr.`}</span>
             </div>
             <div style={{ overflowX: 'auto' }}>
               <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 640 }}>
