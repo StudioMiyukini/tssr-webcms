@@ -10,6 +10,7 @@ const block = (type: Parameters<typeof makePageBlock>[0], patch: Partial<PageBlo
 const note = (cls: string, title: string, html: string) => block('html', { html: `<aside class="pb-note pb-note-${cls}"><p class="pb-note-title">${title}</p>${html}</aside>` });
 const th = (t: string) => `<th style="border:1px solid var(--border);padding:7px 10px;text-align:left;background:var(--surface-2)">${t}</th>`;
 const td = (t: string) => `<td style="border:1px solid var(--border);padding:7px 10px">${t}</td>`;
+const tbl = (head: string[], rows: string[][]) => `<div style="overflow-x:auto;margin:6px 0"><table style="border-collapse:collapse;width:100%;min-width:440px;font-size:13px"><thead><tr>${head.map(th).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(td).join('')}</tr>`).join('')}</tbody></table></div>`;
 
 // ── Contenu ──
 const annexe1 = `<div style="overflow-x:auto;margin:6px 0"><table style="border-collapse:collapse;width:100%;min-width:560px;font-size:13px">
@@ -76,6 +77,42 @@ const blocks: PageBlock[] = [
     '<strong>Tables de routage</strong> : captures / listes des routes configurées.',
     '<strong>Borne Wi-Fi</strong> : captures montrant son fonctionnement.',
   ] }),
+
+  block('heading', { level: 2, text: '🗺️ Schéma logique & plan d’adressage (validé — Groupe 5)' }),
+  note('gray', '🖼️ Schéma', '<p>Le schéma logique (draw.io) est <strong>validé</strong>. Pour l’afficher ici, dépose le <strong>fichier .png</strong> exporté et je l’intègre à cet endroit. Voici le plan d’adressage qu’il fixe.</p>'),
+
+  block('heading', { level: 3, text: 'Réseau Admin / IT — 192.5.10.0/28' }),
+  block('html', { html: tbl(['Équipement', 'Adresse IP', 'Rôle'], [
+    ['Poste Admin 1', '192.5.10.1', 'poste administrateur'],
+    ['Serveur DHCP-DNS-Web', '<strong>192.5.10.12</strong>', 'serveur (IP fixe)'],
+    ['SW-1', '192.5.10.13', 'switch — IP de gestion'],
+    ['Passerelle (R_IT_G5 Gi0/0)', '<strong>192.5.10.14</strong>', 'passerelle du réseau'],
+  ]) }),
+  block('html', { html: '<p class="meta" style="font-size:12px">Masque <code>255.255.255.240</code> · broadcast <code>192.5.10.15</code> · plage utilisable <code>.1 → .14</code>.</p>' }),
+
+  block('heading', { level: 3, text: 'Réseau Utilisateurs — 192.5.50.0/24' }),
+  block('html', { html: tbl(['Équipement', 'Adresse IP', 'Rôle'], [
+    ['Stagiaire', '192.5.50.1', 'poste — <strong>via DHCP</strong>'],
+    ['Formateur', '192.5.50.3', 'poste — <strong>via DHCP</strong>'],
+    ['CISCO WAP 371', '192.5.50.124', 'point d’accès Wi-Fi (SSID-EDWIN05)'],
+    ['Sw-2', '192.5.50.253', 'switch — IP de gestion'],
+    ['Passerelle (R_IT_G5 Gi0/1)', '<strong>192.5.50.254</strong>', 'passerelle du réseau'],
+  ]) }),
+  block('html', { html: '<p class="meta" style="font-size:12px">Masque <code>255.255.255.0</code> · les postes Stagiaire/Formateur et le Wi-Fi reçoivent leur IP par <strong>DHCP</strong>.</p>' }),
+
+  block('heading', { level: 3, text: 'Liaison extérieure / autres écoles — 172.16.3.0/24' }),
+  block('html', { html: tbl(['Équipement', 'Adresse IP', 'Rôle'], [
+    ['Routeur_G5 Gi0/0', '172.16.3.250', 'sortie vers le nuage / les autres écoles (réseau « Salle »)'],
+  ]) }),
+
+  block('heading', { level: 3, text: 'Routeurs & interfaces' }),
+  block('html', { html: tbl(['Routeur', 'Interface', 'Réseau', 'Adresse IP'], [
+    ['R_IT_G5', 'Gi0/0', 'Admin 192.5.10.0/28', '192.5.10.14'],
+    ['R_IT_G5', 'Gi0/1', 'Utilisateurs 192.5.50.0/24', '192.5.50.254'],
+    ['Routeur_G5', 'Gi0/0', 'Extérieur 172.16.3.0/24', '172.16.3.250'],
+    ['Routeur_G5', 'Gi0/1', 'Utilisateurs 192.5.50.0/24', '192.5.50.254 ⚠️'],
+  ]) }),
+  note('yellow', '⚠️ 2 points à vérifier avant de configurer', '<ul><li><strong>Conflit d’adresse</strong> : <strong>R_IT_G5</strong> et <strong>Routeur_G5</strong> portent tous les deux <code>192.5.50.254</code> sur le réseau Utilisateurs — impossible (2 machines, même IP). Une seule est la passerelle des clients (<code>.254</code>) ; donne à l’autre routeur une <strong>IP libre distincte</strong> (ex. <code>192.5.50.252</code>) sur ce segment, et prévois le <strong>routage</strong> entre les deux.</li><li><strong>Étiquette de masque</strong> : sur le schéma, l’interface <code>R_IT_G5 Gi0/0</code> est notée <code>/24</code> alors que le réseau Admin est en <strong>/28</strong> (<code>255.255.255.240</code>). Corrige l’étiquette en <code>/28</code>.</li></ul>'),
 
   block('heading', { level: 2, text: '🖥️ Annexe 1 — configuration des machines virtuelles' }),
   block('html', { html: annexe1 }),
