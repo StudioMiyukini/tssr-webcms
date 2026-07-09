@@ -9,6 +9,7 @@ const block = (type: Parameters<typeof makePageBlock>[0], patch: Partial<PageBlo
 
 type Proc = { slug: string; icon: string; title: string; desc: string; tags: string[]; cat: string };
 const CATEGORIES: { id: string; icon: string; label: string }[] = [
+  { id: 'projet', icon: '🏗️', label: 'Projets & plateformes' },
   { id: 'virtualisation', icon: '🖥️', label: 'Virtualisation & Hyper-V' },
   { id: 'ad', icon: '🏢', label: 'Active Directory' },
   { id: 'reseau', icon: '🌐', label: 'Réseau & adressage' },
@@ -17,6 +18,7 @@ const CATEGORIES: { id: string; icon: string; label: string }[] = [
   { id: 'cisco', icon: '🧪', label: 'Cisco / Packet Tracer' },
 ];
 const PROCEDURES: Proc[] = [
+  { slug: 'procedure-plateforme-1', icon: '🏗️', title: 'Plateforme 1 — montage de l’infrastructure', desc: 'La procédure complète du montage de notre infrastructure « Plateforme 1 » réalisée pendant l’exercice (rédaction en cours).', tags: ['Projet', 'Infrastructure', 'Réalisation'], cat: 'projet' },
   { slug: 'procedure-vm-hyperv', icon: '🖥️', title: 'Créer & configurer une VM (ISO) sur Hyper-V', desc: 'De la création de la VM au début du TP : OS, nom, IP fixe, pare-feu.', tags: ['Hyper-V', 'Réseau'], cat: 'virtualisation' },
   { slug: 'procedure-hyperv-ressources', icon: '🧩', title: 'Hyper-V : fonctionnement & ressources', desc: 'Hyperviseur, VM, commutateurs, VHDX — et attribuer CPU/RAM/disque/réseau.', tags: ['Hyper-V', 'Hébergement'], cat: 'virtualisation' },
   { slug: 'procedure-installation-active-directory', icon: '🏢', title: 'Installer & configurer Active Directory', desc: 'De la VM vierge au client intégré au domaine : procédure complète.', tags: ['Active Directory'], cat: 'ad' },
