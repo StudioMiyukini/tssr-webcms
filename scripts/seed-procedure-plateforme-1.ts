@@ -14,6 +14,8 @@ const tbl = (head: string[], rows: string[][]) => `<div style="overflow-x:auto;m
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const stepsStyle = block('html', { html: `<style>.proc-cmd{font-family:ui-monospace,'Space Mono',monospace;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:8px 0;white-space:pre-wrap;overflow-x:auto;font-size:12.5px;line-height:1.55}</style>` });
 const cmd = (t: string) => block('html', { html: `<div class="proc-cmd">${esc(t)}</div>` });
+// Liste HTML (les items peuvent contenir des balises — contrairement au bloc « list » qui les échappe).
+const ul = (items: string[]) => block('html', { html: `<ul>${items.map(i => `<li>${i}</li>`).join('')}</ul>` });
 
 // ── Contenu ──
 const annexe1 = `<div style="overflow-x:auto;margin:6px 0"><table style="border-collapse:collapse;width:100%;min-width:560px;font-size:13px">
@@ -38,21 +40,21 @@ const blocks: PageBlock[] = [
   note('blue', '🏫 Contexte', '<p>L’<strong>École de Développement Informatique EDIVN</strong> forme des développeurs et souhaite <strong>restructurer son réseau</strong> pour gagner en efficacité et en sécurité. Dans le cadre de son agrandissement, chaque site dispose d’une équipe pour restructurer le réseau. M. Dupont nous confie cette mission.</p>'),
 
   block('heading', { level: 2, text: '🎯 Mission' }),
-  block('list', { listItems: [
+  ul([
     'Configurer les routeurs : routage entre les différents réseaux de la structure et vers les autres écoles.',
     'Configurer les serveurs : mise en service du serveur DNS et du serveur Web.',
     'Sécuriser le réseau : accès de management à distance en SSH sur le switch et le routeur (mot de passe : cisco).',
     'Configurer le point d’accès sans-fil Cisco : Wi-Fi pour les utilisateurs.',
     'Accès site Web : permettre l’accès au site web de chaque site.',
-  ] }),
+  ]),
 
   block('heading', { level: 2, text: '📋 Cahier des charges (besoins)' }),
 
   block('heading', { level: 3, text: 'Sous-réseaux' }),
-  block('list', { listItems: [
+  ul([
     '<strong>Réseau Admin (IT)</strong> : postes de travail des administrateurs + serveur DNS/Web.',
     '<strong>Réseau Utilisateurs</strong> : postes de travail des formateurs et stagiaires.',
-  ] }),
+  ]),
 
   block('heading', { level: 3, text: 'Wi-Fi' }),
   block('html', { html: '<p>Un point d’accès <strong>Cisco WAP 371</strong> fournit le Wi-Fi aux stagiaires et formateurs, avec un <strong>SSID</strong> spécifique <code>SSID-EDWINXX</code> et une attribution d’<strong>IP dynamiques par DHCP</strong>.</p>' }),
@@ -62,25 +64,25 @@ const blocks: PageBlock[] = [
 
   block('heading', { level: 3, text: 'Serveur Web (réseau IT, IP fixe)' }),
   block('html', { html: '<p>Hébergé dans le réseau IT, il héberge les sites de l’école. Deux sites à créer :</p>' }),
-  block('list', { listItems: [
+  ul([
     'Site 1 : <code>www.GroupeXX-EDIVN.lan</code> sur le <strong>port 8080</strong>, accessible <strong>depuis l’extérieur</strong>.',
     'Site 2 (intranet) : <code>Intranet.XX.EDIVN.lan</code>, accessible <strong>pour l’école</strong>, avec une page d’accueil affichant « <em>Bienvenue sur le site de l’école EDIVN</em> ».',
-  ] }),
+  ]),
 
   block('heading', { level: 3, text: 'Switches & accès distant' }),
-  block('list', { listItems: [
+  ul([
     'Renommer <strong>l’ensemble des switches</strong>.',
     'Mettre en place une connexion à distance <strong>SSH</strong> sur le switch et le routeur (mot de passe : <code>cisco</code>).',
-  ] }),
+  ]),
 
   block('heading', { level: 2, text: '📦 Dossier technique attendu (livrables)' }),
-  block('list', { listItems: [
+  ul([
     '<strong>Schéma logique</strong> : architecture réseau (sous-réseaux, équipements, interconnexions).',
     '<strong>Configuration des machines</strong> (Annexe 1) : matériel et logiciel de chaque machine.',
     '<strong>Configuration des switches et du routeur</strong> (Annexe 2) : paramètres réseau.',
     '<strong>Tables de routage</strong> : captures / listes des routes configurées.',
     '<strong>Borne Wi-Fi</strong> : captures montrant son fonctionnement.',
-  ] }),
+  ]),
 
   block('heading', { level: 2, text: '🗺️ Schéma logique & plan d’adressage (validé — Groupe 5)' }),
   note('gray', '🖼️ Schéma', '<p>Le schéma logique (draw.io) est <strong>validé</strong>. Pour l’afficher ici, dépose le <strong>fichier .png</strong> exporté et je l’intègre à cet endroit. Voici le plan d’adressage qu’il fixe.</p>'),
@@ -166,12 +168,12 @@ write memory`),
 
   block('heading', { level: 3, text: 'Étape 2 (en parallèle) — Préparation des VM sur l’hôte Hyper-V' }),
   block('html', { html: '<p>Pendant la configuration du routeur, on prépare les deux machines Windows du réseau Admin/IT — le <strong>Poste Admin 1</strong> et le <strong>Serveur DHCP-DNS-Web</strong> — <strong>sur le même hôte Hyper-V</strong>.</p>' }),
-  block('list', { listItems: [
+  ul([
     'Créer les 2 VM (Gestionnaire Hyper-V → <strong>Nouvel ordinateur virtuel</strong>, génération 2), selon l’Annexe 1 : <strong>Serveur</strong> 2048 Mo / 30 Go, <strong>Poste</strong> 1024 Mo / 20 Go.',
     'Connecter les deux au <strong>même commutateur virtuel</strong> (privé / interne) = segment <strong>Admin/IT</strong>.',
     'Installer les OS : <strong>Windows Server</strong> (édition Expérience de bureau) sur la VM serveur, <strong>Windows 10 Pro</strong> sur le poste admin ; définir le mot de passe administrateur.',
     'Renommer les machines et appliquer l’<strong>IP fixe</strong> (voir le tableau ci-dessous).',
-  ] }),
+  ]),
   block('html', { html: tbl(['VM', 'Nom', 'IP / masque', 'Passerelle', 'DNS'], [
     ['Serveur', 'SRV (DHCP-DNS-Web)', '<strong>192.5.10.12</strong> /28', '192.5.10.14', '192.5.10.12 (lui-même)'],
     ['Poste admin', 'Poste-Admin-1', '192.5.10.1 /28', '192.5.10.14', '192.5.10.12'],
