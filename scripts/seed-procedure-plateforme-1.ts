@@ -243,6 +243,30 @@ write memory`),
   note('gray', 'ℹ️ Cohérence du domaine', '<p>Utilise le <strong>même nom de domaine</strong> partout : la zone DNS, les <code>ip domain-name</code> des routeurs/switches et les URL des sites (ex. tout en <code>Groupe5-EDIVN.lan</code>).</p>'),
   note('gray', '🔗 Détails', '<p><a href="/pages/procedure-iis">IIS : héberger un site</a> · <a href="/pages/procedure-dns">DNS : zones & enregistrements</a> · <a href="/pages/procedure-dhcp">rôle DHCP</a>.</p>'),
 
+  block('heading', { level: 3, text: 'Étape 6 — DHCP : étendues + relais' }),
+  block('html', { html: '<p>Deux <strong>étendues</strong> sur le serveur DHCP (<code>192.5.10.12</code>), une par réseau, plus un <strong>relais</strong> sur le routeur pour les clients du réseau Utilisateurs.</p>' }),
+  block('html', { html: tbl(['Étendue', 'Réseau', 'Plage distribuée', 'Passerelle (003)', 'DNS (006)'], [
+    ['Admin', '192.5.10.0/28', '192.5.10.1 → .11', '192.5.10.14', '192.5.10.12'],
+    ['Utilisateurs', '192.5.50.0/24', '192.5.50.1 → .200', '192.5.50.254', '192.5.10.12'],
+  ]) }),
+  block('html', { html: '<p class="meta" style="font-size:12px">Option <strong>015</strong> (nom de domaine) = <code>Groupe5-EDIVN.lan</code> sur les deux étendues.</p>' }),
+  note('yellow', '⚠️ Adresses à exclure de l’étendue', '<ul><li><strong>Utilisateurs</strong> : le <strong>WAP 371 (<code>192.5.50.124</code>)</strong> a une IP fixe et tombe <strong>dans</strong> la plage <code>.1–.200</code> → il faut l’<strong>exclure</strong> de l’étendue (sinon conflit d’adresse). La passerelle <code>.254</code> et Sw-2 <code>.253</code> sont déjà hors plage.</li><li><strong>Admin</strong> : si le <strong>Poste Admin 1 (<code>.1</code>)</strong> est en IP fixe, l’exclure aussi (ou le passer en DHCP). Le serveur <code>.12</code>, SW-1 <code>.13</code> et la passerelle <code>.14</code> sont déjà hors de la plage <code>.1–.11</code>.</li></ul>'),
+
+  block('heading', { level: 4, text: 'Relais DHCP sur R_IT_G5 (indispensable)' }),
+  block('html', { html: '<p>Le serveur DHCP est dans le réseau Admin ; les clients Utilisateurs sont <strong>derrière le routeur</strong> → leurs demandes DHCP (des <strong>broadcasts</strong>) ne franchissent pas le routeur sans <strong>relais</strong>. On ajoute donc <code>ip helper-address</code> sur l’interface côté Utilisateurs :</p>' }),
+  cmd(`configure terminal
+interface GigabitEthernet0/1
+ ip helper-address 192.5.10.12
+ exit
+end
+write memory`),
+  note('yellow', '🧪 Sans relais, pas d’adresse', '<p><strong>Indispensable</strong> : sans <code>ip helper-address</code>, les postes Stagiaire/Formateur ne recevront <strong>aucune adresse</strong> (leur broadcast DHCP reste bloqué au routeur).</p>'),
+  block('html', { html: '<p><strong>Vérification</strong> (sur un poste client du réseau Utilisateurs) :</p>' }),
+  cmd(`ipconfig /release
+ipconfig /renew
+ipconfig /all      REM IP dans la plage .1-.200, passerelle .254, DNS 192.5.10.12`),
+  note('gray', '🔗 Détails', '<p><a href="/pages/procedure-dhcp">DHCP : étendue, options & réservation</a> · <a href="/pages/procedure-dhcp-relais">DHCP par relais (ip helper-address)</a>.</p>'),
+
   block('heading', { level: 2, text: '🔧 Problèmes rencontrés & résolution' }),
 
   block('heading', { level: 3, text: '① Commutateur externe Hyper-V sur la mauvaise carte réseau — ✅ résolu' }),
@@ -276,7 +300,7 @@ REM ou en PowerShell (admin) :
 Enable-NetFirewallRule -DisplayName "Partage de fichiers et d'imprimantes (demande d'echo - trafic entrant ICMPv4)"`),
   note('gray', 'ℹ️ Détail', '<p>Pas-à-pas illustré : <a href="/pages/astuce-pare-feu-ping">Autoriser le ping (ICMP) dans le pare-feu</a>. Après ça, <code>ping 192.5.10.12</code> depuis le stagiaire doit répondre.</p>'),
 
-  note('yellow', '🚧 Suite', '<p>Prochaines étapes à documenter : <strong>configuration DHCP</strong> (étendue réseau Utilisateurs + relais <code>ip helper-address</code> sur R_IT_G5), <strong>routage</strong> (R_IT_G5 ↔ Routeur_G5 ↔ extérieur), <strong>accès externe</strong> du site <code>:8080</code>, <strong>point d’accès Wi-Fi</strong> (WAP 371), puis <strong>tests de bout en bout</strong>.</p>'),
+  note('yellow', '🚧 Suite', '<p>Prochaines étapes à documenter : <strong>routage</strong> (R_IT_G5 ↔ Routeur_G5 ↔ extérieur) + <strong>NAT/PAT</strong> pour l’accès externe du site <code>:8080</code>, configuration du <strong>point d’accès Wi-Fi</strong> (WAP 371 / SSID-EDWIN05), puis <strong>tests de bout en bout</strong>.</p>'),
 ];
 
 function cookieFrom(res: Response): string {
