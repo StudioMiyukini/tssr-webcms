@@ -99,12 +99,13 @@ const blocks: PageBlock[] = [
   block('heading', { level: 3, text: 'Réseau Utilisateurs — 192.5.50.0/24' }),
   block('html', { html: tbl(['Équipement', 'Adresse IP', 'Rôle'], [
     ['Stagiaire', '192.5.50.1', 'poste — <strong>via DHCP</strong>'],
-    ['Formateur', '192.5.50.3', 'poste — <strong>via DHCP</strong>'],
-    ['CISCO WAP 371', '192.5.50.124', 'point d’accès Wi-Fi (SSID-EDWIN05)'],
+    ['Formateur', '192.5.50.2', 'poste — <strong>via DHCP</strong>'],
+    ['CISCO WAP 371', '192.5.50.251', 'point d’accès Wi-Fi (SSID-EDWIN05) — IP fixe'],
+    ['Routeur_G5 (LAN)', '192.5.50.252', 'routeur de bordure — IP fixe'],
     ['Sw-2', '192.5.50.253', 'switch — IP de gestion'],
     ['Passerelle (R_IT_G5 Gi0/1)', '<strong>192.5.50.254</strong>', 'passerelle du réseau'],
   ]) }),
-  block('html', { html: '<p class="meta" style="font-size:12px">Masque <code>255.255.255.0</code> · les postes Stagiaire/Formateur et le Wi-Fi reçoivent leur IP par <strong>DHCP</strong>.</p>' }),
+  block('html', { html: '<p class="meta" style="font-size:12px">Masque <code>255.255.255.0</code> · les postes Stagiaire/Formateur (et les clients Wi-Fi) reçoivent leur IP par <strong>DHCP</strong> (pool <code>.1 → .200</code>). Les équipements d’infra à IP fixe (<code>.251 → .254</code>) sont <strong>au-dessus du pool</strong> → aucune exclusion nécessaire.</p>' }),
 
   block('heading', { level: 3, text: 'Liaison extérieure / autres écoles — 172.16.3.0/24' }),
   block('html', { html: tbl(['Équipement', 'Adresse IP', 'Rôle'], [
@@ -116,9 +117,10 @@ const blocks: PageBlock[] = [
     ['R_IT_G5', 'Gi0/0', 'Admin 192.5.10.0/28', '192.5.10.14'],
     ['R_IT_G5', 'Gi0/1', 'Utilisateurs 192.5.50.0/24', '192.5.50.254'],
     ['Routeur_G5', 'Gi0/0', 'Extérieur 172.16.3.0/24', '172.16.3.250'],
-    ['Routeur_G5', 'Gi0/1', 'Utilisateurs 192.5.50.0/24', '192.5.50.254 ⚠️'],
+    ['Routeur_G5', 'Gi0/1', 'Utilisateurs 192.5.50.0/24', '<strong>192.5.50.252</strong>'],
   ]) }),
-  note('yellow', '⚠️ 2 points à vérifier avant de configurer', '<ul><li><strong>Conflit d’adresse</strong> : <strong>R_IT_G5</strong> et <strong>Routeur_G5</strong> portent tous les deux <code>192.5.50.254</code> sur le réseau Utilisateurs — impossible (2 machines, même IP). Une seule est la passerelle des clients (<code>.254</code>) ; donne à l’autre routeur une <strong>IP libre distincte</strong> (ex. <code>192.5.50.252</code>) sur ce segment, et prévois le <strong>routage</strong> entre les deux.</li><li><strong>Étiquette de masque</strong> : sur le schéma, l’interface <code>R_IT_G5 Gi0/0</code> est notée <code>/24</code> alors que le réseau Admin est en <strong>/28</strong> (<code>255.255.255.240</code>). Corrige l’étiquette en <code>/28</code>.</li></ul>'),
+  note('green', '✅ Schéma corrigé', '<p>Les deux anomalies repérées à la validation sont corrigées : (1) le <strong>doublon de passerelle</strong> — Routeur_G5 est passé en <code>192.5.50.252</code>, seul <strong>R_IT_G5</strong> garde <code>192.5.50.254</code> ; (2) le <strong>masque côté Admin</strong> — <code>R_IT_G5 Gi0/0</code> est bien en <strong>/28</strong> (<code>255.255.255.240</code>). L’adressage d’infra du réseau Utilisateurs est regroupé en haut de plage (<code>.251</code> WAP · <code>.252</code> Routeur_G5 · <code>.253</code> Sw-2 · <code>.254</code> passerelle), donc hors du pool DHCP.</p>'),
+  note('gray', 'ℹ️ Nommage des interfaces', '<p>Le schéma note les interfaces <code>Gi0/x</code> (Gigabit) ; sur les <strong>routeurs 2811</strong> réels du lab ce sont des <code>FastEthernet0/x</code> — mêmes rôles, adapter le nom dans la CLI (cf. Étapes 1 et 7).</p>'),
 
   block('heading', { level: 2, text: '🖥️ Annexe 1 — configuration des machines virtuelles' }),
   block('html', { html: annexe1 }),
@@ -266,7 +268,7 @@ write memory`),
     ['Utilisateurs', '192.5.50.0/24', '192.5.50.1 → .200', '192.5.50.254', '192.5.10.12'],
   ]) }),
   block('html', { html: '<p class="meta" style="font-size:12px">Option <strong>015</strong> (nom de domaine) = <code>Groupe5-EDIVN.lan</code> sur les deux étendues.</p>' }),
-  note('yellow', '⚠️ Adresses à exclure de l’étendue', '<ul><li><strong>Utilisateurs</strong> : le <strong>WAP 371 (<code>192.5.50.124</code>)</strong> a une IP fixe et tombe <strong>dans</strong> la plage <code>.1–.200</code> → il faut l’<strong>exclure</strong> de l’étendue (sinon conflit d’adresse). La passerelle <code>.254</code> et Sw-2 <code>.253</code> sont déjà hors plage.</li><li><strong>Admin</strong> : si le <strong>Poste Admin 1 (<code>.1</code>)</strong> est en IP fixe, l’exclure aussi (ou le passer en DHCP). Le serveur <code>.12</code>, SW-1 <code>.13</code> et la passerelle <code>.14</code> sont déjà hors de la plage <code>.1–.11</code>.</li></ul>'),
+  note('yellow', '⚠️ Adresses à exclure de l’étendue', '<ul><li><strong>Utilisateurs</strong> : les équipements d’infra à IP fixe (WAP <code>.251</code>, Routeur_G5 <code>.252</code>, Sw-2 <code>.253</code>, passerelle <code>.254</code>) sont <strong>au-dessus du pool <code>.1–.200</code></strong> → <strong>rien à exclure</strong> côté Utilisateurs. (Si un jour tu élargis le pool au-delà de <code>.200</code>, pense à exclure ces adresses.)</li><li><strong>Admin</strong> : si le <strong>Poste Admin 1 (<code>.1</code>)</strong> est en IP fixe, l’exclure de l’étendue Admin (ou le passer en DHCP). Le serveur <code>.12</code>, SW-1 <code>.13</code> et la passerelle <code>.14</code> sont déjà hors de la plage <code>.1–.11</code>.</li></ul>'),
 
   block('heading', { level: 4, text: 'Relais DHCP sur R_IT_G5 (indispensable)' }),
   block('html', { html: '<p>Le serveur DHCP est dans le réseau Admin ; les clients Utilisateurs sont <strong>derrière le routeur</strong> → leurs demandes DHCP (des <strong>broadcasts</strong>) ne franchissent pas le routeur sans <strong>relais</strong>. On ajoute donc <code>ip helper-address</code> sur l’interface côté Utilisateurs :</p>' }),
@@ -291,6 +293,7 @@ ipconfig /all      REM IP dans la plage .1-.200, passerelle .254, DNS 192.5.10.1
     ['R_IT_G5', 'Fa0/1 (LAN)', '192.5.50.254 /24', '—'],
     ['R_IT_G5', 'Fa0/0 (Admin)', '192.5.10.14 /28', '—'],
   ]),
+  note('gray', 'ℹ️ IP WAN : schéma vs équipement', '<p>Le <strong>schéma validé</strong> note l’interface WAN de Routeur_G5 en <code>Gi0/0 = 172.16.3.250</code> ; la config appliquée sur le 2811 réel utilisait <code>Fa0/1 = 172.16.3.126</code>. Les deux fonctionnent (même réseau <code>172.16.3.0/24</code>, passerelle <code>172.16.3.254</code>) — mais <strong>aligne schéma et équipement sur une seule valeur</strong> pour éviter toute confusion. La <strong>route par défaut</strong> vise la passerelle <code>172.16.3.254</code> dans les deux cas.</p>'),
   note('yellow', '🧹 Nettoyage préalable', '<p>Routeur_G5 contenait des <strong>restes d’une autre maquette</strong> (réseaux <code>192.168.x.x</code> / <code>172.16.9.x</code>) qui cassaient la sortie : deux <strong>routes par défaut bidon</strong> et une <strong>ACL de NAT</strong> qui ne visait pas nos réseaux. Retirés avant de configurer.</p>'),
   cmd(`! sur Routeur_G5 — retirer les restes de l'autre maquette
 configure terminal
