@@ -267,6 +267,53 @@ ipconfig /renew
 ipconfig /all      REM IP dans la plage .1-.200, passerelle .254, DNS 192.5.10.12`),
   note('gray', '🔗 Détails', '<p><a href="/pages/procedure-dhcp">DHCP : étendue, options & réservation</a> · <a href="/pages/procedure-dhcp-relais">DHCP par relais (ip helper-address)</a>.</p>'),
 
+  block('heading', { level: 3, text: 'Étape 7 — Routage inter-routeurs & accès Internet (NAT/PAT)' }),
+  note('blue', '🗺️ Deux routeurs, deux rôles', '<p><strong>R_IT_G5</strong> = routeur <strong>interne</strong> : passerelle des clients (<code>192.5.50.254</code>), relie les réseaux Utilisateurs et Admin. <strong>Routeur_G5</strong> = routeur de <strong>bordure</strong> : il fait le <strong>NAT/PAT</strong> vers le réseau réel (<code>172.16.3.0/24</code>) pour donner Internet au lab. Les deux se trouvent sur le LAN Utilisateurs (R_IT_G5 en <code>.254</code>, Routeur_G5 en <code>.252</code> — plus de doublon).</p>'),
+  tbl(['Routeur', 'Interface', 'IP', 'Rôle NAT'], [
+    ['Routeur_G5', 'Fa0/0 (LAN)', '192.5.50.252 /24', 'ip nat inside'],
+    ['Routeur_G5', 'Fa0/1 (WAN)', '172.16.3.126 /24', 'ip nat outside'],
+    ['R_IT_G5', 'Fa0/1 (LAN)', '192.5.50.254 /24', '—'],
+    ['R_IT_G5', 'Fa0/0 (Admin)', '192.5.10.14 /28', '—'],
+  ]),
+  note('yellow', '🧹 Nettoyage préalable', '<p>Routeur_G5 contenait des <strong>restes d’une autre maquette</strong> (réseaux <code>192.168.x.x</code> / <code>172.16.9.x</code>) qui cassaient la sortie : deux <strong>routes par défaut bidon</strong> et une <strong>ACL de NAT</strong> qui ne visait pas nos réseaux. Retirés avant de configurer.</p>'),
+  cmd(`! sur Routeur_G5 — retirer les restes de l'autre maquette
+configure terminal
+no ip nat inside source static 192.168.0.102 172.16.9.45
+no ip route 0.0.0.0 0.0.0.0 192.168.100.1
+no ip route 0.0.0.0 0.0.0.0 172.16.9.254
+no ip route 192.168.0.0 255.255.255.0 192.168.100.1`),
+  block('html', { html: '<p><strong>NAT/PAT</strong> : l’ACL <code>LAN</code> désigne les réseaux <em>internes</em> à traduire ; le PAT (<code>overload</code>) les masque tous derrière l’IP de l’interface WAN.</p>' }),
+  cmd(`! ACL des reseaux internes a traduire
+ip access-list standard LAN
+ no permit 192.168.10.0 0.0.0.255
+ no permit 192.168.99.0 0.0.0.15
+ no permit 192.168.90.0 0.0.0.15
+ permit 192.5.50.0 0.0.0.255
+ permit 192.5.10.0 0.0.0.15
+ exit
+! PAT : tout le LAN sort derriere l'IP de Fa0/1
+ip nat inside source list LAN interface FastEthernet0/1 overload
+! vraie passerelle Internet (reseau de Fa0/1) + route vers le LAN Admin
+ip route 0.0.0.0 0.0.0.0 172.16.3.254
+ip route 192.5.10.0 255.255.255.240 192.5.50.254
+end
+write memory`),
+  note('red', '⚠️ Complément sur R_IT_G5 (sinon pas d’Internet)', '<p>Les clients ont R_IT_G5 pour passerelle : il doit renvoyer tout l’inconnu vers Routeur_G5. Sans cette route par défaut, le trafic Internet meurt sur R_IT_G5.</p>'),
+  cmd(`! sur R_IT_G5
+configure terminal
+ip route 0.0.0.0 0.0.0.0 192.5.50.252
+end
+write memory`),
+  block('html', { html: '<p><strong>Vérification</strong> :</p>' }),
+  cmd(`! sur Routeur_G5
+show ip route             ! une seule default 172.16.3.254, plus de 192.168
+show access-lists LAN     ! permit 192.5.50.0 / 192.5.10.0
+show ip nat translations  ! des lignes apparaissent quand un client sort
+! sur un client du LAN
+ping 172.16.3.254         ! la passerelle WAN
+ping 8.8.8.8              ! Internet (via PAT)`),
+  note('gray', '🔗 Détails', '<p><a href="/pages/procedure-routes-statiques">Routes statiques</a> · <a href="/pages/procedure-nat">NAT / PAT</a> · <a href="/pages/procedure-cisco-routeur-cli">Config routeur Cisco (CLI)</a>.</p>'),
+
   block('heading', { level: 2, text: '🔧 Problèmes rencontrés & résolution' }),
 
   block('heading', { level: 3, text: '① Commutateur externe Hyper-V sur la mauvaise carte réseau — ✅ résolu' }),
