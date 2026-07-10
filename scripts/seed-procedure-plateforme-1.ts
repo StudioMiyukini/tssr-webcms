@@ -224,6 +224,25 @@ write memory`),
   ]),
   note('yellow', '🔗 Vérifications', '<ul><li><code>show ip interface brief</code> sur chaque switch → <strong>Vlan1 up/up</strong>.</li><li>Voyants des ports (Packet Tracer) au <strong>vert</strong> une fois tout branché.</li><li>Depuis le poste admin : <code>ssh -l admin 192.5.10.13</code> (SW-1) et un <code>ping</code> vers la passerelle.</li></ul>'),
 
+  block('heading', { level: 3, text: 'Étape 5 — Serveur : rôles, sites Web (IIS) & DNS' }),
+  block('html', { html: '<p>Sur le serveur Windows (<code>192.5.10.12</code>) : installation des <strong>rôles</strong>, création des <strong>2 sites Web</strong> et des <strong>enregistrements DNS</strong>.</p>' }),
+  block('heading', { level: 4, text: 'Rôles installés' }),
+  ul(['Rôle <strong>DHCP</strong> (à configurer : étendue réseau Utilisateurs + relais).', 'Rôle <strong>DNS</strong> (zones + enregistrements).', 'Rôle <strong>Serveur Web (IIS)</strong>.']),
+  block('heading', { level: 4, text: 'Sites Web (IIS)' }),
+  ul([
+    'Un <strong>dossier par site</strong> avec un fichier <code>index.html</code> ; la page de l’intranet affiche « <em>Bienvenue sur le site de l’école EDIVN</em> ».',
+    'Site 1 — <code>www.Groupe5-EDIVN.lan</code> : liaison HTTP sur le <strong>port 8080</strong>, accessible depuis l’extérieur.',
+    'Site 2 — intranet (<code>Intranet.5.EDIVN.lan</code>) : liaison HTTP, accessible pour l’école.',
+  ]),
+  block('heading', { level: 4, text: 'Enregistrements DNS' }),
+  ul([
+    'Enregistrement <strong>A</strong> pour le <strong>domaine racine</strong> : <code>Groupe5-EDIVN.lan → 192.5.10.12</code>.',
+    'Un <strong>alias (CNAME)</strong> <code>www</code> → domaine racine (et l’entrée pour l’intranet).',
+  ]),
+  note('yellow', '⚠️ Un enregistrement DNS ne porte pas de port', '<p>Un <strong>A/CNAME résout seulement un nom en IP</strong> — il ne contient <strong>pas</strong> le port. Le <code>8080</code> vient de la <strong>liaison IIS</strong>, pas de l’alias : l’URL reste donc <code>http://www.Groupe5-EDIVN.lan:8080</code>. Pour l’atteindre <strong>sans taper « :8080 »</strong>, il faut l’une de ces solutions : une <strong>liaison sur le port 80 avec en-tête d’hôte</strong>, une <strong>redirection HTTP</strong> vers :8080, ou une <strong>redirection de port (NAT/PAT)</strong> sur le routeur pour l’accès externe. <em>(Préciser la méthode retenue.)</em></p>'),
+  note('gray', 'ℹ️ Cohérence du domaine', '<p>Utilise le <strong>même nom de domaine</strong> partout : la zone DNS, les <code>ip domain-name</code> des routeurs/switches et les URL des sites (ex. tout en <code>Groupe5-EDIVN.lan</code>).</p>'),
+  note('gray', '🔗 Détails', '<p><a href="/pages/procedure-iis">IIS : héberger un site</a> · <a href="/pages/procedure-dns">DNS : zones & enregistrements</a> · <a href="/pages/procedure-dhcp">rôle DHCP</a>.</p>'),
+
   block('heading', { level: 2, text: '🔧 Problèmes rencontrés & résolution' }),
 
   block('heading', { level: 3, text: '① Commutateur externe Hyper-V sur la mauvaise carte réseau — ✅ résolu' }),
@@ -257,7 +276,7 @@ REM ou en PowerShell (admin) :
 Enable-NetFirewallRule -DisplayName "Partage de fichiers et d'imprimantes (demande d'echo - trafic entrant ICMPv4)"`),
   note('gray', 'ℹ️ Détail', '<p>Pas-à-pas illustré : <a href="/pages/astuce-pare-feu-ping">Autoriser le ping (ICMP) dans le pare-feu</a>. Après ça, <code>ping 192.5.10.12</code> depuis le stagiaire doit répondre.</p>'),
 
-  note('yellow', '🚧 Suite', '<p>Prochaines étapes à documenter : promotion du serveur (rôles <strong>DNS</strong>, <strong>DHCP</strong>, <strong>Web/IIS</strong>), routage (R_IT_G5 ↔ Routeur_G5 ↔ extérieur), sites Web (2), point d’accès Wi-Fi, puis tests de bout en bout.</p>'),
+  note('yellow', '🚧 Suite', '<p>Prochaines étapes à documenter : <strong>configuration DHCP</strong> (étendue réseau Utilisateurs + relais <code>ip helper-address</code> sur R_IT_G5), <strong>routage</strong> (R_IT_G5 ↔ Routeur_G5 ↔ extérieur), <strong>accès externe</strong> du site <code>:8080</code>, <strong>point d’accès Wi-Fi</strong> (WAP 371), puis <strong>tests de bout en bout</strong>.</p>'),
 ];
 
 function cookieFrom(res: Response): string {
