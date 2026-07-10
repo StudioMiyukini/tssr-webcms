@@ -300,6 +300,20 @@ REM ou en PowerShell (admin) :
 Enable-NetFirewallRule -DisplayName "Partage de fichiers et d'imprimantes (demande d'echo - trafic entrant ICMPv4)"`),
   note('gray', 'ℹ️ Détail', '<p>Pas-à-pas illustré : <a href="/pages/astuce-pare-feu-ping">Autoriser le ping (ICMP) dans le pare-feu</a>. Après ça, <code>ping 192.5.10.12</code> depuis le stagiaire doit répondre.</p>'),
 
+  block('heading', { level: 3, text: '④ Impossible de pinguer la passerelle de l’autre réseau (autre interface du même routeur)' }),
+  note('yellow', '🔎 Cause probable & diagnostic', '<p>Pinguer une <strong>interface de routeur</strong> (ex. <code>192.5.10.14</code> = Gi0/0) n’est <strong>pas</strong> concerné par le <strong>pare-feu Windows</strong> — le routeur n’est pas Windows. Ce n’est donc <strong>pas</strong> le même problème que le ③. Si l’autre interface ne répond pas, c’est un souci <strong>d’interface / de lien</strong> : la cause la plus fréquente est que l’interface visée est <strong>up/down</strong> (son segment n’est pas relié) → son IP est inactive et ne répond pas.</p>'),
+  cmd(`! sur R_IT_G5
+show ip interface brief
+!   Gi0/0  192.5.10.14   doit etre  up / up
+!   Gi0/1  192.5.50.254  doit etre  up / up
+show ip route            ! les 2 reseaux connectes (C) doivent apparaitre`),
+  ul([
+    'Si <strong>Gi0/0</strong> est <code>up/down</code> ou <code>down/down</code> → le <strong>lien du réseau Admin est coupé</strong> (câble non branché, <code>no shutdown</code> oublié, ou pont Hyper-V / commutateur externe HS — cf. problème ①). Rétablir le lien : l’IP <code>.14</code> ne répond que si la ligne est <strong>up/up</strong>.',
+    'Sur le client : <code>ipconfig /all</code> → vérifier le <strong>masque /24</strong> (<code>255.255.255.0</code>) et la <strong>passerelle</strong> (<code>192.5.50.254</code>). Un mauvais masque ferait croire au client que <code>.10.14</code> est local (ARP direct → échec).',
+    'Tester d’abord le ping de sa <strong>propre passerelle</strong> (<code>192.5.50.254</code>) : s’il échoue, le problème est <strong>local</strong> (lien/switch), pas le routage inter-réseaux.',
+  ]),
+  note('gray', '🔗 Méthode', '<p><a href="/pages/procedure-test-connectivite">Test de connectivité méthodique</a> (dérouler dans l’ordre : lien → passerelle → réseau distant).</p>'),
+
   note('yellow', '🚧 Suite', '<p>Prochaines étapes à documenter : <strong>routage</strong> (R_IT_G5 ↔ Routeur_G5 ↔ extérieur) + <strong>NAT/PAT</strong> pour l’accès externe du site <code>:8080</code>, configuration du <strong>point d’accès Wi-Fi</strong> (WAP 371 / SSID-EDWIN05), puis <strong>tests de bout en bout</strong>.</p>'),
 ];
 
