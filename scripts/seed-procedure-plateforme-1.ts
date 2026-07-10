@@ -224,6 +224,39 @@ write memory`),
   ]),
   note('yellow', '🔗 Vérifications', '<ul><li><code>show ip interface brief</code> sur chaque switch → <strong>Vlan1 up/up</strong>.</li><li>Voyants des ports (Packet Tracer) au <strong>vert</strong> une fois tout branché.</li><li>Depuis le poste admin : <code>ssh -l admin 192.5.10.13</code> (SW-1) et un <code>ping</code> vers la passerelle.</li></ul>'),
 
+  block('heading', { level: 2, text: '🔧 Problèmes rencontrés & résolution' }),
+
+  block('heading', { level: 3, text: '① Commutateur externe Hyper-V sur la mauvaise carte réseau — ✅ résolu' }),
+  block('html', { html: '<p><strong>Symptôme</strong> : les VM ne communiquaient pas avec la maquette (pas de connectivité vers le réseau).<br><strong>Cause</strong> : le <strong>commutateur virtuel externe</strong> Hyper-V était rattaché à la <strong>mauvaise carte réseau physique</strong>.<br><strong>Solution</strong> : Gestionnaire Hyper-V → <em>Gestionnaire de commutateur virtuel</em> → commutateur <strong>Externe</strong> → sélectionner la <strong>bonne carte réseau</strong> (celle reliée au réseau/pont) → OK. Vérifier ensuite, dans les <em>Paramètres</em> de chaque VM, que la carte réseau est bien connectée à ce commutateur.</p>' }),
+
+  block('heading', { level: 3, text: '② SSH non fonctionnel — problème de clé / encodage' }),
+  note('yellow', '🔑 Cause probable & solution', '<p>La <strong>clé RSA</strong> a probablement été générée <strong>avant</strong> d’avoir fixé le <code>hostname</code> et le <code>ip domain-name</code> (ou l’équipement a été renommé <em>après</em>) → la clé porte un mauvais nom et est invalide. <strong>Solution</strong> : fixer hostname + domaine, puis <strong>supprimer et régénérer</strong> la clé.</p>'),
+  cmd(`configure terminal
+ip domain-name G5-EDIVN.lan
+crypto key zeroize rsa          ! supprime l'ancienne cle
+crypto key generate rsa
+1024                            ! la longueur, seule sur sa ligne
+ip ssh version 2
+line vty 0 4
+ login local
+ transport input ssh
+ exit
+end
+! Verifications :
+show ip ssh                     ! doit indiquer SSH Enabled, version 2.0
+show crypto key mypubkey rsa    ! la cle doit exister
+! Test depuis un client : ssh -l admin 192.5.10.13`),
+  note('gray', 'ℹ️ À contrôler aussi', '<ul><li>Un <strong>compte local</strong> existe : <code>username admin privilege 15 secret cisco</code> (le <code>login local</code> s’en sert).</li><li>Modulus <strong>≥ 768</strong> (1024 recommandé) pour SSHv2.</li><li>Depuis le client PT : ouvre l’<em>invite de commandes</em> et tape <code>ssh -l admin &lt;IP&gt;</code> (pas <code>telnet</code>).</li></ul>'),
+
+  block('heading', { level: 3, text: '③ Ping Stagiaire → Serveur échoue (l’inverse fonctionne)' }),
+  note('yellow', '🛡️ Cause & solution : pare-feu Windows du serveur', '<p>Le sens <strong>Serveur → Stagiaire</strong> fonctionne → le <strong>routage est bon dans les deux sens</strong>. Ce qui échoue, c’est le <strong>ping entrant</strong> vers le serveur : le <strong>pare-feu Windows</strong> du serveur <strong>bloque par défaut les requêtes ICMP entrantes</strong> non sollicitées (surtout venant d’un <em>autre sous-réseau</em>). Quand le serveur initie le ping, la réponse revient (pare-feu à état) ; quand le stagiaire initie, la requête entrante est bloquée. <strong>Solution : autoriser l’ICMP echo entrant</strong> sur le serveur.</p>'),
+  cmd(`REM Sur le SERVEUR Windows (invite admin) — autoriser le ping entrant IPv4 :
+netsh advfirewall firewall add rule name="ICMPv4 Echo In" protocol=icmpv4:8,any dir=in action=allow
+
+REM ou en PowerShell (admin) :
+Enable-NetFirewallRule -DisplayName "Partage de fichiers et d'imprimantes (demande d'echo - trafic entrant ICMPv4)"`),
+  note('gray', 'ℹ️ Détail', '<p>Pas-à-pas illustré : <a href="/pages/astuce-pare-feu-ping">Autoriser le ping (ICMP) dans le pare-feu</a>. Après ça, <code>ping 192.5.10.12</code> depuis le stagiaire doit répondre.</p>'),
+
   note('yellow', '🚧 Suite', '<p>Prochaines étapes à documenter : promotion du serveur (rôles <strong>DNS</strong>, <strong>DHCP</strong>, <strong>Web/IIS</strong>), routage (R_IT_G5 ↔ Routeur_G5 ↔ extérieur), sites Web (2), point d’accès Wi-Fi, puis tests de bout en bout.</p>'),
 ];
 
