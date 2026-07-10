@@ -182,7 +182,49 @@ write memory`),
   note('gray', 'ℹ️ Points clés', '<ul><li>Les deux VM sont sur le <strong>même hôte</strong> et le <strong>même commutateur virtuel</strong> (privé/interne) → elles communiquent sur le réseau Admin/IT <code>192.5.10.0/28</code>.</li><li>Le poste et (plus tard) les serveurs pointent vers le <strong>serveur DNS = 192.5.10.12</strong>.</li><li>Masque <code>/28</code> = <code>255.255.255.240</code>, passerelle <code>192.5.10.14</code> (interface Gi0/0 du routeur).</li></ul>'),
   note('gray', '🔗 Détails', '<p><a href="/pages/procedure-vm-hyperv">Créer & configurer une VM (ISO) sur Hyper-V</a> · <a href="/pages/procedure-hyperv-ressources">Hyper-V : ressources</a> · <a href="/pages/procedure-ip-fixe-windows">Configurer une IP fixe</a> · <a href="/pages/procedure-renommer-poste">Renommer un poste</a>.</p>'),
 
-  note('yellow', '🚧 Suite', '<p>Prochaines étapes à documenter : promotion du serveur (rôles DHCP / DNS / Web), routage (R_IT_G5 ↔ Routeur_G5 ↔ extérieur), switches (renommage + SSH), sites Web (2), point d’accès Wi-Fi, puis tests.</p>'),
+  block('heading', { level: 3, text: 'Étape 3 — Switches (SW-1, Sw-2) : renommage, IP de gestion & SSH' }),
+  block('html', { html: '<p>On <strong>renomme</strong> les deux switches, on leur attribue une <strong>IP de gestion</strong> (SVI <code>VLAN 1</code>) pour l’administration à distance, et on active <strong>SSH</strong> (mot de passe <code>cisco</code>). Configuration depuis la console.</p>' }),
+  cmd(`enable
+configure terminal
+hostname SW-1
+ip domain-name G5-EDIVN.lan
+enable secret cisco
+username admin privilege 15 secret cisco
+!
+! --- IP de gestion (SVI) ---
+interface vlan 1
+ ip address 192.5.10.13 255.255.255.240
+ no shutdown
+ exit
+ip default-gateway 192.5.10.14
+!
+! --- SSH ---
+crypto key generate rsa
+1024
+ip ssh version 2
+line vty 0 4
+ transport input ssh
+ login local
+ exit
+!
+end
+write memory`),
+  block('html', { html: '<p>Mêmes commandes pour <strong>Sw-2</strong> en adaptant le nom, l’IP de gestion et la passerelle :</p>' }),
+  block('html', { html: tbl(['Switch', 'Réseau', 'IP de gestion (VLAN 1)', 'Masque', 'ip default-gateway'], [
+    ['SW-1', 'Admin / IT', '192.5.10.13', '255.255.255.240', '192.5.10.14'],
+    ['Sw-2', 'Utilisateurs', '192.5.50.253', '255.255.255.0', '192.5.50.254'],
+  ]) }),
+  note('gray', 'ℹ️ IP de gestion', '<p>Un switch de niveau 2 n’a pas d’IP sur ses ports ; on lui donne une <strong>adresse de gestion sur le SVI VLAN 1</strong> (dans le sous-réseau de son segment) + une <code>ip default-gateway</code> pour être joignable en SSH depuis un autre réseau.</p>'),
+
+  block('heading', { level: 3, text: 'Étape 4 — Câblage (tout branché)' }),
+  ul([
+    '<strong>SW-1</strong> (Admin/IT) : Poste Admin 1 et Serveur en <strong>ports access</strong> ; liaison montante vers <strong>R_IT_G5 Gi0/0</strong>.',
+    '<strong>Sw-2</strong> (Utilisateurs) : Stagiaire, Formateur et le <strong>WAP 371</strong> en ports access ; liaisons vers <strong>R_IT_G5 Gi0/1</strong> et <strong>Routeur_G5</strong>.',
+    '<strong>Routeur_G5</strong> : côté Utilisateurs (Sw-2) et côté extérieur (<code>172.16.3.0/24</code>) vers le nuage / les autres écoles.',
+  ]),
+  note('yellow', '🔗 Vérifications', '<ul><li><code>show ip interface brief</code> sur chaque switch → <strong>Vlan1 up/up</strong>.</li><li>Voyants des ports (Packet Tracer) au <strong>vert</strong> une fois tout branché.</li><li>Depuis le poste admin : <code>ssh -l admin 192.5.10.13</code> (SW-1) et un <code>ping</code> vers la passerelle.</li></ul>'),
+
+  note('yellow', '🚧 Suite', '<p>Prochaines étapes à documenter : promotion du serveur (rôles <strong>DNS</strong>, <strong>DHCP</strong>, <strong>Web/IIS</strong>), routage (R_IT_G5 ↔ Routeur_G5 ↔ extérieur), sites Web (2), point d’accès Wi-Fi, puis tests de bout en bout.</p>'),
 ];
 
 function cookieFrom(res: Response): string {
