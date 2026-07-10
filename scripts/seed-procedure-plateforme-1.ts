@@ -1,91 +1,99 @@
-/* Procédure « Plateforme 1 » : montage de l'infrastructure réalisée pendant l'exercice.
-   Squelette — le contenu sera rédigé étape par étape (dicté par l'utilisateur).
+/* Procédure « Plateforme 1 — montage de l'infrastructure EDIVN ».
+   Guide pas-à-pas réutilisable, destiné à une équipe qui doit monter l'infra.
    Usage : BASE=... ADMIN_PW=... tsx scripts/seed-procedure-plateforme-1.ts */
 import { makePageBlock, renderPageBlocksToHtml, serializePageBlocks, type PageBlock } from '../client/src/lib/page-blocks';
 
 const BASE = process.env.BASE || 'https://tssr.miyukini.com';
 const PW = process.env.ADMIN_PW || 'changeme';
-const PAGE = { slug: 'procedure-plateforme-1', title: 'Plateforme 1 — infrastructure EDIVN', excerpt: 'Montage de l’infrastructure de l’École de Développement Informatique (EDIVN) : cahier des charges (contexte, mission, sous-réseaux, DHCP, Wi-Fi, serveurs DNS/Web, SSH), livrables attendus et Annexe 1 (configuration des VM). La réalisation pas-à-pas suit.' };
+const PAGE = { slug: 'procedure-plateforme-1', title: 'Plateforme 1 — montage de l’infrastructure EDIVN', excerpt: 'Procédure complète et applicable pour monter le réseau de l’École de Développement Informatique (EDIVN) : plan d’adressage, puis 8 étapes couleur (reset, routeur interne + SSH, VM Hyper-V, switches, câblage, serveur DNS/Web/IIS, DHCP + relais, routage inter-routeurs + NAT/PAT, Wi-Fi), tests de validation et dépannage.' };
+
 const block = (type: Parameters<typeof makePageBlock>[0], patch: Partial<PageBlock>) => Object.assign(makePageBlock(type), patch);
 const note = (cls: string, title: string, html: string) => block('html', { html: `<aside class="pb-note pb-note-${cls}"><p class="pb-note-title">${title}</p>${html}</aside>` });
 const th = (t: string) => `<th style="border:1px solid var(--border);padding:7px 10px;text-align:left;background:var(--surface-2)">${t}</th>`;
 const td = (t: string) => `<td style="border:1px solid var(--border);padding:7px 10px">${t}</td>`;
 const tbl = (head: string[], rows: string[][]) => `<div style="overflow-x:auto;margin:6px 0"><table style="border-collapse:collapse;width:100%;min-width:440px;font-size:13px"><thead><tr>${head.map(th).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(td).join('')}</tr>`).join('')}</tbody></table></div>`;
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const stepsStyle = block('html', { html: `<style>.proc-cmd{font-family:ui-monospace,'Space Mono',monospace;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:8px 0;white-space:pre-wrap;overflow-x:auto;font-size:12.5px;line-height:1.55}</style>` });
 const cmd = (t: string) => block('html', { html: `<div class="proc-cmd">${esc(t)}</div>` });
 // Liste HTML (les items peuvent contenir des balises — contrairement au bloc « list » qui les échappe).
 const ul = (items: string[]) => block('html', { html: `<ul>${items.map(i => `<li>${i}</li>`).join('')}</ul>` });
 
-// ── Contenu ──
-const annexe1 = `<div style="overflow-x:auto;margin:6px 0"><table style="border-collapse:collapse;width:100%;min-width:560px;font-size:13px">
-<thead><tr>${['Caractéristique', 'VM Serveur 1', 'VM Serveur 2', 'VM Client'].map(th).join('')}</tr></thead>
-<tbody>
-${[
-  ['Nom de la VM', '<strong>SRV-DNS</strong>', '<strong>SRV-IIS</strong>', '<strong>CLIENT-W</strong>'],
-  ['Mémoire (RAM)', '2048 Mo', '2048 Mo', '1024 Mo'],
-  ['Stockage', 'C : 30 Go', 'C : 30 Go', 'C : 20 Go'],
-  ['Commutateur', 'Privé / Interne', 'Privé / Interne', 'Privé / Interne'],
-  ['Adresse IP', '192.168.10.11', '192.168.10.12', '192.168.10.101'],
-  ['Masque', '255.255.255.0', '255.255.255.0', '255.255.255.0'],
-  ['Serveur DNS', 'SRV-DNS', 'SRV-DNS', 'SRV-DNS'],
-  ['Nom de domaine', '<em>GroupeXX-EDIVN.lan</em> (à définir)', '—', '—'],
-].map(r => `<tr>${td(`<strong>${r[0]}</strong>`)}${td(r[1])}${td(r[2])}${td(r[3])}</tr>`).join('')}
-</tbody></table></div>`;
+// Bandeau d'étape coloré (couleur = repère visuel de l'étape).
+const step = (n: string, title: string, sub: string, color: string) => block('html', { html: `<div class="step-banner" style="border-left-color:${color}"><span class="step-num" style="background:${color}">${n}</span><span class="step-tt"><h3 id="etape-${n}">${title}</h3><span class="step-sub">${sub}</span></span></div>` });
+
+const C = { reset: '#64748b', routeur: '#3b82f6', vm: '#8b5cf6', switch: '#0ea5e9', cable: '#f59e0b', serveur: '#22c55e', dhcp: '#f97316', nat: '#ef4444', wifi: '#6366f1' };
+
+const styleBlock = block('html', { html: `<style>
+.proc-cmd{font-family:ui-monospace,'Space Mono',monospace;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:8px 0;white-space:pre-wrap;overflow-x:auto;font-size:12.5px;line-height:1.55}
+.step-banner{display:flex;align-items:center;gap:14px;margin:32px 0 12px;padding:13px 16px;border:1px solid var(--border);border-left-width:6px;border-radius:12px;background:var(--surface-2)}
+.step-banner .step-num{flex:0 0 auto;width:36px;height:36px;border-radius:10px;display:grid;place-items:center;font-weight:700;color:#fff;font-size:16px;line-height:1}
+.step-banner .step-tt{display:flex;flex-direction:column;gap:2px;min-width:0}
+.step-banner h3{margin:0;font-size:17px;line-height:1.25}
+.step-banner .step-sub{font-size:12.5px;color:var(--muted,#7a8699);font-weight:400}
+</style>` });
+
+// ── Annexe 1 : machines virtuelles (aligné sur le plan d'adressage) ──
+const annexe1 = tbl(['Caractéristique', 'VM Serveur', 'VM Poste admin'], [
+  ['Nom de la VM', '<strong>SRV-EDIVN</strong>', '<strong>POSTE-ADMIN-1</strong>'],
+  ['Système', 'Windows Server (Expérience de bureau)', 'Windows 10 Pro'],
+  ['Mémoire (RAM)', '2048 Mo', '1024 Mo'],
+  ['Stockage', 'C : 30 Go', 'C : 20 Go'],
+  ['Génération Hyper-V', '2', '2'],
+  ['Commutateur virtuel', 'Admin/IT (privé ou interne)', 'Admin/IT (privé ou interne)'],
+  ['Adresse IP / masque', '<strong>192.5.10.12</strong> /28', '192.5.10.1 /28'],
+  ['Passerelle', '192.5.10.14', '192.5.10.14'],
+  ['Serveur DNS', '192.5.10.12 (lui-même)', '192.5.10.12'],
+  ['Rôles', '<strong>DHCP · DNS · Serveur Web (IIS)</strong>', '— (poste client)'],
+]);
 
 const blocks: PageBlock[] = [
-  block('hero', { eyebrow: 'Procédure · Projet', title: 'Plateforme 1 — infrastructure EDIVN', subtitle: 'Restructurer et monter le réseau de l’École de Développement Informatique (EDIVN).' }),
-  stepsStyle,
+  block('hero', { eyebrow: 'Procédure · Projet réseau', title: 'Plateforme EDIVN — montage de l’infrastructure', subtitle: 'Guide pas-à-pas pour restructurer et monter le réseau de l’École de Développement Informatique (EDIVN).' }),
+  styleBlock,
 
-  note('blue', '🏫 Contexte', '<p>L’<strong>École de Développement Informatique EDIVN</strong> forme des développeurs et souhaite <strong>restructurer son réseau</strong> pour gagner en efficacité et en sécurité. Dans le cadre de son agrandissement, chaque site dispose d’une équipe pour restructurer le réseau. M. Dupont nous confie cette mission.</p>'),
+  note('blue', '🏫 Contexte', '<p>L’<strong>École de Développement Informatique EDIVN</strong> forme des développeurs et souhaite <strong>restructurer son réseau</strong> pour gagner en efficacité et en sécurité. Dans le cadre de son agrandissement, chaque site dispose d’une équipe chargée de restructurer le réseau.</p>'),
+  note('gray', '🧭 Comment lire cette procédure', '<p>Suivez les <strong>8 étapes colorées</strong> dans l’ordre. Chaque étape est autonome (objectif, commandes, vérification). Les exemples prennent le <strong>Groupe 5</strong> comme référence : <strong>remplacez le suffixe de groupe</strong> (<code>G5</code>, <code>Groupe5</code>, <code>05</code>) et le domaine par les vôtres.</p>'),
 
   block('heading', { level: 2, text: '🎯 Mission' }),
   ul([
-    'Configurer les routeurs : routage entre les différents réseaux de la structure et vers les autres écoles.',
-    'Configurer les serveurs : mise en service du serveur DNS et du serveur Web.',
-    'Sécuriser le réseau : accès de management à distance en SSH sur le switch et le routeur (mot de passe : cisco).',
+    'Configurer les routeurs : routage entre les réseaux de la structure et vers les autres écoles.',
+    'Configurer les serveurs : mise en service des services DNS et Web.',
+    'Sécuriser le réseau : accès de management à distance en SSH sur les switches et les routeurs (mot de passe : <code>cisco</code>).',
     'Configurer le point d’accès sans-fil Cisco : Wi-Fi pour les utilisateurs.',
-    'Accès site Web : permettre l’accès au site web de chaque site.',
+    'Accès site Web : permettre l’accès au site web du site.',
   ]),
 
   block('heading', { level: 2, text: '📋 Cahier des charges (besoins)' }),
-
   block('heading', { level: 3, text: 'Sous-réseaux' }),
   ul([
-    '<strong>Réseau Admin (IT)</strong> : postes de travail des administrateurs + serveur DNS/Web.',
-    '<strong>Réseau Utilisateurs</strong> : postes de travail des formateurs et stagiaires.',
+    '<strong>Réseau Admin (IT)</strong> : postes des administrateurs + serveur DNS/Web.',
+    '<strong>Réseau Utilisateurs</strong> : postes des formateurs et stagiaires.',
   ]),
-
   block('heading', { level: 3, text: 'Wi-Fi' }),
-  block('html', { html: '<p>Un point d’accès <strong>Cisco WAP 371</strong> fournit le Wi-Fi aux stagiaires et formateurs, avec un <strong>SSID</strong> spécifique <code>SSID-EDWINXX</code> et une attribution d’<strong>IP dynamiques par DHCP</strong>.</p>' }),
-
+  block('html', { html: '<p>Un point d’accès <strong>Cisco WAP 371</strong> fournit le Wi-Fi aux stagiaires et formateurs, avec un <strong>SSID</strong> dédié <code>SSID-EDWINXX</code> et une attribution d’<strong>IP dynamiques par DHCP</strong>.</p>' }),
   block('heading', { level: 3, text: 'DHCP' }),
-  block('html', { html: '<p>Un service <strong>DHCP</strong> (solution libre) gère l’attribution des configurations réseau pour <strong>l’ensemble du réseau</strong> de l’école.</p>' }),
-
+  block('html', { html: '<p>Un service <strong>DHCP</strong> gère l’attribution des configurations réseau pour <strong>l’ensemble du réseau</strong> de l’école.</p>' }),
   block('heading', { level: 3, text: 'Serveur Web (réseau IT, IP fixe)' }),
   block('html', { html: '<p>Hébergé dans le réseau IT, il héberge les sites de l’école. Deux sites à créer :</p>' }),
   ul([
-    'Site 1 : <code>www.GroupeXX-EDIVN.lan</code> sur le <strong>port 8080</strong>, accessible <strong>depuis l’extérieur</strong>.',
-    'Site 2 (intranet) : <code>Intranet.XX.EDIVN.lan</code>, accessible <strong>pour l’école</strong>, avec une page d’accueil affichant « <em>Bienvenue sur le site de l’école EDIVN</em> ».',
+    'Site 1 : <code>www.Groupe5-EDIVN.lan</code> sur le <strong>port 8080</strong>, accessible <strong>depuis l’extérieur</strong>.',
+    'Site 2 (intranet) : <code>Intranet.5.EDIVN.lan</code>, accessible <strong>pour l’école</strong>, avec une page d’accueil « <em>Bienvenue sur le site de l’école EDIVN</em> ».',
   ]),
-
   block('heading', { level: 3, text: 'Switches & accès distant' }),
   ul([
     'Renommer <strong>l’ensemble des switches</strong>.',
-    'Mettre en place une connexion à distance <strong>SSH</strong> sur le switch et le routeur (mot de passe : <code>cisco</code>).',
+    'Mettre en place une connexion à distance <strong>SSH</strong> sur les switches et les routeurs (mot de passe : <code>cisco</code>).',
   ]),
 
-  block('heading', { level: 2, text: '📦 Dossier technique attendu (livrables)' }),
+  block('heading', { level: 2, text: '📦 Livrables attendus (dossier technique)' }),
   ul([
     '<strong>Schéma logique</strong> : architecture réseau (sous-réseaux, équipements, interconnexions).',
-    '<strong>Configuration des machines</strong> (Annexe 1) : matériel et logiciel de chaque machine.',
-    '<strong>Configuration des switches et du routeur</strong> (Annexe 2) : paramètres réseau.',
+    '<strong>Configuration des machines</strong> (Annexe 1).',
+    '<strong>Configuration des switches et des routeurs</strong> (Annexe 2).',
     '<strong>Tables de routage</strong> : captures / listes des routes configurées.',
     '<strong>Borne Wi-Fi</strong> : captures montrant son fonctionnement.',
   ]),
 
-  block('heading', { level: 2, text: '🗺️ Schéma logique & plan d’adressage (validé — Groupe 5)' }),
-  note('gray', '🖼️ Schéma', '<p>Le schéma logique (draw.io) est <strong>validé</strong>. Pour l’afficher ici, dépose le <strong>fichier .png</strong> exporté et je l’intègre à cet endroit. Voici le plan d’adressage qu’il fixe.</p>'),
+  block('heading', { level: 2, text: '🗺️ Schéma logique & plan d’adressage' }),
+  note('gray', '🖼️ Schéma', '<p>Insérez ici le <strong>schéma logique</strong> (export <code>.png</code> depuis draw.io). Le plan d’adressage ci-dessous en découle.</p>'),
 
   block('heading', { level: 3, text: 'Réseau Admin / IT — 192.5.10.0/28' }),
   block('html', { html: tbl(['Équipement', 'Adresse IP', 'Rôle'], [
@@ -105,48 +113,48 @@ const blocks: PageBlock[] = [
     ['Sw-2', '192.5.50.253', 'switch — IP de gestion'],
     ['Passerelle (R_IT_G5 Gi0/1)', '<strong>192.5.50.254</strong>', 'passerelle du réseau'],
   ]) }),
-  block('html', { html: '<p class="meta" style="font-size:12px">Masque <code>255.255.255.0</code> · les postes Stagiaire/Formateur (et les clients Wi-Fi) reçoivent leur IP par <strong>DHCP</strong> (pool <code>.1 → .200</code>). Les équipements d’infra à IP fixe (<code>.251 → .254</code>) sont <strong>au-dessus du pool</strong> → aucune exclusion nécessaire.</p>' }),
+  block('html', { html: '<p class="meta" style="font-size:12px">Masque <code>255.255.255.0</code> · les postes et les clients Wi-Fi reçoivent leur IP par <strong>DHCP</strong> (pool <code>.1 → .200</code>). Les équipements d’infra à IP fixe (<code>.251 → .254</code>) sont <strong>au-dessus du pool</strong> → aucune exclusion nécessaire.</p>' }),
 
   block('heading', { level: 3, text: 'Liaison extérieure / autres écoles — 172.16.3.0/24' }),
   block('html', { html: tbl(['Équipement', 'Adresse IP', 'Rôle'], [
-    ['Routeur_G5 Gi0/0', '172.16.3.250', 'sortie vers le nuage / les autres écoles (réseau « Salle »)'],
+    ['Routeur_G5 (WAN)', '172.16.3.250', 'sortie vers les autres écoles / Internet'],
+    ['Passerelle de la salle', '172.16.3.254', 'route par défaut du routeur de bordure'],
   ]) }),
+  block('html', { html: '<p class="meta" style="font-size:12px">L’IP WAN et la passerelle sont <strong>fournies par la salle</strong> (réseau <code>172.16.3.0/24</code>) ; adaptez-les à votre poste.</p>' }),
 
   block('heading', { level: 3, text: 'Routeurs & interfaces' }),
   block('html', { html: tbl(['Routeur', 'Interface', 'Réseau', 'Adresse IP'], [
-    ['R_IT_G5', 'Gi0/0', 'Admin 192.5.10.0/28', '192.5.10.14'],
-    ['R_IT_G5', 'Gi0/1', 'Utilisateurs 192.5.50.0/24', '192.5.50.254'],
-    ['Routeur_G5', 'Gi0/0', 'Extérieur 172.16.3.0/24', '172.16.3.250'],
-    ['Routeur_G5', 'Gi0/1', 'Utilisateurs 192.5.50.0/24', '<strong>192.5.50.252</strong>'],
+    ['R_IT_G5 (interne)', 'Gi0/0', 'Admin 192.5.10.0/28', '192.5.10.14'],
+    ['R_IT_G5 (interne)', 'Gi0/1', 'Utilisateurs 192.5.50.0/24', '192.5.50.254'],
+    ['Routeur_G5 (bordure)', 'Gi0/1', 'Utilisateurs 192.5.50.0/24', '192.5.50.252'],
+    ['Routeur_G5 (bordure)', 'Gi0/0', 'Extérieur 172.16.3.0/24', '172.16.3.250'],
   ]) }),
-  note('green', '✅ Schéma corrigé', '<p>Les deux anomalies repérées à la validation sont corrigées : (1) le <strong>doublon de passerelle</strong> — Routeur_G5 est passé en <code>192.5.50.252</code>, seul <strong>R_IT_G5</strong> garde <code>192.5.50.254</code> ; (2) le <strong>masque côté Admin</strong> — <code>R_IT_G5 Gi0/0</code> est bien en <strong>/28</strong> (<code>255.255.255.240</code>). L’adressage d’infra du réseau Utilisateurs est regroupé en haut de plage (<code>.251</code> WAP · <code>.252</code> Routeur_G5 · <code>.253</code> Sw-2 · <code>.254</code> passerelle), donc hors du pool DHCP.</p>'),
-  note('gray', 'ℹ️ Nommage des interfaces', '<p>Le schéma note les interfaces <code>Gi0/x</code> (Gigabit) ; sur les <strong>routeurs 2811</strong> réels du lab ce sont des <code>FastEthernet0/x</code> — mêmes rôles, adapter le nom dans la CLI (cf. Étapes 1 et 7).</p>'),
+  note('gray', 'ℹ️ Nommage des interfaces', '<p>Sur les <strong>routeurs 2811</strong> les interfaces sont des <code>FastEthernet0/x</code> ; sur un <strong>2911</strong> des <code>GigabitEthernet0/x</code>. Rôles identiques — adaptez simplement le nom dans la CLI.</p>'),
+  note('gray', 'ℹ️ Cohérence du nom de domaine', '<p>Utilisez le <strong>même nom de domaine</strong> partout : zone DNS, <code>ip domain-name</code> des routeurs/switches, option DHCP 015 et URL des sites (exemple ici : <code>Groupe5-EDIVN.lan</code>).</p>'),
 
   block('heading', { level: 2, text: '🖥️ Annexe 1 — configuration des machines virtuelles' }),
   block('html', { html: annexe1 }),
-  note('gray', 'ℹ️ Remarques', '<p>Toutes les VM sont sur le commutateur <strong>Privé/Interne</strong> et pointent vers <strong>SRV-DNS</strong> comme serveur DNS. Le <strong>nom de domaine</strong> reste à définir (ex. <code>GroupeXX-EDIVN.lan</code>) ; remplace <code>XX</code> par ton numéro de groupe partout.</p>'),
+  note('gray', 'ℹ️ Remarques', '<p>Les deux VM (serveur + poste admin) sont sur le <strong>même commutateur virtuel Admin/IT</strong> et pointent vers le <strong>DNS 192.5.10.12</strong>. Masque <code>/28</code> = <code>255.255.255.240</code>, passerelle <code>192.5.10.14</code>.</p>'),
 
   block('heading', { level: 2, text: '🔧 Réalisation pas à pas' }),
-  block('html', { html: '<p>Ce que nous avons effectué, dans l’ordre. Cette partie s’étoffe au fur et à mesure du montage.</p>' }),
+  block('html', { html: '<p>Huit étapes, à suivre dans l’ordre. Chacune se termine par une <strong>vérification</strong> avant de passer à la suivante.</p>' }),
 
-  block('heading', { level: 3, text: 'Étape 0 — Repartir d’une configuration vierge (routeurs & switches)' }),
-  note('red', '🧨 À faire AVANT toute config sur du matériel réutilisé', '<p>Un équipement qui a déjà servi (autre maquette, exercice précédent) peut contenir une config qui <strong>bloque tout</strong> : mauvaises routes par défaut, ACL de NAT hors sujet, doublons d’adresses, VLAN parasites… (c’est exactement ce qui nous est arrivé sur Routeur_G5). On <strong>efface la config de démarrage</strong> et on <strong>redémarre</strong> pour partir propre.</p>'),
+  // ── Étape 0 ──
+  step('0', 'Réinitialiser les équipements réseau', 'Routeurs & switches — partir d’une configuration vierge', C.reset),
+  note('red', '🧨 À faire AVANT toute configuration sur du matériel réutilisé', '<p>Un équipement qui a déjà servi peut contenir une config qui <strong>bloque tout</strong> : routes par défaut erronées, ACL/NAT hors sujet, doublons d’adresses, VLAN parasites (fréquent sur du matériel de lab). On <strong>efface la configuration de démarrage</strong> et on <strong>redémarre</strong>.</p>'),
   cmd(`enable
 write erase          ! ou :  erase startup-config
 reload
 ! "System configuration has been modified. Save? [yes/no]:"  -> no
 ! "Proceed with reload? [confirm]"                            -> Entree
-! au redemarrage : refuser l'assistant de configuration initial
-! "Would you like to enter the initial configuration dialog? [yes/no]:"  -> no`),
-  note('yellow', '💡 Bon à savoir', '<p><code>write erase</code> efface la <strong>startup-config</strong> (NVRAM), pas la running-config en cours — d’où le <code>reload</code> qui recharge une config vide. Sur un <strong>switch</strong>, penser aussi à supprimer la base VLAN si besoin : <code>delete flash:vlan.dat</code> avant le <code>reload</code>. Répondre <strong>no</strong> à l’enregistrement pour ne pas re-sauver l’ancienne config.</p>'),
-  cmd(`! switch uniquement, si des VLAN parasites subsistent
-delete flash:vlan.dat    ! confirmer (Entree x2)
-write erase
-reload`),
+! au redemarrage, refuser l'assistant de configuration :
+! "...enter the initial configuration dialog? [yes/no]:"      -> no`),
+  note('yellow', '💡 Bon à savoir', '<p><code>write erase</code> efface la <strong>startup-config</strong> (NVRAM) ; c’est le <code>reload</code> qui recharge une config vide. Sur un <strong>switch</strong>, supprimez aussi la base VLAN si des VLAN parasites subsistent : <code>delete flash:vlan.dat</code> (confirmer) <strong>avant</strong> le <code>reload</code>. Répondez <strong>no</strong> à l’enregistrement.</p>'),
   note('gray', '🔗 Détail', '<p>Pas-à-pas générique : <a href="/pages/procedure-cisco-routeur-cli">Configurer un routeur Cisco (CLI)</a>.</p>'),
 
-  block('heading', { level: 3, text: 'Étape 1 — Routeur R_IT_G5 : interfaces + SSH' }),
-  block('html', { html: '<p>Configuration des <strong>deux interfaces</strong> du routeur interne (côté Admin/IT et côté Utilisateurs) puis de l’<strong>accès de management à distance en SSH</strong> (mot de passe <code>cisco</code>, comme demandé dans le cahier des charges). Toute cette configuration se fait <strong>depuis la console</strong> (onglet <code>CLI</code> sous Packet Tracer, ou câble console sur un équipement réel) — le SSH n’étant pas encore actif.</p>' }),
+  // ── Étape 1 ──
+  step('1', 'Routeur interne R_IT — interfaces & SSH', 'Adressage des 2 interfaces + accès de management SSH', C.routeur),
+  block('html', { html: '<p>Configurer les <strong>deux interfaces</strong> du routeur interne (côté Admin/IT et côté Utilisateurs) puis l’<strong>accès SSH</strong> (mot de passe <code>cisco</code>). Tout se fait <strong>depuis la console</strong> (onglet <code>CLI</code> sous Packet Tracer, ou câble console sur matériel réel) — le SSH n’étant pas encore actif.</p>' }),
   cmd(`enable
 configure terminal
 hostname R_IT_G5
@@ -164,7 +172,7 @@ interface GigabitEthernet0/1
  exit
 !
 ! --- Acces distant SSH (mot de passe : cisco) ---
-ip domain-name G5-EDIVN.lan
+ip domain-name Groupe5-EDIVN.lan
 enable secret cisco
 username admin privilege 15 secret cisco
 crypto key generate rsa
@@ -177,35 +185,36 @@ line vty 0 4
 !
 end
 write memory`),
-  note('gray', 'ℹ️ Points clés', '<ul><li><code>Gi0/0</code> = passerelle du réseau <strong>Admin/IT</strong> (<code>192.5.10.14/28</code>), <code>Gi0/1</code> = passerelle du réseau <strong>Utilisateurs</strong> (<code>192.5.50.254/24</code>).</li><li>SSH exige un <strong>hostname</strong>, un <strong>ip domain-name</strong> et des <strong>clés RSA</strong> (le <code>1024</code> seul répond à la question de longueur de clé). <code>login local</code> utilise le compte <code>username</code>.</li><li>Nom de domaine <code>G5-EDIVN.lan</code> à ajuster selon le domaine retenu.</li></ul>'),
+  note('gray', 'ℹ️ Points clés', '<ul><li><code>Gi0/0</code> = passerelle du réseau <strong>Admin/IT</strong> (<code>192.5.10.14/28</code>), <code>Gi0/1</code> = passerelle du réseau <strong>Utilisateurs</strong> (<code>192.5.50.254/24</code>).</li><li>SSH exige un <strong>hostname</strong>, un <strong>ip domain-name</strong> et des <strong>clés RSA</strong> (le <code>1024</code> répond à la question de longueur de clé). <code>login local</code> utilise le compte <code>username</code>.</li></ul>'),
   block('html', { html: '<p><strong>Vérification :</strong></p>' }),
   cmd(`do show ip interface brief
 ! Gi0/0 -> 192.5.10.14  up/up  |  Gi0/1 -> 192.5.50.254  up/up
 ! puis, depuis un client : ssh -l admin 192.5.10.14`),
-  note('gray', '🔗 Rappels', '<p>Détails : <a href="/pages/procedure-cisco-routeur-cli">Configurer un routeur en CLI</a> · <a href="/pages/procedure-ssh-packet-tracer">SSH sur Packet Tracer</a>. Si <code>enable</code> refuse après SSH : voir <a href="/depannage">Dépannage</a>.</p>'),
+  note('gray', '🔗 Rappels', '<p><a href="/pages/procedure-cisco-routeur-cli">Configurer un routeur en CLI</a> · <a href="/pages/procedure-ssh-packet-tracer">SSH sur Packet Tracer</a>.</p>'),
 
-  block('heading', { level: 3, text: 'Étape 2 (en parallèle) — Préparation des VM sur l’hôte Hyper-V' }),
-  block('html', { html: '<p>Pendant la configuration du routeur, on prépare les deux machines Windows du réseau Admin/IT — le <strong>Poste Admin 1</strong> et le <strong>Serveur DHCP-DNS-Web</strong> — <strong>sur le même hôte Hyper-V</strong>.</p>' }),
+  // ── Étape 2 ──
+  step('2', 'Machines virtuelles (Hyper-V)', 'Serveur + poste admin sur le segment Admin/IT', C.vm),
+  block('html', { html: '<p>Préparer les deux machines Windows du réseau Admin/IT — le <strong>Poste Admin 1</strong> et le <strong>Serveur DHCP-DNS-Web</strong> — <strong>sur le même hôte Hyper-V</strong> (peut se faire en parallèle de l’étape 1).</p>' }),
   ul([
-    'Créer les 2 VM (Gestionnaire Hyper-V → <strong>Nouvel ordinateur virtuel</strong>, génération 2), selon l’Annexe 1 : <strong>Serveur</strong> 2048 Mo / 30 Go, <strong>Poste</strong> 1024 Mo / 20 Go.',
-    'Connecter les deux au <strong>même commutateur virtuel</strong> (privé / interne) = segment <strong>Admin/IT</strong>.',
-    'Installer les OS : <strong>Windows Server</strong> (édition Expérience de bureau) sur la VM serveur, <strong>Windows 10 Pro</strong> sur le poste admin ; définir le mot de passe administrateur.',
-    'Renommer les machines et appliquer l’<strong>IP fixe</strong> (voir le tableau ci-dessous).',
+    'Créer les 2 VM (Gestionnaire Hyper-V → <strong>Nouvel ordinateur virtuel</strong>, génération 2), selon l’Annexe 1.',
+    'Connecter les deux au <strong>même commutateur virtuel</strong> (privé/interne) = segment <strong>Admin/IT</strong>.',
+    'Installer les OS : <strong>Windows Server</strong> (Expérience de bureau) sur la VM serveur, <strong>Windows 10 Pro</strong> sur le poste ; définir le mot de passe administrateur.',
+    'Renommer les machines et appliquer l’<strong>IP fixe</strong> (tableau ci-dessous).',
   ]),
   block('html', { html: tbl(['VM', 'Nom', 'IP / masque', 'Passerelle', 'DNS'], [
-    ['Serveur', 'SRV (DHCP-DNS-Web)', '<strong>192.5.10.12</strong> /28', '192.5.10.14', '192.5.10.12 (lui-même)'],
-    ['Poste admin', 'Poste-Admin-1', '192.5.10.1 /28', '192.5.10.14', '192.5.10.12'],
+    ['Serveur', 'SRV-EDIVN', '<strong>192.5.10.12</strong> /28', '192.5.10.14', '192.5.10.12 (lui-même)'],
+    ['Poste admin', 'POSTE-ADMIN-1', '192.5.10.1 /28', '192.5.10.14', '192.5.10.12'],
   ]) }),
-  note('blue', '🧩 Rôles du serveur SRV', '<p>Le serveur <strong>Windows Server</strong> (<code>192.5.10.12</code>) portera <strong>trois rôles</strong>, installés aux étapes suivantes : <strong>DHCP</strong> (attribution des IP aux postes du réseau Utilisateurs, via relais), <strong>DNS</strong> (résolution des noms + zones du domaine) et <strong>Serveur Web / IIS</strong> (les 2 sites : <code>www.Groupe5-EDIVN.lan</code> sur le port 8080 et l’intranet). Le poste admin est un simple client <strong>Windows 10 Pro</strong>.</p>'),
-  note('gray', 'ℹ️ Points clés', '<ul><li>Les deux VM sont sur le <strong>même hôte</strong> et le <strong>même commutateur virtuel</strong> (privé/interne) → elles communiquent sur le réseau Admin/IT <code>192.5.10.0/28</code>.</li><li>Le poste et (plus tard) les serveurs pointent vers le <strong>serveur DNS = 192.5.10.12</strong>.</li><li>Masque <code>/28</code> = <code>255.255.255.240</code>, passerelle <code>192.5.10.14</code> (interface Gi0/0 du routeur).</li></ul>'),
+  note('blue', '🧩 Rôles du serveur', '<p>Le serveur <strong>Windows Server</strong> (<code>192.5.10.12</code>) portera <strong>trois rôles</strong>, installés aux étapes suivantes : <strong>DHCP</strong>, <strong>DNS</strong> et <strong>Serveur Web / IIS</strong>. Le poste admin est un simple client <strong>Windows 10 Pro</strong>.</p>'),
   note('gray', '🔗 Détails', '<p><a href="/pages/procedure-vm-hyperv">Créer & configurer une VM (ISO) sur Hyper-V</a> · <a href="/pages/procedure-hyperv-ressources">Hyper-V : ressources</a> · <a href="/pages/procedure-ip-fixe-windows">Configurer une IP fixe</a> · <a href="/pages/procedure-renommer-poste">Renommer un poste</a>.</p>'),
 
-  block('heading', { level: 3, text: 'Étape 3 — Switches (SW-1, Sw-2) : renommage, IP de gestion & SSH' }),
-  block('html', { html: '<p>On <strong>renomme</strong> les deux switches, on leur attribue une <strong>IP de gestion</strong> (SVI <code>VLAN 1</code>) pour l’administration à distance, et on active <strong>SSH</strong> (mot de passe <code>cisco</code>). Configuration depuis la console.</p>' }),
+  // ── Étape 3 ──
+  step('3', 'Switches — renommage, gestion & SSH', 'IP de gestion (SVI VLAN 1) + accès SSH sur SW-1 et Sw-2', C.switch),
+  block('html', { html: '<p><strong>Renommer</strong> les deux switches, leur attribuer une <strong>IP de gestion</strong> (SVI <code>VLAN 1</code>) et activer <strong>SSH</strong> (mot de passe <code>cisco</code>). Configuration depuis la console.</p>' }),
   cmd(`enable
 configure terminal
 hostname SW-1
-ip domain-name G5-EDIVN.lan
+ip domain-name Groupe5-EDIVN.lan
 enable secret cisco
 username admin privilege 15 secret cisco
 !
@@ -234,18 +243,20 @@ write memory`),
   ]) }),
   note('gray', 'ℹ️ IP de gestion', '<p>Un switch de niveau 2 n’a pas d’IP sur ses ports ; on lui donne une <strong>adresse de gestion sur le SVI VLAN 1</strong> (dans le sous-réseau de son segment) + une <code>ip default-gateway</code> pour être joignable en SSH depuis un autre réseau.</p>'),
 
-  block('heading', { level: 3, text: 'Étape 4 — Câblage (tout branché)' }),
+  // ── Étape 4 ──
+  step('4', 'Câblage & vérifications physiques', 'Interconnexion des équipements et contrôle des liens', C.cable),
   ul([
     '<strong>SW-1</strong> (Admin/IT) : Poste Admin 1 et Serveur en <strong>ports access</strong> ; liaison montante vers <strong>R_IT_G5 Gi0/0</strong>.',
     '<strong>Sw-2</strong> (Utilisateurs) : Stagiaire, Formateur et le <strong>WAP 371</strong> en ports access ; liaisons vers <strong>R_IT_G5 Gi0/1</strong> et <strong>Routeur_G5</strong>.',
-    '<strong>Routeur_G5</strong> : côté Utilisateurs (Sw-2) et côté extérieur (<code>172.16.3.0/24</code>) vers le nuage / les autres écoles.',
+    '<strong>Routeur_G5</strong> : côté Utilisateurs (Sw-2) et côté extérieur (<code>172.16.3.0/24</code>) vers les autres écoles.',
   ]),
-  note('yellow', '🔗 Vérifications', '<ul><li><code>show ip interface brief</code> sur chaque switch → <strong>Vlan1 up/up</strong>.</li><li>Voyants des ports (Packet Tracer) au <strong>vert</strong> une fois tout branché.</li><li>Depuis le poste admin : <code>ssh -l admin 192.5.10.13</code> (SW-1) et un <code>ping</code> vers la passerelle.</li></ul>'),
+  note('yellow', '🔍 Vérifications', '<ul><li><code>show ip interface brief</code> sur chaque switch → <strong>Vlan1 up/up</strong>.</li><li>Voyants des ports au <strong>vert</strong> une fois tout branché.</li><li>Depuis le poste admin : <code>ssh -l admin 192.5.10.13</code> (SW-1) et un <code>ping</code> vers la passerelle.</li></ul>'),
 
-  block('heading', { level: 3, text: 'Étape 5 — Serveur : rôles, sites Web (IIS) & DNS' }),
-  block('html', { html: '<p>Sur le serveur Windows (<code>192.5.10.12</code>) : installation des <strong>rôles</strong>, création des <strong>2 sites Web</strong> et des <strong>enregistrements DNS</strong>.</p>' }),
-  block('heading', { level: 4, text: 'Rôles installés' }),
-  ul(['Rôle <strong>DHCP</strong> (à configurer : étendue réseau Utilisateurs + relais).', 'Rôle <strong>DNS</strong> (zones + enregistrements).', 'Rôle <strong>Serveur Web (IIS)</strong>.']),
+  // ── Étape 5 ──
+  step('5', 'Serveur — rôles, sites Web (IIS) & DNS', 'Installation DHCP/DNS/IIS, 2 sites et enregistrements DNS', C.serveur),
+  block('html', { html: '<p>Sur le serveur Windows (<code>192.5.10.12</code>) : installer les <strong>rôles</strong>, créer les <strong>2 sites Web</strong> et les <strong>enregistrements DNS</strong>.</p>' }),
+  block('heading', { level: 4, text: 'Rôles à installer' }),
+  ul(['Rôle <strong>DHCP</strong> (configuré à l’étape 6).', 'Rôle <strong>DNS</strong> (zones + enregistrements).', 'Rôle <strong>Serveur Web (IIS)</strong>.']),
   block('heading', { level: 4, text: 'Sites Web (IIS)' }),
   ul([
     'Un <strong>dossier par site</strong> avec un fichier <code>index.html</code> ; la page de l’intranet affiche « <em>Bienvenue sur le site de l’école EDIVN</em> ».',
@@ -254,70 +265,79 @@ write memory`),
   ]),
   block('heading', { level: 4, text: 'Enregistrements DNS' }),
   ul([
-    'Enregistrement <strong>A</strong> pour le <strong>domaine racine</strong> : <code>Groupe5-EDIVN.lan → 192.5.10.12</code>.',
-    'Un <strong>alias (CNAME)</strong> <code>www</code> → domaine racine (et l’entrée pour l’intranet).',
+    'Enregistrement <strong>A</strong> du domaine racine : <code>Groupe5-EDIVN.lan → 192.5.10.12</code>.',
+    'Un <strong>alias (CNAME)</strong> <code>www</code> → domaine racine, plus l’entrée de l’intranet.',
   ]),
-  note('blue', '✅ Accès au site (port 8080)', '<p>Le site est <strong>servi par IIS sur le port 8080</strong> (défini dans la <strong>liaison / binding</strong> du site). On y accède donc par <code>http://www.Groupe5-EDIVN.lan:8080</code> : le <strong>DNS</strong> résout le nom vers l’IP du serveur (<code>192.5.10.12</code>), et le <code>:8080</code> de l’URL correspond à la liaison IIS. <strong>Rappel utile</strong> : un enregistrement DNS (A/CNAME) ne transporte <strong>pas</strong> de port — c’est bien la <strong>liaison IIS</strong> qui fixe le 8080, pas l’alias. Pour l’<strong>accès depuis l’extérieur</strong>, il faudra ajouter une <strong>redirection de port (NAT/PAT)</strong> sur le routeur vers <code>192.5.10.12:8080</code> (à documenter à l’étape routage).</p>'),
-  note('gray', 'ℹ️ Cohérence du domaine', '<p>Utilise le <strong>même nom de domaine</strong> partout : la zone DNS, les <code>ip domain-name</code> des routeurs/switches et les URL des sites (ex. tout en <code>Groupe5-EDIVN.lan</code>).</p>'),
+  note('blue', '🌐 Accès au site sur le port 8080', '<p>Le site est <strong>servi par IIS sur le port 8080</strong> (défini dans la <strong>liaison / binding</strong> du site). On y accède par <code>http://www.Groupe5-EDIVN.lan:8080</code> : le <strong>DNS</strong> résout le nom vers <code>192.5.10.12</code>, et le <code>:8080</code> correspond à la liaison IIS. <strong>Rappel</strong> : un enregistrement DNS (A/CNAME) ne transporte <strong>pas</strong> de port — c’est la <strong>liaison IIS</strong> qui fixe le 8080. Pour l’<strong>accès externe</strong>, prévoir une <strong>redirection de port (NAT/PAT)</strong> vers <code>192.5.10.12:8080</code> (étape 7).</p>'),
   note('gray', '🔗 Détails', '<p><a href="/pages/procedure-iis">IIS : héberger un site</a> · <a href="/pages/procedure-dns">DNS : zones & enregistrements</a> · <a href="/pages/procedure-dhcp">rôle DHCP</a>.</p>'),
 
-  block('heading', { level: 3, text: 'Étape 6 — DHCP : étendues + relais' }),
-  block('html', { html: '<p>Deux <strong>étendues</strong> sur le serveur DHCP (<code>192.5.10.12</code>), une par réseau, plus un <strong>relais</strong> sur le routeur pour les clients du réseau Utilisateurs.</p>' }),
+  // ── Étape 6 ──
+  step('6', 'DHCP — étendues & relais', 'Deux étendues + relais ip helper-address sur le routeur', C.dhcp),
+  block('html', { html: '<p>Créer deux <strong>étendues</strong> sur le serveur DHCP (<code>192.5.10.12</code>), une par réseau, puis un <strong>relais</strong> sur le routeur pour les clients du réseau Utilisateurs.</p>' }),
   block('html', { html: tbl(['Étendue', 'Réseau', 'Plage distribuée', 'Passerelle (003)', 'DNS (006)'], [
     ['Admin', '192.5.10.0/28', '192.5.10.1 → .11', '192.5.10.14', '192.5.10.12'],
     ['Utilisateurs', '192.5.50.0/24', '192.5.50.1 → .200', '192.5.50.254', '192.5.10.12'],
   ]) }),
   block('html', { html: '<p class="meta" style="font-size:12px">Option <strong>015</strong> (nom de domaine) = <code>Groupe5-EDIVN.lan</code> sur les deux étendues.</p>' }),
-  note('yellow', '⚠️ Adresses à exclure de l’étendue', '<ul><li><strong>Utilisateurs</strong> : les équipements d’infra à IP fixe (WAP <code>.251</code>, Routeur_G5 <code>.252</code>, Sw-2 <code>.253</code>, passerelle <code>.254</code>) sont <strong>au-dessus du pool <code>.1–.200</code></strong> → <strong>rien à exclure</strong> côté Utilisateurs. (Si un jour tu élargis le pool au-delà de <code>.200</code>, pense à exclure ces adresses.)</li><li><strong>Admin</strong> : si le <strong>Poste Admin 1 (<code>.1</code>)</strong> est en IP fixe, l’exclure de l’étendue Admin (ou le passer en DHCP). Le serveur <code>.12</code>, SW-1 <code>.13</code> et la passerelle <code>.14</code> sont déjà hors de la plage <code>.1–.11</code>.</li></ul>'),
-
+  note('yellow', '⚠️ Adresses à exclure', '<ul><li><strong>Utilisateurs</strong> : les IP fixes de l’infra (WAP <code>.251</code>, Routeur_G5 <code>.252</code>, Sw-2 <code>.253</code>, passerelle <code>.254</code>) sont <strong>au-dessus du pool <code>.1–.200</code></strong> → <strong>rien à exclure</strong>. (Si vous élargissez le pool au-delà de <code>.200</code>, excluez ces adresses.)</li><li><strong>Admin</strong> : si le <strong>Poste Admin 1 (<code>.1</code>)</strong> est en IP fixe, l’exclure de l’étendue (ou le passer en DHCP).</li></ul>'),
   block('heading', { level: 4, text: 'Relais DHCP sur R_IT_G5 (indispensable)' }),
-  block('html', { html: '<p>Le serveur DHCP est dans le réseau Admin ; les clients Utilisateurs sont <strong>derrière le routeur</strong> → leurs demandes DHCP (des <strong>broadcasts</strong>) ne franchissent pas le routeur sans <strong>relais</strong>. On ajoute donc <code>ip helper-address</code> sur l’interface côté Utilisateurs :</p>' }),
+  block('html', { html: '<p>Le serveur DHCP est dans le réseau Admin ; les clients Utilisateurs sont <strong>derrière le routeur</strong> → leurs demandes (des <strong>broadcasts</strong>) ne franchissent pas le routeur sans <strong>relais</strong>. On ajoute <code>ip helper-address</code> sur l’interface côté Utilisateurs :</p>' }),
   cmd(`configure terminal
 interface GigabitEthernet0/1
  ip helper-address 192.5.10.12
  exit
 end
 write memory`),
-  note('yellow', '🧪 Sans relais, pas d’adresse', '<p><strong>Indispensable</strong> : sans <code>ip helper-address</code>, les postes Stagiaire/Formateur ne recevront <strong>aucune adresse</strong> (leur broadcast DHCP reste bloqué au routeur).</p>'),
-  block('html', { html: '<p><strong>Vérification</strong> (sur un poste client du réseau Utilisateurs) :</p>' }),
+  note('yellow', '🧪 Sans relais, pas d’adresse', '<p>Sans <code>ip helper-address</code>, les postes Stagiaire/Formateur ne reçoivent <strong>aucune adresse</strong> (leur broadcast DHCP reste bloqué au routeur).</p>'),
+  block('html', { html: '<p><strong>Vérification</strong> (sur un poste du réseau Utilisateurs) :</p>' }),
   cmd(`ipconfig /release
 ipconfig /renew
 ipconfig /all      REM IP dans la plage .1-.200, passerelle .254, DNS 192.5.10.12`),
   note('gray', '🔗 Détails', '<p><a href="/pages/procedure-dhcp">DHCP : étendue, options & réservation</a> · <a href="/pages/procedure-dhcp-relais">DHCP par relais (ip helper-address)</a>.</p>'),
 
-  block('heading', { level: 3, text: 'Étape 7 — Routage inter-routeurs & accès Internet (NAT/PAT)' }),
-  note('blue', '🗺️ Deux routeurs, deux rôles', '<p><strong>R_IT_G5</strong> = routeur <strong>interne</strong> : passerelle des clients (<code>192.5.50.254</code>), relie les réseaux Utilisateurs et Admin. <strong>Routeur_G5</strong> = routeur de <strong>bordure</strong> : il fait le <strong>NAT/PAT</strong> vers le réseau réel (<code>172.16.3.0/24</code>) pour donner Internet au lab. Les deux se trouvent sur le LAN Utilisateurs (R_IT_G5 en <code>.254</code>, Routeur_G5 en <code>.252</code> — plus de doublon).</p>'),
-  tbl(['Routeur', 'Interface', 'IP', 'Rôle NAT'], [
-    ['Routeur_G5', 'Fa0/0 (LAN)', '192.5.50.252 /24', 'ip nat inside'],
-    ['Routeur_G5', 'Fa0/1 (WAN)', '172.16.3.126 /24', 'ip nat outside'],
-    ['R_IT_G5', 'Fa0/1 (LAN)', '192.5.50.254 /24', '—'],
-    ['R_IT_G5', 'Fa0/0 (Admin)', '192.5.10.14 /28', '—'],
-  ]),
-  note('gray', 'ℹ️ IP WAN : schéma vs équipement', '<p>Le <strong>schéma validé</strong> note l’interface WAN de Routeur_G5 en <code>Gi0/0 = 172.16.3.250</code> ; la config appliquée sur le 2811 réel utilisait <code>Fa0/1 = 172.16.3.126</code>. Les deux fonctionnent (même réseau <code>172.16.3.0/24</code>, passerelle <code>172.16.3.254</code>) — mais <strong>aligne schéma et équipement sur une seule valeur</strong> pour éviter toute confusion. La <strong>route par défaut</strong> vise la passerelle <code>172.16.3.254</code> dans les deux cas.</p>'),
-  note('yellow', '🧹 Nettoyage préalable', '<p>Routeur_G5 contenait des <strong>restes d’une autre maquette</strong> (réseaux <code>192.168.x.x</code> / <code>172.16.9.x</code>) qui cassaient la sortie : deux <strong>routes par défaut bidon</strong> et une <strong>ACL de NAT</strong> qui ne visait pas nos réseaux. Retirés avant de configurer.</p>'),
-  cmd(`! sur Routeur_G5 — retirer les restes de l'autre maquette
-configure terminal
-no ip nat inside source static 192.168.0.102 172.16.9.45
-no ip route 0.0.0.0 0.0.0.0 192.168.100.1
-no ip route 0.0.0.0 0.0.0.0 172.16.9.254
-no ip route 192.168.0.0 255.255.255.0 192.168.100.1`),
+  // ── Étape 7 ──
+  step('7', 'Routage inter-routeurs & accès Internet', 'NAT/PAT sur le routeur de bordure + routes par défaut', C.nat),
+  note('blue', '🗺️ Deux routeurs, deux rôles', '<p><strong>R_IT_G5</strong> = routeur <strong>interne</strong> (passerelle des clients, relie Utilisateurs et Admin). <strong>Routeur_G5</strong> = routeur de <strong>bordure</strong> : il fait le <strong>NAT/PAT</strong> vers le réseau de la salle (<code>172.16.3.0/24</code>) pour donner Internet.</p>'),
+  block('html', { html: tbl(['Routeur', 'Interface', 'IP', 'Rôle NAT'], [
+    ['Routeur_G5', 'LAN (vers Sw-2)', '192.5.50.252 /24', 'ip nat inside'],
+    ['Routeur_G5', 'WAN (vers salle)', '172.16.3.250 /24', 'ip nat outside'],
+    ['R_IT_G5', 'LAN Utilisateurs', '192.5.50.254 /24', '—'],
+    ['R_IT_G5', 'LAN Admin', '192.5.10.14 /28', '—'],
+  ]) }),
+  block('heading', { level: 4, text: 'Configuration de Routeur_G5 (bordure)' }),
   block('html', { html: '<p><strong>NAT/PAT</strong> : l’ACL <code>LAN</code> désigne les réseaux <em>internes</em> à traduire ; le PAT (<code>overload</code>) les masque tous derrière l’IP de l’interface WAN.</p>' }),
-  cmd(`! ACL des reseaux internes a traduire
+  cmd(`enable
+configure terminal
+hostname Routeur_G5
+!
+! --- Interfaces ---
+interface FastEthernet0/0
+ description LAN Utilisateurs
+ ip address 192.5.50.252 255.255.255.0
+ ip nat inside
+ no shutdown
+ exit
+interface FastEthernet0/1
+ description Sortie salle / autres ecoles
+ ip address 172.16.3.250 255.255.255.0     ! IP WAN fournie par la salle
+ ip nat outside
+ no shutdown
+ exit
+!
+! --- NAT/PAT : les reseaux internes sortent derriere l'IP WAN ---
 ip access-list standard LAN
- no permit 192.168.10.0 0.0.0.255
- no permit 192.168.99.0 0.0.0.15
- no permit 192.168.90.0 0.0.0.15
  permit 192.5.50.0 0.0.0.255
  permit 192.5.10.0 0.0.0.15
  exit
-! PAT : tout le LAN sort derriere l'IP de Fa0/1
 ip nat inside source list LAN interface FastEthernet0/1 overload
-! vraie passerelle Internet (reseau de Fa0/1) + route vers le LAN Admin
-ip route 0.0.0.0 0.0.0.0 172.16.3.254
-ip route 192.5.10.0 255.255.255.240 192.5.50.254
+!
+! --- Routage ---
+ip route 0.0.0.0 0.0.0.0 172.16.3.254             ! sortie Internet (passerelle salle)
+ip route 192.5.10.0 255.255.255.240 192.5.50.254  ! LAN Admin, via R_IT_G5
 end
 write memory`),
-  note('red', '⚠️ Complément sur R_IT_G5 (sinon pas d’Internet)', '<p>Les clients ont R_IT_G5 pour passerelle : il doit renvoyer tout l’inconnu vers Routeur_G5. Sans cette route par défaut, le trafic Internet meurt sur R_IT_G5.</p>'),
+  block('heading', { level: 4, text: 'Complément sur R_IT_G5 (indispensable pour Internet)' }),
+  note('red', '⚠️ Route par défaut manquante = pas d’Internet', '<p>Les clients ont R_IT_G5 pour passerelle : il doit renvoyer tout l’inconnu vers Routeur_G5. Sans cette route par défaut, le trafic Internet s’arrête sur R_IT_G5.</p>'),
   cmd(`! sur R_IT_G5
 configure terminal
 ip route 0.0.0.0 0.0.0.0 192.5.50.252
@@ -325,23 +345,45 @@ end
 write memory`),
   block('html', { html: '<p><strong>Vérification</strong> :</p>' }),
   cmd(`! sur Routeur_G5
-show ip route             ! une seule default 172.16.3.254, plus de 192.168
+show ip route             ! une seule default -> 172.16.3.254
 show access-lists LAN     ! permit 192.5.50.0 / 192.5.10.0
 show ip nat translations  ! des lignes apparaissent quand un client sort
 ! sur un client du LAN
-ping 172.16.3.254         ! la passerelle WAN
+ping 172.16.3.254         ! passerelle WAN
 ping 8.8.8.8              ! Internet (via PAT)`),
   note('gray', '🔗 Détails', '<p><a href="/pages/procedure-routes-statiques">Routes statiques</a> · <a href="/pages/procedure-nat">NAT / PAT</a> · <a href="/pages/procedure-cisco-routeur-cli">Config routeur Cisco (CLI)</a>.</p>'),
 
-  block('heading', { level: 2, text: '🔧 Problèmes rencontrés & résolution' }),
+  // ── Étape 8 ──
+  step('8', 'Point d’accès Wi-Fi — Cisco WAP 371', 'SSID EDWIN05, IP fixe, clients en DHCP', C.wifi),
+  block('html', { html: '<p>Le WAP 371 diffuse le Wi-Fi des stagiaires/formateurs. Il reçoit une <strong>IP fixe</strong> (<code>192.5.50.251</code>) et ses clients obtiennent leur IP par <strong>DHCP</strong> (le relais de l’étape 6 est déjà en place).</p>' }),
+  ul([
+    'Attribuer au WAP l’<strong>IP fixe <code>192.5.50.251</code></strong> (masque <code>/24</code>, passerelle <code>192.5.50.254</code>) et le connecter en port access sur <strong>Sw-2</strong>.',
+    'Accéder à l’interface d’administration du WAP (navigateur → IP du point d’accès).',
+    'Créer le <strong>SSID</strong> <code>SSID-EDWIN05</code>, activer la <strong>sécurité WPA2-PSK</strong> et définir la clé.',
+    'Laisser les clients Wi-Fi en <strong>DHCP</strong> (ils tombent dans l’étendue Utilisateurs <code>.1–.200</code>).',
+  ]),
+  note('yellow', '🔍 Vérification', '<p>Associer un client au SSID <code>SSID-EDWIN05</code> → il doit recevoir une <strong>IP <code>192.5.50.x</code></strong> par DHCP, joindre sa passerelle <code>.254</code> et accéder au site / à Internet.</p>'),
 
-  block('heading', { level: 3, text: '① Commutateur externe Hyper-V sur la mauvaise carte réseau — ✅ résolu' }),
-  block('html', { html: '<p><strong>Symptôme</strong> : les VM ne communiquaient pas avec la maquette (pas de connectivité vers le réseau).<br><strong>Cause</strong> : le <strong>commutateur virtuel externe</strong> Hyper-V était rattaché à la <strong>mauvaise carte réseau physique</strong>.<br><strong>Solution</strong> : Gestionnaire Hyper-V → <em>Gestionnaire de commutateur virtuel</em> → commutateur <strong>Externe</strong> → sélectionner la <strong>bonne carte réseau</strong> (celle reliée au réseau/pont) → OK. Vérifier ensuite, dans les <em>Paramètres</em> de chaque VM, que la carte réseau est bien connectée à ce commutateur.</p>' }),
+  block('heading', { level: 2, text: '✅ Tests de validation (bout en bout)' }),
+  ul([
+    '<strong>SSH</strong> depuis le poste admin vers R_IT_G5, SW-1, Sw-2 et Routeur_G5 (<code>ssh -l admin &lt;IP&gt;</code>).',
+    '<strong>DHCP</strong> : un client Utilisateurs reçoit une IP <code>.1–.200</code>, passerelle <code>.254</code>, DNS <code>192.5.10.12</code>.',
+    '<strong>Routage inter-réseaux</strong> : depuis un client, <code>ping 192.5.10.12</code> (serveur) et <code>ping 192.5.10.14</code> (passerelle Admin).',
+    '<strong>DNS</strong> : <code>nslookup www.Groupe5-EDIVN.lan</code> → <code>192.5.10.12</code>.',
+    '<strong>Web</strong> : <code>http://www.Groupe5-EDIVN.lan:8080</code> et l’intranet s’affichent.',
+    '<strong>Internet</strong> : <code>ping 8.8.8.8</code> depuis un client ; <code>show ip nat translations</code> se remplit sur Routeur_G5.',
+    '<strong>Wi-Fi</strong> : association au SSID <code>SSID-EDWIN05</code> + IP DHCP.',
+  ]),
 
-  block('heading', { level: 3, text: '② SSH non fonctionnel — problème de clé / encodage' }),
-  note('yellow', '🔑 Cause probable & solution', '<p>La <strong>clé RSA</strong> a probablement été générée <strong>avant</strong> d’avoir fixé le <code>hostname</code> et le <code>ip domain-name</code> (ou l’équipement a été renommé <em>après</em>) → la clé porte un mauvais nom et est invalide. <strong>Solution</strong> : fixer hostname + domaine, puis <strong>supprimer et régénérer</strong> la clé.</p>'),
+  block('heading', { level: 2, text: '🧰 Pièges fréquents & dépannage' }),
+
+  block('heading', { level: 3, text: '① Les VM ne communiquent pas — commutateur externe Hyper-V sur la mauvaise carte' }),
+  block('html', { html: '<p><strong>Symptôme</strong> : les VM n’ont pas de connectivité vers la maquette.<br><strong>Cause</strong> : le <strong>commutateur virtuel externe</strong> Hyper-V est rattaché à la <strong>mauvaise carte réseau physique</strong>.<br><strong>Solution</strong> : Gestionnaire Hyper-V → <em>Gestionnaire de commutateur virtuel</em> → commutateur <strong>Externe</strong> → sélectionner la <strong>bonne carte</strong> → OK. Vérifier ensuite, dans les <em>Paramètres</em> de chaque VM, que la carte réseau est connectée à ce commutateur.</p>' }),
+
+  block('heading', { level: 3, text: '② SSH ne fonctionne pas — clé RSA invalide' }),
+  note('yellow', '🔑 Cause & solution', '<p>La <strong>clé RSA</strong> a été générée <strong>avant</strong> d’avoir fixé le <code>hostname</code> et le <code>ip domain-name</code> (ou l’équipement a été renommé ensuite) → la clé porte un mauvais nom. <strong>Solution</strong> : fixer hostname + domaine, puis <strong>supprimer et régénérer</strong> la clé.</p>'),
   cmd(`configure terminal
-ip domain-name G5-EDIVN.lan
+ip domain-name Groupe5-EDIVN.lan
 crypto key zeroize rsa          ! supprime l'ancienne cle
 crypto key generate rsa
 1024                            ! la longueur, seule sur sa ligne
@@ -355,50 +397,28 @@ end
 show ip ssh                     ! doit indiquer SSH Enabled, version 2.0
 show crypto key mypubkey rsa    ! la cle doit exister
 ! Test depuis un client : ssh -l admin 192.5.10.13`),
-  note('gray', 'ℹ️ À contrôler aussi', '<ul><li>Un <strong>compte local</strong> existe : <code>username admin privilege 15 secret cisco</code> (le <code>login local</code> s’en sert).</li><li>Modulus <strong>≥ 768</strong> (1024 recommandé) pour SSHv2.</li><li>Depuis le client PT : ouvre l’<em>invite de commandes</em> et tape <code>ssh -l admin &lt;IP&gt;</code> (pas <code>telnet</code>).</li></ul>'),
+  note('gray', 'ℹ️ À contrôler aussi', '<ul><li>Un <strong>compte local</strong> existe : <code>username admin privilege 15 secret cisco</code>.</li><li>Modulus <strong>≥ 768</strong> (1024 recommandé) pour SSHv2.</li><li>Depuis le client : <code>ssh -l admin &lt;IP&gt;</code> (pas <code>telnet</code>).</li></ul>'),
 
-  block('heading', { level: 3, text: '③ Ping Stagiaire → Serveur échoue (l’inverse fonctionne)' }),
-  note('yellow', '🛡️ Cause & solution : pare-feu Windows du serveur', '<p>Le sens <strong>Serveur → Stagiaire</strong> fonctionne → le <strong>routage est bon dans les deux sens</strong>. Ce qui échoue, c’est le <strong>ping entrant</strong> vers le serveur : le <strong>pare-feu Windows</strong> du serveur <strong>bloque par défaut les requêtes ICMP entrantes</strong> non sollicitées (surtout venant d’un <em>autre sous-réseau</em>). Quand le serveur initie le ping, la réponse revient (pare-feu à état) ; quand le stagiaire initie, la requête entrante est bloquée. <strong>Solution : autoriser l’ICMP echo entrant</strong> sur le serveur.</p>'),
+  block('heading', { level: 3, text: '③ Ping d’un poste vers le serveur qui échoue (l’inverse fonctionne)' }),
+  note('yellow', '🛡️ Cause & solution : pare-feu Windows du serveur', '<p>Si le sens <strong>Serveur → poste</strong> fonctionne, le <strong>routage est bon</strong>. Ce qui échoue, c’est le <strong>ping entrant</strong> : le <strong>pare-feu Windows</strong> bloque par défaut l’<strong>ICMP entrant</strong> non sollicité (surtout depuis un autre sous-réseau). <strong>Solution : autoriser l’ICMP echo entrant</strong> sur le serveur.</p>'),
   cmd(`REM Sur le SERVEUR Windows (invite admin) — autoriser le ping entrant IPv4 :
 netsh advfirewall firewall add rule name="ICMPv4 Echo In" protocol=icmpv4:8,any dir=in action=allow
 
 REM ou en PowerShell (admin) :
 Enable-NetFirewallRule -DisplayName "Partage de fichiers et d'imprimantes (demande d'echo - trafic entrant ICMPv4)"`),
-  note('gray', 'ℹ️ Détail', '<p>Pas-à-pas illustré : <a href="/pages/astuce-pare-feu-ping">Autoriser le ping (ICMP) dans le pare-feu</a>. Après ça, <code>ping 192.5.10.12</code> depuis le stagiaire doit répondre.</p>'),
+  note('gray', 'ℹ️ Détail', '<p>Pas-à-pas illustré : <a href="/pages/astuce-pare-feu-ping">Autoriser le ping (ICMP) dans le pare-feu</a>.</p>'),
 
-  block('heading', { level: 3, text: '④ Impossible de pinguer la passerelle de l’autre réseau (autre interface du même routeur)' }),
-  note('yellow', '🔎 Cause probable & diagnostic', '<p>Pinguer une <strong>interface de routeur</strong> (ex. <code>192.5.10.14</code> = Gi0/0) n’est <strong>pas</strong> concerné par le <strong>pare-feu Windows</strong> — le routeur n’est pas Windows. Ce n’est donc <strong>pas</strong> le même problème que le ③. Si l’autre interface ne répond pas, c’est un souci <strong>d’interface / de lien</strong> : la cause la plus fréquente est que l’interface visée est <strong>up/down</strong> (son segment n’est pas relié) → son IP est inactive et ne répond pas.</p>'),
-  cmd(`! sur R_IT_G5
-show ip interface brief
-!   Gi0/0  192.5.10.14   doit etre  up / up
-!   Gi0/1  192.5.50.254  doit etre  up / up
-show ip route            ! les 2 reseaux connectes (C) doivent apparaitre`),
-  ul([
-    'Si <strong>Gi0/0</strong> est <code>up/down</code> ou <code>down/down</code> → le <strong>lien du réseau Admin est coupé</strong> (câble non branché, <code>no shutdown</code> oublié, ou pont Hyper-V / commutateur externe HS — cf. problème ①). Rétablir le lien : l’IP <code>.14</code> ne répond que si la ligne est <strong>up/up</strong>.',
-    'Sur le client : <code>ipconfig /all</code> → vérifier le <strong>masque /24</strong> (<code>255.255.255.0</code>) et la <strong>passerelle</strong> (<code>192.5.50.254</code>). Un mauvais masque ferait croire au client que <code>.10.14</code> est local (ARP direct → échec).',
-    'Tester d’abord le ping de sa <strong>propre passerelle</strong> (<code>192.5.50.254</code>) : s’il échoue, le problème est <strong>local</strong> (lien/switch), pas le routage inter-réseaux.',
-    '⚠️ <strong>Piège classique</strong> : pinguer sa propre passerelle <strong>réussit même sans passerelle par défaut configurée</strong> (même sous-réseau → simple ARP). Ça ne prouve donc <strong>rien</strong> sur le routage. Pour joindre <code>.10.14</code> (autre réseau), le client <strong>doit</strong> avoir <code>192.5.50.254</code> déclarée en <strong>passerelle par défaut</strong>. En DHCP, c’est l’<strong>option 003</strong> de l’étendue (cf. Étape 6) — si elle manque, le ping vers l’autre réseau échoue alors que tout le reste semble correct.',
-  ]),
-  note('red', '🎯 Cause confirmée sur EDIVN : hôte Hyper-V multi-homé (2 passerelles par défaut)', '<p>L’hôte de test avait <strong>deux cartes</strong> : la physique en DHCP (<code>172.16.3.x</code>, passerelle <code>172.16.3.254</code>) <strong>et</strong> la vEthernet du lab (<code>192.5.50.5/24</code>, passerelle <code>192.5.50.254</code>). Comme <code>192.5.10.0/28</code> n’est <strong>directement connecté sur aucune</strong> des deux, Windows applique la <strong>route par défaut</strong> — et choisit celle de la carte physique (métrique plus basse). Le ping de <code>192.5.10.14</code> partait donc <strong>vers Internet</strong> (tracert : <code>172.16.3.254 → …</code>), pas vers le routeur du lab. <code>192.5.50.254</code> répondait car il est dans le <strong>sous-réseau connecté</strong>. <strong>Le routage Cisco n’était pas en cause.</strong></p>'),
+  block('heading', { level: 3, text: '④ Impossible de pinguer un autre réseau depuis un hôte Hyper-V à deux cartes' }),
+  note('yellow', '🔎 Diagnostic', '<p>D’abord vérifier l’évidence : sur R_IT_G5, <code>show ip interface brief</code> (les 2 interfaces <strong>up/up</strong>) et, côté client, <code>ipconfig /all</code> (bon masque <strong>/24</strong> et <strong>passerelle par défaut</strong> <code>192.5.50.254</code>). <strong>Piège</strong> : pinguer sa <em>propre</em> passerelle réussit même sans passerelle par défaut (même sous-réseau) — ça ne prouve rien sur le routage.</p>'),
+  note('red', '🎯 Cause fréquente : hôte multi-homé (2 passerelles par défaut)', '<p>Si vous testez depuis l’<strong>hôte Hyper-V</strong> et qu’il a <strong>deux cartes</strong> (une physique DHCP vers la salle <code>172.16.3.x</code>, une vEthernet du lab <code>192.5.50.x</code>), Windows applique la <strong>route par défaut de la carte physique</strong> pour tout réseau non directement connecté. Le ping part alors <strong>vers Internet</strong> au lieu du routeur du lab — le routage Cisco n’est pas en cause.</p>'),
   cmd(`:: preuve : le 1er saut sort par la mauvaise carte
 tracert -d 192.5.10.14      ! 1er saut = 172.16.3.254 => mauvais chemin
 
-:: fix : router le reseau Admin par le routeur du lab (persistant)
+:: fix ponctuel : router le reseau Admin par le routeur du lab
 route add 192.5.10.0 mask 255.255.255.240 192.5.50.254 -p
 tracert -d 192.5.10.14      ! 1er saut doit devenir 192.5.50.254`),
-  note('green', '✅ Résolu', '<p>Deux méthodes, toutes deux validées : (1) tester depuis une <strong>VM</strong> et y sélectionner <strong>la bonne carte réseau</strong> (celle du lab), ou (2) <strong>désactiver la carte inutile</strong> sur l’hôte (la physique DHCP) le temps du test → il ne reste qu’un seul chemin, le ping vers <code>192.5.10.14</code> passe.</p>'),
-  note('gray', '✅ Fix propre', '<p>Sur un hôte à 2 cartes, ne garder <strong>qu’une seule passerelle par défaut</strong> (celle d’Internet) ; sur la vEthernet du lab, ne renseigner <strong>que IP + masque</strong> et ajouter des <strong>routes statiques</strong> vers les sous-réseaux du lab. Deux passerelles par défaut = routage aléatoire. Le vrai test se fait depuis une <strong>VM à une seule carte</strong> sur le réseau Utilisateurs : elle atteint <code>192.5.10.14</code> sans aucune route ajoutée.</p>'),
-  note('yellow', '🔀 Autre piste (à écarter) : deux passerelles avec la MÊME IP', '<p>Si le client est <strong>correctement configuré</strong> (bonne IP, bon masque /24, bonne passerelle <code>192.5.50.254</code>, bon DNS) et que le routeur est <strong>up/up</strong>, mais que le ping vers l’autre réseau échoue quand même → cherche un <strong>doublon d’adresse de passerelle</strong>. Sur EDIVN, <strong>R_IT_G5</strong> et <strong>Routeur_G5</strong> portent tous deux <code>192.5.50.254</code> sur le LAN Utilisateurs. Le PC ARP pour <code>.254</code> et obtient <strong>le MAC du mauvais routeur</strong> : le ping vers <code>.50.254</code> marche (les deux ont cette IP), mais le ping vers <code>192.5.10.14</code> (qui n’existe que sur R_IT_G5) part vers Routeur_G5 qui ne sait pas l’atteindre → échec.</p>'),
-  cmd(`:: sur le client : quel MAC repond pour la passerelle ?
-arp -a | find "192.5.50.254"
-
-! sur R_IT_G5 : son propre MAC
-show interfaces FastEthernet0/1 | include bia
-! MAC differents => le client parle au mauvais routeur`),
-  note('green', '✅ Correction', '<p>Une <strong>seule</strong> passerelle doit porter <code>192.5.50.254</code>. Comme <strong>R_IT_G5</strong> atteint le réseau serveur (<code>192.5.10.0/28</code>), on le garde comme passerelle des clients. Idéal : relier R_IT_G5 ↔ Routeur_G5 par un <strong>lien d’interconnexion dédié</strong> (/30) et <strong>retirer Routeur_G5 du LAN Utilisateurs</strong>, puis <code>ip route 0.0.0.0 0.0.0.0 &lt;IP de Routeur_G5&gt;</code> sur R_IT_G5 pour la sortie. Rapide : donner à Routeur_G5 une <strong>autre IP</strong> sur le LAN.</p>'),
+  note('green', '✅ Solutions', '<p>(1) Tester depuis une <strong>VM à une seule carte</strong> sur le réseau Utilisateurs (elle atteint l’autre réseau sans rien ajouter) ; ou (2) <strong>désactiver la carte inutile</strong> le temps du test ; ou (3) ne garder <strong>qu’une seule passerelle par défaut</strong> sur l’hôte + des <strong>routes statiques</strong> vers les sous-réseaux du lab.</p>'),
   note('gray', '🔗 Méthode', '<p><a href="/pages/procedure-test-connectivite">Test de connectivité méthodique</a> (dérouler dans l’ordre : lien → passerelle → réseau distant).</p>'),
-
-  note('yellow', '🚧 Suite', '<p>Prochaines étapes à documenter : <strong>routage</strong> (R_IT_G5 ↔ Routeur_G5 ↔ extérieur) + <strong>NAT/PAT</strong> pour l’accès externe du site <code>:8080</code>, configuration du <strong>point d’accès Wi-Fi</strong> (WAP 371 / SSID-EDWIN05), puis <strong>tests de bout en bout</strong>.</p>'),
 ];
 
 function cookieFrom(res: Response): string {
