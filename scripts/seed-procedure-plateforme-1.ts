@@ -127,6 +127,22 @@ const blocks: PageBlock[] = [
   block('heading', { level: 2, text: '🔧 Réalisation pas à pas' }),
   block('html', { html: '<p>Ce que nous avons effectué, dans l’ordre. Cette partie s’étoffe au fur et à mesure du montage.</p>' }),
 
+  block('heading', { level: 3, text: 'Étape 0 — Repartir d’une configuration vierge (routeurs & switches)' }),
+  note('red', '🧨 À faire AVANT toute config sur du matériel réutilisé', '<p>Un équipement qui a déjà servi (autre maquette, exercice précédent) peut contenir une config qui <strong>bloque tout</strong> : mauvaises routes par défaut, ACL de NAT hors sujet, doublons d’adresses, VLAN parasites… (c’est exactement ce qui nous est arrivé sur Routeur_G5). On <strong>efface la config de démarrage</strong> et on <strong>redémarre</strong> pour partir propre.</p>'),
+  cmd(`enable
+write erase          ! ou :  erase startup-config
+reload
+! "System configuration has been modified. Save? [yes/no]:"  -> no
+! "Proceed with reload? [confirm]"                            -> Entree
+! au redemarrage : refuser l'assistant de configuration initial
+! "Would you like to enter the initial configuration dialog? [yes/no]:"  -> no`),
+  note('yellow', '💡 Bon à savoir', '<p><code>write erase</code> efface la <strong>startup-config</strong> (NVRAM), pas la running-config en cours — d’où le <code>reload</code> qui recharge une config vide. Sur un <strong>switch</strong>, penser aussi à supprimer la base VLAN si besoin : <code>delete flash:vlan.dat</code> avant le <code>reload</code>. Répondre <strong>no</strong> à l’enregistrement pour ne pas re-sauver l’ancienne config.</p>'),
+  cmd(`! switch uniquement, si des VLAN parasites subsistent
+delete flash:vlan.dat    ! confirmer (Entree x2)
+write erase
+reload`),
+  note('gray', '🔗 Détail', '<p>Pas-à-pas générique : <a href="/pages/procedure-cisco-routeur-cli">Configurer un routeur Cisco (CLI)</a>.</p>'),
+
   block('heading', { level: 3, text: 'Étape 1 — Routeur R_IT_G5 : interfaces + SSH' }),
   block('html', { html: '<p>Configuration des <strong>deux interfaces</strong> du routeur interne (côté Admin/IT et côté Utilisateurs) puis de l’<strong>accès de management à distance en SSH</strong> (mot de passe <code>cisco</code>, comme demandé dans le cahier des charges). Toute cette configuration se fait <strong>depuis la console</strong> (onglet <code>CLI</code> sous Packet Tracer, ou câble console sur un équipement réel) — le SSH n’étant pas encore actif.</p>' }),
   cmd(`enable

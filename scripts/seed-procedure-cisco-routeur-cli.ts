@@ -18,6 +18,17 @@ const blocks: PageBlock[] = [
   stepsStyle,
   note('blue', '🎯 Objectif', '<p>Configurer un routeur Cisco (2811 / 2911) en <strong>ligne de commande</strong> : lui donner un nom, activer et adresser ses <strong>interfaces</strong>, puis sauvegarder. C’est la démarche manuelle qui <strong>justifie</strong> l’outil <a href="/pages/configurateur-routeur-cisco">Configurateur — Routeur Cisco</a> et l’étape « interfaces » de l’<a href="/pages/atelier-reseau">Atelier Réseau</a>.</p>'),
 
+  block('heading', { level: 2, text: '0) Repartir d’une configuration vierge (matériel réutilisé)' }),
+  note('red', '🧨 Réflexe avant toute config', '<p>Un routeur ou un switch qui a déjà servi peut garder une config qui <strong>bloque tout</strong> : routes par défaut bidon, ACL/NAT hors sujet, doublons d’adresses, VLAN parasites. Avant de configurer, on <strong>efface la startup-config</strong> et on <strong>redémarre</strong> pour partir sur une base propre.</p>'),
+  cmd(`enable
+write erase          ! ou :  erase startup-config
+reload
+! "Save?  [yes/no]:"                 -> no   (ne PAS re-sauver l'ancienne config)
+! "Proceed with reload? [confirm]"   -> Entree
+! au redemarrage, refuser l'assistant :
+! "...enter the initial configuration dialog? [yes/no]:"  -> no`),
+  note('yellow', '💡 write erase efface la NVRAM', '<p><code>write erase</code> vide la <strong>startup-config</strong> (NVRAM) ; c’est le <code>reload</code> qui recharge alors une config vide. Sur un <strong>switch</strong>, supprime aussi la base VLAN si des VLAN parasites subsistent : <code>delete flash:vlan.dat</code> (confirmer) <strong>avant</strong> le <code>reload</code>.</p>'),
+
   block('heading', { level: 2, text: '🧭 Les modes Cisco' }),
   block('html', { html: '<p>La CLI Cisco a trois niveaux ; l’invite change selon le mode :</p>' }),
   block('html', { html: `<table style="border-collapse:collapse;width:100%;font-size:13px"><thead><tr style="background:var(--surface-2)">${['Mode', 'Invite', 'Pour…', 'Commande d’entrée'].map(c => `<th style="text-align:left;padding:8px 10px;border:1px solid var(--border)">${c}</th>`).join('')}</tr></thead><tbody>
