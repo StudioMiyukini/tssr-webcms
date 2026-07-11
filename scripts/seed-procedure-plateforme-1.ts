@@ -96,7 +96,8 @@ const blocks: PageBlock[] = [
   ]),
 
   block('heading', { level: 2, text: '🗺️ Schéma logique & plan d’adressage' }),
-  note('gray', '🖼️ Schéma', '<p>Insérez ici le <strong>schéma logique</strong> (export <code>.png</code> depuis draw.io). Le plan d’adressage ci-dessous en découle.</p>'),
+  figure('/uploads/plat1-schema-reseau.png', 'Schéma logique EDIVN : réseau Admin/IT (192.5.10.0/28), réseau Utilisateurs (192.5.50.0/24), routeur interne R_IT_G5, routeur de bordure Routeur_G5 et sortie vers 172.16.3.0/24.'),
+  block('html', { html: '<p>Le plan d’adressage ci-dessous découle de ce schéma.</p>' }),
 
   block('heading', { level: 3, text: 'Réseau Admin / IT — 192.5.10.0/28' }),
   block('html', { html: tbl(['Équipement', 'Adresse IP', 'Rôle'], [
