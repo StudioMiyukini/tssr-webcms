@@ -390,6 +390,19 @@ show ip nat translations  ! des lignes apparaissent quand un client sort
 ! sur un client du LAN
 ping 172.16.3.254         ! passerelle WAN
 ping 8.8.8.8              ! Internet (via PAT)`),
+
+  block('heading', { level: 4, text: 'Accès externe au site (redirection de port)' }),
+  note('blue', '🌍 Publier le site vers la salle', '<p>Le serveur <code>192.5.10.12</code> est en <strong>adresse privée</strong> → injoignable directement depuis la salle. On <strong>publie le port 8080</strong> de Routeur_G5 vers le serveur (NAT statique entrant / port forwarding). <strong>NAT = joindre</strong> ; c’est indépendant du DNS.</p>'),
+  cmd(`! sur Routeur_G5 — rediriger le port 8080 externe vers le serveur IIS
+configure terminal
+ip nat inside source static tcp 192.5.10.12 8080 interface FastEthernet0/1 8080
+end
+write memory
+! depuis la salle :  http://172.16.3.250:8080
+! (confort : publier le port 80 -> 8080 pour eviter de taper :8080)
+! ip nat inside source static tcp 192.5.10.12 8080 interface FastEthernet0/1 80`),
+  note('yellow', '🌐 Résolution du nom (DNS) pour la salle', '<p>Votre DNS (SRV-1) résout <code>www.Groupe05-EDIVN.lan → 192.5.10.12</code>, une IP <strong>privée inatteignable</strong> de l’extérieur. Deux options :</p><ul><li><strong>Le plus simple</strong> : la salle accède par l’<strong>IP publique</strong> <code>http://172.16.3.250:8080</code> — aucun DNS requis.</li><li><strong>Par le nom</strong> : ajouter sur le <strong>DNS de la salle</strong> un enregistrement <code>www.Groupe05-EDIVN.lan → 172.16.3.250</code> (l’IP <strong>WAN</strong>, pas la privée) — c’est du <strong>DNS « split »</strong> (interne = <code>.10.12</code>, externe = <code>172.16.3.250</code>).</li></ul><p>⚠️ Le DNS ne transporte <strong>pas</strong> de port : la salle tape <code>:8080</code> (sauf si vous publiez le port 80).</p>'),
+  note('gray', '🧪 Vérification', '<p><code>show ip nat translations</code> (l’entrée statique <code>tcp</code> apparaît) · depuis la salle, ouvrir <code>http://172.16.3.250:8080</code> · penser à <strong>autoriser HTTP entrant</strong> dans le pare-feu Windows de SRV-1.</p>'),
   note('gray', '🔗 Détails', '<p><a href="/pages/procedure-routes-statiques">Routes statiques</a> · <a href="/pages/procedure-nat">NAT / PAT</a> · <a href="/pages/procedure-cisco-routeur-cli">Config routeur Cisco (CLI)</a>.</p>'),
 
   // ── Étape 8 ──
