@@ -468,6 +468,17 @@ tracert -d 192.5.10.14      ! 1er saut doit devenir 192.5.50.254`),
   note('green', '✅ Solutions', '<p>(1) Tester depuis une <strong>VM à une seule carte</strong> sur le réseau Utilisateurs (elle atteint l’autre réseau sans rien ajouter) ; ou (2) <strong>désactiver la carte inutile</strong> le temps du test ; ou (3) ne garder <strong>qu’une seule passerelle par défaut</strong> sur l’hôte + des <strong>routes statiques</strong> vers les sous-réseaux du lab.</p>'),
   note('gray', '🔗 Méthode', '<p><a href="/pages/procedure-test-connectivite">Test de connectivité méthodique</a> (dérouler dans l’ordre : lien → passerelle → réseau distant).</p>'),
   ]),
+
+  acc('⑤ Câble RJ45 débranché — simple mais très bloquant', [
+    note('yellow', '🔌 Le réflexe à avoir', '<p>Un câble <strong>RJ45</strong> mal enclenché (languette cassée, prise à demi enfoncée) peut se <strong>débrancher tout seul</strong> — parfois sans qu’on y touche. Résultat : une machine ou un segment entier tombe, alors que <strong>toute la configuration est correcte</strong>. On cherche longtemps un problème logiciel qui n’existe pas.</p>'),
+    ul([
+      'Symptômes : lien <code>down/down</code> sur <code>show ip interface brief</code>, voyant de port <strong>éteint</strong>, plus de ping, un poste qui perd son bail DHCP.',
+      '<strong>Vérifiez physiquement les câbles périodiquement</strong> — surtout après avoir bougé un équipement, et dès qu’un test échoue « sans raison ».',
+      'Réenclenchez à fond jusqu’au <em>clic</em>. Si la languette est cassée, <strong>remplacez le câble</strong>.',
+      'Contrôlez les deux extrémités (côté machine <em>et</em> côté switch) et les liaisons montantes routeur ↔ switch.',
+    ]),
+    note('gray', '💡 Avant de suspecter la config', '<p>Face à une panne réseau soudaine, commencez <strong>toujours</strong> par la <strong>couche 1</strong> (câble, voyant, port) avant de rouvrir la CLI. C’est la cause la plus fréquente et la plus vite écartée.</p>'),
+  ]),
 ];
 
 function cookieFrom(res: Response): string {
