@@ -21,6 +21,9 @@ const ul = (items: string[]) => block('html', { html: `<ul>${items.map(i => `<li
 const step = (n: string, title: string, sub: string, color: string) => block('html', { html: `<div class="step-banner" style="border-left-color:${color}"><span class="step-num" style="background:${color}">${n}</span><span class="step-tt"><h3 id="etape-${n}">${title}</h3><span class="step-sub">${sub}</span></span></div>` });
 
 const C = { reset: '#64748b', routeur: '#3b82f6', vm: '#8b5cf6', switch: '#0ea5e9', cable: '#f59e0b', serveur: '#22c55e', dhcp: '#f97316', nat: '#ef4444', wifi: '#6366f1' };
+// Rail vertical coloré courant le long du contenu d'une étape (rappel visuel de l'étape en cours).
+const railOpen = (color: string) => block('html', { html: `<div class="step-rail" style="border-left-color:${color}">` });
+const railClose = block('html', { html: '</div>' });
 
 const styleBlock = block('html', { html: `<style>
 .proc-cmd{font-family:ui-monospace,'Space Mono',monospace;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:8px 0;white-space:pre-wrap;overflow-x:auto;font-size:12.5px;line-height:1.55}
@@ -37,6 +40,8 @@ const styleBlock = block('html', { html: `<style>
 .pb-acc[open]>summary{border-bottom:1px solid var(--border)}
 .pb-acc-body{padding:6px 16px 12px}
 .pb-acc-body>*:first-child{margin-top:8px}
+.step-rail{border-left:4px solid var(--border);padding:2px 0 2px 16px;margin:0 0 10px 4px}
+.step-rail>*:first-child{margin-top:6px}
 </style>` });
 
 const figure = (url: string, cap: string) => block('html', { html: `<figure style="margin:12px 0 16px;text-align:center"><img src="${url}" alt="${cap}" loading="lazy" style="max-width:100%;border:1px solid var(--border);border-radius:8px"/><figcaption class="meta" style="margin-top:6px;font-size:12.5px">${cap}</figcaption></figure>` });
@@ -156,6 +161,7 @@ const blocks: PageBlock[] = [
 
   // ── Étape 0 ──
   step('0', 'Réinitialiser les équipements réseau', 'Routeurs & switches — partir d’une configuration vierge', C.reset),
+  railOpen(C.reset),
   note('red', '🧨 À faire AVANT toute configuration sur du matériel réutilisé', '<p>Un équipement qui a déjà servi peut contenir une config qui <strong>bloque tout</strong> : routes par défaut erronées, ACL/NAT hors sujet, doublons d’adresses, VLAN parasites (fréquent sur du matériel de lab). On <strong>efface la configuration de démarrage</strong> et on <strong>redémarre</strong>.</p>'),
 
   block('heading', { level: 4, text: 'a) Se connecter au port console (avant tout réseau)' }),
@@ -187,7 +193,9 @@ reload
   note('gray', '🔗 Détail', '<p>Pas-à-pas générique : <a href="/pages/procedure-cisco-routeur-cli">Configurer un routeur Cisco (CLI)</a>.</p>'),
 
   // ── Étape 1 ──
+  railClose,
   step('1', 'Routeur interne R_IT — interfaces & SSH', 'Adressage des 2 interfaces + accès de management SSH', C.routeur),
+  railOpen(C.routeur),
   block('html', { html: '<p>Configurer les <strong>deux interfaces</strong> du routeur interne (côté Admin/IT et côté Utilisateurs) puis l’<strong>accès SSH</strong> (mot de passe <code>cisco</code>). Tout se fait <strong>depuis la console</strong> (onglet <code>CLI</code> sous Packet Tracer, ou câble console sur matériel réel) — le SSH n’étant pas encore actif.</p>' }),
   cmd(`enable
 configure terminal
@@ -227,7 +235,9 @@ write memory`),
   note('gray', '🔗 Rappels', '<p><a href="/pages/procedure-cisco-routeur-cli">Configurer un routeur en CLI</a> · <a href="/pages/procedure-ssh-packet-tracer">SSH sur Packet Tracer</a>.</p>'),
 
   // ── Étape 2 ──
+  railClose,
   step('2', 'Machines virtuelles (Hyper-V)', 'Serveur SRV-1 + poste CLIENT10, un commutateur externe par VM', C.vm),
+  railOpen(C.vm),
   block('html', { html: '<p>Préparer les deux machines Windows du réseau Admin/IT — le poste <strong>CLIENT10</strong> et le serveur <strong>SRV-1</strong> — chacune reliée à la maquette Cisco par son <strong>propre commutateur externe</strong> (voir la règle ci-dessous). Peut se faire en parallèle de l’étape 1.</p>' }),
   ul([
     'Créer les 2 VM (Gestionnaire Hyper-V → <strong>Nouvel ordinateur virtuel</strong>, génération 2), selon l’Annexe 1.',
@@ -247,7 +257,9 @@ write memory`),
   note('gray', '🔗 Détails', '<p><a href="/pages/procedure-vm-hyperv">Créer & configurer une VM (ISO) sur Hyper-V</a> · <a href="/pages/procedure-hyperv-ressources">Hyper-V : ressources</a> · <a href="/pages/procedure-ip-fixe-windows">Configurer une IP fixe</a> · <a href="/pages/procedure-renommer-poste">Renommer un poste</a>.</p>'),
 
   // ── Étape 3 ──
+  railClose,
   step('3', 'Switches — renommage, gestion & SSH', 'IP de gestion (SVI VLAN 1) + accès SSH sur SW-1 et Sw-2', C.switch),
+  railOpen(C.switch),
   block('html', { html: '<p><strong>Renommer</strong> les deux switches, leur attribuer une <strong>IP de gestion</strong> (SVI <code>VLAN 1</code>) et activer <strong>SSH</strong> (mot de passe <code>cisco</code>). Configuration depuis la console.</p>' }),
   cmd(`enable
 configure terminal
@@ -282,7 +294,9 @@ write memory`),
   note('gray', 'ℹ️ IP de gestion', '<p>Un switch de niveau 2 n’a pas d’IP sur ses ports ; on lui donne une <strong>adresse de gestion sur le SVI VLAN 1</strong> (dans le sous-réseau de son segment) + une <code>ip default-gateway</code> pour être joignable en SSH depuis un autre réseau.</p>'),
 
   // ── Étape 4 ──
+  railClose,
   step('4', 'Câblage & vérifications physiques', 'Interconnexion des équipements et contrôle des liens', C.cable),
+  railOpen(C.cable),
   ul([
     '<strong>SW-1</strong> (Admin/IT) : Poste Admin 1 et Serveur en <strong>ports access</strong> ; liaison montante vers <strong>R_IT_G5 Gi0/0</strong>.',
     '<strong>Sw-2</strong> (Utilisateurs) : Stagiaire, Formateur et le <strong>WAP 371</strong> en ports access ; liaisons vers <strong>R_IT_G5 Gi0/1</strong> et <strong>Routeur_G5</strong>.',
@@ -336,7 +350,9 @@ write memory`),
   note('gray', '🧭 Si un test échoue', '<p>Déroulez les anneaux dans l’ordre A → B → C. Le premier échec situe la coupure : câble/switch (A), routage ou pare-feu (B), NAT/route par défaut (C). Détails dans les <strong>Pièges fréquents</strong> (bas de page) et la <a href="/pages/procedure-test-connectivite">méthode de test de connectivité</a>.</p>'),
 
   // ── Étape 5 ──
+  railClose,
   step('5', 'Serveur — rôles, sites Web (IIS) & DNS', 'Installation DHCP/DNS/IIS, 2 sites et enregistrements DNS', C.serveur),
+  railOpen(C.serveur),
   block('html', { html: '<p>Sur <strong>SRV-1</strong> (<code>192.5.10.12</code>) : installer les <strong>rôles</strong>, créer les <strong>2 sites Web</strong> et les <strong>enregistrements DNS</strong>.</p>' }),
 
   block('heading', { level: 4, text: 'Rôles installés' }),
@@ -367,7 +383,9 @@ write memory`),
   note('gray', '🔗 Détails', '<p><a href="/pages/procedure-iis">IIS : héberger un site</a> · <a href="/pages/procedure-dns">DNS : zones & enregistrements</a> · <a href="/pages/procedure-dhcp">rôle DHCP</a>.</p>'),
 
   // ── Étape 6 ──
+  railClose,
   step('6', 'DHCP — étendues & relais', 'Deux étendues + relais ip helper-address sur le routeur', C.dhcp),
+  railOpen(C.dhcp),
   block('html', { html: '<p>Créer deux <strong>étendues</strong> sur SRV-1 (<code>192.5.10.12</code>), une par réseau, puis un <strong>relais</strong> sur le routeur pour les clients du réseau Utilisateurs.</p>' }),
   block('html', { html: tbl(['Étendue', 'Réseau', 'Plage distribuée', 'Passerelle (003)', 'DNS (006)'], [
     ['Etendue Admins', '192.5.10.0/28', '192.5.10.1 → .11', '192.5.10.14', '192.5.10.12'],
@@ -399,7 +417,9 @@ ipconfig /all      REM IP dans la plage .1-.200, passerelle .254, DNS 192.5.10.1
   note('gray', '🔗 Détails', '<p><a href="/pages/procedure-dhcp">DHCP : étendue, options & réservation</a> · <a href="/pages/procedure-dhcp-relais">DHCP par relais (ip helper-address)</a>.</p>'),
 
   // ── Étape 7 ──
+  railClose,
   step('7', 'Routage inter-routeurs & accès Internet', 'NAT/PAT sur le routeur de bordure + routes par défaut', C.nat),
+  railOpen(C.nat),
   note('blue', '🗺️ Deux routeurs, deux rôles', '<p><strong>R_IT_G5</strong> = routeur <strong>interne</strong> (passerelle des clients, relie Utilisateurs et Admin). <strong>Routeur_G5</strong> = routeur de <strong>bordure</strong> : il fait le <strong>NAT/PAT</strong> vers le réseau de la salle (<code>172.16.3.0/24</code>) pour donner Internet.</p>'),
   block('html', { html: tbl(['Routeur', 'Interface', 'IP', 'Rôle NAT'], [
     ['Routeur_G5', 'LAN (vers Sw-2)', '192.5.50.252 /24', 'ip nat inside'],
@@ -470,7 +490,9 @@ write memory
   note('gray', '🔗 Détails', '<p><a href="/pages/procedure-routes-statiques">Routes statiques</a> · <a href="/pages/cisco-nat">NAT / PAT</a> · <a href="/pages/procedure-cisco-routeur-cli">Config routeur Cisco (CLI)</a>.</p>'),
 
   // ── Étape 8 ──
+  railClose,
   step('8', 'Point d’accès Wi-Fi — Cisco WAP 371', 'SSID EDWIN05, IP fixe, clients en DHCP', C.wifi),
+  railOpen(C.wifi),
   block('html', { html: '<p>Le WAP 371 diffuse le Wi-Fi des stagiaires/formateurs. Il reçoit une <strong>IP fixe</strong> (<code>192.5.50.251</code>) et ses clients obtiennent leur IP par <strong>DHCP</strong> (le relais de l’étape 6 est déjà en place).</p>' }),
   ul([
     'Attribuer au WAP l’<strong>IP fixe <code>192.5.50.251</code></strong> (masque <code>/24</code>, passerelle <code>192.5.50.254</code>) et le connecter en port access sur <strong>Sw-2</strong>.',
@@ -479,6 +501,8 @@ write memory
     'Laisser les clients Wi-Fi en <strong>DHCP</strong> (ils tombent dans l’étendue Utilisateurs <code>.1–.200</code>).',
   ]),
   note('yellow', '🔍 Vérification', '<p>Associer un client au SSID <code>SSID-EDWIN05</code> → il doit recevoir une <strong>IP <code>192.5.50.x</code></strong> par DHCP, joindre sa passerelle <code>.254</code> et accéder au site / à Internet.</p>'),
+
+  railClose,
 
   block('heading', { level: 2, text: '✅ Tests de validation (bout en bout)' }),
   ul([
