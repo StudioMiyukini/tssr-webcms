@@ -157,6 +157,25 @@ const blocks: PageBlock[] = [
   // ── Étape 0 ──
   step('0', 'Réinitialiser les équipements réseau', 'Routeurs & switches — partir d’une configuration vierge', C.reset),
   note('red', '🧨 À faire AVANT toute configuration sur du matériel réutilisé', '<p>Un équipement qui a déjà servi peut contenir une config qui <strong>bloque tout</strong> : routes par défaut erronées, ACL/NAT hors sujet, doublons d’adresses, VLAN parasites (fréquent sur du matériel de lab). On <strong>efface la configuration de démarrage</strong> et on <strong>redémarre</strong>.</p>'),
+
+  block('heading', { level: 4, text: 'a) Se connecter au port console (avant tout réseau)' }),
+  block('html', { html: '<p>Un équipement neuf ou réinitialisé n’a <strong>pas d’adresse IP</strong> → le SSH est impossible. On passe par le <strong>port CONSOLE</strong>, avec un <strong>câble console</strong> (rollover RJ45 → série, ou cordon <strong>USB console</strong>). Le PC voit alors un <strong>port COM</strong>.</p>' }),
+  ul([
+    'Brancher le câble : prise <strong>CONSOLE</strong> (bleu clair) de l’équipement → port <strong>série / USB</strong> du PC (adaptateur USB-série si nécessaire).',
+    'Repérer le numéro de port : <strong>Gestionnaire de périphériques</strong> Windows → <em>Ports (COM et LPT)</em> → noter <code>COMx</code>.',
+  ]),
+  block('heading', { level: 4, text: 'b) Ouvrir la console dans MobaXterm' }),
+  ul([
+    'MobaXterm → bouton <strong>Session</strong> → <strong>Serial</strong>.',
+    '<strong>Serial port</strong> = <code>COMx</code> (celui repéré), <strong>Speed (bps)</strong> = <code>9600</code>.',
+    'Onglet <em>Advanced Serial settings</em> : <strong>Data bits</strong> = 8, <strong>Stop bits</strong> = 1, <strong>Parity</strong> = none, <strong>Flow control</strong> = none.',
+    'Cliquer <strong>OK</strong> pour ouvrir la session, puis appuyer sur <strong>Entrée</strong> pour obtenir l’invite (<code>Router&gt;</code> ou <code>Switch&gt;</code>).',
+  ]),
+  note('gray', 'ℹ️ Paramètres série Cisco (9600 8N1)', '<p><strong>9600</strong> bauds · <strong>8</strong> bits de données · parité <strong>aucune</strong> · <strong>1</strong> bit de stop · <strong>pas</strong> de contrôle de flux. (Alternative <strong>PuTTY</strong> : <em>Connection type</em> = <strong>Serial</strong>, <em>Serial line</em> = <code>COMx</code>, <em>Speed</em> = <code>9600</code>.)</p>'),
+  note('yellow', '🩹 Rien ne s’affiche ?', '<ul><li>Mauvais <strong>COMx</strong> ou <strong>vitesse</strong> ≠ 9600 → vérifier dans le Gestionnaire de périphériques et les réglages MobaXterm.</li><li>Pilote de l’adaptateur USB-série absent (Prolific / FTDI) → l’installer.</li><li>Appuyer plusieurs fois sur <strong>Entrée</strong> ; débrancher/rebrancher le câble console.</li></ul>'),
+
+  block('heading', { level: 4, text: 'c) Effacer la configuration' }),
+  block('html', { html: '<p>Une fois l’invite obtenue dans la console, on efface la configuration de démarrage :</p>' }),
   cmd(`enable
 write erase          ! ou :  erase startup-config
 reload
