@@ -40,7 +40,7 @@ const annexe1 = tbl(['Caractéristique', 'VM Serveur', 'VM Poste client'], [
   ['Système', 'Windows Server 2019', 'Windows 10 Pro'],
   ['Mémoire (RAM)', '4096 Mo', '4096 Mo'],
   ['Stockage', 'C : 50 Go', 'C : 40 Go'],
-  ['Commutateur virtuel', 'Externe', 'Externe'],
+  ['Commutateur virtuel', 'Externe (commutateur 1)', 'Externe (commutateur 2)'],
   ['Adresse IP', '<strong>192.5.10.12</strong> /28', '192.5.10.1 /28'],
   ['Masque de sous-réseau', '255.255.255.240', '255.255.255.240'],
   ['Passerelle par défaut', '192.5.10.14', '192.5.10.14'],
@@ -138,7 +138,7 @@ const blocks: PageBlock[] = [
   block('heading', { level: 2, text: '🖥️ Annexe 1 — configuration des machines virtuelles' }),
   block('html', { html: annexe1 }),
   figure('/uploads/plat1-annexe.png', 'Fiche de configuration des machines (relevé d’origine).'),
-  note('gray', 'ℹ️ Remarques', '<p>Les deux VM (SRV-1 + CLIENT10) sont sur le <strong>même commutateur virtuel Externe</strong> et pointent vers le <strong>DNS 192.5.10.12</strong>. Masque <code>/28</code> = <code>255.255.255.240</code>, passerelle <code>192.5.10.14</code>.</p>'),
+  note('gray', 'ℹ️ Remarques', '<p>Les deux VM (SRV-1 + CLIENT10) sont sur le <strong>même segment Admin</strong> et pointent vers le <strong>DNS 192.5.10.12</strong>, mais <strong>chacune sur son propre commutateur externe</strong> (2 cartes ou 2 hôtes — voir Étape 2). Masque <code>/28</code> = <code>255.255.255.240</code>, passerelle <code>192.5.10.14</code>.</p>'),
 
   block('heading', { level: 2, text: '🔧 Réalisation pas à pas' }),
   block('html', { html: '<p>Huit étapes, à suivre dans l’ordre. Chacune se termine par une <strong>vérification</strong> avant de passer à la suivante.</p>' }),
@@ -197,11 +197,11 @@ write memory`),
   note('gray', '🔗 Rappels', '<p><a href="/pages/procedure-cisco-routeur-cli">Configurer un routeur en CLI</a> · <a href="/pages/procedure-ssh-packet-tracer">SSH sur Packet Tracer</a>.</p>'),
 
   // ── Étape 2 ──
-  step('2', 'Machines virtuelles (Hyper-V)', 'Serveur SRV-1 + poste CLIENT10 sur le segment Admin/IT', C.vm),
-  block('html', { html: '<p>Préparer les deux machines Windows du réseau Admin/IT — le poste <strong>CLIENT10</strong> et le serveur <strong>SRV-1</strong> — <strong>sur le même hôte Hyper-V</strong> (peut se faire en parallèle de l’étape 1).</p>' }),
+  step('2', 'Machines virtuelles (Hyper-V)', 'Serveur SRV-1 + poste CLIENT10, un commutateur externe par VM', C.vm),
+  block('html', { html: '<p>Préparer les deux machines Windows du réseau Admin/IT — le poste <strong>CLIENT10</strong> et le serveur <strong>SRV-1</strong> — chacune reliée à la maquette Cisco par son <strong>propre commutateur externe</strong> (voir la règle ci-dessous). Peut se faire en parallèle de l’étape 1.</p>' }),
   ul([
     'Créer les 2 VM (Gestionnaire Hyper-V → <strong>Nouvel ordinateur virtuel</strong>, génération 2), selon l’Annexe 1.',
-    'Connecter les deux au <strong>même commutateur virtuel Externe</strong> (ici <code>COMM-VIRTUEL-EXT-client</code>) — nécessaire pour joindre les routeurs Cisco physiques.',
+    'Placer <strong>chaque VM sur un commutateur virtuel Externe distinct</strong> (ex. <code>COMM-VIRTUEL-EXT-client</code> pour CLIENT10) — voir la règle ⚠️ ci-dessous.',
     'Installer les OS : <strong>Windows Server 2019</strong> (Expérience de bureau) sur <strong>SRV-1</strong>, <strong>Windows 10 Pro</strong> sur <strong>CLIENT10</strong> ; définir le mot de passe administrateur.',
     'Renommer les machines et appliquer l’<strong>IP fixe</strong> (tableau ci-dessous).',
   ]),
@@ -213,7 +213,7 @@ write memory`),
   figure('/uploads/plat1-vm-hyperv-carte-reseau.png', 'Paramètres Hyper-V de CLIENT10 — la carte réseau est rattachée au commutateur virtuel <strong>Externe</strong> « COMM-VIRTUEL-EXT-client ».'),
   figure('/uploads/plat1-vm-tcpip-client10.png', 'Configuration IPv4 fixe du poste : IP 192.5.10.1, masque 255.255.255.240 (/28), passerelle 192.5.10.14, DNS préféré 192.5.10.12.'),
   note('blue', '🧩 Rôles du serveur', '<p>Le serveur <strong>SRV-1</strong> (Windows Server 2019, <code>192.5.10.12</code>) porte les rôles <strong>DHCP</strong>, <strong>DNS</strong> et <strong>Serveur Web (IIS)</strong>, installés aux étapes 5 et 6. <strong>CLIENT10</strong> est un simple poste <strong>Windows 10 Pro</strong>.</p>'),
-  note('yellow', '⚠️ Commutateur Externe', '<p>Le commutateur virtuel <strong>Externe</strong> ponte les VM sur une <strong>carte réseau physique</strong> : vérifiez qu’il est rattaché à la <strong>bonne carte</strong> (celle reliée à la maquette). Une mauvaise carte = VM isolées (voir <em>Pièges fréquents ①</em>).</p>'),
+  note('red', '⚠️ Règle : un commutateur externe distinct par VM', '<p>Un commutateur virtuel <strong>Externe</strong> est lié à <strong>une seule carte réseau physique</strong>. Sur le matériel du lab, faire passer les deux VM par le <strong>même</strong> commutateur externe provoque des problèmes de connectivité (pont / multi-homing). La règle est donc : <strong>chaque VM sur son propre commutateur externe</strong>, ce qui impose</p><ul><li>soit <strong>2 cartes réseau physiques distinctes</strong> sur le même hôte (un commutateur externe par carte),</li><li>soit <strong>2 hôtes Hyper-V différents</strong>, une VM par hôte.</li></ul><p>Les deux VM restent sur le <strong>même segment Admin</strong> (<code>192.5.10.0/28</code>) — c’est le <strong>lien physique</strong> qui est dédoublé, pas le sous-réseau. Vérifiez que chaque commutateur externe pointe sur la <strong>bonne carte</strong> (cf. <em>Pièges fréquents ①</em> et <em>④</em>).</p>'),
   note('gray', '🔗 Détails', '<p><a href="/pages/procedure-vm-hyperv">Créer & configurer une VM (ISO) sur Hyper-V</a> · <a href="/pages/procedure-hyperv-ressources">Hyper-V : ressources</a> · <a href="/pages/procedure-ip-fixe-windows">Configurer une IP fixe</a> · <a href="/pages/procedure-renommer-poste">Renommer un poste</a>.</p>'),
 
   // ── Étape 3 ──
