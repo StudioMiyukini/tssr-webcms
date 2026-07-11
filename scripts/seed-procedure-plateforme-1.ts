@@ -137,7 +137,8 @@ const blocks: PageBlock[] = [
 
   block('heading', { level: 2, text: '🖥️ Annexe 1 — configuration des machines virtuelles' }),
   block('html', { html: annexe1 }),
-  note('gray', 'ℹ️ Remarques', '<p>Les deux VM (serveur + poste admin) sont sur le <strong>même commutateur virtuel Admin/IT</strong> et pointent vers le <strong>DNS 192.5.10.12</strong>. Masque <code>/28</code> = <code>255.255.255.240</code>, passerelle <code>192.5.10.14</code>.</p>'),
+  figure('/uploads/plat1-annexe.png', 'Fiche de configuration des machines (relevé d’origine).'),
+  note('gray', 'ℹ️ Remarques', '<p>Les deux VM (SRV-1 + CLIENT10) sont sur le <strong>même commutateur virtuel Externe</strong> et pointent vers le <strong>DNS 192.5.10.12</strong>. Masque <code>/28</code> = <code>255.255.255.240</code>, passerelle <code>192.5.10.14</code>.</p>'),
 
   block('heading', { level: 2, text: '🔧 Réalisation pas à pas' }),
   block('html', { html: '<p>Huit étapes, à suivre dans l’ordre. Chacune se termine par une <strong>vérification</strong> avant de passer à la suivante.</p>' }),
@@ -301,6 +302,7 @@ write memory`),
   figure('/uploads/plat1-dhcp-pool-admins.png', 'Pool de l’étendue Admins : 192.5.10.1 → 192.5.10.11.'),
   figure('/uploads/plat1-dhcp-pool-stagiaires.png', 'Pool de l’étendue Stagiaires : 192.5.50.1 → 192.5.50.200.'),
   figure('/uploads/plat1-dhcp-options-stagiaires.png', 'Options de l’étendue Stagiaires : 003 Routeur = 192.5.50.254, 006 DNS = 192.5.10.12.'),
+  figure('/uploads/plat1-dhcp-options-admins.png', 'Options de l’étendue Admins : 003 Routeur = 192.5.10.14, 006 DNS = 192.5.10.12.'),
   block('heading', { level: 4, text: 'Réservations' }),
   block('html', { html: '<p>Le <strong>point d’accès Wi-Fi</strong> reçoit toujours la même adresse grâce à une <strong>réservation DHCP</strong> (association MAC → IP) : <code>192.5.50.251</code>. Cette adresse est <strong>hors du pool <code>.1–.200</code></strong>, donc aucun conflit possible.</p>' }),
   figure('/uploads/plat1-dhcp-reservations.png', 'Réservation DHCP « Reservation Wifi » → 192.5.50.251 dans l’étendue Stagiaires.'),
@@ -318,6 +320,7 @@ write memory`),
   cmd(`ipconfig /release
 ipconfig /renew
 ipconfig /all      REM IP dans la plage .1-.200, passerelle .254, DNS 192.5.10.12`),
+  figure('/uploads/plat1-dhcp-baux.png', 'Baux d’adresses attribués côté serveur (ex. PC-Jean-Marc → 192.5.10.1).'),
   note('gray', '🔗 Détails', '<p><a href="/pages/procedure-dhcp">DHCP : étendue, options & réservation</a> · <a href="/pages/procedure-dhcp-relais">DHCP par relais (ip helper-address)</a>.</p>'),
 
   // ── Étape 7 ──
