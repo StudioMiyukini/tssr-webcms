@@ -31,18 +31,21 @@ const styleBlock = block('html', { html: `<style>
 .step-banner .step-sub{font-size:12.5px;color:var(--muted,#7a8699);font-weight:400}
 </style>` });
 
-// ── Annexe 1 : machines virtuelles (aligné sur le plan d'adressage) ──
-const annexe1 = tbl(['Caractéristique', 'VM Serveur', 'VM Poste admin'], [
-  ['Nom de la VM', '<strong>SRV-EDIVN</strong>', '<strong>POSTE-ADMIN-1</strong>'],
-  ['Système', 'Windows Server (Expérience de bureau)', 'Windows 10 Pro'],
-  ['Mémoire (RAM)', '2048 Mo', '1024 Mo'],
-  ['Stockage', 'C : 30 Go', 'C : 20 Go'],
-  ['Génération Hyper-V', '2', '2'],
-  ['Commutateur virtuel', 'Admin/IT (privé ou interne)', 'Admin/IT (privé ou interne)'],
-  ['Adresse IP / masque', '<strong>192.5.10.12</strong> /28', '192.5.10.1 /28'],
-  ['Passerelle', '192.5.10.14', '192.5.10.14'],
-  ['Serveur DNS', '192.5.10.12 (lui-même)', '192.5.10.12'],
-  ['Rôles', '<strong>DHCP · DNS · Serveur Web (IIS)</strong>', '— (poste client)'],
+const figure = (url: string, cap: string) => block('html', { html: `<figure style="margin:12px 0 16px;text-align:center"><img src="${url}" alt="${cap}" loading="lazy" style="max-width:100%;border:1px solid var(--border);border-radius:8px"/><figcaption class="meta" style="margin-top:6px;font-size:12.5px">${cap}</figcaption></figure>` });
+
+// ── Annexe 1 : machines virtuelles (relevé des configurations réelles) ──
+const annexe1 = tbl(['Caractéristique', 'VM Serveur', 'VM Poste client'], [
+  ['Nom de la VM', '<strong>SRV-1</strong>', '<strong>CLIENT10</strong>'],
+  ['Rôles / usage', 'DNS · IIS · DHCP', 'poste client'],
+  ['Système', 'Windows Server 2019', 'Windows 10 Pro'],
+  ['Mémoire (RAM)', '4096 Mo', '4096 Mo'],
+  ['Stockage', 'C : 50 Go', 'C : 40 Go'],
+  ['Commutateur virtuel', 'Externe', 'Externe'],
+  ['Adresse IP', '<strong>192.5.10.12</strong> /28', '192.5.10.1 /28'],
+  ['Masque de sous-réseau', '255.255.255.240', '255.255.255.240'],
+  ['Passerelle par défaut', '192.5.10.14', '192.5.10.14'],
+  ['Serveur DNS', 'SRV-1 (192.5.10.12)', 'SRV-1 (192.5.10.12)'],
+  ['Nom de domaine', 'edivn.lan', 'edivn.lan'],
 ]);
 
 const blocks: PageBlock[] = [
@@ -74,8 +77,8 @@ const blocks: PageBlock[] = [
   block('heading', { level: 3, text: 'Serveur Web (réseau IT, IP fixe)' }),
   block('html', { html: '<p>Hébergé dans le réseau IT, il héberge les sites de l’école. Deux sites à créer :</p>' }),
   ul([
-    'Site 1 : <code>www.Groupe5-EDIVN.lan</code> sur le <strong>port 8080</strong>, accessible <strong>depuis l’extérieur</strong>.',
-    'Site 2 (intranet) : <code>Intranet.5.EDIVN.lan</code>, accessible <strong>pour l’école</strong>, avec une page d’accueil « <em>Bienvenue sur le site de l’école EDIVN</em> ».',
+    'Site 1 : <code>www.Groupe05-EDIVN.lan</code> sur le <strong>port 8080</strong>, accessible <strong>depuis l’extérieur</strong>.',
+    'Site 2 (intranet) : <code>Intranet.05.EDIVN.lan</code>, accessible <strong>pour l’école</strong>, avec une page d’accueil « <em>Bienvenue sur le site de l’école EDIVN</em> ».',
   ]),
   block('heading', { level: 3, text: 'Switches & accès distant' }),
   ul([
@@ -130,7 +133,7 @@ const blocks: PageBlock[] = [
     ['Routeur_G5 (bordure)', 'Gi0/0', 'Extérieur 172.16.3.0/24', '172.16.3.250'],
   ]) }),
   note('gray', 'ℹ️ Nommage des interfaces', '<p>Sur les <strong>routeurs 2811</strong> les interfaces sont des <code>FastEthernet0/x</code> ; sur un <strong>2911</strong> des <code>GigabitEthernet0/x</code>. Rôles identiques — adaptez simplement le nom dans la CLI.</p>'),
-  note('gray', 'ℹ️ Cohérence du nom de domaine', '<p>Utilisez le <strong>même nom de domaine</strong> partout : zone DNS, <code>ip domain-name</code> des routeurs/switches, option DHCP 015 et URL des sites (exemple ici : <code>Groupe5-EDIVN.lan</code>).</p>'),
+  note('gray', 'ℹ️ Noms de domaine utilisés', '<p>Le domaine des <strong>équipements réseau</strong> (<code>ip domain-name</code> des routeurs/switches, requis pour SSH) est <code>edivn.lan</code>. Les <strong>sites Web</strong> ont chacun leur <strong>zone DNS</strong> : <code>Groupe05-EDIVN.lan</code> (site public) et <code>05.EDIVN.lan</code> (intranet). Adaptez le numéro de groupe.</p>'),
 
   block('heading', { level: 2, text: '🖥️ Annexe 1 — configuration des machines virtuelles' }),
   block('html', { html: annexe1 }),
@@ -172,7 +175,7 @@ interface GigabitEthernet0/1
  exit
 !
 ! --- Acces distant SSH (mot de passe : cisco) ---
-ip domain-name Groupe5-EDIVN.lan
+ip domain-name edivn.lan
 enable secret cisco
 username admin privilege 15 secret cisco
 crypto key generate rsa
@@ -193,19 +196,23 @@ write memory`),
   note('gray', '🔗 Rappels', '<p><a href="/pages/procedure-cisco-routeur-cli">Configurer un routeur en CLI</a> · <a href="/pages/procedure-ssh-packet-tracer">SSH sur Packet Tracer</a>.</p>'),
 
   // ── Étape 2 ──
-  step('2', 'Machines virtuelles (Hyper-V)', 'Serveur + poste admin sur le segment Admin/IT', C.vm),
-  block('html', { html: '<p>Préparer les deux machines Windows du réseau Admin/IT — le <strong>Poste Admin 1</strong> et le <strong>Serveur DHCP-DNS-Web</strong> — <strong>sur le même hôte Hyper-V</strong> (peut se faire en parallèle de l’étape 1).</p>' }),
+  step('2', 'Machines virtuelles (Hyper-V)', 'Serveur SRV-1 + poste CLIENT10 sur le segment Admin/IT', C.vm),
+  block('html', { html: '<p>Préparer les deux machines Windows du réseau Admin/IT — le poste <strong>CLIENT10</strong> et le serveur <strong>SRV-1</strong> — <strong>sur le même hôte Hyper-V</strong> (peut se faire en parallèle de l’étape 1).</p>' }),
   ul([
     'Créer les 2 VM (Gestionnaire Hyper-V → <strong>Nouvel ordinateur virtuel</strong>, génération 2), selon l’Annexe 1.',
-    'Connecter les deux au <strong>même commutateur virtuel</strong> (privé/interne) = segment <strong>Admin/IT</strong>.',
-    'Installer les OS : <strong>Windows Server</strong> (Expérience de bureau) sur la VM serveur, <strong>Windows 10 Pro</strong> sur le poste ; définir le mot de passe administrateur.',
+    'Connecter les deux au <strong>même commutateur virtuel Externe</strong> (ici <code>COMM-VIRTUEL-EXT-client</code>) — nécessaire pour joindre les routeurs Cisco physiques.',
+    'Installer les OS : <strong>Windows Server 2019</strong> (Expérience de bureau) sur <strong>SRV-1</strong>, <strong>Windows 10 Pro</strong> sur <strong>CLIENT10</strong> ; définir le mot de passe administrateur.',
     'Renommer les machines et appliquer l’<strong>IP fixe</strong> (tableau ci-dessous).',
   ]),
   block('html', { html: tbl(['VM', 'Nom', 'IP / masque', 'Passerelle', 'DNS'], [
-    ['Serveur', 'SRV-EDIVN', '<strong>192.5.10.12</strong> /28', '192.5.10.14', '192.5.10.12 (lui-même)'],
-    ['Poste admin', 'POSTE-ADMIN-1', '192.5.10.1 /28', '192.5.10.14', '192.5.10.12'],
+    ['Serveur', 'SRV-1', '<strong>192.5.10.12</strong> /28', '192.5.10.14', '192.5.10.12 (lui-même)'],
+    ['Poste client', 'CLIENT10', '192.5.10.1 /28', '192.5.10.14', '192.5.10.12'],
   ]) }),
-  note('blue', '🧩 Rôles du serveur', '<p>Le serveur <strong>Windows Server</strong> (<code>192.5.10.12</code>) portera <strong>trois rôles</strong>, installés aux étapes suivantes : <strong>DHCP</strong>, <strong>DNS</strong> et <strong>Serveur Web / IIS</strong>. Le poste admin est un simple client <strong>Windows 10 Pro</strong>.</p>'),
+  figure('/uploads/plat1-vm-specs-client10.png', 'Spécifications de CLIENT10 : Windows 10 Pro, 4 Go de RAM.'),
+  figure('/uploads/plat1-vm-hyperv-carte-reseau.png', 'Paramètres Hyper-V de CLIENT10 — la carte réseau est rattachée au commutateur virtuel <strong>Externe</strong> « COMM-VIRTUEL-EXT-client ».'),
+  figure('/uploads/plat1-vm-tcpip-client10.png', 'Configuration IPv4 fixe du poste : IP 192.5.10.1, masque 255.255.255.240 (/28), passerelle 192.5.10.14, DNS préféré 192.5.10.12.'),
+  note('blue', '🧩 Rôles du serveur', '<p>Le serveur <strong>SRV-1</strong> (Windows Server 2019, <code>192.5.10.12</code>) porte les rôles <strong>DHCP</strong>, <strong>DNS</strong> et <strong>Serveur Web (IIS)</strong>, installés aux étapes 5 et 6. <strong>CLIENT10</strong> est un simple poste <strong>Windows 10 Pro</strong>.</p>'),
+  note('yellow', '⚠️ Commutateur Externe', '<p>Le commutateur virtuel <strong>Externe</strong> ponte les VM sur une <strong>carte réseau physique</strong> : vérifiez qu’il est rattaché à la <strong>bonne carte</strong> (celle reliée à la maquette). Une mauvaise carte = VM isolées (voir <em>Pièges fréquents ①</em>).</p>'),
   note('gray', '🔗 Détails', '<p><a href="/pages/procedure-vm-hyperv">Créer & configurer une VM (ISO) sur Hyper-V</a> · <a href="/pages/procedure-hyperv-ressources">Hyper-V : ressources</a> · <a href="/pages/procedure-ip-fixe-windows">Configurer une IP fixe</a> · <a href="/pages/procedure-renommer-poste">Renommer un poste</a>.</p>'),
 
   // ── Étape 3 ──
@@ -214,7 +221,7 @@ write memory`),
   cmd(`enable
 configure terminal
 hostname SW-1
-ip domain-name Groupe5-EDIVN.lan
+ip domain-name edivn.lan
 enable secret cisco
 username admin privilege 15 secret cisco
 !
@@ -254,32 +261,50 @@ write memory`),
 
   // ── Étape 5 ──
   step('5', 'Serveur — rôles, sites Web (IIS) & DNS', 'Installation DHCP/DNS/IIS, 2 sites et enregistrements DNS', C.serveur),
-  block('html', { html: '<p>Sur le serveur Windows (<code>192.5.10.12</code>) : installer les <strong>rôles</strong>, créer les <strong>2 sites Web</strong> et les <strong>enregistrements DNS</strong>.</p>' }),
-  block('heading', { level: 4, text: 'Rôles à installer' }),
-  ul(['Rôle <strong>DHCP</strong> (configuré à l’étape 6).', 'Rôle <strong>DNS</strong> (zones + enregistrements).', 'Rôle <strong>Serveur Web (IIS)</strong>.']),
+  block('html', { html: '<p>Sur <strong>SRV-1</strong> (<code>192.5.10.12</code>) : installer les <strong>rôles</strong>, créer les <strong>2 sites Web</strong> et les <strong>enregistrements DNS</strong>.</p>' }),
+
+  block('heading', { level: 4, text: 'Rôles installés' }),
+  ul(['<strong>DHCP</strong> (configuré à l’étape 6).', '<strong>DNS</strong> (zones + enregistrements).', '<strong>Serveur Web (IIS)</strong>.', '<strong>Services de fichiers et de stockage</strong> (présent par défaut).']),
+  figure('/uploads/plat1-srv-roles.png', 'Gestionnaire de serveur : les 4 rôles installés — DHCP, DNS, IIS, Services de fichiers et de stockage.'),
+
   block('heading', { level: 4, text: 'Sites Web (IIS)' }),
   ul([
-    'Un <strong>dossier par site</strong> avec un fichier <code>index.html</code> ; la page de l’intranet affiche « <em>Bienvenue sur le site de l’école EDIVN</em> ».',
-    'Site 1 — <code>www.Groupe5-EDIVN.lan</code> : liaison HTTP sur le <strong>port 8080</strong>, accessible depuis l’extérieur.',
-    'Site 2 — intranet (<code>Intranet.5.EDIVN.lan</code>) : liaison HTTP, accessible pour l’école.',
+    'Créer <strong>deux sites</strong>, un <strong>dossier physique</strong> par site avec un <code>index.html</code> ; la page de l’intranet affiche « <em>Bienvenue sur le site de l’école EDIVN</em> ».',
+    'Site <strong>Public</strong> — dossier <code>C:\\inetpub\\Public-EDIVN</code> ; liaison HTTP <code>www.Groupe05-EDIVN.lan</code> sur le <strong>port 8080</strong>, accessible depuis l’extérieur.',
+    'Site <strong>intranet privé</strong> — dossier <code>C:\\inetpub\\Prive-EDIVN</code> ; liaison HTTP, accessible pour l’école (<code>Intranet.05.EDIVN.lan</code>).',
   ]),
+  figure('/uploads/plat1-iis-sites.png', 'IIS → deux sites : « intranet privé » et « Public ».'),
+  figure('/uploads/plat1-iis-public.png', 'Site Public → dossier physique C:\\inetpub\\Public-EDIVN.'),
+  figure('/uploads/plat1-iis-binding-8080.png', 'Liaison du site Public : http, nom d’hôte www.Groupe05-EDIVN.lan, port 8080, IP 192.5.10.12.'),
+  figure('/uploads/plat1-iis-intranet.png', 'Site intranet privé → dossier physique C:\\inetpub\\Prive-EDIVN.'),
+
   block('heading', { level: 4, text: 'Enregistrements DNS' }),
-  ul([
-    'Enregistrement <strong>A</strong> du domaine racine : <code>Groupe5-EDIVN.lan → 192.5.10.12</code>.',
-    'Un <strong>alias (CNAME)</strong> <code>www</code> → domaine racine, plus l’entrée de l’intranet.',
-  ]),
-  note('blue', '🌐 Accès au site sur le port 8080', '<p>Le site est <strong>servi par IIS sur le port 8080</strong> (défini dans la <strong>liaison / binding</strong> du site). On y accède par <code>http://www.Groupe5-EDIVN.lan:8080</code> : le <strong>DNS</strong> résout le nom vers <code>192.5.10.12</code>, et le <code>:8080</code> correspond à la liaison IIS. <strong>Rappel</strong> : un enregistrement DNS (A/CNAME) ne transporte <strong>pas</strong> de port — c’est la <strong>liaison IIS</strong> qui fixe le 8080. Pour l’<strong>accès externe</strong>, prévoir une <strong>redirection de port (NAT/PAT)</strong> vers <code>192.5.10.12:8080</code> (étape 7).</p>'),
+  block('html', { html: '<p>Deux <strong>zones de recherche directe</strong> sur SRV-1, chacune avec un enregistrement <strong>A</strong> racine vers <code>192.5.10.12</code> et un <strong>alias (CNAME)</strong> vers la racine :</p>' }),
+  block('html', { html: tbl(['Zone', 'Enregistrements', 'Résout'], [
+    ['<code>Groupe05-EDIVN.lan</code>', 'A (racine) → 192.5.10.12 · CNAME <code>www</code> → racine', '<code>www.Groupe05-EDIVN.lan</code> (site Public)'],
+    ['<code>05.EDIVN.lan</code>', 'A (racine) → 192.5.10.12 · CNAME <code>Intranet</code> → racine', '<code>Intranet.05.EDIVN.lan</code> (intranet)'],
+  ]) }),
+  figure('/uploads/plat1-dns-zones.png', 'Gestionnaire DNS : les deux zones de recherche directe.'),
+  figure('/uploads/plat1-dns-zone-www.png', 'Zone Groupe05-EDIVN.lan : A racine → 192.5.10.12 et CNAME www.'),
+  figure('/uploads/plat1-dns-zone-intranet.png', 'Zone 05.EDIVN.lan : A racine → 192.5.10.12 et CNAME Intranet.'),
+  note('blue', '🌐 Accès au site sur le port 8080', '<p>Le site est <strong>servi par IIS sur le port 8080</strong> (défini dans la <strong>liaison / binding</strong>). On y accède par <code>http://www.Groupe05-EDIVN.lan:8080</code> : le <strong>DNS</strong> résout le nom vers <code>192.5.10.12</code>, et le <code>:8080</code> correspond à la liaison IIS. <strong>Rappel</strong> : un enregistrement DNS (A/CNAME) ne transporte <strong>pas</strong> de port — c’est la <strong>liaison IIS</strong> qui fixe le 8080. Pour l’<strong>accès externe</strong>, prévoir une <strong>redirection de port (NAT/PAT)</strong> vers <code>192.5.10.12:8080</code> (étape 7).</p>'),
   note('gray', '🔗 Détails', '<p><a href="/pages/procedure-iis">IIS : héberger un site</a> · <a href="/pages/procedure-dns">DNS : zones & enregistrements</a> · <a href="/pages/procedure-dhcp">rôle DHCP</a>.</p>'),
 
   // ── Étape 6 ──
   step('6', 'DHCP — étendues & relais', 'Deux étendues + relais ip helper-address sur le routeur', C.dhcp),
-  block('html', { html: '<p>Créer deux <strong>étendues</strong> sur le serveur DHCP (<code>192.5.10.12</code>), une par réseau, puis un <strong>relais</strong> sur le routeur pour les clients du réseau Utilisateurs.</p>' }),
+  block('html', { html: '<p>Créer deux <strong>étendues</strong> sur SRV-1 (<code>192.5.10.12</code>), une par réseau, puis un <strong>relais</strong> sur le routeur pour les clients du réseau Utilisateurs.</p>' }),
   block('html', { html: tbl(['Étendue', 'Réseau', 'Plage distribuée', 'Passerelle (003)', 'DNS (006)'], [
-    ['Admin', '192.5.10.0/28', '192.5.10.1 → .11', '192.5.10.14', '192.5.10.12'],
-    ['Utilisateurs', '192.5.50.0/24', '192.5.50.1 → .200', '192.5.50.254', '192.5.10.12'],
+    ['Etendue Admins', '192.5.10.0/28', '192.5.10.1 → .11', '192.5.10.14', '192.5.10.12'],
+    ['Etendue Stagiaires', '192.5.50.0/24', '192.5.50.1 → .200', '192.5.50.254', '192.5.10.12'],
   ]) }),
-  block('html', { html: '<p class="meta" style="font-size:12px">Option <strong>015</strong> (nom de domaine) = <code>Groupe5-EDIVN.lan</code> sur les deux étendues.</p>' }),
-  note('yellow', '⚠️ Adresses à exclure', '<ul><li><strong>Utilisateurs</strong> : les IP fixes de l’infra (WAP <code>.251</code>, Routeur_G5 <code>.252</code>, Sw-2 <code>.253</code>, passerelle <code>.254</code>) sont <strong>au-dessus du pool <code>.1–.200</code></strong> → <strong>rien à exclure</strong>. (Si vous élargissez le pool au-delà de <code>.200</code>, excluez ces adresses.)</li><li><strong>Admin</strong> : si le <strong>Poste Admin 1 (<code>.1</code>)</strong> est en IP fixe, l’exclure de l’étendue (ou le passer en DHCP).</li></ul>'),
+  figure('/uploads/plat1-dhcp-etendues.png', 'Les deux étendues actives sur SRV-1 : « Etendue Admins » (192.5.10.0) et « Etendue Stagiaires » (192.5.50.0).'),
+  figure('/uploads/plat1-dhcp-pool-admins.png', 'Pool de l’étendue Admins : 192.5.10.1 → 192.5.10.11.'),
+  figure('/uploads/plat1-dhcp-pool-stagiaires.png', 'Pool de l’étendue Stagiaires : 192.5.50.1 → 192.5.50.200.'),
+  figure('/uploads/plat1-dhcp-options-stagiaires.png', 'Options de l’étendue Stagiaires : 003 Routeur = 192.5.50.254, 006 DNS = 192.5.10.12.'),
+  block('heading', { level: 4, text: 'Réservations' }),
+  block('html', { html: '<p>Le <strong>point d’accès Wi-Fi</strong> reçoit toujours la même adresse grâce à une <strong>réservation DHCP</strong> (association MAC → IP) : <code>192.5.50.251</code>. Cette adresse est <strong>hors du pool <code>.1–.200</code></strong>, donc aucun conflit possible.</p>' }),
+  figure('/uploads/plat1-dhcp-reservations.png', 'Réservation DHCP « Reservation Wifi » → 192.5.50.251 dans l’étendue Stagiaires.'),
+  note('gray', 'ℹ️ Exclusions', '<p>Les autres IP fixes de l’infra (Routeur_G5 <code>.252</code>, Sw-2 <code>.253</code>, passerelle <code>.254</code>) sont déjà <strong>au-dessus du pool</strong> → rien à exclure. Côté Admin, le poste en IP fixe est géré par <strong>réservation</strong> (ex. <code>192.5.10.5</code>).</p>'),
   block('heading', { level: 4, text: 'Relais DHCP sur R_IT_G5 (indispensable)' }),
   block('html', { html: '<p>Le serveur DHCP est dans le réseau Admin ; les clients Utilisateurs sont <strong>derrière le routeur</strong> → leurs demandes (des <strong>broadcasts</strong>) ne franchissent pas le routeur sans <strong>relais</strong>. On ajoute <code>ip helper-address</code> sur l’interface côté Utilisateurs :</p>' }),
   cmd(`configure terminal
@@ -369,8 +394,8 @@ ping 8.8.8.8              ! Internet (via PAT)`),
     '<strong>SSH</strong> depuis le poste admin vers R_IT_G5, SW-1, Sw-2 et Routeur_G5 (<code>ssh -l admin &lt;IP&gt;</code>).',
     '<strong>DHCP</strong> : un client Utilisateurs reçoit une IP <code>.1–.200</code>, passerelle <code>.254</code>, DNS <code>192.5.10.12</code>.',
     '<strong>Routage inter-réseaux</strong> : depuis un client, <code>ping 192.5.10.12</code> (serveur) et <code>ping 192.5.10.14</code> (passerelle Admin).',
-    '<strong>DNS</strong> : <code>nslookup www.Groupe5-EDIVN.lan</code> → <code>192.5.10.12</code>.',
-    '<strong>Web</strong> : <code>http://www.Groupe5-EDIVN.lan:8080</code> et l’intranet s’affichent.',
+    '<strong>DNS</strong> : <code>nslookup www.Groupe05-EDIVN.lan</code> → <code>192.5.10.12</code>.',
+    '<strong>Web</strong> : <code>http://www.Groupe05-EDIVN.lan:8080</code> et l’intranet s’affichent.',
     '<strong>Internet</strong> : <code>ping 8.8.8.8</code> depuis un client ; <code>show ip nat translations</code> se remplit sur Routeur_G5.',
     '<strong>Wi-Fi</strong> : association au SSID <code>SSID-EDWIN05</code> + IP DHCP.',
   ]),
@@ -383,7 +408,7 @@ ping 8.8.8.8              ! Internet (via PAT)`),
   block('heading', { level: 3, text: '② SSH ne fonctionne pas — clé RSA invalide' }),
   note('yellow', '🔑 Cause & solution', '<p>La <strong>clé RSA</strong> a été générée <strong>avant</strong> d’avoir fixé le <code>hostname</code> et le <code>ip domain-name</code> (ou l’équipement a été renommé ensuite) → la clé porte un mauvais nom. <strong>Solution</strong> : fixer hostname + domaine, puis <strong>supprimer et régénérer</strong> la clé.</p>'),
   cmd(`configure terminal
-ip domain-name Groupe5-EDIVN.lan
+ip domain-name edivn.lan
 crypto key zeroize rsa          ! supprime l'ancienne cle
 crypto key generate rsa
 1024                            ! la longueur, seule sur sa ligne
