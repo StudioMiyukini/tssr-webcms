@@ -29,9 +29,19 @@ const styleBlock = block('html', { html: `<style>
 .step-banner .step-tt{display:flex;flex-direction:column;gap:2px;min-width:0}
 .step-banner h3{margin:0;font-size:17px;line-height:1.25}
 .step-banner .step-sub{font-size:12.5px;color:var(--muted,#7a8699);font-weight:400}
+.pb-acc{border:1px solid var(--border);border-radius:10px;margin:10px 0;overflow:hidden;background:var(--surface-2)}
+.pb-acc>summary{cursor:pointer;padding:12px 16px;font-weight:600;font-size:14.5px;list-style:none;display:flex;align-items:center;gap:10px}
+.pb-acc>summary::-webkit-details-marker{display:none}
+.pb-acc>summary::before{content:'▶';font-size:10px;color:var(--muted,#7a8699);transition:transform .15s;flex:0 0 auto}
+.pb-acc[open]>summary::before{transform:rotate(90deg)}
+.pb-acc[open]>summary{border-bottom:1px solid var(--border)}
+.pb-acc-body{padding:6px 16px 12px}
+.pb-acc-body>*:first-child{margin-top:8px}
 </style>` });
 
 const figure = (url: string, cap: string) => block('html', { html: `<figure style="margin:12px 0 16px;text-align:center"><img src="${url}" alt="${cap}" loading="lazy" style="max-width:100%;border:1px solid var(--border);border-radius:8px"/><figcaption class="meta" style="margin-top:6px;font-size:12.5px">${cap}</figcaption></figure>` });
+// Accordéon repliable : regroupe des blocs HTML dans un <details>.
+const acc = (summary: string, inner: PageBlock[]) => block('html', { html: `<details class="pb-acc"><summary>${summary}</summary><div class="pb-acc-body">${inner.map(b => (b as any).html || '').join('')}</div></details>` });
 
 // ── Annexe 1 : machines virtuelles (relevé des configurations réelles) ──
 const annexe1 = tbl(['Caractéristique', 'VM Serveur', 'VM Poste client'], [
@@ -406,10 +416,11 @@ ping 8.8.8.8              ! Internet (via PAT)`),
 
   block('heading', { level: 2, text: '🧰 Pièges fréquents & dépannage' }),
 
-  block('heading', { level: 3, text: '① Les VM ne communiquent pas — commutateur externe Hyper-V sur la mauvaise carte' }),
-  block('html', { html: '<p><strong>Symptôme</strong> : les VM n’ont pas de connectivité vers la maquette.<br><strong>Cause</strong> : le <strong>commutateur virtuel externe</strong> Hyper-V est rattaché à la <strong>mauvaise carte réseau physique</strong>.<br><strong>Solution</strong> : Gestionnaire Hyper-V → <em>Gestionnaire de commutateur virtuel</em> → commutateur <strong>Externe</strong> → sélectionner la <strong>bonne carte</strong> → OK. Vérifier ensuite, dans les <em>Paramètres</em> de chaque VM, que la carte réseau est connectée à ce commutateur.</p>' }),
+  acc('① Les VM ne communiquent pas — commutateur externe sur la mauvaise carte', [
+    block('html', { html: '<p><strong>Symptôme</strong> : les VM n’ont pas de connectivité vers la maquette.<br><strong>Cause</strong> : le <strong>commutateur virtuel externe</strong> Hyper-V est rattaché à la <strong>mauvaise carte réseau physique</strong>.<br><strong>Solution</strong> : Gestionnaire Hyper-V → <em>Gestionnaire de commutateur virtuel</em> → commutateur <strong>Externe</strong> → sélectionner la <strong>bonne carte</strong> → OK. Vérifier ensuite, dans les <em>Paramètres</em> de chaque VM, que la carte réseau est connectée à ce commutateur.</p>' }),
+  ]),
 
-  block('heading', { level: 3, text: '② SSH ne fonctionne pas — clé RSA invalide ou client Windows incompatible' }),
+  acc('② SSH ne fonctionne pas — clé RSA invalide ou client Windows incompatible', [
   note('yellow', '🔑 Cause 1 & solution : clé RSA', '<p>La <strong>clé RSA</strong> a été générée <strong>avant</strong> d’avoir fixé le <code>hostname</code> et le <code>ip domain-name</code> (ou l’équipement a été renommé ensuite) → la clé porte un mauvais nom. <strong>Solution</strong> : fixer hostname + domaine, puis <strong>supprimer et régénérer</strong> la clé.</p>'),
   cmd(`configure terminal
 ip domain-name edivn.lan
@@ -433,8 +444,9 @@ show crypto key mypubkey rsa    ! la cle doit exister
     'Dépannage seulement, si l’on tient au client natif : <code>ssh -o KexAlgorithms=+diffie-hellman-group1-sha1 -o HostKeyAlgorithms=+ssh-rsa -l admin &lt;IP&gt;</code> (moins pratique — PuTTY/MobaXterm restent conseillés).',
   ]),
   note('gray', 'ℹ️ À contrôler aussi', '<ul><li>Un <strong>compte local</strong> existe : <code>username admin privilege 15 secret cisco</code>.</li><li>Modulus <strong>≥ 768</strong> (1024 recommandé) pour SSHv2.</li><li>Utilisez <strong>SSH</strong> (pas <code>telnet</code>).</li></ul>'),
+  ]),
 
-  block('heading', { level: 3, text: '③ Ping d’un poste vers le serveur qui échoue (l’inverse fonctionne)' }),
+  acc('③ Ping d’un poste vers le serveur qui échoue (l’inverse fonctionne)', [
   note('yellow', '🛡️ Cause & solution : pare-feu Windows du serveur', '<p>Si le sens <strong>Serveur → poste</strong> fonctionne, le <strong>routage est bon</strong>. Ce qui échoue, c’est le <strong>ping entrant</strong> : le <strong>pare-feu Windows</strong> bloque par défaut l’<strong>ICMP entrant</strong> non sollicité (surtout depuis un autre sous-réseau). <strong>Solution : autoriser l’ICMP echo entrant</strong> sur le serveur.</p>'),
   cmd(`REM Sur le SERVEUR Windows (invite admin) — autoriser le ping entrant IPv4 :
 netsh advfirewall firewall add rule name="ICMPv4 Echo In" protocol=icmpv4:8,any dir=in action=allow
@@ -442,8 +454,9 @@ netsh advfirewall firewall add rule name="ICMPv4 Echo In" protocol=icmpv4:8,any 
 REM ou en PowerShell (admin) :
 Enable-NetFirewallRule -DisplayName "Partage de fichiers et d'imprimantes (demande d'echo - trafic entrant ICMPv4)"`),
   note('gray', 'ℹ️ Détail', '<p>Pas-à-pas illustré : <a href="/pages/astuce-pare-feu-ping">Autoriser le ping (ICMP) dans le pare-feu</a>.</p>'),
+  ]),
 
-  block('heading', { level: 3, text: '④ Impossible de pinguer un autre réseau depuis un hôte Hyper-V à deux cartes' }),
+  acc('④ Impossible de pinguer un autre réseau depuis un hôte Hyper-V à deux cartes', [
   note('yellow', '🔎 Diagnostic', '<p>D’abord vérifier l’évidence : sur R_IT_G5, <code>show ip interface brief</code> (les 2 interfaces <strong>up/up</strong>) et, côté client, <code>ipconfig /all</code> (bon masque <strong>/24</strong> et <strong>passerelle par défaut</strong> <code>192.5.50.254</code>). <strong>Piège</strong> : pinguer sa <em>propre</em> passerelle réussit même sans passerelle par défaut (même sous-réseau) — ça ne prouve rien sur le routage.</p>'),
   note('red', '🎯 Cause fréquente : hôte multi-homé (2 passerelles par défaut)', '<p>Si vous testez depuis l’<strong>hôte Hyper-V</strong> et qu’il a <strong>deux cartes</strong> (une physique DHCP vers la salle <code>172.16.3.x</code>, une vEthernet du lab <code>192.5.50.x</code>), Windows applique la <strong>route par défaut de la carte physique</strong> pour tout réseau non directement connecté. Le ping part alors <strong>vers Internet</strong> au lieu du routeur du lab — le routage Cisco n’est pas en cause.</p>'),
   cmd(`:: preuve : le 1er saut sort par la mauvaise carte
@@ -454,6 +467,7 @@ route add 192.5.10.0 mask 255.255.255.240 192.5.50.254 -p
 tracert -d 192.5.10.14      ! 1er saut doit devenir 192.5.50.254`),
   note('green', '✅ Solutions', '<p>(1) Tester depuis une <strong>VM à une seule carte</strong> sur le réseau Utilisateurs (elle atteint l’autre réseau sans rien ajouter) ; ou (2) <strong>désactiver la carte inutile</strong> le temps du test ; ou (3) ne garder <strong>qu’une seule passerelle par défaut</strong> sur l’hôte + des <strong>routes statiques</strong> vers les sous-réseaux du lab.</p>'),
   note('gray', '🔗 Méthode', '<p><a href="/pages/procedure-test-connectivite">Test de connectivité méthodique</a> (dérouler dans l’ordre : lien → passerelle → réseau distant).</p>'),
+  ]),
 ];
 
 function cookieFrom(res: Response): string {
