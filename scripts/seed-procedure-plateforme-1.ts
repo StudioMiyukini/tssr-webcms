@@ -408,8 +408,8 @@ ping 8.8.8.8              ! Internet (via PAT)`),
   block('heading', { level: 3, text: '① Les VM ne communiquent pas — commutateur externe Hyper-V sur la mauvaise carte' }),
   block('html', { html: '<p><strong>Symptôme</strong> : les VM n’ont pas de connectivité vers la maquette.<br><strong>Cause</strong> : le <strong>commutateur virtuel externe</strong> Hyper-V est rattaché à la <strong>mauvaise carte réseau physique</strong>.<br><strong>Solution</strong> : Gestionnaire Hyper-V → <em>Gestionnaire de commutateur virtuel</em> → commutateur <strong>Externe</strong> → sélectionner la <strong>bonne carte</strong> → OK. Vérifier ensuite, dans les <em>Paramètres</em> de chaque VM, que la carte réseau est connectée à ce commutateur.</p>' }),
 
-  block('heading', { level: 3, text: '② SSH ne fonctionne pas — clé RSA invalide' }),
-  note('yellow', '🔑 Cause & solution', '<p>La <strong>clé RSA</strong> a été générée <strong>avant</strong> d’avoir fixé le <code>hostname</code> et le <code>ip domain-name</code> (ou l’équipement a été renommé ensuite) → la clé porte un mauvais nom. <strong>Solution</strong> : fixer hostname + domaine, puis <strong>supprimer et régénérer</strong> la clé.</p>'),
+  block('heading', { level: 3, text: '② SSH ne fonctionne pas — clé RSA invalide ou client Windows incompatible' }),
+  note('yellow', '🔑 Cause 1 & solution : clé RSA', '<p>La <strong>clé RSA</strong> a été générée <strong>avant</strong> d’avoir fixé le <code>hostname</code> et le <code>ip domain-name</code> (ou l’équipement a été renommé ensuite) → la clé porte un mauvais nom. <strong>Solution</strong> : fixer hostname + domaine, puis <strong>supprimer et régénérer</strong> la clé.</p>'),
   cmd(`configure terminal
 ip domain-name edivn.lan
 crypto key zeroize rsa          ! supprime l'ancienne cle
@@ -425,7 +425,13 @@ end
 show ip ssh                     ! doit indiquer SSH Enabled, version 2.0
 show crypto key mypubkey rsa    ! la cle doit exister
 ! Test depuis un client : ssh -l admin 192.5.10.13`),
-  note('gray', 'ℹ️ À contrôler aussi', '<ul><li>Un <strong>compte local</strong> existe : <code>username admin privilege 15 secret cisco</code>.</li><li>Modulus <strong>≥ 768</strong> (1024 recommandé) pour SSHv2.</li><li>Depuis le client : <code>ssh -l admin &lt;IP&gt;</code> (pas <code>telnet</code>).</li></ul>'),
+  note('red', '🖥️ Cause 2 & solution : client SSH Windows incompatible → PuTTY / MobaXterm', '<p>Même avec une clé valide, la connexion peut échouer avec un message du type <em>« Unable to negotiate… no matching key exchange method / host key type »</em>. Le <strong>client OpenSSH natif de Windows</strong> (commande <code>ssh</code>) <strong>désactive par défaut les algorithmes hérités</strong> (<code>diffie-hellman-group1-sha1</code>, clé d’hôte <code>ssh-rsa</code>, chiffrements <code>aes-cbc</code>/<code>3des</code>) que les <strong>anciens IOS Cisco du lab</strong> sont seuls à proposer → aucune négociation possible.</p><p><strong>Solution : se connecter avec <a href="https://www.putty.org/" target="_blank" rel="noopener">PuTTY</a> ou <a href="https://mobaxterm.mobatek.net/" target="_blank" rel="noopener">MobaXterm</a></strong>, qui prennent encore en charge ces algorithmes hérités. C’est la méthode fiable sur le matériel à disposition.</p>'),
+  ul([
+    '<strong>PuTTY</strong> : <em>Host Name</em> = l’IP de l’équipement (ex. <code>192.5.10.13</code>), <em>Port</em> <code>22</code>, <em>Connection type</em> <strong>SSH</strong> → <em>Open</em>, puis login <code>admin</code> / <code>cisco</code>.',
+    '<strong>MobaXterm</strong> : <em>Session → SSH</em>, <em>Remote host</em> = l’IP, <em>Specify username</em> = <code>admin</code> → OK.',
+    'Dépannage seulement, si l’on tient au client natif : <code>ssh -o KexAlgorithms=+diffie-hellman-group1-sha1 -o HostKeyAlgorithms=+ssh-rsa -l admin &lt;IP&gt;</code> (moins pratique — PuTTY/MobaXterm restent conseillés).',
+  ]),
+  note('gray', 'ℹ️ À contrôler aussi', '<ul><li>Un <strong>compte local</strong> existe : <code>username admin privilege 15 secret cisco</code>.</li><li>Modulus <strong>≥ 768</strong> (1024 recommandé) pour SSHv2.</li><li>Utilisez <strong>SSH</strong> (pas <code>telnet</code>).</li></ul>'),
 
   block('heading', { level: 3, text: '③ Ping d’un poste vers le serveur qui échoue (l’inverse fonctionne)' }),
   note('yellow', '🛡️ Cause & solution : pare-feu Windows du serveur', '<p>Si le sens <strong>Serveur → poste</strong> fonctionne, le <strong>routage est bon</strong>. Ce qui échoue, c’est le <strong>ping entrant</strong> : le <strong>pare-feu Windows</strong> bloque par défaut l’<strong>ICMP entrant</strong> non sollicité (surtout depuis un autre sous-réseau). <strong>Solution : autoriser l’ICMP echo entrant</strong> sur le serveur.</p>'),
