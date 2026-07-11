@@ -427,6 +427,50 @@ write memory
     '<strong>Wi-Fi</strong> : association au SSID <code>SSID-EDWIN05</code> + IP DHCP.',
   ]),
 
+  block('heading', { level: 2, text: '🔌 Plan de tests ping (communication réseau)' }),
+  note('blue', '🎯 Méthode : tester en anneaux', '<p>On valide la connectivité du <strong>plus proche au plus lointain</strong> : d’abord sa <strong>passerelle</strong>, puis le <strong>réseau distant</strong>, puis la <strong>sortie</strong>, puis <strong>Internet</strong>. La <strong>première</strong> étape qui échoue localise la panne au saut près. Les <strong>interfaces de routeur</strong> répondent toujours → idéales pour valider le <strong>routage</strong> sans interférence du pare-feu.</p>'),
+
+  block('heading', { level: 4, text: 'A. Dans chaque réseau (liaison locale)' }),
+  block('html', { html: '<p><strong>Depuis le Poste Admin</strong> (<code>192.5.10.1</code>, réseau Admin) :</p>' }),
+  block('html', { html: tbl(['Commande', 'Cible', 'Ce que ça valide'], [
+    ['<code>ping 192.5.10.14</code>', 'passerelle Admin (R_IT_G5 Gi0/0)', 'lien local + switch SW-1'],
+    ['<code>ping 192.5.10.13</code>', 'SW-1 (IP de gestion)', 'switch joignable'],
+    ['<code>ping 192.5.10.12</code>', 'SRV-1 (serveur) ✱', 'le serveur répond'],
+  ]) }),
+  block('html', { html: '<p><strong>Depuis un poste Utilisateurs</strong> (<code>192.5.50.x</code>) :</p>' }),
+  block('html', { html: tbl(['Commande', 'Cible', 'Ce que ça valide'], [
+    ['<code>ping 192.5.50.254</code>', 'passerelle Users (R_IT_G5 Gi0/1)', 'lien local + switch Sw-2'],
+    ['<code>ping 192.5.50.253</code>', 'Sw-2 (IP de gestion)', 'switch joignable'],
+    ['<code>ping 192.5.50.252</code>', 'Routeur_G5 (LAN)', 'routeur de bordure joignable'],
+    ['<code>ping 192.5.50.251</code>', 'WAP 371', 'point d’accès joignable'],
+    ['<code>ping &lt;IP Formateur&gt;</code>', 'autre poste du réseau ✱', 'communication entre postes'],
+  ]) }),
+
+  block('heading', { level: 4, text: 'B. Entre les réseaux (routage via R_IT_G5)' }),
+  block('html', { html: tbl(['Depuis', 'Commande', 'Ce que ça valide'], [
+    ['Poste Users', '<code>ping 192.5.10.14</code>', 'routage Users → Admin (interface routeur, répond toujours)'],
+    ['Poste Users', '<code>ping 192.5.10.12</code> ✱', 'le serveur Admin est joignable depuis Users'],
+    ['Poste Admin', '<code>ping 192.5.50.254</code>', 'routage Admin → Users (interface routeur)'],
+    ['Poste Admin', '<code>ping 192.5.50.251</code>', 'le WAP est joignable depuis Admin'],
+  ]) }),
+  note('yellow', '✱ Ping vers une machine Windows', '<p>Les cibles marquées <strong>✱</strong> sont des <strong>postes/serveurs Windows</strong> : leur <strong>pare-feu</strong> peut bloquer le ping entrant <strong>même si le routage est bon</strong>. Si <code>ping .10.14</code> passe mais <code>ping .10.12</code> échoue → ce n’est pas le routage, c’est le pare-feu du serveur (voir <em>dépannage ③</em>). Autorisez l’ICMP entrant, ou fiez-vous à l’interface du routeur pour juger le routage.</p>'),
+
+  block('heading', { level: 4, text: 'C. Vers la salle & Internet (via Routeur_G5)' }),
+  block('html', { html: '<p><strong>Depuis un client du LAN</strong> :</p>' }),
+  block('html', { html: tbl(['Commande', 'Cible', 'Ce que ça valide'], [
+    ['<code>ping 172.16.3.250</code>', 'Routeur_G5 (WAN)', 'routage jusqu’au routeur de bordure'],
+    ['<code>ping 172.16.3.254</code>', 'passerelle de la salle', 'sortie vers le réseau de la salle'],
+    ['<code>ping 8.8.8.8</code>', 'Internet', 'accès Internet (via NAT/PAT)'],
+  ]) }),
+
+  block('heading', { level: 4, text: 'D. Depuis les routeurs (pour isoler une panne)' }),
+  block('html', { html: tbl(['Sur', 'Commande', 'Ce que ça valide'], [
+    ['R_IT_G5', '<code>ping 192.5.10.12</code> · <code>ping 192.5.50.252</code>', 'joint le serveur et le routeur de bordure'],
+    ['R_IT_G5', '<code>ping 172.16.3.254</code>', 'la route par défaut vers Routeur_G5 fonctionne'],
+    ['Routeur_G5', '<code>ping 192.5.50.254</code> · <code>ping 8.8.8.8</code>', 'joint R_IT_G5 et Internet'],
+  ]) }),
+  note('gray', '🧭 Si un test échoue', '<p>Déroulez les anneaux dans l’ordre A → B → C. Le premier échec situe la coupure : câble/switch (A), routage ou pare-feu (B), NAT/route par défaut (C). Détails dans les <strong>Pièges fréquents</strong> ci-dessous et la <a href="/pages/procedure-test-connectivite">méthode de test de connectivité</a>.</p>'),
+
   block('heading', { level: 2, text: '🧰 Pièges fréquents & dépannage' }),
 
   acc('① Les VM ne communiquent pas — commutateur externe sur la mauvaise carte', [
