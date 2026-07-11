@@ -53,6 +53,12 @@ export type Ctx = {
   dnsServer: string;
   dhcpServer: string;                      // IP du serveur DHCP (relais ip helper-address)
   leaseDays: string;                       // durée du bail DHCP (jours)
+  // Sortie Internet (NAT/PAT) — optionnel
+  internetRouterId: string;                // routeur de bordure ('' = pas de NAT)
+  wanIf: string;                           // interface WAN (vers le FAI)
+  wanIp: string; wanCidr: string;          // adresse WAN
+  faiGw: string;                           // passerelle du FAI / de la salle
+  webIp: string; webPort: string;          // serveur web à publier (facultatif)
 };
 
 let _uid = 0;
@@ -74,6 +80,7 @@ export const DEFAULT_CTX: Ctx = {
   ],
   login: 'admin', mdp: 'Azerty77', secret: 'MonSecretEnable',
   gwPos: 'last', switchPos: 'beforeRouter', linkCidr: '30', dnsServer: '192.168.10.11', dhcpServer: '192.168.10.11', leaseDays: '7',
+  internetRouterId: '', wanIf: 'GigabitEthernet0/1', wanIp: '', wanCidr: '30', faiGw: '', webIp: '', webPort: '80',
 };
 
 // Normalise un contexte issu du localStorage (tolère les anciens formats :
@@ -365,6 +372,69 @@ export function buildSsh(ctx: Ctx, plan: Plan): { routers: SshCfg[]; switches: S
   return { routers, switches };
 }
 
+// Étape 0 : réinitialiser un équipement réutilisé (config parasite qui bloque tout).
+export function buildReset(): string {
+  return [
+    'enable',
+    'write erase          ! ou : erase startup-config',
+    'reload',
+    '! "Save? [yes/no]:"                 -> no',
+    '! "Proceed with reload? [confirm]"  -> Entree',
+    '! (switch, VLAN parasites)  delete flash:vlan.dat  AVANT le reload',
+  ].join('\n');
+}
+
+// Sortie Internet : NAT/PAT (overload) sur le routeur de bordure + route par défaut + publication de port.
+export type NatCfg = { text: string; router: string };
+export function buildNat(ctx: Ctx, plan: Plan): NatCfg | null {
+  const r = ctx.routers.find(x => x.id === ctx.internetRouterId);
+  if (!r) return null;
+  const wanCidr = clampNum(Number(ctx.wanCidr) || 30, 1, 32);
+  const wanMask = ipToStr(maskFromCidr(wanCidr));
+  const wanIf = (ctx.wanIf || '').trim() || 'GigabitEthernet0/1';
+  const myIf = plan.ifaces.filter(i => i.routerId === r.id);
+  const lines: string[] = [`! ===== ${r.name} — Sortie Internet (NAT/PAT) =====`, 'configure terminal'];
+  lines.push('! 1) Interface WAN (vers le FAI / la salle)', `interface ${wanIf}`, ` ip address ${(ctx.wanIp || '').trim() || '<IP_WAN>'} ${wanMask}`, ' ip nat outside', ' no shutdown', ' exit', '!');
+  lines.push('! 2) Interfaces internes en « ip nat inside »');
+  if (myIf.length) for (const i of myIf) lines.push(`interface ${i.iface}`, ' ip nat inside', ' exit');
+  else lines.push('! (aucune interface interne — assigne des sous-réseaux à ce routeur, étape 3)');
+  lines.push('!', '! 3) Réseaux internes à traduire (ACL)', 'ip access-list standard NAT-LAN');
+  for (const b of plan.bases) lines.push(` permit ${ipToStr(b.net)} ${ipToStr(wildcardFromCidr(b.cidr))}`);
+  lines.push(' exit', '!', '! 4) PAT (overload) derrière l’IP WAN', `ip nat inside source list NAT-LAN interface ${wanIf} overload`, '!', '! 5) Route par défaut vers le FAI', `ip route 0.0.0.0 0.0.0.0 ${(ctx.faiGw || '').trim() || '<passerelle_FAI>'}`);
+  if ((ctx.webIp || '').trim()) {
+    const port = (ctx.webPort || '80').trim();
+    lines.push('!', `! 6) Publier le serveur web ${ctx.webIp.trim()}:${port} vers l’extérieur`, `ip nat inside source static tcp ${ctx.webIp.trim()} ${port} interface ${wanIf} ${port}`);
+  }
+  lines.push('end', 'write memory');
+  return { text: lines.join('\n'), router: r.name };
+}
+
+// Plan de tests ping (anneaux) : local → inter-réseaux → Internet.
+export type TestSection = { title: string; lines: string[] };
+export function buildTests(ctx: Ctx, plan: Plan, nat: NatCfg | null): { sections: TestSection[]; full: string } {
+  const lan = plan.subs.filter(s => s.kind === 'lan' && s.gw !== null);
+  const sections: TestSection[] = [];
+  const a: string[] = [];
+  for (const s of lan) {
+    a.push(`ping ${ipToStr(s.gw!)}    ! passerelle « ${s.name} »`);
+    if (s.switchIp !== null) a.push(`ping ${ipToStr(s.switchIp)}    ! switch « ${s.name} »`);
+  }
+  if (a.length) sections.push({ title: 'A. Dans chaque réseau (liaison locale)', lines: a });
+  const b: string[] = [];
+  for (const from of lan) {
+    const others = lan.filter(o => o.id !== from.id);
+    if (!others.length) continue;
+    b.push(`# depuis un poste de « ${from.name} » :`);
+    for (const o of others) b.push(`ping ${ipToStr(o.gw!)}    ! -> passerelle « ${o.name} » (interface routeur, répond toujours)`);
+  }
+  if (b.length) sections.push({ title: 'B. Entre les réseaux (routage inter-VLAN)', lines: b });
+  if (nat && (ctx.faiGw || '').trim()) {
+    sections.push({ title: 'C. Vers le FAI & Internet (via NAT/PAT)', lines: [`ping ${ctx.faiGw.trim()}    ! passerelle FAI / salle`, 'ping 8.8.8.8    ! Internet (via PAT)'] });
+  }
+  const full = sections.map(s => `! ${s.title}\n${s.lines.join('\n')}`).join('\n\n');
+  return { sections, full };
+}
+
 // ─────────────────────────────────────────── Styles ───────────────────────────────────────────
 const field: CSSProperties = { width: '100%', padding: '7px 9px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface)', color: 'var(--text)', fontSize: 13.5, boxSizing: 'border-box' };
 const label: CSSProperties = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-soft)', marginBottom: 4 };
@@ -385,6 +455,7 @@ const STEPS = [
   { n: 5, icon: '📶', title: 'DHCP' },
   { n: 6, icon: '🌐', title: 'DNS' },
   { n: 7, icon: '🔑', title: 'SSH' },
+  { n: 8, icon: '🔌', title: 'Tests' },
 ];
 const STORAGE_KEY = 'net_workshop_v1';
 
@@ -435,6 +506,9 @@ export function NetworkWorkshop() {
   const dns = useMemo(() => buildDns(ctx, plan), [ctx, plan]);
   const routerCfg = useMemo(() => buildRouterConfigs(ctx, plan), [ctx, plan]);
   const ssh = useMemo(() => buildSsh(ctx, plan), [ctx, plan]);
+  const nat = useMemo(() => buildNat(ctx, plan), [ctx, plan]);
+  const tests = useMemo(() => buildTests(ctx, plan, nat), [ctx, plan, nat]);
+  const resetText = buildReset();
   const lanSubs = plan.subs.filter(s => s.kind === 'lan');
   const linkSubs = plan.subs.filter(s => s.kind === 'link');
   const ifaceFor = (routerId: string, ip: number) => plan.ifaces.find(i => i.routerId === routerId && i.ip === ip);
@@ -728,6 +802,15 @@ export function NetworkWorkshop() {
 
           <div style={group}>
             <div style={legend}>
+              🧨 Étape 0 — Réinitialiser (matériel réutilisé)
+              <button type="button" onClick={() => copy('reset', resetText)} style={{ ...smallBtn, marginLeft: 'auto' }}>{copied === 'reset' ? '✓ Copié' : 'Copier'}</button>
+            </div>
+            <div className="meta" style={{ fontSize: 11.5, margin: '0 0 8px' }}>Sur un routeur/switch déjà utilisé, une config parasite (routes, ACL, VLAN) peut tout bloquer. À passer <strong>avant</strong> toute configuration.</div>
+            <pre style={preStyle}><code>{resetText}</code></pre>
+          </div>
+
+          <div style={group}>
+            <div style={legend}>
               📟 Configuration des routeurs (CLI + routes statiques)
               <button type="button" onClick={() => copy('rcfgAll', routerCfg.full)} style={{ ...btn, marginLeft: 'auto' }}>{copied === 'rcfgAll' ? '✓ Copié' : 'Tout copier'}</button>
             </div>
@@ -743,6 +826,35 @@ export function NetworkWorkshop() {
             ))}
             {!routerCfg.byRouter.length && <div className="meta">Ajoute des routeurs à l’étape 3.</div>}
             <div className="meta" style={{ fontSize: 11.5, marginTop: 4 }}>Interfaces (IP + <code>no shutdown</code>, <code>clock rate</code> côté DCE) et <strong>routes statiques</strong> vers tous les sous-réseaux non directement connectés (prochain saut calculé par plus court chemin). À coller dans la CLI de chaque routeur.</div>
+          </div>
+
+          <div style={group}>
+            <div style={legend}>🌍 Sortie Internet — NAT/PAT (routeur de bordure)</div>
+            <div className="meta" style={{ fontSize: 11.5, margin: '0 0 10px' }}>Choisis le routeur relié à l’extérieur : l’outil génère le <strong>PAT (overload)</strong>, la <strong>route par défaut</strong> et, en option, la <strong>publication d’un serveur web</strong> (redirection de port).</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10, marginBottom: 10 }}>
+              <div><label style={label}>Routeur de sortie</label>
+                <select value={ctx.internetRouterId} onChange={e => set({ internetRouterId: e.target.value })} style={field}>
+                  <option value="">— aucun (pas de NAT) —</option>
+                  {ctx.routers.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                </select>
+              </div>
+              <div><label style={label}>Interface WAN</label><input value={ctx.wanIf} onChange={e => set({ wanIf: e.target.value })} style={field} placeholder="GigabitEthernet0/1" /></div>
+              <div><label style={label}>IP WAN</label><input value={ctx.wanIp} onChange={e => set({ wanIp: e.target.value })} style={field} placeholder="172.16.3.250" /></div>
+              <div><label style={label}>CIDR WAN</label><input value={ctx.wanCidr} onChange={e => set({ wanCidr: e.target.value })} style={field} placeholder="24" /></div>
+              <div><label style={label}>Passerelle FAI</label><input value={ctx.faiGw} onChange={e => set({ faiGw: e.target.value })} style={field} placeholder="172.16.3.254" /></div>
+              <div><label style={label}>Serveur web (option)</label><input value={ctx.webIp} onChange={e => set({ webIp: e.target.value })} style={field} placeholder="192.5.10.12" /></div>
+              <div><label style={label}>Port web</label><input value={ctx.webPort} onChange={e => set({ webPort: e.target.value })} style={field} placeholder="8080" /></div>
+            </div>
+            {nat ? (
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 5 }}>
+                  <strong style={{ fontSize: 13 }}>🧭 {nat.router}</strong>
+                  <button type="button" onClick={() => copy('nat', nat.text)} style={{ ...smallBtn, marginLeft: 'auto' }}>{copied === 'nat' ? '✓ Copié' : 'Copier'}</button>
+                </div>
+                <pre style={preStyle}><code>{nat.text}</code></pre>
+                <div className="meta" style={{ fontSize: 11.5, marginTop: 6 }}>⚠️ L’<strong>interface WAN</strong> doit être une interface <strong>libre</strong> de ce routeur (non utilisée par un sous-réseau). Le <strong>serveur web</strong> est publié en <code>ip nat inside source static tcp</code> ; le DNS ne portant pas de port, l’accès externe se fait par <code>http://&lt;IP WAN&gt;:{ctx.webPort || '80'}</code>.</div>
+              </div>
+            ) : <div className="meta">Sélectionne un <strong>routeur de sortie</strong> pour générer la configuration NAT/PAT.</div>}
           </div>
           <StepNav step={step} setStep={setStep} />
         </div>
@@ -793,6 +905,7 @@ export function NetworkWorkshop() {
                 </tbody>
               </table>
             </div>
+            <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>💡 Les équipements à <strong>IP fixe</strong> (serveur, WAP, imprimante) : soit une adresse <strong>hors de la plage</strong> distribuée, soit une <strong>réservation DHCP</strong> (association MAC → IP) — jamais une adresse déjà dans le pool, sous peine de conflit.</div>
           </div>
           <StepNav step={step} setStep={setStep} />
         </div>
@@ -870,6 +983,33 @@ export function NetworkWorkshop() {
               </div>
             ))}
             {!ssh.switches.length && <div className="meta">Coche « switch » sur des sous-réseaux à l’étape 3.</div>}
+          </div>
+
+          <div style={group}>
+            <div style={legend}>🖥️ Se connecter en SSH depuis Windows</div>
+            <div className="meta" style={{ fontSize: 12 }}>Le client <code>ssh</code> natif de Windows refuse souvent les algorithmes des vieux IOS (« <em>no matching key exchange method</em> »). Utilise <strong>PuTTY</strong> ou <strong>MobaXterm</strong> (IP de l’équipement, port 22, type SSH). Si la clé est invalide (équipement renommé après sa génération), régénère-la : <code>crypto key zeroize rsa</code> puis <code>crypto key generate rsa</code>.</div>
+          </div>
+          <StepNav step={step} setStep={setStep} />
+        </div>
+      )}
+
+      {/* ── Étape 8 : Tests ── */}
+      {step === 8 && (
+        <div>
+          <div style={group}>
+            <div style={legend}>
+              🔌 Plan de tests ping (communication réseau)
+              {!!tests.full && <button type="button" onClick={() => copy('testsAll', tests.full)} style={{ ...btn, marginLeft: 'auto' }}>{copied === 'testsAll' ? '✓ Copié' : 'Tout copier'}</button>}
+            </div>
+            <div className="meta" style={{ fontSize: 11.5, margin: '0 0 10px' }}>On valide du plus proche au plus lointain : la <strong>première</strong> commande qui échoue localise la panne. Les <strong>interfaces de routeur</strong> répondent toujours → idéales pour juger le routage sans le pare-feu Windows.</div>
+            {tests.sections.map((sec, k) => (
+              <div key={k} style={{ marginBottom: 12 }}>
+                <strong style={{ fontSize: 13 }}>{sec.title}</strong>
+                <pre style={{ ...preStyle, marginTop: 5 }}><code>{sec.lines.join('\n')}</code></pre>
+              </div>
+            ))}
+            {!tests.sections.length && <div className="meta">Définis des sous-réseaux et une topologie (étapes 1 &amp; 3) pour générer les tests.</div>}
+            <div className="meta" style={{ fontSize: 11.5, marginTop: 4 }}>Un ping vers un <strong>poste/serveur Windows</strong> peut échouer à cause du <strong>pare-feu</strong> même si le routage est bon → autorise l’ICMP entrant, ou fie-toi aux interfaces de routeur. Pinguer sa <em>propre</em> passerelle réussit même sans passerelle par défaut : ça ne prouve pas le routage.</div>
           </div>
           <StepNav step={step} setStep={setStep} />
         </div>
@@ -1009,7 +1149,7 @@ function StepNav({ step, setStep }: { step: number; setStep: (n: number) => void
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 4 }}>
       <button type="button" onClick={() => setStep(Math.max(1, step - 1))} disabled={step <= 1} style={{ ...smallBtn, opacity: step <= 1 ? .4 : 1 }}>← Précédent</button>
-      <button type="button" onClick={() => setStep(Math.min(7, step + 1))} disabled={step >= 7} style={{ ...btn, opacity: step >= 7 ? .4 : 1 }}>Suivant →</button>
+      <button type="button" onClick={() => setStep(Math.min(8, step + 1))} disabled={step >= 8} style={{ ...btn, opacity: step >= 8 ? .4 : 1 }}>Suivant →</button>
     </div>
   );
 }
