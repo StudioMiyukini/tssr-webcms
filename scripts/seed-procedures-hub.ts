@@ -10,6 +10,7 @@ const block = (type: Parameters<typeof makePageBlock>[0], patch: Partial<PageBlo
 type Proc = { slug: string; icon: string; title: string; desc: string; tags: string[]; cat: string };
 const CATEGORIES: { id: string; icon: string; label: string }[] = [
   { id: 'projet', icon: '🏗️', label: 'Projets & plateformes' },
+  { id: 'correction', icon: '📝', label: 'Corrections de réalisations' },
   { id: 'virtualisation', icon: '🖥️', label: 'Virtualisation & Hyper-V' },
   { id: 'ad', icon: '🏢', label: 'Active Directory' },
   { id: 'reseau', icon: '🌐', label: 'Réseau & adressage' },
@@ -19,6 +20,7 @@ const CATEGORIES: { id: string; icon: string; label: string }[] = [
 ];
 const PROCEDURES: Proc[] = [
   { slug: 'procedure-plateforme-1', icon: '🏗️', title: 'Plateforme 1 — montage de l’infrastructure', desc: 'La procédure complète du montage de notre infrastructure « Plateforme 1 » réalisée pendant l’exercice (rédaction en cours).', tags: ['Projet', 'Infrastructure', 'Réalisation'], cat: 'projet' },
+  { slug: 'correction-realisation-1-windows', icon: '📝', title: 'Réalisation 1 Windows — Correction', desc: 'Solution pas-à-pas illustrée (contexte Engineer Aero) : 3 VM réseau interne, DNS, IIS (2 sites), DHCP (étendue + réservation) et communication avec la machine physique.', tags: ['Correction', 'Windows', 'DNS', 'IIS', 'DHCP'], cat: 'correction' },
   { slug: 'procedure-vm-hyperv', icon: '🖥️', title: 'Créer & configurer une VM (ISO) sur Hyper-V', desc: 'De la création de la VM au début du TP : OS, nom, IP fixe, pare-feu.', tags: ['Hyper-V', 'Réseau'], cat: 'virtualisation' },
   { slug: 'procedure-hyperv-ressources', icon: '🧩', title: 'Hyper-V : fonctionnement & ressources', desc: 'Hyperviseur, VM, commutateurs, VHDX — et attribuer CPU/RAM/disque/réseau.', tags: ['Hyper-V', 'Hébergement'], cat: 'virtualisation' },
   { slug: 'procedure-installation-active-directory', icon: '🏢', title: 'Installer & configurer Active Directory', desc: 'De la VM vierge au client intégré au domaine : procédure complète.', tags: ['Active Directory'], cat: 'ad' },
