@@ -49,7 +49,9 @@ const figure = (url: string, cap: string) => block('html', { html: `<figure styl
 const acc = (summary: string, inner: PageBlock[]) => block('html', { html: `<details class="pb-acc"><summary>${summary}</summary><div class="pb-acc-body">${inner.map(b => (b as any).html || '').join('')}</div></details>` });
 
 // ── Annexe 1 : machines virtuelles (relevé des configurations réelles) ──
-const annexe1 = tbl(['Caractéristique', 'VM Serveur', 'VM Poste client'], [
+// Colonne « Serveur » en bleu, colonne « Client » en vert, 1re colonne en gras.
+const SRV_COL = '#2563eb', CLI_COL = '#16a34a';
+const annexeRows: [string, string, string][] = [
   ['Nom de la VM', '<strong>SRV-1</strong>', '<strong>CLIENT10</strong>'],
   ['Rôles / usage', 'DNS · IIS · DHCP', 'poste client'],
   ['Système', 'Windows Server 2019', 'Windows 10 Pro'],
@@ -61,7 +63,10 @@ const annexe1 = tbl(['Caractéristique', 'VM Serveur', 'VM Poste client'], [
   ['Passerelle par défaut', '192.5.10.14', '192.5.10.14'],
   ['Serveur DNS', 'SRV-1 (192.5.10.12)', 'SRV-1 (192.5.10.12)'],
   ['Nom de domaine', 'edivn.lan', 'edivn.lan'],
-]);
+];
+const aTh = (t: string, color?: string) => `<th style="border:1px solid var(--border);padding:7px 10px;text-align:left;background:var(--surface-2)${color ? `;color:${color}` : ''}">${t}</th>`;
+const aTd = (t: string, style: string) => `<td style="border:1px solid var(--border);padding:7px 10px;${style}">${t}</td>`;
+const annexe1 = `<div style="overflow-x:auto;margin:6px 0"><table style="border-collapse:collapse;width:100%;min-width:440px;font-size:13px"><thead><tr>${aTh('Caractéristique')}${aTh('VM Serveur', SRV_COL)}${aTh('VM Poste client', CLI_COL)}</tr></thead><tbody>${annexeRows.map(r => `<tr>${aTd(r[0], 'font-weight:700')}${aTd(r[1], `color:${SRV_COL}`)}${aTd(r[2], `color:${CLI_COL}`)}</tr>`).join('')}</tbody></table></div>`;
 
 const blocks: PageBlock[] = [
   block('hero', { eyebrow: 'Procédure · Projet réseau', title: 'Plateforme EDIVN — montage de l’infrastructure', subtitle: '' }),
