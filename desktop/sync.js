@@ -6,7 +6,8 @@ const fs = require('fs');
 const path = require('path');
 
 const LIVE = (process.env.TSSR_LIVE || 'https://tssr.miyukini.com').replace(/\/$/, '');
-const cacheDir = process.env.TSSR_CACHE || path.join(__dirname, 'cache');
+// Dossier de cache : argument CLI (en exécution directe uniquement), sinon env, sinon ./cache.
+const cacheDir = (require.main === module && process.argv[2]) || process.env.TSSR_CACHE || path.join(__dirname, 'cache');
 const MAX_PAGES = 800;
 
 const ensure = (d) => fs.mkdirSync(d, { recursive: true });

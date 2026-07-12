@@ -21,15 +21,31 @@ cd ..
 npm install
 npm run build
 
-:: 2) Construire l'application de bureau
+:: 2) Application de bureau
 cd desktop
 npm install
-npm run dist
+npm run seed        :: (optionnel) pré-embarque le contenu pour un 1er lancement hors-ligne
+npm run dist        :: exécutable portable + installateur
 ```
 
 Résultat dans `desktop/out/` :
 - `TSSR-Local-1.0.0-portable.exe` — **portable** (double-clic, rien à installer)
 - `TSSR-Local-Setup-1.0.0.exe` — **installateur** (crée un raccourci « TSSR Local »)
+
+### ⚠️ Si `npm run dist` échoue (« Cannot create symbolic link »)
+
+C'est une limite Windows : `electron-builder` a besoin du privilège de **liens symboliques** pour préparer la signature. Deux solutions :
+
+1. **Activer le Mode développeur** : Paramètres → *Confidentialité et sécurité* → *Espace développeurs* → activer. Puis relancer `npm run dist`.
+2. Ou lancer le terminal **en tant qu'administrateur**, puis `npm run dist`.
+
+**Sans** ce privilège, utilisez la variante **dossier exécutable** (ne signe pas, donc pas de blocage) :
+
+```bat
+npx electron-builder --win dir
+```
+
+→ produit `desktop/out/win-unpacked/` : un dossier contenant **`TSSR Local.exe`** (double-clic pour lancer). Copiez/zippez ce dossier pour le transporter — c'est une app complète et autonome (~270 Mo).
 
 ## Développement / test rapide (sans empaqueter)
 

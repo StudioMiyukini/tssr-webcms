@@ -10,6 +10,7 @@
     "start": "electron .",
     "sync": "node sync.js",
     "serve": "node server.js",
+    "seed": "node sync.js seed-cache",
     "dist": "electron-builder --win",
     "dist:portable": "electron-builder --win portable"
   },
@@ -30,6 +31,10 @@
       {
         "from": "../dist/client",
         "to": "client"
+      },
+      {
+        "from": "seed-cache",
+        "to": "seed-cache"
       }
     ],
     "win": {

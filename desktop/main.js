@@ -5,6 +5,7 @@
 'use strict';
 const { app, BrowserWindow, Menu, dialog, shell } = require('electron');
 const path = require('path');
+const fs = require('fs');
 
 // Cache dans le profil utilisateur ; client servi depuis les ressources empaquetées.
 process.env.TSSR_CACHE = path.join(app.getPath('userData'), 'cache');
@@ -14,6 +15,15 @@ process.env.TSSR_CLIENT = app.isPackaged
 
 const { createServer } = require('./server');
 const sync = require('./sync');
+
+// Premier lancement hors-ligne : recopie le cache pré-embarqué (seed) s'il n'y a rien.
+function seedCacheIfEmpty() {
+  const pagesDir = path.join(process.env.TSSR_CACHE, 'pages');
+  const hasContent = fs.existsSync(pagesDir) && fs.readdirSync(pagesDir).length > 0;
+  if (hasContent) return;
+  const seed = app.isPackaged ? path.join(process.resourcesPath, 'seed-cache') : path.join(__dirname, 'seed-cache');
+  try { if (fs.existsSync(seed)) fs.cpSync(seed, process.env.TSSR_CACHE, { recursive: true }); } catch { /* ignore */ }
+}
 
 let win = null;
 let port = 0;
@@ -83,6 +93,7 @@ async function createWindow() {
 
 app.whenReady().then(async () => {
   buildMenu();
+  seedCacheIfEmpty();       // contenu disponible dès le 1er lancement, même hors-ligne
   await runSync();          // synchro auto au lancement (silencieuse ; ignore si hors-ligne)
   port = await startServer();
   await createWindow();
