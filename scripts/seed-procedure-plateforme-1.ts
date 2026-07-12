@@ -64,19 +64,20 @@ const annexe1 = tbl(['Caractéristique', 'VM Serveur', 'VM Poste client'], [
 ]);
 
 const blocks: PageBlock[] = [
-  block('hero', { eyebrow: 'Procédure · Projet réseau', title: 'Plateforme EDIVN — montage de l’infrastructure', subtitle: 'Guide pas-à-pas pour restructurer et monter le réseau de l’École de Développement Informatique (EDIVN).' }),
+  block('hero', { eyebrow: 'Procédure · Projet réseau', title: 'Plateforme EDIVN — montage de l’infrastructure', subtitle: '' }),
   styleBlock,
 
   note('blue', '🏫 Contexte', '<p>L’<strong>École de Développement Informatique EDIVN</strong> forme des développeurs et souhaite <strong>restructurer son réseau</strong> pour gagner en efficacité et en sécurité. Dans le cadre de son agrandissement, chaque site dispose d’une équipe chargée de restructurer le réseau.</p>'),
   note('gray', '🧭 Comment lire cette procédure', '<p>Suivez les <strong>8 étapes colorées</strong> dans l’ordre. Chaque étape est autonome (objectif, commandes, vérification). Les exemples prennent le <strong>Groupe 5</strong> comme référence : <strong>remplacez le suffixe de groupe</strong> (<code>G5</code>, <code>Groupe5</code>, <code>05</code>) et le domaine par les vôtres.</p>'),
 
   block('heading', { level: 2, text: '🎯 Mission' }),
+  block('html', { html: '<p>Afin de réaliser la restructuration demandée par l’EDIVN, le travail est mené en suivant la procédure ci-dessous :</p>' }),
   ul([
-    'Configurer les routeurs : routage entre les réseaux de la structure et vers les autres écoles.',
-    'Configurer les serveurs : mise en service des services DNS et Web.',
+    'Configurer les routeurs : routage entre les <strong>deux réseaux de l’EDIVN</strong> (Admin et Utilisateurs) et vers l’<strong>extérieur</strong> (box Internet).',
+    'Configurer les serveurs : mise en service des services <strong>DNS, DHCP et Web</strong>.',
     'Sécuriser le réseau : accès de management à distance en SSH sur les switches et les routeurs (mot de passe : <code>cisco</code>).',
     'Configurer le point d’accès sans-fil Cisco : Wi-Fi pour les utilisateurs.',
-    'Accès site Web : permettre l’accès au site web du site.',
+    'Accès Web : permettre l’accès au <strong>site public de l’EDIVN</strong> ainsi qu’à son <strong>intranet</strong>, pour les stagiaires et les administrateurs.',
   ]),
 
   block('heading', { level: 2, text: '📋 Cahier des charges (besoins)' }),
@@ -153,7 +154,6 @@ const blocks: PageBlock[] = [
 
   block('heading', { level: 2, text: '🖥️ Annexe 1 — configuration des machines virtuelles' }),
   block('html', { html: annexe1 }),
-  figure('/uploads/plat1-annexe.png', 'Fiche de configuration des machines (relevé d’origine).'),
   note('gray', 'ℹ️ Remarques', '<p>Les deux VM (SRV-1 + CLIENT10) sont sur le <strong>même segment Admin</strong> et pointent vers le <strong>DNS 192.5.10.12</strong>, mais <strong>chacune sur son propre commutateur externe</strong> (2 cartes ou 2 hôtes — voir Étape 2). Masque <code>/28</code> = <code>255.255.255.240</code>, passerelle <code>192.5.10.14</code>.</p>'),
 
   block('heading', { level: 2, text: '🔧 Réalisation pas à pas' }),
@@ -238,7 +238,7 @@ write memory`),
   railClose,
   step('2', 'Machines virtuelles (Hyper-V)', 'Serveur SRV-1 + poste CLIENT10, un commutateur externe par VM', C.vm),
   railOpen(C.vm),
-  block('html', { html: '<p>Préparer les deux machines Windows du réseau Admin/IT — le poste <strong>CLIENT10</strong> et le serveur <strong>SRV-1</strong> — chacune reliée à la maquette Cisco par son <strong>propre commutateur externe</strong> (voir la règle ci-dessous). Peut se faire en parallèle de l’étape 1.</p>' }),
+  block('html', { html: '<p><strong>Déployer</strong> les deux machines virtuelles du réseau d’administration IT via <strong>Hyper-V</strong> — le poste <strong>CLIENT10</strong> et le serveur <strong>SRV-1</strong> — chacune reliée à la maquette Cisco par son <strong>propre commutateur externe</strong> (voir la règle ci-dessous). Peut se faire en parallèle de l’étape 1.</p>' }),
   ul([
     'Créer les 2 VM (Gestionnaire Hyper-V → <strong>Nouvel ordinateur virtuel</strong>, génération 2), selon l’Annexe 1.',
     'Placer <strong>chaque VM sur un commutateur virtuel Externe distinct</strong> (ex. <code>COMM-VIRTUEL-EXT-client</code> pour CLIENT10) — voir la règle ⚠️ ci-dessous.',
@@ -351,7 +351,7 @@ write memory`),
 
   // ── Étape 5 ──
   railClose,
-  step('5', 'Serveur — rôles, sites Web (IIS) & DNS', 'Installation DHCP/DNS/IIS, 2 sites et enregistrements DNS', C.serveur),
+  step('5', 'Serveur — rôles (DHCP · DNS · IIS) & sites Web', 'Installation des rôles DHCP/DNS/IIS, 2 sites Web et enregistrements DNS', C.serveur),
   railOpen(C.serveur),
   block('html', { html: '<p>Sur <strong>SRV-1</strong> (<code>192.5.10.12</code>) : installer les <strong>rôles</strong>, créer les <strong>2 sites Web</strong> et les <strong>enregistrements DNS</strong>.</p>' }),
 
@@ -361,7 +361,7 @@ write memory`),
 
   block('heading', { level: 4, text: 'Sites Web (IIS)' }),
   ul([
-    'Créer <strong>deux sites</strong>, un <strong>dossier physique</strong> par site avec un <code>index.html</code> ; la page de l’intranet affiche « <em>Bienvenue sur le site de l’école EDIVN</em> ».',
+    'Créer <strong>deux sites</strong>, chacun avec son <strong>dossier physique</strong> et son <strong>index.html</strong> (une page par site) : le site <strong>public</strong> affiche « <em>Bienvenue sur le site de l’EDIVN</em> », l’<strong>intranet</strong> affiche « <em>Bienvenue sur l’intranet de l’école EDIVN</em> ».',
     'Site <strong>Public</strong> — dossier <code>C:\\inetpub\\Public-EDIVN</code> ; liaison HTTP <code>www.Groupe05-EDIVN.lan</code> sur le <strong>port 8080</strong>, accessible depuis l’extérieur.',
     'Site <strong>intranet privé</strong> — dossier <code>C:\\inetpub\\Prive-EDIVN</code> ; liaison HTTP, accessible pour l’école (<code>Intranet.05.EDIVN.lan</code>).',
   ]),
@@ -380,6 +380,8 @@ write memory`),
   figure('/uploads/plat1-dns-zone-www.png', 'Zone Groupe05-EDIVN.lan : A racine → 192.5.10.12 et CNAME www.'),
   figure('/uploads/plat1-dns-zone-intranet.png', 'Zone 05.EDIVN.lan : A racine → 192.5.10.12 et CNAME Intranet.'),
   note('blue', '🌐 Accès au site sur le port 8080', '<p>Le site est <strong>servi par IIS sur le port 8080</strong> (défini dans la <strong>liaison / binding</strong>). On y accède par <code>http://www.Groupe05-EDIVN.lan:8080</code> : le <strong>DNS</strong> résout le nom vers <code>192.5.10.12</code>, et le <code>:8080</code> correspond à la liaison IIS. <strong>Rappel</strong> : un enregistrement DNS (A/CNAME) ne transporte <strong>pas</strong> de port — c’est la <strong>liaison IIS</strong> qui fixe le 8080. Pour l’<strong>accès externe</strong>, prévoir une <strong>redirection de port (NAT/PAT)</strong> vers <code>192.5.10.12:8080</code> (étape 7).</p>'),
+  note('gray', 'ℹ️ Pourquoi le port 8080 ?', '<p><strong>Port 80</strong> : port <strong>standard</strong> du trafic web grand public. <strong>Port 8080</strong> : alternative courante, utilisée pour <strong>séparer</strong> les accès web et <strong>renforcer la sécurité</strong> globale. Ici le site public est publié sur <code>8080</code> (exigence du cahier des charges) → il faut préciser <code>:8080</code> dans l’URL, sauf à ajouter une redirection <code>80 → 8080</code> (étape 7).</p>'),
+  note('yellow', '🛡️ Pare-feu Windows du serveur', '<p>Ouvrir les <strong>flux entrants</strong> nécessaires dans le pare-feu (mode avancé, règles de trafic entrant) : <strong>HTTP</strong> (ports <code>80</code>/<code>8080</code>) pour servir les sites, et l’<strong>ICMP entrant</strong> pour répondre aux pings de test (cf. <em>Pièges fréquents ③</em>). Sans ces règles, le site ou les tests échouent alors que la configuration réseau est correcte.</p>'),
   note('gray', '🔗 Détails', '<p><a href="/pages/procedure-iis">IIS : héberger un site</a> · <a href="/pages/procedure-dns">DNS : zones & enregistrements</a> · <a href="/pages/procedure-dhcp">rôle DHCP</a>.</p>'),
 
   // ── Étape 6 ──
