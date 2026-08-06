@@ -48,7 +48,7 @@ const blocks: PageBlock[] = [
   block('html', { html: tbl(['Caractéristique', 'SRV-DNS-WEB', 'SRV-DHCP', 'CLIENT-W'], [
     ['Système', 'Windows Server 2019', 'Windows Server 2019', 'Windows 10'],
     ['Mémoire (RAM)', '4096 Mo', '4096 Mo', '4096 Mo'],
-    ['Stockage', 'C : 50 Go · D : 10 Go', 'C : 50 Go · D : 15 Go', 'C : 40 Go'],
+    ['Stockage', 'C : 50 Go · D : 10 Go', 'C : 50 Go', 'C : 40 Go · D : 15 Go'],
     ['Commutateur', '<strong>Interne</strong>', '<strong>Interne</strong>', '<strong>Interne</strong>'],
     ['Adresse IP', '<strong>192.168.10.250</strong>', '<strong>192.168.10.251</strong>', '192.168.10.101'],
     ['Masque', '255.255.255.0', '255.255.255.0', '255.255.255.0'],

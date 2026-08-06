@@ -14,19 +14,37 @@ const pre = (code: string, lang = 'PowerShell') => `<div style="margin:6px 0 12p
 // ===================================================================================
 // Catalogue des scripts (ajoute ici les futurs scripts)
 // ===================================================================================
-type Script = { slug: string; icon: string; title: string; desc: string; tags: string[]; cat: string };
+type Script = { slug: string; icon: string; title: string; desc: string; tags: string[]; cat: string; featured?: string };
 const CATEGORIES: { id: string; icon: string; label: string }[] = [
-  { id: 'cisco', icon: '🧪', label: 'Cisco / Packet Tracer' },
+  { id: 'cisco', icon: '📟', label: 'Cisco / Packet Tracer' },
   { id: 'reseau', icon: '🌐', label: 'Réseau & adressage' },
   { id: 'ad', icon: '🏢', label: 'Active Directory' },
-  { id: 'virtualisation', icon: '🖥️', label: 'Virtualisation & VM' },
+  { id: 'virtualisation', icon: '🧰', label: 'Hyper-V & VM' },
 ];
 const SCRIPTS: Script[] = [
+  {
+    slug: 'simulateur-complet', icon: '🖥️',
+    title: 'Simulateur complet — Poste de travail virtuel',
+    desc: 'Un bureau unique (barre des tâches, menu Démarrer, plein écran) qui réunit tous les simulateurs : Windows Server (Hyper-V, Active Directory, DNS/DHCP/IIS, GPO), invite de commandes cmd & PowerShell, console routeur Cisco et Réalisation 1. Chaque fenêtre garde son état pour dérouler un TP de bout en bout.',
+    tags: ['Interactif', 'Windows', 'Active Directory', 'Hyper-V', 'cmd', 'Cisco'], cat: 'virtualisation', featured: 'Le bureau virtuel tout-en-un',
+  },
+  {
+    slug: 'entrainement-realisation-1', icon: '🎯',
+    title: 'Entraînement — Réalisation 1 Windows',
+    desc: 'Refais la Réalisation 1 en aveugle : saisis noms de machines, IP fixes, masque, DNS, zone + enregistrements, sites IIS, étendue DHCP et IP hôte Hyper-V. L’outil valide chaque étape, signale les erreurs (valeur attendue) et donne un score.',
+    tags: ['Interactif', 'Windows', 'DNS', 'IIS', 'DHCP', 'Entraînement'], cat: 'virtualisation', featured: 'S’entraîner en conditions d’examen',
+  },
+  {
+    slug: 'emulateur-invite-commandes', icon: '⌨️',
+    title: 'Émulateur d’invite de commandes (bac à sable)',
+    desc: 'Terminal cmd simulé avec état machine modifiable : netsh, ipconfig, ping, nslookup, hostname, arp… et équivalents PowerShell. La config change réellement (l’IP posée par netsh apparaît dans ipconfig) ; table d’hôtes éditable pour des tests ping/DNS réalistes selon le sous-réseau. Réutilisable pour n’importe quelle configuration.',
+    tags: ['Interactif', 'Réseau', 'cmd', 'PowerShell', 'netsh'], cat: 'reseau',
+  },
   {
     slug: 'atelier-reseau', icon: '🗺️',
     title: 'Atelier Réseau & Packet Tracer (assistant)',
     desc: 'Assistant multi-étapes à contexte partagé : contexte, préférences, segmentation VLSM multi-routeurs (2811/2911) avec attribution auto des interfaces (LAN + liaisons série/Gig, DCE/clock), schéma (blocs + SVG), pools DHCP par routeur et enregistrements DNS + tests.',
-    tags: ['Interactif', 'Réseau', 'Cisco', 'Packet Tracer', 'VLSM', 'Assistant'], cat: 'cisco',
+    tags: ['Interactif', 'Réseau', 'Cisco', 'Packet Tracer', 'VLSM', 'Assistant'], cat: 'cisco', featured: 'Un TP réseau de A à Z',
   },
   {
     slug: 'configurateur-vm', icon: '🧰',
@@ -67,8 +85,8 @@ const SCRIPTS: Script[] = [
   {
     slug: 'configurateur-routeur-cisco', icon: '📟',
     title: 'Configurateur — Routeur Cisco (Packet Tracer)',
-    desc: 'Outil interactif : hostname, interfaces (IP fixe + activation, clock rate DCE) et routes statiques → configuration CLI IOS prête à coller dans Packet Tracer.',
-    tags: ['Interactif', 'Cisco', 'Packet Tracer', 'Routage'], cat: 'cisco',
+    desc: 'Outil interactif : hostname, interfaces (IP fixe + activation, clock rate DCE), routes statiques et NAT/PAT (inside/outside, overload, NAT statique & redirection de port) → configuration CLI IOS prête à coller dans Packet Tracer.',
+    tags: ['Interactif', 'Cisco', 'Packet Tracer', 'Routage', 'NAT'], cat: 'cisco',
   },
   {
     slug: 'constructeur-agdlp', icon: '🔐',
@@ -99,49 +117,79 @@ const SCRIPTS: Script[] = [
 // ===================================================================================
 // Page ANNUAIRE — cartes horizontales, pagination CSS 20 par page (sans JS)
 // ===================================================================================
-function pill(t: string) { return `<span style="display:inline-block;font-size:10.5px;font-weight:600;color:var(--text-muted);background:var(--surface-3);border:1px solid var(--border);border-radius:999px;padding:1px 9px;margin:4px 4px 0 0">${t}</span>`; }
+function pill(t: string) { return `<span class="sc-pill">${t}</span>`; }
+// Carte compacte (verticale) — description tronquée à 3 lignes, 3 tags max.
 function card(s: Script) {
   const interactif = s.tags.includes('Interactif');
   const badge = `<span class="sc-badge sc-badge-${interactif ? 'int' : 'ps'}">${interactif ? '⚡ Interactif' : '📜 Script'}</span>`;
+  const tags = s.tags.filter(t => t !== 'Interactif').slice(0, 3);
   return `<a class="script-card" href="/pages/${s.slug}">`
-    + `<div class="sc-ico">${s.icon}</div>`
-    + `<div class="sc-body"><div class="sc-title">${s.title} ${badge}</div><div class="sc-desc meta">${s.desc}</div><div>${s.tags.filter(t => t !== 'Interactif').map(pill).join('')}</div></div>`
-    + `<div class="sc-go">Voir →</div></a>`;
+    + `<div class="sc-top"><span class="sc-ico">${s.icon}</span>${badge}</div>`
+    + `<div class="sc-title">${s.title}</div>`
+    + `<div class="sc-desc meta">${s.desc}</div>`
+    + `<div class="sc-tags">${tags.map(pill).join('')}</div>`
+    + `</a>`;
+}
+// Grande carte « À la une » — pour les outils phares.
+function heroCard(s: Script) {
+  return `<a class="sc-feat" href="/pages/${s.slug}">`
+    + `<span class="sc-feat-ico">${s.icon}</span>`
+    + `<span class="sc-feat-body"><span class="sc-feat-kicker">${s.featured}</span>`
+    + `<span class="sc-feat-title">${s.title}</span>`
+    + `<span class="sc-feat-desc">${s.desc}</span></span>`
+    + `<span class="sc-feat-go">Lancer →</span></a>`;
 }
 function buildDirectory(scripts: Script[]): string {
-  const cats = CATEGORIES.filter(c => scripts.some(s => s.cat === c.id));
+  const feats = scripts.filter(s => s.featured);
+  const rest = scripts.filter(s => !s.featured);
+  const cats = CATEGORIES.filter(c => rest.some(s => s.cat === c.id));
   const css = `.scripts-dir{position:relative}`
+    // À la une
+    + `.sc-feats{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin:0 0 30px}`
+    + `.sc-feat{position:relative;display:flex;flex-direction:column;gap:10px;padding:20px 18px 16px;border:1px solid color-mix(in srgb,var(--accent) 35%,var(--border));border-radius:16px;text-decoration:none;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 10%,var(--surface)),var(--surface) 65%);transition:transform .14s,box-shadow .14s,border-color .14s}`
+    + `.sc-feat:hover{transform:translateY(-3px);border-color:var(--accent);box-shadow:0 14px 34px rgba(0,0,0,.16)}`
+    + `.sc-feat-ico{font-size:34px;line-height:1}`
+    + `.sc-feat-kicker{display:block;font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);margin-bottom:4px}`
+    + `.sc-feat-title{display:block;font-weight:800;font-size:16.5px;color:var(--text);line-height:1.3}`
+    + `.sc-feat-desc{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:12.5px;color:var(--text-muted);margin-top:6px;line-height:1.5}`
+    + `.sc-feat-go{margin-top:auto;padding-top:8px;font-size:13px;font-weight:800;color:var(--accent)}`
+    // Sommaire
     + `.scripts-dir .sc-nav{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 24px}`
     + `.scripts-dir .sc-chip{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:var(--text-soft);text-decoration:none;border:1px solid var(--border);border-radius:999px;padding:5px 13px;background:var(--surface);transition:border-color .15s,color .15s}`
     + `.scripts-dir .sc-chip:hover{border-color:var(--accent);color:var(--accent)}`
     + `.scripts-dir .sc-chip .sc-n{font-size:11px;color:var(--text-muted);background:var(--surface-3);border-radius:999px;padding:0 7px}`
-    + `.scripts-dir .sc-sec{margin:0 0 30px;scroll-margin-top:84px}`
+    // Sections
+    + `.scripts-dir .sc-sec{margin:0 0 32px;scroll-margin-top:84px}`
     + `.scripts-dir .sc-h{font-size:16.5px;font-weight:800;color:var(--text);margin:0 0 13px;display:flex;align-items:center;gap:9px;padding-bottom:8px;border-bottom:1px solid var(--border)}`
     + `.scripts-dir .sc-h .sc-count{font-size:12px;font-weight:700;color:var(--text-muted);background:var(--surface-3);border:1px solid var(--border);border-radius:999px;padding:1px 9px}`
-    + `.scripts-dir .sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px}`
-    + `.script-card{display:flex;gap:14px;align-items:center;padding:14px 16px;border:1px solid var(--border);border-radius:12px;background:var(--surface);text-decoration:none;transition:border-color .15s,transform .15s}`
-    + `.script-card:hover{border-color:var(--accent);transform:translateY(-1px)}`
-    + `.script-card .sc-ico{font-size:30px;line-height:1}`
-    + `.script-card .sc-body{flex:1;min-width:0}`
-    + `.script-card .sc-title{font-weight:700;font-size:15px;color:var(--text)}`
-    + `.script-card .sc-desc{font-size:13px;margin-top:2px}`
-    + `.script-card .sc-go{color:var(--accent);font-weight:700;white-space:nowrap}`
-    + `.sc-badge{display:inline-block;font-size:10px;font-weight:700;border-radius:999px;padding:1px 8px;vertical-align:middle;margin-left:4px}`
+    + `.scripts-dir .sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(235px,1fr));gap:12px}`
+    // Cartes compactes
+    + `.script-card{display:flex;flex-direction:column;gap:7px;padding:15px 15px 13px;border:1px solid var(--border);border-radius:13px;background:var(--surface);text-decoration:none;transition:border-color .15s,transform .15s,box-shadow .15s}`
+    + `.script-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 10px 24px rgba(0,0,0,.12)}`
+    + `.script-card .sc-top{display:flex;align-items:center;justify-content:space-between}`
+    + `.script-card .sc-ico{font-size:26px;line-height:1}`
+    + `.script-card .sc-title{font-weight:700;font-size:14px;color:var(--text);line-height:1.35}`
+    + `.script-card .sc-desc{display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;font-size:12px;line-height:1.5;margin:0}`
+    + `.script-card .sc-tags{margin-top:auto;padding-top:4px}`
+    + `.sc-pill{display:inline-block;font-size:10px;font-weight:600;color:var(--text-muted);background:var(--surface-3);border:1px solid var(--border);border-radius:999px;padding:1px 8px;margin:3px 4px 0 0}`
+    + `.sc-badge{display:inline-block;font-size:10px;font-weight:700;border-radius:999px;padding:1px 8px}`
     + `.sc-badge-int{color:#7c3aed;background:color-mix(in srgb,#7c3aed 14%,transparent);border:1px solid color-mix(in srgb,#7c3aed 40%,transparent)}`
     + `.sc-badge-ps{color:var(--text-muted);background:var(--surface-3);border:1px solid var(--border)}`
-    + `@media (max-width:640px){.scripts-dir .sc-grid{grid-template-columns:1fr}}`;
-  const nav = cats.map(c => `<a class="sc-chip" href="#sec-${c.id}">${c.icon} ${c.label} <span class="sc-n">${scripts.filter(s => s.cat === c.id).length}</span></a>`).join('');
+    + `@media (max-width:560px){.scripts-dir .sc-grid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr))}.sc-feats{grid-template-columns:1fr}}`;
+  const nav = cats.map(c => `<a class="sc-chip" href="#sec-${c.id}">${c.icon} ${c.label} <span class="sc-n">${rest.filter(s => s.cat === c.id).length}</span></a>`).join('');
   const sections = cats.map(c => {
-    const group = scripts.filter(s => s.cat === c.id);
+    const group = rest.filter(s => s.cat === c.id);
     return `<section class="sc-sec" id="sec-${c.id}"><h2 class="sc-h">${c.icon} ${c.label} <span class="sc-count">${group.length}</span></h2>`
       + `<div class="sc-grid">${group.map(card).join('')}</div></section>`;
   }).join('');
-  return `<div class="scripts-dir"><style>${css}</style><nav class="sc-nav">${nav}</nav>${sections}</div>`;
+  return `<div class="scripts-dir"><style>${css}</style>`
+    + `<h2 class="sc-h" style="border:none;margin-bottom:10px">⭐ À la une</h2><div class="sc-feats">${feats.map(heroCard).join('')}</div>`
+    + `<nav class="sc-nav">${nav}</nav>${sections}</div>`;
 }
 
 const dirBlocks: PageBlock[] = [
   block('hero', { eyebrow: 'TSSR', title: 'Outils', subtitle: 'Outils interactifs et scripts prêts à l’emploi pour automatiser les tâches courantes.' }),
-  block('html', { html: `<p class="meta">${SCRIPTS.length} outils, classés par domaine. Les <strong>⚡ interactifs</strong> génèrent une config/un script à partir de tes choix ; les <strong>📜 scripts</strong> sont prêts à copier. Utilise le sommaire pour sauter à une catégorie.</p>` }),
+  block('html', { html: `<p class="meta">${SCRIPTS.length} outils. Commence par les <strong>⭐ outils phares</strong>, puis explore par domaine avec le sommaire. Les <strong>⚡ interactifs</strong> génèrent une config/un script à partir de tes choix ; les <strong>📜 scripts</strong> sont prêts à copier.</p>` }),
   block('html', { html: buildDirectory(SCRIPTS) }),
 ];
 
@@ -289,7 +337,7 @@ const segBlocks: PageBlock[] = [
 // ===================================================================================
 const routerBlocks: PageBlock[] = [
   block('hero', { eyebrow: 'Script · Cisco / Packet Tracer', title: 'Configurateur — Routeur Cisco', subtitle: 'Renseigne les interfaces et les routes : la configuration CLI IOS est générée, prête à coller.' }),
-  block('html', { html: '<p>Cet outil construit la <strong>configuration CLI (Cisco IOS)</strong> d’un routeur pour <strong>Packet Tracer</strong> : <strong>hostname</strong>, <strong>interfaces</strong> (adresse IP fixe + masque, <em>description</em>, activation <code>no shutdown</code>, et <code>clock rate</code> côté <strong>DCE</strong> pour les liaisons série) et <strong>routes statiques</strong> (y compris une <strong>route par défaut</strong>). Colle le bloc généré dans la CLI du routeur (mode <code>enable</code>).</p>' }),
+  block('html', { html: '<p>Cet outil construit la <strong>configuration CLI (Cisco IOS)</strong> d’un routeur pour <strong>Packet Tracer</strong> : <strong>hostname</strong>, <strong>interfaces</strong> (adresse IP fixe + masque, <em>description</em>, activation <code>no shutdown</code>, et <code>clock rate</code> côté <strong>DCE</strong> pour les liaisons série), <strong>routes statiques</strong> (y compris une <strong>route par défaut</strong>) et <strong>NAT / PAT</strong> : désignation des interfaces <code>inside</code>/<code>outside</code>, <strong>PAT (overload)</strong> avec ACL des réseaux internes, <strong>NAT statique 1:1</strong> et <strong>redirection de port</strong> (publier un service interne). Colle le bloc généré dans la CLI du routeur (mode <code>enable</code>).</p>' }),
   block('html', { html: '<div class="pb-dynamic" data-block="router-configurator"></div>' }),
   note('blue', 'ℹ️ Comment l’utiliser', '<p>Dans Packet Tracer, ouvre l’onglet <strong>CLI</strong> du routeur, puis <strong>colle</strong> la configuration (elle démarre par <code>enable</code> puis <code>configure terminal</code>). Rappel : sur une liaison <strong>série</strong>, seul le côté <strong>DCE</strong> impose le <code>clock rate</code>. <strong>Procédure manuelle (justification)</strong> : <a href="/pages/procedure-cisco-routeur-cli">Configurer un routeur Cisco en CLI</a>. Cours liés : <a href="/pages/cisco-routeur-cli">Configurer un routeur en CLI</a> et <a href="/pages/cisco-route-statique">Les routes statiques en CLI</a>.</p>'),
 ];
@@ -312,6 +360,34 @@ const adBlocks: PageBlock[] = [
   block('html', { html: '<p>Cet outil génère un script <strong>PowerShell (module ActiveDirectory)</strong> à exécuter <strong>sur le contrôleur de domaine</strong>. Il enchaîne : <strong>① création d’une unité d’organisation</strong>, <strong>② copie d’un utilisateur modèle</strong> (ex. <code>administrateur</code> → <em>Jean NGUYEN</em>, <code>jean.nguyen@domaine</code>, avec reprise des groupes) et <strong>③ désactivation du compte source</strong>. Le mot de passe est demandé à l’exécution (jamais écrit dans le script).</p>' }),
   block('html', { html: '<div class="pb-dynamic" data-block="ad-configurator"></div>' }),
   note('yellow', '⚠️ Avant de désactiver l’administrateur', '<p>Assure-toi de disposer d’un <strong>autre compte administrateur du domaine fonctionnel</strong> avant de désactiver <code>administrateur</code>, sous peine de perdre l’accès d’administration. <strong>Procédure manuelle (justification)</strong> : <a href="/pages/procedure-ad-objets">AD : UO, groupes & utilisateurs</a>. Voir aussi la procédure <a href="/pages/procedure-installation-active-directory">Installer & configurer Active Directory</a> et le <a href="/pages/vocabulaire-active-directory">vocabulaire AD</a>.</p>'),
+];
+
+// ===================================================================================
+// PAGE — Entraînement Réalisation 1 (îlot React : data-block="realisation1-trainer")
+// ===================================================================================
+const r1Blocks: PageBlock[] = [
+  block('hero', { eyebrow: 'Entraînement · Réalisation Windows', title: 'Entraînement — Réalisation 1 Windows', subtitle: 'Refais la réalisation en aveugle : l’outil corrige chaque étape et te donne un score.' }),
+  block('html', { html: '<p>Cet outil te fait <strong>rejouer la Réalisation 1 Windows</strong> (contexte Engineer Aero) de A à Z, sans regarder le corrigé. Tu <strong>saisis toi-même</strong> : les <strong>noms des 3 machines</strong>, leurs <strong>IP fixes</strong>, le <strong>masque</strong> et le <strong>DNS</strong>, la <strong>zone DNS</strong> et ses <strong>enregistrements</strong>, les <strong>deux sites IIS</strong> (nom d’hôte + port), l’<strong>étendue DHCP</strong> (plage de 25 + réservation) et l’<strong>IP de la carte vEthernet</strong> de l’hôte. À chaque étape, clique sur <strong>« Vérifier »</strong> : l’outil coche les bonnes réponses, signale les erreurs avec la <strong>valeur attendue</strong> et met à jour ton <strong>score</strong>. Un bouton <em>« Voir le corrigé »</em> reste dispo par étape si tu bloques.</p>' }),
+  note('yellow', '⚠️ Rappels du sujet', '<p>Réseau <strong>interne isolé</strong> <code>192.168.10.0/24</code> — <strong>pas de passerelle</strong>, <strong>pas d’Active Directory</strong>. Le <strong>domaine reprend ton prénom</strong> (technicien) : <code>engineer&lt;prénom&gt;.lan</code>. Commence par renseigner ton prénom en haut de l’outil.</p>'),
+  block('heading', { level: 2, text: '🖱️ Simulateur de parcours (bureau Windows / Hyper-V)' }),
+  block('html', { html: '<p>Avant de remplir les fenêtres, entraîne-toi au <strong>chemin pour y arriver</strong> — là où ça manque souvent de pratique. Ce simulateur reproduit le <strong>bureau Windows Server</strong> (barre des tâches, menu Démarrer, Gestionnaire de serveur, consoles) : choisis un <strong>objectif</strong>, puis clique de menu en menu jusqu’à la bonne fenêtre (bouton <strong>💡 Indice</strong> si tu bloques). Parcours couverts : <strong>IP fixe</strong> (icône réseau → Connexions réseau → clic droit Ethernet → Propriétés → TCP/IPv4), <strong>Hyper-V</strong> (commutateur virtuel + paramètres VM), <strong>renommage du poste</strong> (Ce PC → Propriétés → Propriétés système → Modifier, avec la zone domaine/groupe de travail prête pour Active Directory), <strong>installation des rôles</strong> (Gérer → Ajouter des rôles : DNS, DHCP, IIS, AD DS) puis leur <strong>utilisation</strong> — Gestionnaire <strong>DNS</strong> (zone + enregistrements A + alias CNAME), console <strong>DHCP</strong> (étendue de 25 adresses + réservation) et <strong>IIS</strong> (2 sites : Présentation:80 et intranet:8080). Enfin <strong>Active Directory</strong> : promouvoir le serveur en <strong>contrôleur de domaine</strong> (nouvelle forêt), <strong>joindre le poste au domaine</strong>, créer une <strong>OU + un utilisateur</strong> (console Utilisateurs et ordinateurs AD) et une <strong>GPO</strong> liée à l’OU (Gestion des stratégies de groupe). 12 objectifs, avec indice du prochain clic à chaque étape.</p>' }),
+  block('html', { html: '<div class="pb-dynamic" data-block="windows-sim"></div>' }),
+
+  block('heading', { level: 2, text: '⌨️ Entraînement — saisie directe des fenêtres' }),
+  block('html', { html: '<p>Ici, les fenêtres sont ouvertes directement : concentre-toi sur les <strong>valeurs à saisir</strong> (IP, DNS, zone, sites IIS, étendue DHCP…). L’outil valide chaque étape et donne un score.</p>' }),
+  block('html', { html: '<div class="pb-dynamic" data-block="realisation1-trainer"></div>' }),
+  note('blue', 'ℹ️ Pour réviser avant / après', '<p>Le corrigé complet illustré : <a href="/pages/correction-realisation-1-windows">Réalisation 1 Windows — Correction</a>. Procédures liées : <a href="/pages/procedure-dns">DNS (zones & enregistrements)</a> · <a href="/pages/procedure-iis">IIS (héberger un site)</a> · <a href="/pages/procedure-dhcp">DHCP (étendue & réservation)</a> · <a href="/pages/procedure-vm-hyperv">Créer une VM Hyper-V</a> · <a href="/pages/trouver-plage-ip-cidr">Trouver une plage d’IP</a>.</p>'),
+];
+
+// ===================================================================================
+// PAGE — Émulateur d'invite de commandes (îlot React : data-block="cmd-emulator")
+// ===================================================================================
+const cmdBlocks: PageBlock[] = [
+  block('hero', { eyebrow: 'Outil · Réseau / CLI', title: 'Émulateur d’invite de commandes', subtitle: 'Un vrai terminal cmd simulé, avec un état machine qui change quand tu tapes tes commandes.' }),
+  block('html', { html: '<p>Ce <strong>bac à sable</strong> reproduit l’<strong>invite de commandes Windows</strong> avec un <strong>état machine modifiable et persisté</strong> : tu poses une IP avec <code>netsh interface ip set address</code>, et <code>ipconfig</code> l’affiche ; tu configures le DNS, et <code>nslookup</code> s’en sert ; <code>ping</code> répond selon ton <strong>sous-réseau</strong> et la <strong>table d’hôtes</strong> (éditable). Il gère aussi un <strong>système de fichiers virtuel</strong> (<code>dir</code>, <code>cd</code>, <code>md</code>, <code>type</code>, <code>echo &gt; fichier</code>, <code>tree</code>), les <strong>variables d’environnement</strong> (<code>set</code>, <code>%COMPUTERNAME%</code>), le <strong>pare-feu</strong> (<code>netsh advfirewall</code>) et un <strong>serveur DHCP simulé</strong> (bail via <code>ipconfig /renew</code>). Idéal pour t’entraîner aux manipulations en ligne de commande de tes prochaines configurations. <strong>cmd prioritaire</strong> (netsh, ipconfig, ping, nslookup, arp, route, netstat, net, netdom…), avec les équivalents <strong>PowerShell</strong> (autorisé) : <code>New-NetIPAddress</code>, <code>Set-DnsClientServerAddress</code>, <code>Rename-Computer</code>, <code>Test-NetConnection</code>, <code>Resolve-DnsName</code>…</p>' }),
+  note('blue', '⌨️ Pour commencer', '<ul><li>Tape <code>help</code> pour la liste des commandes. <kbd>Tab</kbd> = auto-complétion, <kbd>↑</kbd>/<kbd>↓</kbd> = historique, <kbd>Ctrl+L</kbd> = effacer.</li><li>Essaie : <code>ipconfig</code> → <code>netsh interface ip set address "Ethernet" static 192.168.10.101 255.255.255.0 192.168.10.254</code> → <code>ipconfig</code> à nouveau.</li><li><code>netsh interface ip set dns "Ethernet" static 192.168.10.250</code> puis <code>nslookup srv-dhcp</code> et <code>ping srv-dns</code>.</li><li>Fichiers : <code>cd Documents</code> → <code>type notes.txt</code> ; <code>echo test &gt; a.txt</code> → <code>type a.txt</code>.</li><li>L’état (config, fichiers, hôtes) est <strong>sauvegardé</strong> dans le navigateur — bouton « Réinitialiser » pour repartir à zéro.</li></ul>'),
+  block('html', { html: '<div class="pb-dynamic" data-block="cmd-emulator"></div>' }),
+  note('green', '🔗 Procédures liées', '<p><a href="/pages/procedure-ip-fixe-windows">Configurer une IP fixe (Windows)</a> · <a href="/pages/procedure-test-connectivite">Test de connectivité méthodique</a> · <a href="/pages/procedure-renommer-poste">Renommer un poste</a> · <a href="/pages/cmd-et-powershell">Invite de commandes & PowerShell</a>.</p>'),
 ];
 
 // ===================================================================================
@@ -354,6 +430,10 @@ async function main() {
     'Configurateur interactif Active Directory : crée une UO, copie un utilisateur modèle (administrateur → Jean NGUYEN) et désactive le compte source. Génère le script PowerShell prêt à copier.', adBlocks);
   await upsertPage(h, cookie, existing, 'configurateur-vm', 'Configurateur — VM serveur',
     'Configurateur interactif : génère le script PowerShell de mise en service d’une VM serveur (vCPU/RAM, rôles, IP/masque/passerelle .254/DNS, nom Client_xx / SRV_rôle_xx, commutateur privé COM_private).', configBlocks);
+  await upsertPage(h, cookie, existing, 'emulateur-invite-commandes', 'Émulateur d’invite de commandes (bac à sable)',
+    'Terminal cmd Windows simulé avec état machine modifiable : netsh, ipconfig, ping, nslookup, hostname, arp et équivalents PowerShell (New-NetIPAddress, Set-DnsClientServerAddress, Test-NetConnection). La configuration change réellement et ping/nslookup répondent selon le sous-réseau et une table d’hôtes éditable.', cmdBlocks);
+  await upsertPage(h, cookie, existing, 'entrainement-realisation-1', 'Entraînement — Réalisation 1 Windows',
+    'Entraînement auto-corrigé de la Réalisation 1 Windows : saisir noms de machines, IP fixes, masque, DNS, zone + enregistrements, sites IIS, étendue DHCP et IP hôte Hyper-V ; l’outil valide chaque étape, signale les erreurs (valeur attendue) et donne un score.', r1Blocks);
   await upsertPage(h, cookie, existing, 'script-config-vm', 'Configuration standard d’une VM',
     'Script PowerShell : renommer le PC (Client_xx / SRV_rôle_xx) et configurer l’IP fixe (IP, masque, passerelle .254, DNS) sur le commutateur privé COM_private.', ficheBlocks);
   await upsertPage(h, cookie, existing, 'scripts', 'Outils',

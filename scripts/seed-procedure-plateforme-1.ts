@@ -42,11 +42,120 @@ const styleBlock = block('html', { html: `<style>
 .pb-acc-body>*:first-child{margin-top:8px}
 .step-rail{border-left:4px solid var(--border);padding:2px 0 2px 16px;margin:0 0 10px 4px}
 .step-rail>*:first-child{margin-top:6px}
+.proc-shot{margin:14px 0 18px}
+.ps-wrap{position:relative;display:inline-block;max-width:100%;line-height:0}
+.ps-wrap img{display:block;max-width:100%;border:1px solid var(--border);border-radius:8px}
+.ps-mark{position:absolute;border:3px solid #e11d48;border-radius:6px;pointer-events:none}
+.ps-mark.round{border-radius:50%}
+.ps-num{position:absolute;top:-13px;left:-13px;width:24px;height:24px;border-radius:50%;background:#e11d48;color:#fff;font-weight:700;font-size:13px;display:grid;place-items:center;line-height:1;box-shadow:0 1px 4px rgba(0,0,0,.45)}
+.ps-legend{margin:8px 0 0;padding:0;list-style:none;font-size:13.5px;line-height:1.55}
+.ps-legend li{margin:4px 0}
+.ps-b{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:#e11d48;color:#fff;font-weight:700;font-size:11.5px;margin-right:7px;vertical-align:-4px}
+.tuto-step{display:flex;align-items:center;gap:10px;margin:22px 0 8px;font-weight:800;font-size:16px}
+.tuto-step .tn{flex:0 0 auto;width:30px;height:30px;border-radius:50%;background:var(--accent);color:#fff;display:grid;place-items:center;font-size:14px}
+/* Fenêtres Windows simulées (couleurs figées : un dialogue Windows reste clair) */
+.simwin{display:inline-block;max-width:100%;width:520px;background:#f0f0f0;border:1px solid #6f6f6f;border-radius:7px;box-shadow:0 10px 30px rgba(0,0,0,.28);font-family:"Segoe UI",Tahoma,sans-serif;font-size:12.5px;color:#111;text-align:left;overflow:hidden;margin:12px auto}
+.simwin *{box-sizing:border-box}
+.sw-tb{display:flex;align-items:center;gap:8px;background:#fff;border-bottom:1px solid #dcdcdc;padding:7px 10px}
+.sw-tb .i{font-size:14px}.sw-tb .t{font-weight:600;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.sw-tb .x{color:#999}
+.sw-bd{padding:14px 16px;background:#f0f0f0}
+.sw-ft{display:flex;justify-content:flex-end;gap:8px;padding:9px 12px;border-top:1px solid #e2e2e2}
+.sw-btn{min-width:72px;text-align:center;padding:4px 12px;border:1px solid #adadad;border-radius:3px;background:linear-gradient(#fdfdfd,#e7e7e7);font-size:12.5px}
+.sw-btn.def{border-color:#2b7de0;box-shadow:0 0 0 1px #cfe4ff inset}
+.sw-radio{display:flex;align-items:flex-start;gap:7px;margin:5px 0}
+.sw-row{display:flex;align-items:center;gap:10px;margin:6px 0;flex-wrap:wrap}
+.sw-row>.l{flex:0 0 150px;text-align:left}
+.sw-in{border:1px solid #7a7a7a;background:#fff;padding:3px 8px;font-size:12.5px;color:#111;display:inline-block}
+.sw-ip{display:inline-flex;border:1px solid #7a7a7a;background:#fff;padding:3px 8px;font-family:ui-monospace,monospace}
+.sw-sel{border:1px solid #7a7a7a;background:#fff;padding:3px 10px;display:inline-flex;align-items:center;min-width:210px}
+.sw-sel::after{content:'▾';margin-left:auto;color:#555;padding-left:16px}
+.kb{position:relative;outline:2.5px solid #e11d48;outline-offset:2px;border-radius:3px}
+.kb-num{position:absolute;top:-12px;left:-12px;width:22px;height:22px;border-radius:50%;background:#e11d48;color:#fff;font-weight:700;font-size:12px;display:grid;place-items:center;line-height:1;box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.sw-wiz{display:block;background:#f0f0f0}
+.sw-wiz-nav{display:flex;flex-wrap:wrap;align-items:center;gap:2px 6px;border-bottom:1px solid #ddd;padding:7px 10px;background:#fbfbfb}
+.sw-wiz-nav .s{color:#9aa2ad;font-size:10.5px;line-height:1.45}
+.sw-wiz-nav .s.on{color:#111;font-weight:700}
+.sw-wiz-nav .s:not(:last-child)::after{content:'\\203A';margin-left:6px;color:#c4c4c4}
+.sw-wiz-main{padding:12px 14px}
+.sim-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:14px;align-items:start}
+.sim-grid .proc-shot{margin:0}
+.sim-grid .simwin{width:100%}
+.wiz-carousel{margin:12px 0 18px;border:1px solid var(--border);border-radius:10px;overflow:hidden}
+.wc-head{padding:9px 14px;font-weight:700;font-size:13.5px;border-bottom:1px solid var(--border);background:var(--surface-2);display:flex;flex-wrap:wrap;gap:4px 8px;align-items:baseline}
+.wc-hint{font-weight:400;color:var(--text-muted);font-size:12px}
+.carousel{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scroll-behavior:smooth;background:var(--surface)}
+.carousel>figure{flex:0 0 100%;scroll-snap-align:start;margin:0;padding:16px 14px;box-sizing:border-box}
+.carousel::-webkit-scrollbar{height:11px}
+.carousel::-webkit-scrollbar-thumb{background:#b0b0b0;border-radius:10px;border:2px solid var(--surface)}
+.carousel::-webkit-scrollbar-track{background:var(--surface-2)}
+.net-card{border:1px solid var(--border);border-left:5px solid var(--nc,#2563eb);border-radius:12px;overflow:hidden;margin:14px 0;background:var(--surface-2)}
+.net-card .nc-head{padding:12px 16px 10px}
+.net-card .nc-title{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.net-card .nc-ic{font-size:20px;line-height:1}
+.net-card .nc-name{font-weight:800;font-size:16px;color:var(--text)}
+.net-card .nc-cidr{font-family:ui-monospace,'Space Mono',monospace;font-weight:700;font-size:13px;color:var(--nc,#2563eb);background:color-mix(in srgb,var(--nc,#2563eb) 14%,transparent);border:1px solid color-mix(in srgb,var(--nc,#2563eb) 35%,transparent);border-radius:999px;padding:2px 11px}
+.net-card .nc-facts{display:flex;flex-wrap:wrap;gap:7px 18px;margin-top:10px}
+.net-card .nc-facts>span{font-size:12.5px}
+.net-card .nc-k{color:var(--text-muted)}
+.net-card .nc-v{font-family:ui-monospace,'Space Mono',monospace;font-weight:600;color:var(--text)}
+.net-card .nc-body{padding:0 12px 12px}
+.net-card .nc-body>div{margin:0}
+.net-card .nc-cap{font-size:11.5px;color:var(--text-muted);padding:0 16px 12px}
+.wiz-stack{border:1px solid var(--border);border-radius:10px;overflow:hidden;margin:12px 0;background:var(--surface-2)}
+.wiz-stack>.wc-head{padding:9px 14px;font-weight:700;font-size:13.5px;border-bottom:1px solid var(--border)}
+.wiz-stack>figure{margin:12px 14px}
+.dp-break{display:none}
 </style>` });
 
 const figure = (url: string, cap: string) => block('html', { html: `<figure style="margin:12px 0 16px;text-align:center"><img src="${url}" alt="${cap}" loading="lazy" style="max-width:100%;border:1px solid var(--border);border-radius:8px"/><figcaption class="meta" style="margin-top:6px;font-size:12.5px">${cap}</figcaption></figure>` });
+// Titre d'étape « tutoriel » (pastille numérotée + intitulé simple).
+const tstep = (n: string, title: string) => block('html', { html: `<div class="tuto-step"><span class="tn">${n}</span> ${title}</div>` });
+
+// ── Fenêtres Windows SIMULÉES (HTML) : plus nettes que les captures, valeurs pré-remplies, points clés encadrés en rouge ──
+const swBtns = '<span class="sw-btn def">OK</span><span class="sw-btn">Annuler</span>';
+const swFrame = (icon: string, title: string, body: string, buttons: string = swBtns) =>
+  `<div class="simwin"><div class="sw-tb"><span class="i">${icon}</span><span class="t">${title}</span><span class="x">✕</span></div><div class="sw-bd">${body}</div><div class="sw-ft">${buttons}</div></div>`;
+const swIp = (v: string) => `<span class="sw-ip">${v.split('.').map(o => o.trim()).join('&nbsp; . &nbsp;')}</span>`;
+const kbx = (n: number, html: string) => `<div class="kb"><span class="kb-num">${n}</span>${html}</div>`;
+const rON = '<span style="font-size:13px">◉</span>', rOFF = '<span style="font-size:13px;color:#888">○</span>';
+const cON = '<span style="font-size:13px">☑</span>', cOFF = '<span style="font-size:13px;color:#888">☐</span>';
+// Fenêtre simulée + légende numérotée (pastilles rouges). Légende optionnelle.
+const simWin = (winHtml: string, caption: string, legend: string[] = []) => block('html', {
+  html: `<figure class="proc-shot" style="text-align:center">${winHtml}<figcaption class="meta" style="margin-top:6px;font-size:12.5px">${caption}</figcaption>`
+    + (legend.length ? `<ol class="ps-legend" style="max-width:580px;margin:8px auto 0;text-align:left">${legend.map((l, i) => `<li><span class="ps-b">${i + 1}</span> ${l}</li>`).join('')}</ol>` : '') + '</figure>',
+});
+// Assistant page-par-page : volet d'étapes à gauche (étape courante en gras) + page à droite + boutons.
+const wizBtns = (last = false) => `<span class="sw-btn">&lt; Précédent</span><span class="sw-btn def">${last ? 'Terminer' : 'Suivant &gt;'}</span><span class="sw-btn">Annuler</span>`;
+const wizPage = (icon: string, title: string, steps: string[], cur: number, pageTitle: string, body: string, buttons: string) =>
+  `<div class="simwin" style="width:600px"><div class="sw-tb"><span class="i">${icon}</span><span class="t">${title}</span><span class="x">✕</span></div>`
+  + `<div class="sw-wiz"><div class="sw-wiz-nav">${steps.map((s, i) => `<div class="s${i === cur ? ' on' : ''}">${s}</div>`).join('')}</div>`
+  + `<div class="sw-wiz-main"><p style="font-weight:700;margin:0 0 10px;font-size:13.5px">${pageTitle}</p>${body}</div></div>`
+  + `<div class="sw-ft">${buttons}</div></div>`;
+const VM_STEPS = ['Avant de commencer', 'Nom et emplacement', 'Génération', 'Affecter la mémoire', 'Mise en réseau', 'Disque dur virtuel', 'Options d’installation', 'Résumé'];
+const DHCP_STEPS = ['Nom de l’étendue', 'Plage d’adresses IP', 'Ajout d’exclusions', 'Durée du bail', 'Configurer les options', 'Routeur (passerelle)', 'Domaine et serveurs DNS', 'Serveurs WINS', 'Activer l’étendue', 'Fin'];
 // Accordéon repliable : regroupe des blocs HTML dans un <details>.
 const acc = (summary: string, inner: PageBlock[]) => block('html', { html: `<details class="pb-acc"><summary>${summary}</summary><div class="pb-acc-body">${inner.map(b => (b as any).html || '').join('')}</div></details>` });
+// Accordéon dont le corps dispose ses fenêtres en GRILLE (2 colonnes sur ordinateur, 1 sur mobile).
+const accGrid = (summary: string, inner: PageBlock[]) => block('html', { html: `<details class="pb-acc" open><summary>${summary}</summary><div class="pb-acc-body sim-grid">${inner.map(b => (b as any).html || '').join('')}</div></details>` });
+// Carrousel « pages » : une fenêtre visible à la fois, défilement / glissement horizontal (scroll-snap).
+const carousel = (title: string, slides: PageBlock[]) => block('html', {
+  html: `<div class="wiz-carousel"><div class="wc-head">${title}<span class="wc-hint">← glissez / faites défiler horizontalement pour changer d’écran →</span></div>`
+    + `<div class="carousel">${slides.map(b => (b as any).html || '').join('')}</div></div>`,
+});
+// Groupe d'écrans d'assistant, empilés (les images restent individuelles en colonne).
+const pager = (title: string, slides: PageBlock[]) => block('html', {
+  html: `<div class="wiz-stack"><div class="wc-head">${title}</div>${slides.map(b => (b as any).html || '').join('')}</div>`,
+});
+// Marqueur de découpe en PAGES (sections) pour le lecteur « doc-pager ». data-label = titre de la page.
+const pageBreak = (label: string) => block('html', { html: `<hr class="dp-break" data-label="${label.replace(/"/g, '')}">` });
+// Carte « réseau » : bandeau coloré (nom + CIDR), faits clés (masque/plage/passerelle) et tableau des équipements.
+const netCard = (color: string, icon: string, name: string, cidr: string, facts: [string, string][], head: string[], rows: string[][], caption = '') => block('html', {
+  html: `<div class="net-card" style="--nc:${color}">`
+    + `<div class="nc-head"><div class="nc-title"><span class="nc-ic">${icon}</span><span class="nc-name">${name}</span><span class="nc-cidr">${cidr}</span></div>`
+    + `<div class="nc-facts">${facts.map(([k, v]) => `<span><span class="nc-k">${k} :</span> <span class="nc-v">${v}</span></span>`).join('')}</div></div>`
+    + `<div class="nc-body">${tbl(head, rows)}</div>`
+    + (caption ? `<div class="nc-cap">${caption}</div>` : '') + '</div>',
+});
 
 // ── Annexe 1 : machines virtuelles (relevé des configurations réelles) ──
 // Colonne « Serveur » en bleu, colonne « Client » en vert, 1re colonne en gras.
@@ -71,9 +180,11 @@ const annexe1 = `<div style="overflow-x:auto;margin:6px 0"><table style="border-
 const blocks: PageBlock[] = [
   block('hero', { eyebrow: 'Procédure · Projet réseau', title: 'Plateforme EDIVN — montage de l’infrastructure', subtitle: '' }),
   styleBlock,
+  block('html', { html: `<div data-block="pdf-download" data-title="Plateforme EDIVN — montage de l’infrastructure" data-label="Télécharger la procédure en PDF"></div>` }),
 
+  pageBreak('Présentation & mission'),
   note('blue', '🏫 Contexte', '<p>L’<strong>École de Développement Informatique EDIVN</strong> forme des développeurs et souhaite <strong>restructurer son réseau</strong> pour gagner en efficacité et en sécurité. Dans le cadre de son agrandissement, chaque site dispose d’une équipe chargée de restructurer le réseau.</p>'),
-  note('gray', '🧭 Comment lire cette procédure', '<p>Suivez les <strong>8 étapes colorées</strong> dans l’ordre. Chaque étape est autonome (objectif, commandes, vérification). Les exemples prennent le <strong>Groupe 5</strong> comme référence : <strong>remplacez le suffixe de groupe</strong> (<code>G5</code>, <code>Groupe5</code>, <code>05</code>) et le domaine par les vôtres.</p>'),
+  note('gray', '🧭 Comment lire cette procédure', '<p>Tutoriel pas-à-pas pour <strong>stagiaires TSSR</strong>. Suivez les <strong>8 étapes colorées</strong> dans l’ordre : chacune commence par un <strong>« 🎯 Objectif »</strong> (et ses <strong>prérequis</strong>). Pour les configurations <strong>Windows Server</strong>, chaque <strong>fenêtre d’assistant est reproduite</strong>, avec le <strong style="color:#e11d48">champ à renseigner encadré en rouge</strong> et une légende numérotée. Pour les <strong>routeurs/switches Cisco</strong>, la configuration est en <strong>ligne de commande (CLI)</strong> : blocs de commandes à saisir dans la console. Les exemples prennent le <strong>Groupe 5</strong> — remplacez le suffixe (<code>G5</code>, <code>05</code>) et le domaine par les vôtres.</p>'),
 
   block('heading', { level: 2, text: '🎯 Mission' }),
   block('html', { html: '<p>Afin de réaliser la restructuration demandée par l’EDIVN, le travail est mené en suivant la procédure ci-dessous :</p>' }),
@@ -116,44 +227,46 @@ const blocks: PageBlock[] = [
     '<strong>Borne Wi-Fi</strong> : captures montrant son fonctionnement.',
   ]),
 
+  pageBreak('Plan d’adressage'),
   block('heading', { level: 2, text: '🗺️ Schéma logique & plan d’adressage' }),
   figure('/uploads/plat1-schema-reseau.png', 'Schéma logique EDIVN : réseau Admin/IT (192.5.10.0/28), réseau Utilisateurs (192.5.50.0/24), routeur interne R_IT_G5, routeur de bordure Routeur_G5 et sortie vers 172.16.3.0/24.'),
-  block('html', { html: '<p>Le plan d’adressage ci-dessous découle de ce schéma.</p>' }),
+  block('html', { html: '<p>L’infrastructure repose sur <strong>trois réseaux</strong>. Chacun a sa <strong>carte</strong> ci-dessous : le sous-réseau (CIDR), ses <strong>chiffres clés</strong> (masque, plage utilisable, passerelle) et la liste des équipements avec leur adresse.</p>' }),
 
-  block('heading', { level: 3, text: 'Réseau Admin / IT — 192.5.10.0/28' }),
-  block('html', { html: tbl(['Équipement', 'Adresse IP', 'Rôle'], [
+  netCard('#2563eb', '🏢', 'Réseau Admin / IT', '192.5.10.0 /28', [
+    ['Masque', '255.255.255.240'], ['Plage utilisable', '.1 → .14'], ['Broadcast', '.15'], ['Passerelle', '192.5.10.14'],
+  ], ['Équipement', 'Adresse IP', 'Rôle'], [
     ['Poste Admin 1', '192.5.10.1', 'poste administrateur'],
     ['Serveur DHCP-DNS-Web', '<strong>192.5.10.12</strong>', 'serveur (IP fixe)'],
     ['SW-1', '192.5.10.13', 'switch — IP de gestion'],
     ['Passerelle (R_IT_G5 Gi0/0)', '<strong>192.5.10.14</strong>', 'passerelle du réseau'],
-  ]) }),
-  block('html', { html: '<p class="meta" style="font-size:12px">Masque <code>255.255.255.240</code> · broadcast <code>192.5.10.15</code> · plage utilisable <code>.1 → .14</code>.</p>' }),
+  ], 'Petit réseau <strong>/28</strong> (16 adresses) réservé à l’administration et au serveur.'),
 
-  block('heading', { level: 3, text: 'Réseau Utilisateurs — 192.5.50.0/24' }),
-  block('html', { html: tbl(['Équipement', 'Adresse IP', 'Rôle'], [
+  netCard('#16a34a', '👥', 'Réseau Utilisateurs', '192.5.50.0 /24', [
+    ['Masque', '255.255.255.0'], ['Pool DHCP', '.1 → .200'], ['IP fixes infra', '.251 → .254'], ['Passerelle', '192.5.50.254'],
+  ], ['Équipement', 'Adresse IP', 'Rôle'], [
     ['Stagiaire', '192.5.50.1', 'poste — <strong>via DHCP</strong>'],
     ['Formateur', '192.5.50.2', 'poste — <strong>via DHCP</strong>'],
     ['CISCO WAP 371', '192.5.50.251', 'point d’accès Wi-Fi (SSID-EDWIN05) — IP fixe'],
     ['Routeur_G5 (LAN)', '192.5.50.252', 'routeur de bordure — IP fixe'],
     ['Sw-2', '192.5.50.253', 'switch — IP de gestion'],
     ['Passerelle (R_IT_G5 Gi0/1)', '<strong>192.5.50.254</strong>', 'passerelle du réseau'],
-  ]) }),
-  block('html', { html: '<p class="meta" style="font-size:12px">Masque <code>255.255.255.0</code> · les postes et les clients Wi-Fi reçoivent leur IP par <strong>DHCP</strong> (pool <code>.1 → .200</code>). Les équipements d’infra à IP fixe (<code>.251 → .254</code>) sont <strong>au-dessus du pool</strong> → aucune exclusion nécessaire.</p>' }),
+  ], 'Postes et clients Wi-Fi servis par <strong>DHCP</strong> (.1 → .200). Les IP fixes d’infra (.251 → .254) sont <strong>au-dessus du pool</strong> → aucune exclusion à faire.'),
 
-  block('heading', { level: 3, text: 'Liaison extérieure / autres écoles — 172.16.3.0/24' }),
-  block('html', { html: tbl(['Équipement', 'Adresse IP', 'Rôle'], [
+  netCard('#f97316', '🌍', 'Liaison extérieure / salle', '172.16.3.0 /24', [
+    ['Masque', '255.255.255.0'], ['Sortie WAN', '172.16.3.250'], ['Passerelle salle', '172.16.3.254'],
+  ], ['Équipement', 'Adresse IP', 'Rôle'], [
     ['Routeur_G5 (WAN)', '172.16.3.250', 'sortie vers les autres écoles / Internet'],
     ['Passerelle de la salle', '172.16.3.254', 'route par défaut du routeur de bordure'],
-  ]) }),
-  block('html', { html: '<p class="meta" style="font-size:12px">L’IP WAN et la passerelle sont <strong>fournies par la salle</strong> (réseau <code>172.16.3.0/24</code>) ; adaptez-les à votre poste.</p>' }),
+  ], 'IP WAN et passerelle <strong>fournies par la salle</strong> — adaptez-les à votre poste.'),
 
-  block('heading', { level: 3, text: 'Routeurs & interfaces' }),
-  block('html', { html: tbl(['Routeur', 'Interface', 'Réseau', 'Adresse IP'], [
-    ['R_IT_G5 (interne)', 'Gi0/0', 'Admin 192.5.10.0/28', '192.5.10.14'],
-    ['R_IT_G5 (interne)', 'Gi0/1', 'Utilisateurs 192.5.50.0/24', '192.5.50.254'],
+  netCard('#8b5cf6', '🔀', 'Routeurs & interfaces', 'récapitulatif', [
+    ['R_IT_G5', 'interne — route Admin ↔ Utilisateurs'], ['Routeur_G5', 'bordure — NAT/PAT vers la salle'],
+  ], ['Routeur', 'Interface', 'Réseau', 'Adresse IP'], [
+    ['R_IT_G5 (interne)', 'Gi0/0', 'Admin 192.5.10.0/28', '<strong>192.5.10.14</strong>'],
+    ['R_IT_G5 (interne)', 'Gi0/1', 'Utilisateurs 192.5.50.0/24', '<strong>192.5.50.254</strong>'],
     ['Routeur_G5 (bordure)', 'Gi0/1', 'Utilisateurs 192.5.50.0/24', '192.5.50.252'],
     ['Routeur_G5 (bordure)', 'Gi0/0', 'Extérieur 172.16.3.0/24', '172.16.3.250'],
-  ]) }),
+  ]),
   note('gray', 'ℹ️ Nommage des interfaces', '<p>Sur les <strong>routeurs 2811</strong> les interfaces sont des <code>FastEthernet0/x</code> ; sur un <strong>2911</strong> des <code>GigabitEthernet0/x</code>. Rôles identiques — adaptez simplement le nom dans la CLI.</p>'),
   note('gray', 'ℹ️ Noms de domaine utilisés', '<p>Le domaine des <strong>équipements réseau</strong> (<code>ip domain-name</code> des routeurs/switches, requis pour SSH) est <code>edivn.lan</code>. Les <strong>sites Web</strong> ont chacun leur <strong>zone DNS</strong> : <code>Groupe05-EDIVN.lan</code> (site public) et <code>05.EDIVN.lan</code> (intranet). Adaptez le numéro de groupe.</p>'),
 
@@ -161,12 +274,15 @@ const blocks: PageBlock[] = [
   block('html', { html: annexe1 }),
   note('gray', 'ℹ️ Remarques', '<p>Les deux VM (SRV-1 + CLIENT10) sont sur le <strong>même segment Admin</strong> et pointent vers le <strong>DNS 192.5.10.12</strong>, mais <strong>chacune sur son propre commutateur externe</strong> (2 cartes ou 2 hôtes — voir Étape 2). Masque <code>/28</code> = <code>255.255.255.240</code>, passerelle <code>192.5.10.14</code>.</p>'),
 
+  pageBreak('Réalisation — déroulé'),
   block('heading', { level: 2, text: '🔧 Réalisation pas à pas' }),
   block('html', { html: '<p>Huit étapes, à suivre dans l’ordre. Chacune se termine par une <strong>vérification</strong> avant de passer à la suivante.</p>' }),
 
   // ── Étape 0 ──
+  pageBreak('Étape 0 — Réinitialiser les équipements'),
   step('0', 'Réinitialiser les équipements réseau', 'Routeurs & switches — partir d’une configuration vierge', C.reset),
   railOpen(C.reset),
+  note('blue', '🎯 Objectif', '<p>Partir d’une <strong>configuration vierge</strong> sur les routeurs et switches réutilisés (une ancienne config peut bloquer le TP). Ces équipements se configurent en <strong>ligne de commande (CLI)</strong> via le <strong>port console</strong> (câble console → port COM du PC), tant qu’ils n’ont pas d’adresse IP pour le SSH. On se connecte à la console, on efface la <strong>startup-config</strong>, puis on redémarre.</p>'),
   note('red', '🧨 À faire AVANT toute configuration sur du matériel réutilisé', '<p>Un équipement qui a déjà servi peut contenir une config qui <strong>bloque tout</strong> : routes par défaut erronées, ACL/NAT hors sujet, doublons d’adresses, VLAN parasites (fréquent sur du matériel de lab). On <strong>efface la configuration de démarrage</strong> et on <strong>redémarre</strong>.</p>'),
 
   block('heading', { level: 4, text: 'a) Se connecter au port console (avant tout réseau)' }),
@@ -199,8 +315,10 @@ reload
 
   // ── Étape 1 ──
   railClose,
+  pageBreak('Étape 1 — Routeur interne R_IT'),
   step('1', 'Routeur interne R_IT — interfaces & SSH', 'Adressage des 2 interfaces + accès de management SSH', C.routeur),
   railOpen(C.routeur),
+  note('blue', '🎯 Objectif', '<p>Configurer le <strong>routeur interne R_IT_G5</strong> : adresser ses <strong>deux interfaces</strong> (côté Admin/IT et côté Utilisateurs — il assure le routage entre les deux réseaux), puis activer l’accès d’administration <strong>SSH</strong> (mot de passe <code>cisco</code>). Tout se fait depuis la <strong>console</strong>, le SSH n’étant pas encore actif. Saisissez les blocs de commandes ci-dessous.</p>'),
   block('html', { html: '<p>Configurer les <strong>deux interfaces</strong> du routeur interne (côté Admin/IT et côté Utilisateurs) puis l’<strong>accès SSH</strong> (mot de passe <code>cisco</code>). Tout se fait <strong>depuis la console</strong> (onglet <code>CLI</code> sous Packet Tracer, ou câble console sur matériel réel) — le SSH n’étant pas encore actif.</p>' }),
   cmd(`enable
 configure terminal
@@ -241,30 +359,120 @@ write memory`),
 
   // ── Étape 2 ──
   railClose,
+  pageBreak('Étape 2 — Machines virtuelles (Hyper-V)'),
   step('2', 'Machines virtuelles (Hyper-V)', 'Serveur SRV-1 + poste CLIENT10, un commutateur externe par VM', C.vm),
   railOpen(C.vm),
-  block('html', { html: '<p><strong>Déployer</strong> les deux machines virtuelles du réseau d’administration IT via <strong>Hyper-V</strong> — le poste <strong>CLIENT10</strong> et le serveur <strong>SRV-1</strong> — chacune reliée à la maquette Cisco par son <strong>propre commutateur externe</strong> (voir la règle ci-dessous). Peut se faire en parallèle de l’étape 1.</p>' }),
-  ul([
-    'Créer les 2 VM (Gestionnaire Hyper-V → <strong>Nouvel ordinateur virtuel</strong>, génération 2), selon l’Annexe 1.',
-    'Placer <strong>chaque VM sur un commutateur virtuel Externe distinct</strong> (ex. <code>COMM-VIRTUEL-EXT-client</code> pour CLIENT10) — voir la règle ⚠️ ci-dessous.',
-    'Installer les OS : <strong>Windows Server 2019</strong> (Expérience de bureau) sur <strong>SRV-1</strong>, <strong>Windows 10 Pro</strong> sur <strong>CLIENT10</strong> ; définir le mot de passe administrateur.',
-    'Renommer les machines et appliquer l’<strong>IP fixe</strong> (tableau ci-dessous).',
+  note('blue', '🎯 Objectif', '<p>Créer les <strong>deux machines virtuelles</strong> du réseau d’administration sous <strong>Hyper-V</strong> : le serveur <strong>SRV-1</strong> (Windows Server 2019) et le poste <strong>CLIENT10</strong> (Windows 10 Pro), puis les <strong>renommer</strong> et leur affecter une <strong>adresse IP fixe</strong> (Annexe 1). Sur chaque écran, le champ à renseigner est <strong style="color:#e11d48">encadré en rouge</strong>.</p>'),
+  note('gray', '📋 Prérequis', '<ul><li>Le rôle <strong>Hyper-V</strong> installé sur l’hôte.</li><li>Les images d’installation <strong>ISO</strong> de Windows Server 2019 et Windows 10 Pro.</li><li>Un <strong>commutateur virtuel Externe</strong> créé par machine (voir la règle ⚠️ en fin d’étape).</li></ul>'),
+
+  tstep('2.1', 'Créer la VM (assistant Nouvel ordinateur virtuel)'),
+  block('html', { html: '<p>Dans le <strong>Gestionnaire Hyper-V</strong>, volet <em>Actions</em> → <strong>Nouveau → Ordinateur virtuel</strong>. L’assistant se déroule sur <strong>plusieurs pages</strong> (l’exemple montre le serveur <strong>SRV-1</strong>). Touchez le bandeau ci-dessous pour dérouler les écrans :</p>' }),
+  pager('🖥️ Assistant « Nouvel ordinateur virtuel »', [
+  simWin(wizPage('🖥️', 'Nouvel ordinateur virtuel', VM_STEPS, 0, 'Avant de commencer',
+    '<p style="margin:0">Cet Assistant vous aide à créer un ordinateur virtuel. Cliquez sur <strong>Suivant</strong> pour continuer, ou sur Terminer pour utiliser les valeurs par défaut.</p>'
+    + `<label class="sw-radio" style="margin-top:12px">${rOFF} Ne plus afficher cette page</label>`, wizBtns()),
+    '① Page « Avant de commencer » → cliquez sur Suivant.'),
+  simWin(wizPage('🖥️', 'Nouvel ordinateur virtuel', VM_STEPS, 1, 'Spécifier le nom et l’emplacement',
+    '<p style="margin:0 0 10px">Choisissez un nom et un emplacement pour cet ordinateur virtuel.</p>'
+    + `<div class="sw-row"><span class="l">Nom :</span>${kbx(1, '<span class="sw-in" style="width:150px">SRV-1</span>')}</div>`
+    + `<label class="sw-radio" style="margin-top:10px">${rOFF} Stocker l’ordinateur virtuel à un autre emplacement</label>`, wizBtns()),
+    '② Page « Nom et emplacement ».',
+    ['Saisissez le <strong>nom</strong> de la VM : <code>SRV-1</code> (ou <code>CLIENT10</code> pour le poste).']),
+  simWin(wizPage('🖥️', 'Nouvel ordinateur virtuel', VM_STEPS, 2, 'Spécifier la génération',
+    '<p style="margin:0 0 10px">Choisissez la génération de cet ordinateur virtuel.</p>'
+    + `<label class="sw-radio">${rOFF} Génération 1</label>`
+    + kbx(1, `<label class="sw-radio">${rON} Génération 2</label>`)
+    + '<p class="meta" style="font-size:11px;margin:8px 0 0">La génération 2 prend en charge l’UEFI et le démarrage sécurisé.</p>', wizBtns()),
+    '③ Page « Génération ».',
+    ['Cochez <strong>Génération 2</strong> (UEFI) — adaptée à Windows Server 2019 / Windows 10.']),
+  simWin(wizPage('🖥️', 'Nouvel ordinateur virtuel', VM_STEPS, 3, 'Affecter la mémoire',
+    '<p style="margin:0 0 10px">Spécifiez la quantité de mémoire à allouer à cet ordinateur virtuel.</p>'
+    + kbx(1, '<div class="sw-row"><span class="l">Mémoire de démarrage :</span><span class="sw-in" style="width:90px;text-align:right">4096</span> Mo</div>')
+    + `<label class="sw-radio" style="margin-top:8px">${rOFF} Utiliser la mémoire dynamique</label>`, wizBtns()),
+    '④ Page « Affecter la mémoire ».',
+    ['Mémoire de démarrage = <strong>4096</strong> Mo (4 Go).']),
+  simWin(wizPage('🖥️', 'Nouvel ordinateur virtuel', VM_STEPS, 4, 'Configurer la mise en réseau',
+    '<p style="margin:0 0 10px">Chaque nouvel ordinateur virtuel comprend une carte réseau.</p>'
+    + `<div class="sw-row"><span class="l">Connexion :</span>${kbx(1, '<span class="sw-sel">COMM-VIRTUEL-EXT-client</span>')}</div>`, wizBtns()),
+    '⑤ Page « Mise en réseau ».',
+    ['Choisissez le <strong>commutateur virtuel Externe</strong> dédié à cette machine.']),
+  simWin(wizPage('🖥️', 'Nouvel ordinateur virtuel', VM_STEPS, 5, 'Connecter un disque dur virtuel',
+    '<p style="margin:0 0 10px">Créez un disque dur virtuel pour installer le système d’exploitation.</p>'
+    + kbx(1, `<label class="sw-radio">${rON} Créer un disque dur virtuel</label>`
+      + '<div class="sw-row" style="margin-left:22px"><span class="l">Nom :</span><span class="sw-in" style="width:130px">SRV-1.vhdx</span></div>'
+      + '<div class="sw-row" style="margin-left:22px"><span class="l">Taille :</span><span class="sw-in" style="width:60px;text-align:right">50</span> Go</div>'), wizBtns()),
+    '⑥ Page « Disque dur virtuel ».',
+    ['Taille du disque : <strong>50 Go</strong> pour le serveur (<strong>40 Go</strong> pour CLIENT10).']),
+  simWin(wizPage('🖥️', 'Nouvel ordinateur virtuel', VM_STEPS, 6, 'Options d’installation',
+    '<p style="margin:0 0 8px">Vous pouvez installer un système d’exploitation maintenant.</p>'
+    + `<label class="sw-radio">${rOFF} Installer un système d’exploitation plus tard</label>`
+    + kbx(1, `<label class="sw-radio">${rON} Installer à partir d’un fichier image de démarrage (.iso)</label>`
+      + '<div class="sw-row" style="margin-left:22px"><span class="l">Fichier image :</span><span class="sw-in" style="width:200px">D:\\ISO\\WinServer2019.iso</span></div>'), wizBtns()),
+    '⑦ Page « Options d’installation ».',
+    ['Sélectionnez l’<strong>ISO</strong> de Windows (Server 2019 pour SRV-1, Windows 10 pour CLIENT10).']),
+  simWin(wizPage('🖥️', 'Nouvel ordinateur virtuel', VM_STEPS, 7, 'Résumé',
+    '<p style="margin:0 0 8px">Vous avez terminé l’Assistant Nouvel ordinateur virtuel. Configuration :</p>'
+    + '<div style="font-size:12px;color:#333;line-height:1.8;border:1px solid #ddd;border-radius:4px;padding:8px 10px">Nom : <b>SRV-1</b><br>Génération : 2<br>Mémoire : 4096 Mo<br>Réseau : COMM-VIRTUEL-EXT-client<br>Disque : SRV-1.vhdx (50 Go)</div>', wizBtns(true)),
+    '⑧ Page « Résumé » → cliquez sur Terminer. Répétez l’assistant pour la 2ᵉ VM (CLIENT10).'),
   ]),
-  block('html', { html: tbl(['VM', 'Nom', 'IP / masque', 'Passerelle', 'DNS'], [
-    ['Serveur', 'SRV-1', '<strong>192.5.10.12</strong> /28', '192.5.10.14', '192.5.10.12 (lui-même)'],
-    ['Poste client', 'CLIENT10', '192.5.10.1 /28', '192.5.10.14', '192.5.10.12'],
+  block('html', { html: tbl(['La machine', 'Nom à donner', 'Système à installer', 'Mémoire'], [
+    ['Le serveur', '<strong>SRV-1</strong>', 'Windows Server 2019', '4096 Mo'],
+    ['Le poste', '<strong>CLIENT10</strong>', 'Windows 10 Pro', '4096 Mo'],
   ]) }),
-  figure('/uploads/plat1-vm-specs-client10.png', 'Spécifications de CLIENT10 : Windows 10 Pro, 4 Go de RAM.'),
-  figure('/uploads/plat1-vm-hyperv-carte-reseau.png', 'Paramètres Hyper-V de CLIENT10 — la carte réseau est rattachée au commutateur virtuel <strong>Externe</strong> « COMM-VIRTUEL-EXT-client ».'),
-  figure('/uploads/plat1-vm-tcpip-client10.png', 'Configuration IPv4 fixe du poste : IP 192.5.10.1, masque 255.255.255.240 (/28), passerelle 192.5.10.14, DNS préféré 192.5.10.12.'),
+
+  tstep('2.2', 'Brancher la carte réseau au bon « commutateur »'),
+  block('html', { html: '<p>Reliez la <strong>carte réseau</strong> de la VM à un <strong>commutateur virtuel</strong>. Faites un <strong>clic droit sur la VM → Paramètres</strong>, sélectionnez <strong>Carte réseau</strong> dans la colonne de gauche, puis dans la liste <strong>Commutateur virtuel</strong> choisissez le commutateur <strong>Externe</strong> dédié à cette machine :</p>' }),
+  simWin(
+    swFrame('🖧', 'Paramètres pour CLIENT10 — Carte réseau',
+      '<p style="margin:0 0 6px;font-weight:600">Carte réseau</p><p style="margin:0 0 12px;color:#444">Spécifiez la configuration de la carte réseau ou retirez-la.</p>'
+      + `<div class="sw-row"><span class="l">Commutateur virtuel :</span>${kbx(1, '<span class="sw-sel">COMM-VIRTUEL-EXT-client</span>')}</div>`),
+    'Clic droit sur la machine → « Paramètres » → rubrique « Carte réseau ».',
+    ['Dans la liste <strong>« Commutateur virtuel »</strong>, choisissez un commutateur <strong>Externe</strong> (un par machine — voir la règle ⚠️ ci-dessous).']),
+
+  tstep('2.3', 'Renommer la machine'),
+  block('html', { html: '<p>On donne à chaque machine un <strong>nom clair</strong> (<code>SRV-1</code>, <code>CLIENT10</code>). Chemin : <strong>clic droit sur « Ce PC » → Propriétés</strong> → dans « Propriétés système », onglet <strong>Nom de l’ordinateur</strong> → bouton <strong>Modifier…</strong>. La fenêtre suivante s’ouvre :</p>' }),
+  simWin(
+    swFrame('💻', 'Modification du nom ou du domaine de l’ordinateur',
+      '<p style="margin:0 0 12px">Vous pouvez modifier le nom et l’appartenance de cet ordinateur.</p>'
+      + `<div class="sw-row"><span class="l">Nom de l’ordinateur :</span>${kbx(1, '<span class="sw-in" style="width:160px">CLIENT10</span>')}</div>`
+      + '<div class="sw-fs"><span class="lg">Membre d’un</span>'
+      + `<label class="sw-radio">${rOFF} Domaine :</label><div class="sw-row" style="margin-left:22px"><span class="sw-in" style="width:160px;color:#aaa">&nbsp;</span></div>`
+      + `<label class="sw-radio" style="margin-top:4px">${rON} Groupe de travail :</label><div class="sw-row" style="margin-left:22px"><span class="sw-in" style="width:160px">WORKGROUP</span></div>`
+      + '</div>'),
+    'Propriétés système → onglet « Nom de l’ordinateur » → bouton « Modifier… ».',
+    ['Tapez le <strong>nouveau nom</strong> (ici <code>CLIENT10</code> ; mettez <code>SRV-1</code> pour le serveur), cliquez <strong>OK</strong>, puis <strong>redémarrez</strong>.',
+      'On reste en <strong>Groupe de travail</strong> (le domaine viendra plus tard, une fois Active Directory installé).']),
+
+  tstep('2.4', 'Donner l’adresse IP fixe'),
+  block('html', { html: '<p>Attribuez l’<strong>adresse IP fixe</strong>. Ouvrez le <strong>Centre Réseau et partage</strong> → <em>Modifier les paramètres de la carte</em> → clic droit sur <strong>Ethernet → Propriétés</strong> → double-clic sur <strong>Protocole Internet version 4 (TCP/IPv4)</strong>. Renseignez la configuration selon l’Annexe 1 :</p>' }),
+  simWin(
+    swFrame('🌐', 'Propriétés de : Protocole Internet version 4 (TCP/IPv4)',
+      `<label class="sw-radio">${rOFF} Obtenir une adresse IP automatiquement</label>`
+      + kbx(1, `<label class="sw-radio">${rON} Utiliser l’adresse IP suivante :</label>`
+        + `<div class="sw-row" style="margin-left:22px"><span class="l">Adresse IP :</span>${swIp('192.5.10.1')}</div>`
+        + `<div class="sw-row" style="margin-left:22px"><span class="l">Masque de sous-réseau :</span>${swIp('255.255.255.240')}</div>`
+        + `<div class="sw-row" style="margin-left:22px"><span class="l">Passerelle par défaut :</span>${swIp('192.5.10.14')}</div>`)
+      + `<label class="sw-radio" style="margin-top:10px">${rOFF} Obtenir les adresses des serveurs DNS automatiquement</label>`
+      + kbx(2, `<label class="sw-radio">${rON} Utiliser l’adresse de serveur DNS suivante :</label>`
+        + `<div class="sw-row" style="margin-left:22px"><span class="l">Serveur DNS préféré :</span>${swIp('192.5.10.12')}</div>`)),
+    'Fenêtre « Protocole Internet version 4 (TCP/IPv4) » — exemple du poste CLIENT10.',
+    ['Cochez <strong>« Utiliser l’adresse IP suivante »</strong>, puis saisissez l’<strong>adresse IP</strong>, le <strong>masque</strong> et la <strong>passerelle par défaut</strong>.',
+      'Cochez <strong>« Utiliser l’adresse de serveur DNS suivante »</strong> et indiquez le <strong>serveur DNS</strong> : <code>192.5.10.12</code>.']),
+  block('html', { html: tbl(['La machine', 'Adresse IP', 'Masque', 'Passerelle', 'Serveur DNS'], [
+    ['<strong>SRV-1</strong> (serveur)', '192.5.10.12', '255.255.255.240', '192.5.10.14', '192.5.10.12'],
+    ['<strong>CLIENT10</strong> (poste)', '192.5.10.1', '255.255.255.240', '192.5.10.14', '192.5.10.12'],
+  ]) }),
+  note('yellow', '✅ Vérifier que ça marche', '<p>Ouvrez l’<strong>invite de commandes</strong> (touche Windows, tapez <code>cmd</code>, Entrée) et tapez <code>ipconfig</code> : vous devez voir l’adresse que vous venez de saisir. Puis <code>ping 192.5.10.14</code> (la passerelle) — si ça répond, la machine est bien branchée au réseau.</p>'),
   note('blue', '🧩 Rôles du serveur', '<p>Le serveur <strong>SRV-1</strong> (Windows Server 2019, <code>192.5.10.12</code>) porte les rôles <strong>DHCP</strong>, <strong>DNS</strong> et <strong>Serveur Web (IIS)</strong>, installés aux étapes 5 et 6. <strong>CLIENT10</strong> est un simple poste <strong>Windows 10 Pro</strong>.</p>'),
   note('red', '⚠️ Règle : un commutateur externe distinct par VM', '<p>Un commutateur virtuel <strong>Externe</strong> est lié à <strong>une seule carte réseau physique</strong>. Sur le matériel du lab, faire passer les deux VM par le <strong>même</strong> commutateur externe provoque des problèmes de connectivité (pont / multi-homing). La règle est donc : <strong>chaque VM sur son propre commutateur externe</strong>, ce qui impose</p><ul><li>soit <strong>2 cartes réseau physiques distinctes</strong> sur le même hôte (un commutateur externe par carte),</li><li>soit <strong>2 hôtes Hyper-V différents</strong>, une VM par hôte.</li></ul><p>Les deux VM restent sur le <strong>même segment Admin</strong> (<code>192.5.10.0/28</code>) — c’est le <strong>lien physique</strong> qui est dédoublé, pas le sous-réseau. Vérifiez que chaque commutateur externe pointe sur la <strong>bonne carte</strong> (cf. <em>Pièges fréquents ①</em> et <em>④</em>).</p>'),
   note('gray', '🔗 Détails', '<p><a href="/pages/procedure-vm-hyperv">Créer & configurer une VM (ISO) sur Hyper-V</a> · <a href="/pages/procedure-hyperv-ressources">Hyper-V : ressources</a> · <a href="/pages/procedure-ip-fixe-windows">Configurer une IP fixe</a> · <a href="/pages/procedure-renommer-poste">Renommer un poste</a>.</p>'),
 
   // ── Étape 3 ──
   railClose,
+  pageBreak('Étape 3 — Switches (SSH)'),
   step('3', 'Switches — renommage, gestion & SSH', 'IP de gestion (SVI VLAN 1) + accès SSH sur SW-1 et Sw-2', C.switch),
   railOpen(C.switch),
+  note('blue', '🎯 Objectif', '<p>Renommer les deux switches, leur attribuer une <strong>IP de gestion</strong> (interface virtuelle <strong>SVI VLAN 1</strong>, pour l’administration à distance) et activer <strong>SSH</strong> (mot de passe <code>cisco</code>). Les commandes sont identiques pour SW-1 et Sw-2 : seuls le nom, l’IP de gestion et la passerelle changent.</p>'),
   block('html', { html: '<p><strong>Renommer</strong> les deux switches, leur attribuer une <strong>IP de gestion</strong> (SVI <code>VLAN 1</code>) et activer <strong>SSH</strong> (mot de passe <code>cisco</code>). Configuration depuis la console.</p>' }),
   cmd(`enable
 configure terminal
@@ -300,6 +508,7 @@ write memory`),
 
   // ── Étape 4 ──
   railClose,
+  pageBreak('Étape 4 — Câblage & tests ping'),
   step('4', 'Câblage & vérifications physiques', 'Interconnexion des équipements et contrôle des liens', C.cable),
   railOpen(C.cable),
   ul([
@@ -356,34 +565,55 @@ write memory`),
 
   // ── Étape 5 ──
   railClose,
+  pageBreak('Étape 5 — Serveur : rôles, IIS, DNS'),
   step('5', 'Serveur — rôles (DHCP · DNS · IIS) & sites Web', 'Installation des rôles DHCP/DNS/IIS, 2 sites Web et enregistrements DNS', C.serveur),
   railOpen(C.serveur),
-  block('html', { html: '<p>Sur <strong>SRV-1</strong> (<code>192.5.10.12</code>) : installer les <strong>rôles</strong>, créer les <strong>2 sites Web</strong> et les <strong>enregistrements DNS</strong>.</p>' }),
+  note('blue', '🎯 Objectif', '<p>Le serveur <strong>SRV-1</strong> (<code>192.5.10.12</code>) va rendre <strong>trois services</strong> : distribuer les adresses (<strong>DHCP</strong>), traduire les noms en adresses (<strong>DNS</strong>) et héberger les <strong>sites web</strong> (<strong>IIS</strong>). On installe d’abord ces « rôles », puis on crée les 2 sites et les noms DNS.</p>'),
 
-  block('heading', { level: 4, text: 'Rôles installés' }),
-  ul(['<strong>DHCP</strong> (configuré à l’étape 6).', '<strong>DNS</strong> (zones + enregistrements).', '<strong>Serveur Web (IIS)</strong>.', '<strong>Services de fichiers et de stockage</strong> (présent par défaut).']),
-  figure('/uploads/plat1-srv-roles.png', 'Gestionnaire de serveur : les 4 rôles installés — DHCP, DNS, IIS, Services de fichiers et de stockage.'),
+  tstep('5.1', 'Installer les rôles (DHCP, DNS, IIS)'),
+  block('html', { html: '<p>Dans le <strong>Gestionnaire de serveur</strong> → <strong>Gérer → Ajouter des rôles et fonctionnalités</strong>. Déroulez l’assistant jusqu’à la page <strong>« Rôles de serveurs »</strong> et cochez les rôles :</p>' }),
+  simWin(
+    swFrame('🧩', 'Assistant Ajouter des rôles — Rôles de serveurs',
+      '<p style="margin:0 0 10px">Sélectionnez un ou plusieurs rôles à installer sur le serveur.</p>'
+      + kbx(1, `<label class="sw-radio" style="margin:5px 0">${cON} Serveur DHCP</label><label class="sw-radio" style="margin:5px 0">${cON} Serveur DNS</label><label class="sw-radio" style="margin:5px 0">${cON} Serveur Web (IIS)</label>`)
+      + `<label class="sw-radio" style="margin:5px 0">${cOFF} Services AD DS (Active Directory)</label>`,
+      '<span class="sw-btn">&lt; Précédent</span><span class="sw-btn def">Suivant &gt;</span><span class="sw-btn">Installer</span>'),
+    'Assistant « Ajouter des rôles » → page « Rôles de serveurs ».',
+    ['Cochez <strong>Serveur DHCP</strong>, <strong>Serveur DNS</strong> et <strong>Serveur Web (IIS)</strong>, puis terminez avec <strong>Installer</strong>.']),
 
-  block('heading', { level: 4, text: 'Sites Web (IIS)' }),
-  ul([
-    'Créer <strong>deux sites</strong>, chacun avec son <strong>dossier physique</strong> et son <strong>index.html</strong> (une page par site) : le site <strong>public</strong> affiche « <em>Bienvenue sur le site de l’EDIVN</em> », l’<strong>intranet</strong> affiche « <em>Bienvenue sur l’intranet de l’école EDIVN</em> ».',
-    'Site <strong>Public</strong> — dossier <code>C:\\inetpub\\Public-EDIVN</code> ; liaison HTTP <code>www.Groupe05-EDIVN.lan</code> sur le <strong>port 8080</strong>, accessible depuis l’extérieur.',
-    'Site <strong>intranet privé</strong> — dossier <code>C:\\inetpub\\Prive-EDIVN</code> ; liaison HTTP, accessible pour l’école (<code>Intranet.05.EDIVN.lan</code>).',
-  ]),
-  figure('/uploads/plat1-iis-sites.png', 'IIS → deux sites : « intranet privé » et « Public ».'),
-  figure('/uploads/plat1-iis-public.png', 'Site Public → dossier physique C:\\inetpub\\Public-EDIVN.'),
-  figure('/uploads/plat1-iis-binding-8080.png', 'Liaison du site Public : http, nom d’hôte www.Groupe05-EDIVN.lan, port 8080, IP 192.5.10.12.'),
-  figure('/uploads/plat1-iis-intranet.png', 'Site intranet privé → dossier physique C:\\inetpub\\Prive-EDIVN.'),
-
-  block('heading', { level: 4, text: 'Enregistrements DNS' }),
-  block('html', { html: '<p>Deux <strong>zones de recherche directe</strong> sur SRV-1, chacune avec un enregistrement <strong>A</strong> racine vers <code>192.5.10.12</code> et un <strong>alias (CNAME)</strong> vers la racine :</p>' }),
-  block('html', { html: tbl(['Zone', 'Enregistrements', 'Résout'], [
-    ['<code>Groupe05-EDIVN.lan</code>', 'A (racine) → 192.5.10.12 · CNAME <code>www</code> → racine', '<code>www.Groupe05-EDIVN.lan</code> (site Public)'],
-    ['<code>05.EDIVN.lan</code>', 'A (racine) → 192.5.10.12 · CNAME <code>Intranet</code> → racine', '<code>Intranet.05.EDIVN.lan</code> (intranet)'],
+  tstep('5.2', 'Créer les 2 sites web (IIS)'),
+  block('html', { html: '<p>Ouvrez le <strong>Gestionnaire des services Internet (IIS)</strong> → clic droit sur <strong>Sites → Ajouter un site Web…</strong>. Chaque site a son <strong>dossier</strong> (avec un <code>index.html</code>) et sa <strong>liaison</strong> (adresse + port + nom du site). Voici le site <strong>Public</strong> :</p>' }),
+  simWin(
+    swFrame('🕸️', 'Ajouter un site Web',
+      '<div class="sw-row"><span class="l">Nom du site :</span><span class="sw-in" style="width:150px">Public-EDIVN</span></div>'
+      + '<div class="sw-row"><span class="l">Chemin d’accès physique :</span><span class="sw-in" style="width:180px">C:\\inetpub\\Public-EDIVN</span></div>'
+      + '<div class="sw-fs"><span class="lg">Liaison</span>'
+      + '<div class="sw-row"><span class="l">Type :</span><span class="sw-in" style="width:70px;background:#eef1f4;color:#666">http</span><span class="l" style="flex:0 0 auto">Adresse IP :</span><span class="sw-in" style="width:120px;background:#eef1f4;color:#666">192.5.10.12</span></div>'
+      + `<div class="sw-row"><span class="l">Port :</span>${kbx(1, '<span class="sw-in" style="width:64px">8080</span>')}<span class="l" style="flex:0 0 auto">Nom d’hôte :</span>${kbx(2, '<span class="sw-in" style="width:190px">www.Groupe05-EDIVN.lan</span>')}</div>`
+      + '</div>'),
+    'IIS → clic droit sur « Sites » → « Ajouter un site Web… » (exemple du site Public).',
+    ['Le <strong>port 8080</strong> (imposé par le cahier des charges) — on l’écrira dans l’URL : <code>…:8080</code>.',
+      'Le <strong>nom d’hôte</strong> du site : <code>www.Groupe05-EDIVN.lan</code>. L’intranet se fait pareil, avec <code>Intranet.05.EDIVN.lan</code>.']),
+  block('html', { html: tbl(['Site', 'Dossier', 'Nom d’hôte (liaison)', 'Port', 'Page d’accueil'], [
+    ['<strong>Public</strong>', 'C:\\inetpub\\Public-EDIVN', 'www.Groupe05-EDIVN.lan', '<strong>8080</strong>', '« Bienvenue sur le site de l’EDIVN »'],
+    ['<strong>intranet</strong>', 'C:\\inetpub\\Prive-EDIVN', 'Intranet.05.EDIVN.lan', '80', '« Bienvenue sur l’intranet de l’école EDIVN »'],
   ]) }),
-  figure('/uploads/plat1-dns-zones.png', 'Gestionnaire DNS : les deux zones de recherche directe.'),
-  figure('/uploads/plat1-dns-zone-www.png', 'Zone Groupe05-EDIVN.lan : A racine → 192.5.10.12 et CNAME www.'),
-  figure('/uploads/plat1-dns-zone-intranet.png', 'Zone 05.EDIVN.lan : A racine → 192.5.10.12 et CNAME Intranet.'),
+
+  tstep('5.3', 'Créer les noms DNS (le serveur traduit les noms en adresses)'),
+  block('html', { html: '<p>Pour que <code>www.Groupe05-EDIVN.lan</code> mène au serveur, le <strong>DNS</strong> doit connaître ce nom. Ouvrez le <strong>Gestionnaire DNS</strong>, créez une <strong>zone de recherche directe</strong> par site, puis un <strong>enregistrement « Nouvel hôte (A) »</strong> pointant vers <code>192.5.10.12</code> :</p>' }),
+  simWin(
+    swFrame('🌐', 'Nouvel hôte (A)',
+      '<div class="sw-row"><span class="l">Nom (parent si vide) :</span><span class="sw-in" style="width:120px">www</span></div>'
+      + '<div class="sw-row"><span class="l">Nom de domaine complet :</span><span style="font-family:ui-monospace,monospace">www.Groupe05-EDIVN.lan</span></div>'
+      + `<div class="sw-row"><span class="l">Adresse IP :</span>${kbx(1, swIp('192.5.10.12'))}</div>`
+      + `<label class="sw-radio" style="margin-top:8px">${cON} Créer un pointeur PTR associé</label>`,
+      '<span class="sw-btn def">Ajouter l’hôte</span><span class="sw-btn">Annuler</span>'),
+    'Gestionnaire DNS → clic droit sur la zone → « Nouvel hôte (A)… ».',
+    ['L’<strong>adresse IP</strong> du serveur : <code>192.5.10.12</code> (tous les noms de sites pointent vers lui).']),
+  block('html', { html: tbl(['Zone à créer', 'Enregistrements', 'Le nom qui marchera'], [
+    ['<code>Groupe05-EDIVN.lan</code>', 'A racine → 192.5.10.12 · alias <strong>CNAME</strong> <code>www</code>', '<code>www.Groupe05-EDIVN.lan</code> (site Public)'],
+    ['<code>05.EDIVN.lan</code>', 'A racine → 192.5.10.12 · alias <strong>CNAME</strong> <code>Intranet</code>', '<code>Intranet.05.EDIVN.lan</code> (intranet)'],
+  ]) }),
   note('blue', '🌐 Accès au site sur le port 8080', '<p>Le site est <strong>servi par IIS sur le port 8080</strong> (défini dans la <strong>liaison / binding</strong>). On y accède par <code>http://www.Groupe05-EDIVN.lan:8080</code> : le <strong>DNS</strong> résout le nom vers <code>192.5.10.12</code>, et le <code>:8080</code> correspond à la liaison IIS. <strong>Rappel</strong> : un enregistrement DNS (A/CNAME) ne transporte <strong>pas</strong> de port — c’est la <strong>liaison IIS</strong> qui fixe le 8080. Pour l’<strong>accès externe</strong>, prévoir une <strong>redirection de port (NAT/PAT)</strong> vers <code>192.5.10.12:8080</code> (étape 7).</p>'),
   note('gray', 'ℹ️ Pourquoi le port 8080 ?', '<p><strong>Port 80</strong> : port <strong>standard</strong> du trafic web grand public. <strong>Port 8080</strong> : alternative courante, utilisée pour <strong>séparer</strong> les accès web et <strong>renforcer la sécurité</strong> globale. Ici le site public est publié sur <code>8080</code> (exigence du cahier des charges) → il faut préciser <code>:8080</code> dans l’URL, sauf à ajouter une redirection <code>80 → 8080</code> (étape 7).</p>'),
   note('yellow', '🛡️ Pare-feu Windows du serveur', '<p>Ouvrir les <strong>flux entrants</strong> nécessaires dans le pare-feu (mode avancé, règles de trafic entrant) : <strong>HTTP</strong> (ports <code>80</code>/<code>8080</code>) pour servir les sites, et l’<strong>ICMP entrant</strong> pour répondre aux pings de test (cf. <em>Pièges fréquents ③</em>). Sans ces règles, le site ou les tests échouent alors que la configuration réseau est correcte.</p>'),
@@ -391,24 +621,69 @@ write memory`),
 
   // ── Étape 6 ──
   railClose,
+  pageBreak('Étape 6 — DHCP'),
   step('6', 'DHCP — étendues & relais', 'Deux étendues + relais ip helper-address sur le routeur', C.dhcp),
   railOpen(C.dhcp),
-  block('html', { html: '<p>Créer deux <strong>étendues</strong> sur SRV-1 (<code>192.5.10.12</code>), une par réseau, puis un <strong>relais</strong> sur le routeur pour les clients du réseau Utilisateurs.</p>' }),
-  block('html', { html: tbl(['Étendue', 'Réseau', 'Plage distribuée', 'Passerelle (003)', 'DNS (006)'], [
-    ['Etendue Admins', '192.5.10.0/28', '192.5.10.1 → .11', '192.5.10.14', '192.5.10.12'],
-    ['Etendue Stagiaires', '192.5.50.0/24', '192.5.50.1 → .200', '192.5.50.254', '192.5.10.12'],
+  note('blue', '🎯 Objectif', '<p>Le <strong>DHCP</strong> distribue <strong>automatiquement</strong> une adresse (avec la passerelle et le DNS) à chaque poste qui se connecte — plus besoin de la saisir à la main. On crée <strong>deux étendues</strong> (une par réseau) sur SRV-1, puis un <strong>relais</strong> sur le routeur pour que les postes Utilisateurs (de l’autre côté du routeur) soient servis aussi.</p>'),
+
+  tstep('6.1', 'Créer une étendue (assistant Nouvelle étendue)'),
+  block('html', { html: '<p>Dans la console <strong>DHCP</strong> → clic droit sur <strong>IPv4 → Nouvelle étendue…</strong>. L’assistant se déroule page par page (exemple : l’<strong>étendue Stagiaires</strong>). Touchez le bandeau pour dérouler les écrans :</p>' }),
+  pager('📶 Assistant « Nouvelle étendue » DHCP', [
+  simWin(wizPage('📶', 'Assistant Nouvelle étendue', DHCP_STEPS, 0, 'Nom de l’étendue',
+    '<p style="margin:0 0 10px">Donnez un nom et une description à cette étendue.</p>'
+    + `<div class="sw-row"><span class="l">Nom :</span>${kbx(1, '<span class="sw-in" style="width:170px">Etendue Stagiaires</span>')}</div>`, wizBtns()),
+    '① Page « Nom de l’étendue ».', ['Nommez l’étendue (ex. <code>Etendue Stagiaires</code>).']),
+  simWin(wizPage('📶', 'Assistant Nouvelle étendue', DHCP_STEPS, 1, 'Plage d’adresses IP',
+    '<p style="margin:0 0 10px">Définissez la plage d’adresses distribuée par cette étendue.</p>'
+    + kbx(1, `<div class="sw-row"><span class="l">Adresse IP de début :</span>${swIp('192.5.50.1')}</div>`
+      + `<div class="sw-row"><span class="l">Adresse IP de fin :</span>${swIp('192.5.50.200')}</div>`)
+    + `<div class="sw-row"><span class="l">Masque de sous-réseau :</span>${swIp('255.255.255.0')}</div>`, wizBtns()),
+    '② Page « Plage d’adresses IP ».', ['La <strong>plage distribuée</strong> : <code>.1</code> → <code>.200</code>, avec le masque du réseau.']),
+  simWin(wizPage('📶', 'Assistant Nouvelle étendue', DHCP_STEPS, 2, 'Ajout d’exclusions et de retard',
+    '<p style="margin:0">Aucune exclusion ici (les IP fixes de l’infra sont <em>au-dessus</em> du pool). Cliquez sur <strong>Suivant</strong>.</p>', wizBtns()),
+    '③ Page « Exclusions » → Suivant (rien à exclure).'),
+  simWin(wizPage('📶', 'Assistant Nouvelle étendue', DHCP_STEPS, 3, 'Durée du bail',
+    '<p style="margin:0 0 10px">Durée pendant laquelle un client conserve son adresse.</p>'
+    + '<div class="sw-row"><span class="l">Limitée à :</span><span class="sw-in" style="width:50px;text-align:right">8</span> jours</div>', wizBtns()),
+    '④ Page « Durée du bail » (8 jours par défaut).'),
+  simWin(wizPage('📶', 'Assistant Nouvelle étendue', DHCP_STEPS, 4, 'Configurer les options DHCP',
+    '<p style="margin:0 0 10px">Voulez-vous configurer les options (passerelle, DNS…) maintenant ?</p>'
+    + kbx(1, `<label class="sw-radio">${rON} Oui, je veux configurer ces options maintenant</label>`)
+    + `<label class="sw-radio">${rOFF} Non, je les configurerai plus tard</label>`, wizBtns()),
+    '⑤ Page « Configurer les options » → cochez <strong>Oui</strong>.', ['Répondez <strong>Oui</strong> pour enchaîner sur les options 003 et 006.']),
+  simWin(wizPage('📶', 'Assistant Nouvelle étendue', DHCP_STEPS, 5, 'Routeur (passerelle par défaut)',
+    '<p style="margin:0 0 10px">Adresse du routeur (option <strong>003</strong>) distribuée aux clients.</p>'
+    + `<div class="sw-row"><span class="l">Adresse IP :</span>${kbx(1, swIp('192.5.50.254'))}</div><div class="sw-row"><span class="sw-btn">Ajouter</span></div>`, wizBtns()),
+    '⑥ Page « Routeur » = option <strong>003</strong>.', ['La <strong>passerelle</strong> du réseau Utilisateurs : <code>192.5.50.254</code>.']),
+  simWin(wizPage('📶', 'Assistant Nouvelle étendue', DHCP_STEPS, 6, 'Nom de domaine et serveurs DNS',
+    '<p style="margin:0 0 10px">Serveur DNS (option <strong>006</strong>) distribué aux clients.</p>'
+    + '<div class="sw-row"><span class="l">Domaine parent :</span><span class="sw-in" style="width:150px">edivn.lan</span></div>'
+    + `<div class="sw-row"><span class="l">Serveur DNS :</span>${kbx(1, swIp('192.5.10.12'))}</div>`, wizBtns()),
+    '⑦ Page « Serveurs DNS » = option <strong>006</strong>.', ['Le <strong>serveur DNS</strong> : <code>192.5.10.12</code> (SRV-1).']),
+  simWin(wizPage('📶', 'Assistant Nouvelle étendue', DHCP_STEPS, 8, 'Activer l’étendue',
+    `<label class="sw-radio">${kbx(1, `${rON} Oui, je veux activer cette étendue maintenant`)}</label>`
+    + `<label class="sw-radio" style="margin-top:6px">${rOFF} Non, je l’activerai plus tard</label>`, wizBtns(true)),
+    '⑧ Page « Activer l’étendue » → <strong>Oui</strong>, puis Terminer. (La page « Serveurs WINS » se passe avec Suivant.)',
+    ['Sans <strong>activation</strong>, l’étendue ne distribue rien.']),
+  ]),
+  block('html', { html: tbl(['Étendue', 'Réseau', 'Plage', '003 Passerelle', '006 DNS'], [
+    ['<strong>Admins</strong>', '192.5.10.0/28', '.1 → .11', '192.5.10.14', '192.5.10.12'],
+    ['<strong>Stagiaires</strong>', '192.5.50.0/24', '.1 → .200', '192.5.50.254', '192.5.10.12'],
   ]) }),
-  figure('/uploads/plat1-dhcp-etendues.png', 'Les deux étendues actives sur SRV-1 : « Etendue Admins » (192.5.10.0) et « Etendue Stagiaires » (192.5.50.0).'),
-  figure('/uploads/plat1-dhcp-pool-admins.png', 'Pool de l’étendue Admins : 192.5.10.1 → 192.5.10.11.'),
-  figure('/uploads/plat1-dhcp-pool-stagiaires.png', 'Pool de l’étendue Stagiaires : 192.5.50.1 → 192.5.50.200.'),
-  figure('/uploads/plat1-dhcp-options-stagiaires.png', 'Options de l’étendue Stagiaires : 003 Routeur = 192.5.50.254, 006 DNS = 192.5.10.12.'),
-  figure('/uploads/plat1-dhcp-options-admins.png', 'Options de l’étendue Admins : 003 Routeur = 192.5.10.14, 006 DNS = 192.5.10.12.'),
-  block('heading', { level: 4, text: 'Réservations' }),
-  block('html', { html: '<p>Le <strong>point d’accès Wi-Fi</strong> reçoit toujours la même adresse grâce à une <strong>réservation DHCP</strong> (association MAC → IP) : <code>192.5.50.251</code>. Cette adresse est <strong>hors du pool <code>.1–.200</code></strong>, donc aucun conflit possible.</p>' }),
-  figure('/uploads/plat1-dhcp-reservations.png', 'Réservation DHCP « Reservation Wifi » → 192.5.50.251 dans l’étendue Stagiaires.'),
+
+  tstep('6.2', 'Réserver une adresse fixe pour le Wi-Fi'),
+  block('html', { html: '<p>Le <strong>point d’accès Wi-Fi</strong> doit toujours avoir la <strong>même adresse</strong>. On crée une <strong>réservation</strong> : on associe son adresse matérielle (<strong>MAC</strong>) à l’adresse <code>192.5.50.251</code> (hors du pool <code>.1–.200</code>, donc aucun conflit).</p>' }),
+  simWin(
+    swFrame('📌', 'Nouvelle réservation',
+      '<div class="sw-row"><span class="l">Nom de la réservation :</span><span class="sw-in" style="width:150px">Reservation Wifi</span></div>'
+      + `<div class="sw-row"><span class="l">Adresse IP :</span>${kbx(1, swIp('192.5.50.251'))}</div>`
+      + '<div class="sw-row"><span class="l">Adresse MAC :</span><span class="sw-in" style="width:180px;font-family:ui-monospace,monospace">00-15-5D-0A-1B-2C</span></div>',
+      '<span class="sw-btn def">Ajouter</span><span class="sw-btn">Fermer</span>'),
+    'Console DHCP → étendue Stagiaires → « Réservations » → « Nouvelle réservation… ».',
+    ['L’<strong>adresse réservée</strong> pour le Wi-Fi : <code>192.5.50.251</code>, liée à l’<strong>adresse MAC</strong> du point d’accès.']),
   note('gray', 'ℹ️ Exclusions', '<p>Les autres IP fixes de l’infra (Routeur_G5 <code>.252</code>, Sw-2 <code>.253</code>, passerelle <code>.254</code>) sont déjà <strong>au-dessus du pool</strong> → rien à exclure. Côté Admin, le poste en IP fixe est géré par <strong>réservation</strong> (ex. <code>192.5.10.5</code>).</p>'),
-  block('heading', { level: 4, text: 'Relais DHCP sur R_IT_G5 (indispensable)' }),
-  block('html', { html: '<p>Le serveur DHCP est dans le réseau Admin ; les clients Utilisateurs sont <strong>derrière le routeur</strong> → leurs demandes (des <strong>broadcasts</strong>) ne franchissent pas le routeur sans <strong>relais</strong>. On ajoute <code>ip helper-address</code> sur l’interface côté Utilisateurs :</p>' }),
+  tstep('6.3', 'Relais DHCP sur le routeur (pour les postes de l’autre réseau)'),
+  block('html', { html: '<p>Le serveur DHCP est dans le réseau Admin ; les postes Utilisateurs sont <strong>derrière le routeur</strong> → leurs demandes ne le franchissent pas toutes seules. On ajoute une ligne sur le routeur (<code>ip helper-address</code>) qui <strong>transmet</strong> leurs demandes au serveur. Cette partie se fait <strong>en ligne de commande</strong> sur le routeur :</p>' }),
   cmd(`configure terminal
 interface GigabitEthernet0/1
  ip helper-address 192.5.10.12
@@ -425,9 +700,10 @@ ipconfig /all      REM IP dans la plage .1-.200, passerelle .254, DNS 192.5.10.1
 
   // ── Étape 7 ──
   railClose,
+  pageBreak('Étape 7 — Routage & Internet (NAT)'),
   step('7', 'Routage inter-routeurs & accès Internet', 'NAT/PAT sur le routeur de bordure + routes par défaut', C.nat),
   railOpen(C.nat),
-  note('blue', '🗺️ Deux routeurs, deux rôles', '<p><strong>R_IT_G5</strong> = routeur <strong>interne</strong> (passerelle des clients, relie Utilisateurs et Admin). <strong>Routeur_G5</strong> = routeur de <strong>bordure</strong> : il fait le <strong>NAT/PAT</strong> vers le réseau de la salle (<code>172.16.3.0/24</code>) pour donner Internet.</p>'),
+  note('blue', '🎯 Objectif', '<p>Assurer le <strong>routage inter-réseaux</strong> et l’<strong>accès Internet</strong>. Deux routeurs : <strong>R_IT_G5</strong> (interne, route entre Admin et Utilisateurs) et <strong>Routeur_G5</strong> (bordure, vers la salle <code>172.16.3.0/24</code>). Le routeur de bordure réalise le <strong>NAT/PAT (overload)</strong> : il traduit les adresses privées derrière l’adresse publique de son interface WAN. Configuration en ligne de commande sur les deux routeurs.</p>'),
   block('html', { html: tbl(['Routeur', 'Interface', 'IP', 'Rôle NAT'], [
     ['Routeur_G5', 'LAN (vers Sw-2)', '192.5.50.252 /24', 'ip nat inside'],
     ['Routeur_G5', 'WAN (vers salle)', '172.16.3.250 /24', 'ip nat outside'],
@@ -498,6 +774,7 @@ write memory
 
   // ── Étape 8 ──
   railClose,
+  pageBreak('Étape 8 — Wi-Fi (WAP 371)'),
   step('8', 'Point d’accès Wi-Fi — Cisco WAP 371', 'SSID EDWIN05, IP fixe, clients en DHCP', C.wifi),
   railOpen(C.wifi),
   block('html', { html: '<p>Le WAP 371 diffuse le Wi-Fi des stagiaires/formateurs. Il reçoit une <strong>IP fixe</strong> (<code>192.5.50.251</code>) et ses clients obtiennent leur IP par <strong>DHCP</strong> (le relais de l’étape 6 est déjà en place).</p>' }),
@@ -511,6 +788,7 @@ write memory
 
   railClose,
 
+  pageBreak('Tests de validation & dépannage'),
   block('heading', { level: 2, text: '✅ Tests de validation (bout en bout)' }),
   ul([
     '<strong>SSH</strong> depuis le poste admin vers R_IT_G5, SW-1, Sw-2 et Routeur_G5 (<code>ssh -l admin &lt;IP&gt;</code>).',
@@ -600,7 +878,11 @@ async function main() {
   const h = { 'Content-Type': 'application/json', Cookie: cookie };
   const existing = await (await fetch(`${BASE}/api/admin/pages`, { headers: { Cookie: cookie } })).json() as Array<{ id: number; slug: string }>;
   const cur = existing.find(e => e.slug === PAGE.slug);
-  const body = JSON.stringify({ title: PAGE.title, slug: PAGE.slug, excerpt: PAGE.excerpt, content: renderPageBlocksToHtml(blocks), builder_json: serializePageBlocks(blocks), published: 1 });
+  // Tête (hero, styles, bouton PDF) TOUJOURS visible ; le reste passe dans le lecteur de pages (doc-pager).
+  const HEAD = 3;
+  const contentHtml = renderPageBlocksToHtml(blocks.slice(0, HEAD))
+    + `<div class="pb-dynamic" data-block="doc-pager">${renderPageBlocksToHtml(blocks.slice(HEAD))}</div>`;
+  const body = JSON.stringify({ title: PAGE.title, slug: PAGE.slug, excerpt: PAGE.excerpt, content: contentHtml, builder_json: serializePageBlocks(blocks), published: 1 });
   const res = cur ? await fetch(`${BASE}/api/admin/pages/${cur.id}`, { method: 'PUT', headers: h, body }) : await fetch(`${BASE}/api/admin/pages`, { method: 'POST', headers: h, body });
   console.log(`PAGE ${PAGE.slug}`, res.status, cur ? '(maj)' : '(créée)', res.ok ? '' : await res.text());
   const cc = await fetch(`${BASE}/api/admin/cache/clear`, { method: 'POST', headers: { Cookie: cookie } });

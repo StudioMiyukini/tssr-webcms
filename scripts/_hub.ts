@@ -50,6 +50,7 @@ export const DOMAINS: Domain[] = [
         { href: '/pages/gestionnaire-de-serveurs', title: 'Le gestionnaire de serveurs', desc: 'Installer & gérer (fiches pratiques).' },
         { href: '/pages/vocabulaire-active-directory', title: 'Vocabulaire Active Directory (AD)', desc: 'Forêt, domaine, DC, schéma, OU, groupes… en questions-réponses.' },
         { href: '/pages/administration-domaine-ad', title: 'Administration d’un domaine AD', desc: 'Rôles FSMO, SYSVOL, relations d’approbation & délégation de contrôle (avec schémas).' },
+        { href: '/pages/cours-gpo', title: 'Les GPO (stratégies de groupe)', desc: 'Portée (LSDOU), héritage/blocage, priorité, filtrage, lien vs objet, stratégies vs préférences — 3 exemples (lecteur réseau, fond d’écran, déploiement .msi), blocage de l’invite de commandes et un TP guidé (ciblage par groupe, héritage).' },
         { href: '/pages/hebergement', title: 'L’hébergement web (concepts)', desc: 'Hébergeur, types (mutualisé/VPS/dédié/cloud), DNS & enregistrements, registrar, FQDN, serveurs racine.' },
         { href: '/pages/hebergement-web', title: 'L’hébergement web (DNS + IIS)', desc: 'Publier un site : serveur web IIS, résolution DNS, FQDN, FTP, tests.' },
       ] },
