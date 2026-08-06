@@ -6,9 +6,11 @@ import { getCart, setCart, getCartDetails } from '../lib/cart';
 import { getOrCreateCustomerByEmail } from '../lib/customers';
 import { createOrderFromCart, findOrderByStripeSession } from '../lib/orders';
 import { sendTransactionalEmail, buildOrderEmailHtml, readEmailSettings } from '../lib/email';
+import { rateLimit } from '../lib/rate-limit';
 
 const router = Router();
 const stripe = STRIPE_SECRET_KEY ? new Stripe(STRIPE_SECRET_KEY) : null;
+const checkoutLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 10, message: 'Trop de tentatives. Réessaie dans quelques minutes.' });
 
 const startSchema = z.object({
   customer_name: z.string().min(1),
@@ -19,7 +21,7 @@ const startSchema = z.object({
   notes: z.string().optional().default(''),
 });
 
-router.post('/api/checkout/stripe', async (req, res) => {
+router.post('/api/checkout/stripe', checkoutLimiter, async (req, res) => {
   if (!stripe) { res.status(503).json({ error: 'Stripe non configuré' }); return; }
   const parsed = startSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.flatten() }); return; }
@@ -82,7 +84,7 @@ router.post('/api/checkout/stripe/finalize', async (req, res) => {
   req.session.shippingMethodId = pending.shippingMethodId || 0;
   setCart(req, pending.cart || []);
   const cart = getCartDetails(req);
-  const customer = getOrCreateCustomerByEmail({ name: pending.customer_name, email: pending.customer_email, phone: pending.customer_phone, company: pending.customer_company, address: pending.shipping_address });
+  const { customer, created } = getOrCreateCustomerByEmail({ name: pending.customer_name, email: pending.customer_email, phone: pending.customer_phone, company: pending.customer_company, address: pending.shipping_address });
 
   const { order, items } = createOrderFromCart(cart, {
     customer_id: customer?.id ?? null,
@@ -98,7 +100,10 @@ router.post('/api/checkout/stripe/finalize', async (req, res) => {
   await sendTransactionalEmail({ to: order.customer_email, subject: `Confirmation commande ${order.order_number}`, html: buildOrderEmailHtml(order, items), eventType: 'stripe_customer_confirmation' });
   if (emailCfg.notifyOnOrder && emailCfg.notifyTo) await sendTransactionalEmail({ to: emailCfg.notifyTo, subject: `Nouvelle commande Stripe ${order.order_number}`, html: buildOrderEmailHtml(order, items), eventType: 'stripe_admin_notification' });
 
-  if (customer) req.session.customer = { id: customer.id, name: customer.name, email: customer.email, phone: customer.phone, company: customer.company, address: customer.address };
+  // Sécurité : session seulement pour un compte fraîchement créé (invité) ou déjà authentifié.
+  if (customer && (created || req.session.customer?.id === customer.id)) {
+    req.session.customer = { id: customer.id, name: customer.name, email: customer.email, phone: customer.phone, company: customer.company, address: customer.address };
+  }
   clearPending();
   res.json({ ok: true, order_number: order.order_number, total_cents: cart.totalCents });
 });

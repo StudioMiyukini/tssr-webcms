@@ -41,8 +41,14 @@ router.post('/api/customer/register', authLimiter, (req, res) => {
     company: parsed.data.company,
     address: parsed.data.address,
   }).returning().get();
-  req.session.customer = { id: c.id, name: c.name, email: c.email, phone: c.phone, company: c.company, address: c.address };
-  res.status(201).json({ id: c.id, name: c.name, email: c.email });
+  // Anti-fixation de session à l'inscription, en préservant le panier en cours.
+  const keep = { cart: req.session.cart, couponCode: req.session.couponCode, shippingMethodId: req.session.shippingMethodId };
+  req.session.regenerate((err) => {
+    if (err) { res.status(500).json({ error: 'Erreur de session' }); return; }
+    Object.assign(req.session, keep);
+    req.session.customer = { id: c.id, name: c.name, email: c.email, phone: c.phone, company: c.company, address: c.address };
+    req.session.save(() => res.status(201).json({ id: c.id, name: c.name, email: c.email }));
+  });
 });
 
 const loginSchema = z.object({ email: z.string().email(), password: z.string().min(1) });
@@ -52,8 +58,14 @@ router.post('/api/customer/login', authLimiter, (req, res) => {
   if (!parsed.success) { res.status(400).json({ error: 'Identifiants invalides' }); return; }
   const c = db.select().from(customers).where(eq(customers.email, parsed.data.email.toLowerCase().trim())).get();
   if (!c || !bcrypt.compareSync(parsed.data.password, c.password_hash)) { res.status(401).json({ error: 'Identifiants invalides' }); return; }
-  req.session.customer = { id: c.id, name: c.name, email: c.email, phone: c.phone, company: c.company, address: c.address };
-  res.json({ id: c.id, name: c.name, email: c.email });
+  // Anti-fixation de session au login, en préservant le panier en cours.
+  const keep = { cart: req.session.cart, couponCode: req.session.couponCode, shippingMethodId: req.session.shippingMethodId };
+  req.session.regenerate((err) => {
+    if (err) { res.status(500).json({ error: 'Erreur de session' }); return; }
+    Object.assign(req.session, keep);
+    req.session.customer = { id: c.id, name: c.name, email: c.email, phone: c.phone, company: c.company, address: c.address };
+    req.session.save(() => res.json({ id: c.id, name: c.name, email: c.email }));
+  });
 });
 
 router.post('/api/customer/logout', (req, res) => {

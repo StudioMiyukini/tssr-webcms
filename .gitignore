@@ -14,5 +14,6 @@ portable
 .backup-miyukini-db/
 .legacy/
 ecosystem.config.cjs
+.session-secret
 export/
 cms.sqlite.bak*

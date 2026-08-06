@@ -2,7 +2,7 @@ import { Router, type RequestHandler } from 'express';
 import { z } from 'zod';
 import { and, eq, like, or, sql, desc } from 'drizzle-orm';
 import { db } from '../db/client';
-import { notes, note_folders } from '../db/schema';
+import { notes, note_folders, pages, posts } from '../db/schema';
 import { isAuthed } from '../lib/auth';
 import { isSitePrivate } from './settings';
 import { parseBody, parseId, notFound } from '../lib/http';
@@ -134,6 +134,12 @@ router.get('/api/public/notes/:id', (req, res) => {
   const rec = db.select({ id: notes.id, title: notes.title, content: notes.content, color: notes.color })
     .from(notes).where(and(eq(notes.id, id), eq(notes.archived, 0))).get();
   if (!rec) throw notFound('Note introuvable');
+  // On ne divulgue publiquement une note QUE si elle est réellement intégrée (bloc « note » →
+  // data-note-id) dans une page ou un article PUBLIÉ. Sinon 404 → empêche l'énumération des notes.
+  const needle = `data-note-id="${id}"`;
+  const inPage = db.select({ id: pages.id }).from(pages).where(and(eq(pages.published, 1), like(pages.content, `%${needle}%`))).get();
+  const inPost = inPage ? undefined : db.select({ id: posts.id }).from(posts).where(and(eq(posts.published, 1), like(posts.content, `%${needle}%`))).get();
+  if (!inPage && !inPost) throw notFound('Note introuvable');
   res.json(rec);
 });
 

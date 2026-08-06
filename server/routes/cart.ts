@@ -9,6 +9,7 @@ import { normalizeQuantity } from '../lib/utils';
 import { getOrCreateCustomerByEmail } from '../lib/customers';
 import { createOrderFromCart } from '../lib/orders';
 import { sendTransactionalEmail, buildOrderEmailHtml, readEmailSettings } from '../lib/email';
+import { rateLimit } from '../lib/rate-limit';
 
 const router = Router();
 
@@ -109,7 +110,8 @@ const checkoutSchema = z.object({
   notes: z.string().optional().default(''),
 });
 
-router.post('/api/checkout', async (req, res) => {
+const checkoutLimiter = rateLimit({ windowMs: 10 * 60 * 1000, max: 10, message: 'Trop de tentatives de commande. Réessaie dans quelques minutes.' });
+router.post('/api/checkout', checkoutLimiter, async (req, res) => {
   const parsed = checkoutSchema.safeParse(req.body);
   if (!parsed.success) { res.status(400).json({ error: parsed.error.flatten() }); return; }
   const cart = getCartDetails(req);
@@ -117,8 +119,13 @@ router.post('/api/checkout', async (req, res) => {
   const stockIssue = cart.items.find(i => i.product.manage_stock && i.quantity > Number(i.product.stock || 0));
   if (stockIssue) { res.status(400).json({ error: `Stock insuffisant pour ${stockIssue.product.name}` }); return; }
   const data = parsed.data;
-  const customer = getOrCreateCustomerByEmail({ name: data.customer_name, email: data.customer_email, phone: data.customer_phone, company: data.customer_company, address: data.shipping_address });
-  if (customer) req.session.customer = { id: customer.id, name: customer.name, email: customer.email, phone: customer.phone, company: customer.company, address: customer.address };
+  const { customer, created } = getOrCreateCustomerByEmail({ name: data.customer_name, email: data.customer_email, phone: data.customer_phone, company: data.customer_company, address: data.shipping_address });
+  // Sécurité : n'ouvre une session QUE pour un compte fraîchement créé (invité), ou si le
+  // client était déjà authentifié sur ce compte. Jamais sur un compte existant depuis un
+  // checkout non authentifié — sinon prise de contrôle de compte via l'email de la victime.
+  if (customer && (created || req.session.customer?.id === customer.id)) {
+    req.session.customer = { id: customer.id, name: customer.name, email: customer.email, phone: customer.phone, company: customer.company, address: customer.address };
+  }
 
   const { order, items } = createOrderFromCart(cart, {
     customer_id: customer?.id ?? null,

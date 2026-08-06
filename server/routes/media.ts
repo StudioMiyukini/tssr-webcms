@@ -14,8 +14,10 @@ fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 
 const MIME_EXT: Record<string, string> = {
   'image/jpeg': 'jpg', 'image/png': 'png', 'image/gif': 'gif',
-  'image/webp': 'webp', 'image/svg+xml': 'svg', 'image/avif': 'avif',
+  'image/webp': 'webp', 'image/avif': 'avif',
 };
+// SVG volontairement exclu : un SVG peut porter du script et serait servi inline depuis /uploads
+// (même origine) → XSS stocké. Utiliser PNG/WebP.
 const MAX_BYTES = 12 * 1024 * 1024;
 
 const uploadSchema = z.object({
@@ -30,7 +32,7 @@ router.post('/api/admin/media', requireAuth, (req, res) => {
   if (!m) throw badRequest('Fichier invalide : data URL base64 attendue.');
   const mime = m[1].toLowerCase();
   const ext = MIME_EXT[mime];
-  if (!ext) throw badRequest('Type non supporté (JPEG, PNG, GIF, WebP, SVG, AVIF).');
+  if (!ext) throw badRequest('Type non supporté (JPEG, PNG, GIF, WebP, AVIF).');
   const buf = Buffer.from(m[2], 'base64');
   if (!buf.length) throw badRequest('Fichier vide.');
   if (buf.length > MAX_BYTES) throw badRequest('Image trop volumineuse (max 12 Mo).');

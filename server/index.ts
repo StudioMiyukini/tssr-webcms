@@ -118,8 +118,15 @@ async function createServer() {
   app.use(forumRouter);
   app.use(backupRouter);
 
-  // Fichiers uploadés (servis en dev et prod).
-  app.use('/uploads', express.static(UPLOADS_DIR, { maxAge: '7d', fallthrough: true }));
+  // Fichiers uploadés (servis en dev et prod). Défense en profondeur : aucun fichier servi
+  // depuis /uploads ne doit pouvoir exécuter de script s'il est ouvert directement (SVG/HTML).
+  app.use('/uploads', express.static(UPLOADS_DIR, {
+    maxAge: '7d', fallthrough: true,
+    setHeaders: (res) => {
+      res.setHeader('Content-Security-Policy', "default-src 'none'; sandbox");
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+    },
+  }));
 
   // 404 JSON pour les routes API inconnues (avant le fallback SPA qui renvoie du HTML).
   app.use('/api', (_req, res) => { res.status(404).json({ error: 'Endpoint introuvable' }); });

@@ -25,8 +25,12 @@ router.post('/api/auth/login', loginLimiter, (req, res) => {
     res.status(401).json({ error: 'Identifiants invalides' });
     return;
   }
-  req.session.admin = { id: admin.id, username: admin.username };
-  res.json({ id: admin.id, username: admin.username });
+  // Anti-fixation de session : nouvel identifiant de session à l'élévation de privilège.
+  req.session.regenerate((err) => {
+    if (err) { res.status(500).json({ error: 'Erreur de session' }); return; }
+    req.session.admin = { id: admin.id, username: admin.username };
+    req.session.save(() => res.json({ id: admin.id, username: admin.username }));
+  });
 });
 
 router.post('/api/auth/logout', (req, res) => {

@@ -267,8 +267,14 @@ router.post('/api/site-access', gateLimiter, (req, res) => {
     res.status(403).json({ error: 'Mot de passe incorrect' });
     return;
   }
-  req.session.siteUnlocked = true;
-  req.session.save(() => res.json(gateState(req)));
+  // Anti-fixation : nouvel identifiant de session au déverrouillage, panier préservé.
+  const keep = { cart: req.session.cart, couponCode: req.session.couponCode, shippingMethodId: req.session.shippingMethodId };
+  req.session.regenerate((err) => {
+    if (err) { res.status(500).json({ error: 'Erreur de session' }); return; }
+    Object.assign(req.session, keep);
+    req.session.siteUnlocked = true;
+    req.session.save(() => res.json(gateState(req)));
+  });
 });
 
 router.post('/api/site-access/logout', (req, res) => {
