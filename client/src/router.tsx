@@ -1,4 +1,4 @@
-import { lazy, type ComponentType } from 'react';
+import { lazy, Suspense, type ComponentType } from 'react';
 import { createRouter, createRoute, createRootRoute } from '@tanstack/react-router';
 import { AdminLayout } from './layouts/AdminLayout';
 import { PublicLayout } from './layouts/PublicLayout';
@@ -74,6 +74,13 @@ const ForumCategoryPage = lazyNamed(() => import('./pages/public/ForumPublic'), 
 const ForumTopicPage = lazyNamed(() => import('./pages/public/ForumPublic'), 'ForumTopicPage');
 
 const rootRoute = createRootRoute();
+
+// ===== Atelier Réseau (application dédiée plein écran, hors layout admin/public) =====
+const AtelierApp = lazyNamed(() => import('./pages/atelier/AtelierApp'), 'AtelierApp');
+function AtelierRoute() {
+  return <Suspense fallback={<div className="loading">Chargement…</div>}><AtelierApp /></Suspense>;
+}
+const atelierRoute = createRoute({ getParentRoute: () => rootRoute, path: '/atelier', component: AtelierRoute });
 
 // ===== Admin auth =====
 const loginRoute = createRoute({ getParentRoute: () => rootRoute, path: '/admin/login', component: LoginPage });
@@ -196,6 +203,7 @@ const forumTopicRoute = createRoute({ getParentRoute: () => publicRoute, path: '
 
 const routeTree = rootRoute.addChildren([
   loginRoute,
+  atelierRoute,
   adminRoute.addChildren([
     dashRoute,
     featuresRoute,

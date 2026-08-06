@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { Fragment, useEffect, useMemo, useState, type CSSProperties } from 'react';
 
 /**
  * Atelier Réseau & Packet Tracer — assistant multi-étapes à contexte partagé.
@@ -35,7 +35,7 @@ export type LinkMedia = 'serial' | 'gig';
 export type BaseNet = { id: string; name: string; ip: string; cidr: string };
 // Un sous-réseau : 1 routeur = LAN (passerelle), 2+ routeurs = segment d'interconnexion. baseId = bloc d'adresses.
 export type Service = { id: string; name: string; hosts: string; routerIds: string[]; hasSwitch: boolean; dhcp: boolean; media?: LinkMedia; baseId?: string };
-export type RouterDef = { id: string; name: string; model: RouterModel };
+export type RouterDef = { id: string; name: string; model: RouterModel; mod?: boolean };
 
 export type Ctx = {
   // 1. Contexte
@@ -59,10 +59,21 @@ export type Ctx = {
   wanIp: string; wanCidr: string;          // adresse WAN
   faiGw: string;                           // passerelle du FAI / de la salle
   webIp: string; webPort: string;          // serveur web à publier (facultatif)
+  natOverload: boolean;                     // générer le PAT (overload) — décocher pour du NAT statique seul
+  natStatics: { inside: string; pub: string }[]; // NAT statique 1:1 : IP interne -> IP publique
+  // Adressage manuel (facultatif — sinon calcul automatique)
+  ifaceIps: Record<string, string>;         // IP forcée d'une interface routeur, clé `${routerId}|${iface}`
+  hosts: StaticHost[];                       // end-points à IP fixe (serveurs, postes)
 };
+// Un hôte terminal à adresse fixe rattaché à un sous-réseau.
+export type StaticHost = { id: string; name: string; subId: string; ip: string };
 
 let _uid = 0;
-const uid = (p: string) => `${p}${++_uid}`;
+// Identifiant unique : compteur + suffixe aléatoire → jamais de collision avec un id par défaut
+// (ex. la base 'b1') ni entre sessions (le compteur repart de 0 à chaque chargement de page).
+const uid = (p: string) => `${p}${++_uid}_${Math.random().toString(36).slice(2, 6)}`;
+// Force des id UNIQUES dans une liste (répare les états sauvegardés avec des id en double).
+const dedupeIds = <T extends { id: string }>(arr: T[], p: string): T[] => { const seen = new Set<string>(); return arr.map(x => { let id = x.id; if (!id || seen.has(id)) id = uid(p); seen.add(id); return { ...x, id }; }); };
 
 export const DEFAULT_CTX: Ctx = {
   entreprise: 'Miyukini', domaine: 'miyukini.lan', mode: 'neuf',
@@ -81,18 +92,27 @@ export const DEFAULT_CTX: Ctx = {
   login: 'admin', mdp: 'Azerty77', secret: 'MonSecretEnable',
   gwPos: 'last', switchPos: 'beforeRouter', linkCidr: '30', dnsServer: '192.168.10.11', dhcpServer: '192.168.10.11', leaseDays: '7',
   internetRouterId: '', wanIf: 'GigabitEthernet0/1', wanIp: '', wanCidr: '30', faiGw: '', webIp: '', webPort: '80',
+  natOverload: true, natStatics: [],
+  ifaceIps: {}, hosts: [],
 };
 
 // Normalise un contexte issu du localStorage (tolère les anciens formats :
 // services {routerId} → {routerIds}, et anciens links → sous-réseaux d'interconnexion).
-function migrateCtx(raw: unknown): Ctx {
+export function migrateCtx(raw: unknown): Ctx {
   const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, any>;
   const c = { ...DEFAULT_CTX, ...r } as Ctx;
   delete (c as any).links;
-  c.routers = Array.isArray(c.routers) ? c.routers : DEFAULT_CTX.routers;
+  c.routers = dedupeIds((Array.isArray(c.routers) ? c.routers : DEFAULT_CTX.routers).map((rt: any) => ({ id: rt?.id, name: String(rt?.name ?? 'R'), model: rt?.model === '2811' ? '2811' : '2911', mod: !!rt?.mod } as RouterDef)), 'r');
+  c.natStatics = Array.isArray((c as any).natStatics) ? (c as any).natStatics.filter((s: any) => s && typeof s === 'object').map((s: any) => ({ inside: String(s.inside ?? ''), pub: String(s.pub ?? '') })) : [];
+  c.natOverload = typeof (c as any).natOverload === 'boolean' ? (c as any).natOverload : true;
+  c.ifaceIps = (r.ifaceIps && typeof r.ifaceIps === 'object' && !Array.isArray(r.ifaceIps))
+    ? Object.fromEntries(Object.entries(r.ifaceIps).filter(([k, v]) => typeof k === 'string' && typeof v === 'string')) as Record<string, string>
+    : {};
+  c.hosts = dedupeIds((Array.isArray(r.hosts) ? r.hosts : []).filter((h: any) => h && typeof h === 'object').map((h: any) => ({ id: typeof h.id === 'string' ? h.id : uid('h'), name: String(h.name ?? ''), subId: String(h.subId ?? ''), ip: String(h.ip ?? '') })), 'h');
   // Réseaux de base : depuis bases[] si présent, sinon depuis l'ancien baseIp/baseCidr.
   c.bases = (Array.isArray(r.bases) && r.bases.length ? r.bases : [{ id: 'b1', name: 'Réseau principal', ip: (typeof r.baseIp === 'string' && r.baseIp) || DEFAULT_CTX.baseIp, cidr: String(r.baseCidr ?? DEFAULT_CTX.baseCidr) }])
     .map((b: any, i: number) => ({ id: typeof b?.id === 'string' ? b.id : 'b' + (i + 1), name: typeof b?.name === 'string' ? b.name : `Réseau ${i + 1}`, ip: typeof b?.ip === 'string' ? b.ip : '192.168.10.0', cidr: String(b?.cidr ?? '24') }));
+  c.bases = dedupeIds(c.bases, 'b');
   const baseIds = new Set(c.bases.map(b => b.id));
   const firstBase = c.bases[0].id;
   c.services = (Array.isArray(r.services) ? r.services : []).map((s: any) => ({
@@ -111,12 +131,17 @@ function migrateCtx(raw: unknown): Ctx {
     if (rids.length >= 2) c.services.push({ id: typeof l?.id === 'string' ? 'seg' + l.id : uid('s'), name: 'Interconnexion', hosts: '2', routerIds: rids, hasSwitch: typeof l?.hasSwitch === 'boolean' ? l.hasSwitch : true, dhcp: false, media: l?.media === 'serial' ? 'serial' : undefined, baseId: firstBase });
   }
   if (!c.services.length) c.services = DEFAULT_CTX.services;
+  c.services = dedupeIds(c.services, 's');
   return c;
 }
 
 // ─────────────────────────────────────────── Interfaces Cisco ───────────────────────────────────────────
-const ethName = (m: RouterModel, i: number) => (m === '2811' ? `FastEthernet0/${i}` : `GigabitEthernet0/${i}`);
-const ethMax = (m: RouterModel) => (m === '2811' ? 2 : 3);
+// Interfaces Ethernet intégrées + module d'extension optionnel (slot 1).
+// 2811 : Fa0/0, Fa0/1 intégrées → module = Fa1/0, Fa1/1.
+// 2911 : Gig0/0..0/2 intégrées → module = Gig0/3/0, Gig0/3/1.
+const ethBuiltin = (m: RouterModel): string[] => (m === '2811' ? ['FastEthernet0/0', 'FastEthernet0/1'] : ['GigabitEthernet0/0', 'GigabitEthernet0/1', 'GigabitEthernet0/2']);
+const ethModule = (m: RouterModel): string[] => (m === '2811' ? ['FastEthernet1/0', 'FastEthernet1/1'] : ['GigabitEthernet0/3/0', 'GigabitEthernet0/3/1']);
+const ethSlots = (m: RouterModel, mod?: boolean): string[] => (mod ? [...ethBuiltin(m), ...ethModule(m)] : ethBuiltin(m));
 const ethLabel = (m: RouterModel) => (m === '2811' ? 'FastEthernet' : 'GigabitEthernet');
 const SER_SLOTS = ['Serial0/0/0', 'Serial0/0/1', 'Serial0/1/0', 'Serial0/1/1'];
 // Abréviation courte pour le schéma : GigabitEthernet0/1 → Gig0/1, FastEthernet0/0 → Fa0/0, Serial0/0/0 → Se0/0/0.
@@ -133,11 +158,13 @@ export type Iface = {
   ip: number; mask: number; cidr: number; role: string; clock: boolean;
 };
 export type BaseSummary = { id: string; name: string; net: number; cidr: number; used: number; total: number };
+// Un hôte fixe résolu par le moteur : IP validée + rattachement + éventuel problème.
+export type PlacedHost = { id: string; name: string; subId: string; subName: string; ip: number | null; raw: string; ok: boolean; note: string };
 export type Plan = {
   ok: boolean; error: string; warnings: string[];
   baseNet: number; baseBc: number; cidr: number; totalAddr: number; used: number;
   bases: BaseSummary[];
-  subs: Sub[]; ifaces: Iface[];
+  subs: Sub[]; ifaces: Iface[]; hosts: PlacedHost[];
 };
 
 export function computePlan(ctx: Ctx): Plan {
@@ -154,7 +181,7 @@ export function computePlan(ctx: Ctx): Plan {
     const net = (n & maskFromCidr(c)) >>> 0; const bc = (net | wildcardFromCidr(c)) >>> 0;
     binfo.push({ id: b.id, name: b.name || b.ip, net, bc, cidr: c, ptr: net });
   }
-  if (!binfo.length) return { ok: false, error: 'Aucun réseau de base valide.', warnings, baseNet: 0, baseBc: 0, cidr: 24, totalAddr: 0, used: 0, bases: [], subs: [], ifaces: [] };
+  if (!binfo.length) return { ok: false, error: 'Aucun réseau de base valide.', warnings, baseNet: 0, baseBc: 0, cidr: 24, totalAddr: 0, used: 0, bases: [], subs: [], ifaces: [], hosts: [] };
   const binfoById = new Map(binfo.map(b => [b.id, b] as const));
   const firstBaseId = binfo[0].id;
 
@@ -194,12 +221,26 @@ export function computePlan(ctx: Ctx): Plan {
   const cap = new Map<string, { eth: number; ser: number }>();
   ctx.routers.forEach(r => cap.set(r.id, { eth: 0, ser: 0 }));
   const nextEth = (r: RouterDef): string | null => {
-    const c = cap.get(r.id)!; if (c.eth >= ethMax(r.model)) { warnings.push(`${r.name} (${r.model}) : plus d'interface ${ethLabel(r.model)} libre (${ethMax(r.model)} max).`); return null; }
-    const name = ethName(r.model, c.eth); c.eth++; return name;
+    const c = cap.get(r.id)!; const slots = ethSlots(r.model, r.mod);
+    if (c.eth >= slots.length) {
+      const hint = r.mod ? '' : ` — active le module (slot 1) pour ajouter ${ifAbbr(ethModule(r.model)[0])}`;
+      warnings.push(`${r.name} (${r.model}) : plus d'interface ${ethLabel(r.model)} libre (${slots.length} max)${hint}.`); return null;
+    }
+    const name = slots[c.eth]; c.eth++; return name;
   };
   const nextSer = (r: RouterDef): string | null => {
     const c = cap.get(r.id)!; if (c.ser >= SER_SLOTS.length) { warnings.push(`${r.name} : plus d'interface série libre.`); return null; }
     const name = SER_SLOTS[c.ser]; c.ser++; return name;
+  };
+  // IP manuelle d'une interface (si valide et dans le sous-réseau), sinon la valeur calculée.
+  const ovIps = ctx.ifaceIps || {};
+  const applyOv = (rid: string, iface: string, fallback: number, net: number, bc: number): number => {
+    const raw = (ovIps[`${rid}|${iface}`] || '').trim();
+    if (!raw) return fallback;
+    const n = strToIp(raw);
+    if (n === null) { warnings.push(`IP manuelle « ${raw} » sur ${iface} invalide — adresse auto conservée.`); return fallback; }
+    if (n <= net || n >= bc) { warnings.push(`IP manuelle ${raw} sur ${iface} hors de ${ipToStr(net)} – ${ipToStr(bc)} — ignorée.`); return fallback; }
+    return n >>> 0;
   };
 
   for (const s of ctx.services) {
@@ -208,11 +249,13 @@ export function computePlan(ctx: Ctx): Plan {
     if (!m.transit) {
       // LAN : 1 routeur passerelle + clients (DHCP)
       const r = m.rs[0];
-      const gw = ctx.gwPos === 'last' ? a.last : a.first;
+      let gw = ctx.gwPos === 'last' ? a.last : a.first;
       const switchIp = s.hasSwitch ? (ctx.gwPos === 'last' ? (a.last - 1) >>> 0 : (a.first + 1) >>> 0) : null;
+      // Interface (et donc IP de passerelle, éventuellement forcée manuellement)
+      let ifc: string | null = null;
+      if (r) { ifc = nextEth(r); if (ifc) gw = applyOv(r.id, ifc, gw, a.net, a.bc); }
       subs.push({ kind: 'lan', id: 'svc:' + s.id, name: s.name || 'LAN', net: a.net, first: a.first, last: a.last, bc: a.bc, usable: a.usable, mask: a.mask, cidr: a.cidr, gw, switchIp, routerId: r?.id, routerIds: r ? [r.id] : [], dhcp: s.dhcp });
       if (!r) { warnings.push(`« ${s.name || 'LAN'} » n'a pas de routeur passerelle assigné.`); continue; }
-      const ifc = nextEth(r);
       if (ifc) ifaces.push({ routerId: r.id, routerName: r.name, iface: ifc, target: `LAN ${s.name || ''}`.trim(), ip: gw, mask: a.mask, cidr: a.cidr, role: 'Passerelle LAN', clock: false });
     } else {
       // Interconnexion : 2+ routeurs, une IP par routeur (pas de DHCP)
@@ -221,17 +264,40 @@ export function computePlan(ctx: Ctx): Plan {
       subs.push({ kind: 'link', id: 'svc:' + s.id, name: s.name || 'Interconnexion', net: a.net, first: a.first, last: a.last, bc: a.bc, usable: a.usable, mask: a.mask, cidr: a.cidr, gw: null, switchIp: (swIp !== null && swIp <= a.last) ? swIp : null, media: m.serial ? 'serial' : 'gig', routerIds: parts.map(r => r.id) });
       if (m.serial && m.rs.length > 2) warnings.push(`« ${s.name} » : une liaison série relie exactement 2 routeurs — passe en Ethernet pour en relier davantage.`);
       parts.forEach((r, k) => {
-        const ip = (a.first + k) >>> 0;
         const ifc = m.serial ? nextSer(r) : nextEth(r);
         if (!ifc) return;
+        const ip = applyOv(r.id, ifc, (a.first + k) >>> 0, a.net, a.bc);
         const role = m.serial ? (k === 0 ? 'Liaison série (DCE)' : 'Liaison série (DTE)') : 'Interconnexion';
         ifaces.push({ routerId: r.id, routerName: r.name, iface: ifc, target: s.name || 'Interconnexion', ip, mask: a.mask, cidr: a.cidr, role, clock: m.serial && k === 0 });
       });
     }
   }
 
+  // Hôtes fixes (end-points) : validation + rattachement à leur sous-réseau.
+  const subById = new Map(subs.map(s => [s.id, s] as const));
+  const hosts: PlacedHost[] = (ctx.hosts || []).map(h => {
+    const sub = subById.get(h.subId);
+    const raw = (h.ip || '').trim();
+    const n = strToIp(raw);
+    let ok = true, note = '';
+    if (!sub) { ok = false; note = 'sous-réseau introuvable'; }
+    else if (!raw) { ok = false; note = 'IP à renseigner'; }
+    else if (n === null) { ok = false; note = 'IP invalide'; }
+    else if (n <= sub.net || n >= sub.bc) { ok = false; note = `hors de ${ipToStr(sub.net)}/${sub.cidr}`; }
+    else if (n === sub.gw) { ok = false; note = 'déjà prise par la passerelle'; }
+    else if (sub.switchIp !== null && n === sub.switchIp) { ok = false; note = 'déjà prise par le switch'; }
+    return { id: h.id, name: h.name, subId: h.subId, subName: sub?.name || '—', ip: ok ? n : (n ?? null), raw, ok, note };
+  });
+  // Doublons d'IP entre hôtes du même sous-réseau + collision avec la plage DHCP.
+  for (let i = 0; i < hosts.length; i++) {
+    const h = hosts[i]; if (!h.ok || h.ip === null) continue;
+    if (hosts.some((o, j) => j < i && o.ok && o.subId === h.subId && o.ip === h.ip)) { h.ok = false; h.note = 'IP en doublon'; continue; }
+    const sub = subById.get(h.subId);
+    if (sub && sub.dhcp) { const cr = clientRange(ctx, sub); if (cr && h.ip >= cr[0] && h.ip <= cr[1]) h.note = 'dans la plage DHCP — à exclure du pool'; }
+  }
+
   const basesSum: BaseSummary[] = binfo.map(b => ({ id: b.id, name: b.name, net: b.net, cidr: b.cidr, used: (b.ptr - b.net) >>> 0, total: (b.bc - b.net + 1) >>> 0 }));
-  return { ok: !error, error, warnings, baseNet: binfo[0].net, baseBc: binfo[0].bc, cidr: binfo[0].cidr, totalAddr: basesSum.reduce((a, s) => a + s.total, 0), used: basesSum.reduce((a, s) => a + s.used, 0), bases: basesSum, subs, ifaces };
+  return { ok: !error, error, warnings, baseNet: binfo[0].net, baseBc: binfo[0].bc, cidr: binfo[0].cidr, totalAddr: basesSum.reduce((a, s) => a + s.total, 0), used: basesSum.reduce((a, s) => a + s.used, 0), bases: basesSum, subs, ifaces, hosts };
 }
 
 // Nom de pool DHCP Cisco (majuscules, sans accents ni espaces).
@@ -248,8 +314,8 @@ export function buildDhcp(ctx: Ctx, plan: Plan): { relays: DhcpRelay[]; pools: D
       .map(s => ({ s, ifc: plan.ifaces.find(i => i.routerId === r.id && i.ip === s.gw) }))
       .filter(x => !!x.ifc);
     if (!lans.length) continue;
-    const lines = [`! === ${r.name} — relais DHCP ===`, 'configure terminal'];
-    for (const { ifc } of lans) lines.push(`interface ${ifc!.iface}`, ` ip helper-address ${server || '<IP_serveur_DHCP>'}`, ' exit', '!');
+    const lines = ['configure terminal'];
+    for (const { ifc } of lans) lines.push(`interface ${ifc!.iface}`, ` ip helper-address ${server || '<IP_serveur_DHCP>'}`, ' exit');
     lines.push('end', 'write memory');
     relays.push({ routerId: r.id, routerName: r.name, text: lines.join('\n'), count: lans.length });
   }
@@ -273,6 +339,13 @@ export function buildDns(ctx: Ctx, plan: Plan): { recs: DnsRec[]; domain: string
   }
   const dnsIp = strToIp(ctx.dnsServer.trim());
   if (dnsIp !== null && !seen.has('dns')) recs.push({ host: 'dns', fqdn: `dns.${domain}`, ip: dnsIp });
+  // Hôtes fixes (serveurs/postes à IP statique) → enregistrements DNS.
+  for (const h of plan.hosts) {
+    if (!h.ok || h.ip === null) continue;
+    const host = (h.name || 'host').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9-]+/g, '-').replace(/(^-|-$)/g, '') || 'host';
+    if (seen.has(host)) continue;
+    recs.push({ host, fqdn: `${host}.${domain}`, ip: h.ip }); seen.add(host);
+  }
 
   const hostLines = [
     ctx.domaine.trim() ? `ip domain-name ${domain}` : '',
@@ -296,7 +369,8 @@ export function buildDns(ctx: Ctx, plan: Plan): { recs: DnsRec[]; domain: string
   return { recs, domain, hostLines, zone, tests };
 }
 
-// Configuration CLI de chaque routeur : interfaces + routes statiques (plus court chemin).
+// Configuration CLI COMPLÈTE de chaque routeur : sécurité, interfaces (NAT inside + relais DHCP + horloge DCE),
+// routage statique (plus court chemin) + route par défaut, NAT/PAT de bordure, et SSH (console/vty).
 export type RouterCfg = { routerId: string; routerName: string; text: string; routes: number };
 export function buildRouterConfigs(ctx: Ctx, plan: Plan): { byRouter: RouterCfg[]; full: string } {
   // Graphe des routeurs via les sous-réseaux d'interconnexion.
@@ -304,7 +378,9 @@ export function buildRouterConfigs(ctx: Ctx, plan: Plan): { byRouter: RouterCfg[
   ctx.routers.forEach(r => edges.set(r.id, []));
   for (const s of plan.subs) {
     if (s.kind !== 'link' || !s.routerIds) continue;
-    s.routerIds.forEach((a) => s.routerIds!.forEach((b, ib) => { if (a !== b) edges.get(a)?.push({ to: b, viaIp: (s.first + ib) >>> 0 }); }));
+    // Prochain saut = IP réelle de l'interface du voisin sur cette liaison (respecte les IP manuelles).
+    const ipOf = (rid: string) => { const f = plan.ifaces.find(i => i.routerId === rid && i.ip > s.net && i.ip < s.bc); return f ? f.ip : null; };
+    s.routerIds.forEach((a) => s.routerIds!.forEach((b) => { if (a !== b) { const via = ipOf(b); if (via !== null) edges.get(a)?.push({ to: b, viaIp: via }); } }));
   }
   const nextHopFrom = (from: string) => {
     const res = new Map<string, number>();
@@ -314,15 +390,54 @@ export function buildRouterConfigs(ctx: Ctx, plan: Plan): { byRouter: RouterCfg[
     while (q.length) { const c = q.shift()!; for (const e of edges.get(c.node) || []) if (!seen.has(e.to)) { seen.add(e.to); res.set(e.to, c.via); q.push({ node: e.to, via: c.via }); } }
     return res;
   };
+  const relayServer = (ctx.dhcpServer || '').trim() || (ctx.dnsServer || '').trim();
+  const dom = (ctx.domaine || '').trim() || 'lan';
   const byRouter: RouterCfg[] = ctx.routers.map(r => {
     const myIf = plan.ifaces.filter(i => i.routerId === r.id);
     const nh = nextHopFrom(r.id);
-    const lines: string[] = ['enable', 'configure terminal', `hostname ${r.name}`, '!'];
+    const isBorder = !!ctx.internetRouterId && ctx.internetRouterId === r.id;
+    const wanIf = (ctx.wanIf || '').trim() || 'GigabitEthernet0/1';
+    // IP de passerelle des LAN en DHCP portés par ce routeur → ip helper-address sur l'interface.
+    const dhcpGwIps = new Set(plan.subs.filter(s => s.kind === 'lan' && s.dhcp && s.routerId === r.id && s.gw !== null).map(s => s.gw as number));
+
+    const lines: string[] = ['enable', 'configure terminal', `hostname ${r.name}`];
+
+    // -- Sécurité & accès --
+    lines.push('! --- Securite & acces ---', 'service password-encryption');
+    if ((ctx.secret || '').trim()) lines.push(`enable secret ${ctx.secret.trim()}`);
+    lines.push(`username ${ctx.login || 'admin'} privilege 15 secret ${ctx.mdp || 'MotDePasse'}`);
+    lines.push(`ip domain-name ${dom}`);
+    if ((ctx.dnsServer || '').trim()) lines.push(`ip name-server ${ctx.dnsServer.trim()}`);
+
+    // -- Interfaces (IP, NAT inside, relais DHCP, horloge DCE) --
+    lines.push('! --- Interfaces ---');
     for (const i of myIf) {
-      lines.push(`interface ${i.iface}`, ` ip address ${ipToStr(i.ip)} ${ipToStr(i.mask)}`);
+      lines.push(`interface ${i.iface}`, ` description ${i.target}`, ` ip address ${ipToStr(i.ip)} ${ipToStr(i.mask)}`);
+      if (isBorder && i.iface !== wanIf) lines.push(' ip nat inside');
+      if (dhcpGwIps.has(i.ip)) lines.push(` ip helper-address ${relayServer || '<IP_serveur_DHCP>'}`);
       if (i.clock) lines.push(' clock rate 64000');
-      lines.push(' no shutdown', ' exit', '!');
+      lines.push(' no shutdown', ' exit');
     }
+
+    // -- Sortie Internet (NAT/PAT) — routeur de bordure uniquement --
+    if (isBorder) {
+      const wanCidr = clampNum(Number(ctx.wanCidr) || 30, 1, 32);
+      lines.push('! --- Sortie Internet (NAT/PAT) ---');
+      lines.push(`interface ${wanIf}`, ` ip address ${(ctx.wanIp || '').trim() || '<IP_WAN>'} ${ipToStr(maskFromCidr(wanCidr))}`, ' ip nat outside', ' no shutdown', ' exit');
+      for (const st of (ctx.natStatics || []).filter(s => (s.inside || '').trim() && (s.pub || '').trim()))
+        lines.push(`ip nat inside source static ${st.inside.trim()} ${st.pub.trim()}`);
+      if (ctx.natOverload) {
+        lines.push('ip access-list standard NAT-LAN');
+        for (const b of plan.bases) lines.push(` permit ${ipToStr(b.net)} ${ipToStr(wildcardFromCidr(b.cidr))}`);
+        lines.push(' exit', `ip nat inside source list NAT-LAN interface ${wanIf} overload`);
+      }
+      if ((ctx.webIp || '').trim()) {
+        const port = (ctx.webPort || '80').trim();
+        lines.push(`ip nat inside source static tcp ${ctx.webIp.trim()} ${port} interface ${wanIf} ${port}`);
+      }
+    }
+
+    // -- Routage statique (+ route par défaut sur la bordure) --
     const routes: string[] = [];
     const seen = new Set<string>();
     for (const s of plan.subs) {
@@ -335,11 +450,19 @@ export function buildRouterConfigs(ctx: Ctx, plan: Plan): { byRouter: RouterCfg[
       if (seen.has(key)) continue; seen.add(key);
       routes.push(`ip route ${ipToStr(s.net)} ${ipToStr(s.mask)} ${ipToStr(via)}`);
     }
-    if (routes.length) { lines.push('! --- Routes statiques ---', ...routes, '!'); }
+    if (routes.length || isBorder) lines.push('! --- Routage ---');
+    if (routes.length) lines.push(...routes);
+    if (isBorder) lines.push(`ip route 0.0.0.0 0.0.0.0 ${(ctx.faiGw || '').trim() || '<passerelle_FAI>'}`);
+
+    // -- SSH + lignes d'accès (console/vty) --
+    lines.push('! --- SSH & lignes ---', 'crypto key generate rsa', '1024', 'ip ssh version 2');
+    lines.push('line console 0', ' logging synchronous', ' login local', ' exit');
+    lines.push('line vty 0 4', ' transport input ssh', ' login local', ' exit');
+
     lines.push('end', 'write memory');
     return { routerId: r.id, routerName: r.name, text: lines.join('\n'), routes: routes.length };
   });
-  return { byRouter, full: byRouter.map(b => `! ===== ${b.routerName} =====\n${b.text}`).join('\n\n') };
+  return { byRouter, full: byRouter.map(b => b.text).join('\n\n') };
 }
 
 // Configuration SSH pour chaque routeur et chaque switch (avec SVI de gestion).
@@ -376,11 +499,8 @@ export function buildSsh(ctx: Ctx, plan: Plan): { routers: SshCfg[]; switches: S
 export function buildReset(): string {
   return [
     'enable',
-    'write erase          ! ou : erase startup-config',
+    'write erase',
     'reload',
-    '! "Save? [yes/no]:"                 -> no',
-    '! "Proceed with reload? [confirm]"  -> Entree',
-    '! (switch, VLAN parasites)  delete flash:vlan.dat  AVANT le reload',
   ].join('\n');
 }
 
@@ -393,20 +513,45 @@ export function buildNat(ctx: Ctx, plan: Plan): NatCfg | null {
   const wanMask = ipToStr(maskFromCidr(wanCidr));
   const wanIf = (ctx.wanIf || '').trim() || 'GigabitEthernet0/1';
   const myIf = plan.ifaces.filter(i => i.routerId === r.id);
-  const lines: string[] = [`! ===== ${r.name} — Sortie Internet (NAT/PAT) =====`, 'configure terminal'];
-  lines.push('! 1) Interface WAN (vers le FAI / la salle)', `interface ${wanIf}`, ` ip address ${(ctx.wanIp || '').trim() || '<IP_WAN>'} ${wanMask}`, ' ip nat outside', ' no shutdown', ' exit', '!');
-  lines.push('! 2) Interfaces internes en « ip nat inside »');
+  const lines: string[] = ['configure terminal'];
+  lines.push(`interface ${wanIf}`, ` ip address ${(ctx.wanIp || '').trim() || '<IP_WAN>'} ${wanMask}`, ' ip nat outside', ' no shutdown', ' exit');
   if (myIf.length) for (const i of myIf) lines.push(`interface ${i.iface}`, ' ip nat inside', ' exit');
-  else lines.push('! (aucune interface interne — assigne des sous-réseaux à ce routeur, étape 3)');
-  lines.push('!', '! 3) Réseaux internes à traduire (ACL)', 'ip access-list standard NAT-LAN');
-  for (const b of plan.bases) lines.push(` permit ${ipToStr(b.net)} ${ipToStr(wildcardFromCidr(b.cidr))}`);
-  lines.push(' exit', '!', '! 4) PAT (overload) derrière l’IP WAN', `ip nat inside source list NAT-LAN interface ${wanIf} overload`, '!', '! 5) Route par défaut vers le FAI', `ip route 0.0.0.0 0.0.0.0 ${(ctx.faiGw || '').trim() || '<passerelle_FAI>'}`);
+  const statics = (ctx.natStatics || []).filter(s => (s.inside || '').trim() && (s.pub || '').trim());
+  if (statics.length) {
+    for (const s of statics) lines.push(`ip nat inside source static ${s.inside.trim()} ${s.pub.trim()}`);
+  }
+  if (ctx.natOverload) {
+    lines.push('ip access-list standard NAT-LAN');
+    for (const b of plan.bases) lines.push(` permit ${ipToStr(b.net)} ${ipToStr(wildcardFromCidr(b.cidr))}`);
+    lines.push(' exit', `ip nat inside source list NAT-LAN interface ${wanIf} overload`);
+  }
+  lines.push(`ip route 0.0.0.0 0.0.0.0 ${(ctx.faiGw || '').trim() || '<passerelle_FAI>'}`);
   if ((ctx.webIp || '').trim()) {
     const port = (ctx.webPort || '80').trim();
-    lines.push('!', `! 6) Publier le serveur web ${ctx.webIp.trim()}:${port} vers l’extérieur`, `ip nat inside source static tcp ${ctx.webIp.trim()} ${port} interface ${wanIf} ${port}`);
+    lines.push(`ip nat inside source static tcp ${ctx.webIp.trim()} ${port} interface ${wanIf} ${port}`);
   }
   lines.push('end', 'write memory');
   return { text: lines.join('\n'), router: r.name };
+}
+
+// Table de NAT PRÉVISIONNELLE (ce que « show ip nat translation » affichera) — pour pré-remplir le dossier du TP.
+export type NatRow = { proto: string; localInside: string; localPort: string; globalInside: string; globalPort: string; note: string };
+export function buildNatTable(ctx: Ctx, plan: Plan, nat: NatCfg | null): NatRow[] {
+  if (!nat) return [];
+  const wan = (ctx.wanIp || '').trim() || '<IP_WAN>';
+  const rows: NatRow[] = [];
+  for (const s of (ctx.natStatics || []).filter(s => (s.inside || '').trim() && (s.pub || '').trim()))
+    rows.push({ proto: '---', localInside: s.inside.trim(), localPort: '---', globalInside: s.pub.trim(), globalPort: '---', note: 'NAT statique 1:1 (tous ports)' });
+  if ((ctx.webIp || '').trim()) {
+    const p = (ctx.webPort || '80').trim();
+    rows.push({ proto: 'tcp', localInside: ctx.webIp.trim(), localPort: p, globalInside: wan, globalPort: p, note: 'redirection de port (entrant)' });
+  }
+  if (ctx.natOverload) {
+    const lans = plan.subs.filter(s => s.kind === 'lan').slice(0, 2);
+    lans.forEach((s, i) => rows.push({ proto: 'tcp', localInside: ipToStr(s.first), localPort: String(1025 + i), globalInside: wan, globalPort: String(1025 + i), note: 'PAT — exemple (port attribué dynamiquement)' }));
+    if (!lans.length) rows.push({ proto: 'tcp', localInside: '192.168.x.y', localPort: '1025', globalInside: wan, globalPort: '1025', note: 'PAT — exemple' });
+  }
+  return rows;
 }
 
 // Plan de tests ping (anneaux) : local → inter-réseaux → Internet.
@@ -416,22 +561,16 @@ export function buildTests(ctx: Ctx, plan: Plan, nat: NatCfg | null): { sections
   const sections: TestSection[] = [];
   const a: string[] = [];
   for (const s of lan) {
-    a.push(`ping ${ipToStr(s.gw!)}    ! passerelle « ${s.name} »`);
-    if (s.switchIp !== null) a.push(`ping ${ipToStr(s.switchIp)}    ! switch « ${s.name} »`);
+    a.push(`ping ${ipToStr(s.gw!)}`);
+    if (s.switchIp !== null) a.push(`ping ${ipToStr(s.switchIp)}`);
   }
-  if (a.length) sections.push({ title: 'A. Dans chaque réseau (liaison locale)', lines: a });
-  const b: string[] = [];
-  for (const from of lan) {
-    const others = lan.filter(o => o.id !== from.id);
-    if (!others.length) continue;
-    b.push(`# depuis un poste de « ${from.name} » :`);
-    for (const o of others) b.push(`ping ${ipToStr(o.gw!)}    ! -> passerelle « ${o.name} » (interface routeur, répond toujours)`);
-  }
-  if (b.length) sections.push({ title: 'B. Entre les réseaux (routage inter-VLAN)', lines: b });
+  if (a.length) sections.push({ title: 'A. Dans chaque réseau (liaison locale) — passerelle puis switch de gestion', lines: a });
+  const gws = Array.from(new Set(lan.map(s => ipToStr(s.gw!))));
+  if (gws.length > 1) sections.push({ title: 'B. Entre les réseaux (routage) — depuis un poste, pinguer les passerelles des autres réseaux (interfaces routeur, répondent toujours)', lines: gws.map(g => `ping ${g}`) });
   if (nat && (ctx.faiGw || '').trim()) {
-    sections.push({ title: 'C. Vers le FAI & Internet (via NAT/PAT)', lines: [`ping ${ctx.faiGw.trim()}    ! passerelle FAI / salle`, 'ping 8.8.8.8    ! Internet (via PAT)'] });
+    sections.push({ title: 'C. Vers le FAI & Internet (via NAT/PAT) — passerelle FAI puis Internet', lines: [`ping ${ctx.faiGw.trim()}`, 'ping 8.8.8.8'] });
   }
-  const full = sections.map(s => `! ${s.title}\n${s.lines.join('\n')}`).join('\n\n');
+  const full = sections.map(s => s.lines.join('\n')).join('\n\n');
   return { sections, full };
 }
 
@@ -445,7 +584,9 @@ const smallBtn: CSSProperties = { ...btn, padding: '3px 9px', fontSize: 12, bord
 const mono: CSSProperties = { fontFamily: 'ui-monospace,monospace' };
 const th: CSSProperties = { textAlign: 'left', padding: '7px 9px', borderBottom: '2px solid var(--border)', fontSize: 12, color: 'var(--text-soft)', whiteSpace: 'nowrap' };
 const td: CSSProperties = { padding: '6px 9px', borderBottom: '1px solid var(--border)', fontSize: 12.5, whiteSpace: 'nowrap' };
-const preStyle: CSSProperties = { background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '11px 13px', overflowX: 'auto', fontSize: 12, lineHeight: 1.55, margin: 0, whiteSpace: 'pre', color: 'var(--text)', ...mono };
+// Bloc de SORTIE générée (config CLI à coller) : look « terminal » + liseré accent à gauche
+// pour le distinguer nettement des champs de saisie (correctif audit B1 : saisie ≠ sortie).
+const preStyle: CSSProperties = { background: 'var(--surface-3)', border: '1px solid var(--border)', borderLeft: '3px solid var(--accent)', borderRadius: 8, padding: '11px 13px', overflowX: 'auto', fontSize: 12, lineHeight: 1.55, margin: 0, whiteSpace: 'pre', color: 'var(--text)', ...mono };
 
 const STEPS = [
   { n: 1, icon: '🧾', title: 'Contexte' },
@@ -460,15 +601,41 @@ const STEPS = [
 const STORAGE_KEY = 'net_workshop_v1';
 
 // ─────────────────────────────────────────── Composant principal ───────────────────────────────────────────
-export function NetworkWorkshop() {
-  const [ctx, setCtx] = useState<Ctx>(() => {
+export interface NetworkWorkshopProps {
+  /** Contexte contrôlé (mode application/projet). Absent → l'îlot gère son état via localStorage. */
+  value?: Ctx;
+  onChange?: (next: Ctx) => void;
+  /** Étape contrôlée (pilotée par une navigation externe, ex. la sidebar de l'Atelier). */
+  step?: number;
+  onStep?: (n: number) => void;
+  /** Barre d'étapes intégrée (true pour l'îlot ; false quand une sidebar navigue). */
+  showStepper?: boolean;
+  /** Sous-vue de l'étape 4 (mode app) : 'schema' | 'routeurs' | 'nat'. Absent → tout s'affiche (îlot). */
+  section4?: 'schema' | 'routeurs' | 'nat';
+}
+
+export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showStepper = true, section4 }: NetworkWorkshopProps = {}) {
+  const ctxControlled = value !== undefined && onChange !== undefined;
+  const [internalCtx, setInternalCtx] = useState<Ctx>(() => {
     try { const v = localStorage.getItem(STORAGE_KEY); if (v) return migrateCtx(JSON.parse(v)); } catch { /* */ }
     return DEFAULT_CTX;
   });
-  const [step, setStep] = useState(1);
+  const ctx = ctxControlled ? value! : internalCtx;
+  const setCtx = (action: Ctx | ((c: Ctx) => Ctx)) => {
+    if (ctxControlled) onChange!(typeof action === 'function' ? (action as (c: Ctx) => Ctx)(value!) : action);
+    else setInternalCtx(action);
+  };
+
+  const stepControlled = stepProp !== undefined && onStep !== undefined;
+  const [internalStep, setInternalStep] = useState(1);
+  const step = stepControlled ? stepProp! : internalStep;
+  const setStep = (n: number) => { if (stepControlled) onStep!(n); else setInternalStep(n); };
+
   const [copied, setCopied] = useState('');
 
-  useEffect(() => { try { localStorage.setItem(STORAGE_KEY, JSON.stringify(ctx)); } catch { /* */ } }, [ctx]);
+  // Persistance locale uniquement en mode autonome (îlot CMS) ; en mode contrôlé,
+  // l'état est porté par le projet (serveur).
+  useEffect(() => { if (ctxControlled) return; try { localStorage.setItem(STORAGE_KEY, JSON.stringify(internalCtx)); } catch { /* */ } }, [internalCtx, ctxControlled]);
 
   const set = (p: Partial<Ctx>) => setCtx(c => ({ ...c, ...p }));
   const plan = useMemo(() => computePlan(ctx), [ctx]);
@@ -489,6 +656,17 @@ export function NetworkWorkshop() {
   const setRtr = (id: string, p: Partial<RouterDef>) => set({ routers: ctx.routers.map(r => r.id === id ? { ...r, ...p } : r) });
   const addRtr = () => set({ routers: [...ctx.routers, { id: uid('r'), name: 'R' + (ctx.routers.length + 1), model: '2911' }] });
   const delRtr = (id: string) => set({ routers: ctx.routers.filter(r => r.id !== id), services: ctx.services.map(s => ({ ...s, routerIds: s.routerIds.filter(x => x !== id) })) });
+  // Repartir d'un atelier vierge (efface le contexte enregistré dans le navigateur).
+  const resetCtx = () => { if (typeof window !== 'undefined' && !window.confirm('Réinitialiser l’atelier ? (réseaux, routeurs et sous-réseaux reviennent aux valeurs par défaut)')) return; if (!ctxControlled) { try { localStorage.removeItem(STORAGE_KEY); } catch { /* */ } } setCtx(DEFAULT_CTX); setStep(1); };
+  // — NAT statique (1:1) —
+  const setStat = (idx: number, p: Partial<{ inside: string; pub: string }>) => set({ natStatics: (ctx.natStatics || []).map((s, i) => i === idx ? { ...s, ...p } : s) });
+  const addStat = () => set({ natStatics: [...(ctx.natStatics || []), { inside: '', pub: '' }] });
+  const delStat = (idx: number) => set({ natStatics: (ctx.natStatics || []).filter((_, i) => i !== idx) });
+  // Adressage manuel : IP d'interface routeur + hôtes fixes (end-points)
+  const setIfaceIp = (key: string, v: string) => { const next = { ...(ctx.ifaceIps || {}) }; if (v.trim()) next[key] = v; else delete next[key]; set({ ifaceIps: next }); };
+  const setHost = (idx: number, p: Partial<StaticHost>) => set({ hosts: (ctx.hosts || []).map((h, i) => i === idx ? { ...h, ...p } : h) });
+  const addHost = () => set({ hosts: [...(ctx.hosts || []), { id: uid('h'), name: '', subId: (plan.subs.find(s => s.kind === 'lan')?.id) || plan.subs[0]?.id || '', ip: '' }] });
+  const delHost = (idx: number) => set({ hosts: (ctx.hosts || []).filter((_, i) => i !== idx) });
 
   // Texte exportable du plan (étapes 3/4).
   const planText = useMemo(() => {
@@ -507,15 +685,19 @@ export function NetworkWorkshop() {
   const routerCfg = useMemo(() => buildRouterConfigs(ctx, plan), [ctx, plan]);
   const ssh = useMemo(() => buildSsh(ctx, plan), [ctx, plan]);
   const nat = useMemo(() => buildNat(ctx, plan), [ctx, plan]);
+  const natTable = useMemo(() => buildNatTable(ctx, plan, nat), [ctx, plan, nat]);
   const tests = useMemo(() => buildTests(ctx, plan, nat), [ctx, plan, nat]);
   const resetText = buildReset();
   const lanSubs = plan.subs.filter(s => s.kind === 'lan');
   const linkSubs = plan.subs.filter(s => s.kind === 'link');
   const ifaceFor = (routerId: string, ip: number) => plan.ifaces.find(i => i.routerId === routerId && i.ip === ip);
+  // Étape 4 scindée en sous-vues (mode app) ; sans section4 (îlot CMS) tout s'affiche.
+  const s4 = (v: 'schema' | 'routeurs' | 'nat') => !section4 || section4 === v;
 
   return (
     <div style={{ margin: '14px 0' }}>
-      {/* Stepper */}
+      {/* Stepper (masqué quand une navigation externe pilote les étapes, ex. sidebar Atelier) */}
+      {showStepper && (
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
         {STEPS.map(s => {
           const active = step === s.n;
@@ -528,7 +710,10 @@ export function NetworkWorkshop() {
             </button>
           );
         })}
+        <button type="button" onClick={resetCtx} title="Repartir d’un atelier vierge (efface le contexte enregistré)"
+          style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 9, cursor: 'pointer', fontSize: 12.5, fontWeight: 600, border: '1px solid var(--border)', background: 'var(--surface)', color: 'var(--text-soft)' }}>↺ Réinitialiser</button>
       </div>
+      )}
 
       {/* ── Étape 1 : Contexte ── */}
       {step === 1 && (
@@ -654,7 +839,14 @@ export function NetworkWorkshop() {
                           <option value="2811">2811 (Fa)</option>
                         </select>
                       </td>
-                      <td style={{ ...td, color: 'var(--text-muted)' }}>{ethMax(r.model)}× {ethLabel(r.model)} + série</td>
+                      <td style={{ ...td, color: 'var(--text-muted)' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                          <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, cursor: 'pointer', color: 'var(--text)' }} title={`Ajoute une carte réseau en slot 1 : ${ethModule(r.model).map(ifAbbr).join(', ')}`}>
+                            <input type="checkbox" checked={!!r.mod} onChange={e => setRtr(r.id, { mod: e.target.checked })} /> module slot 1 <span style={{ color: 'var(--accent)', fontWeight: 600 }}>(+{ethModule(r.model).map(ifAbbr).join(', ')})</span>
+                          </label>
+                          <span style={{ fontSize: 11, ...mono }}>{ethSlots(r.model, r.mod).map(ifAbbr).join(' · ')} + série</span>
+                        </div>
+                      </td>
                       <td style={{ ...td, width: 40 }}><button type="button" onClick={() => delRtr(r.id)} style={{ ...smallBtn, color: '#dc2626', borderColor: 'transparent' }} title="Supprimer">✕</button></td>
                     </tr>
                   ))}
@@ -745,21 +937,56 @@ export function NetworkWorkshop() {
               <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 620 }}>
                 <thead><tr><th style={th}>Routeur</th><th style={th}>Interface</th><th style={th}>Cible</th><th style={th}>IP</th><th style={th}>Masque</th><th style={th}>Rôle</th></tr></thead>
                 <tbody>
-                  {plan.ifaces.map((i, k) => (
+                  {plan.ifaces.map((i, k) => {
+                    const key = `${i.routerId}|${i.iface}`;
+                    const forced = !!(ctx.ifaceIps || {})[key];
+                    return (
                     <tr key={k}>
                       <td style={{ ...td, fontWeight: 600 }}>{i.routerName}</td>
                       <td style={{ ...td, ...mono }}>{i.iface}</td>
                       <td style={td}>{i.target}</td>
-                      <td style={{ ...td, ...mono }}>{ipToStr(i.ip)}</td>
+                      <td style={td}>
+                        <input value={(ctx.ifaceIps || {})[key] ?? ''} onChange={e => setIfaceIp(key, e.target.value)} placeholder={ipToStr(i.ip)}
+                          title={forced ? 'IP forcée manuellement' : 'IP automatique — saisis une valeur pour la forcer'}
+                          style={{ ...field, ...mono, width: 132, padding: '3px 7px', borderColor: forced ? 'var(--accent)' : 'var(--border)' }} />
+                      </td>
                       <td style={{ ...td, ...mono }}>{ipToStr(i.mask)}</td>
-                      <td style={{ ...td, color: 'var(--text-muted)' }}>{i.role}{i.clock ? ' · clock 64000' : ''}</td>
+                      <td style={{ ...td, color: 'var(--text-muted)' }}>{i.role}{i.clock ? ' · clock 64000' : ''}{forced ? ' · ✏️ manuel' : ''}</td>
                     </tr>
-                  ))}
+                  ); })}
                   {!plan.ifaces.length && <tr><td style={td} colSpan={6}>Ajoute des routeurs et assigne-les aux sous-réseaux.</td></tr>}
                 </tbody>
               </table>
             </div>
+            <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>✏️ <strong>IP manuelle</strong> : saisis une adresse dans la colonne <em>IP</em> pour la <strong>forcer</strong> (vide = calcul automatique). La <strong>passerelle du LAN</strong>, les <strong>routes statiques</strong>, le <strong>relais DHCP</strong> et le <strong>DNS</strong> suivent automatiquement. Une IP hors du sous-réseau est ignorée (avertissement).</div>
             {ctx.mode === 'extension' && <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>ℹ️ Mode <strong>extension</strong> : vérifie que ces plages ne recouvrent pas l’existant avant de les intégrer.</div>}
+          </div>
+
+          <div style={group}>
+            <div style={legend}>🖥️ Hôtes fixes (end-points : serveurs, postes)</div>
+            <div className="meta" style={{ fontSize: 11.5, margin: '0 0 10px' }}>Attribue une <strong>IP statique</strong> à une machine terminale (ex. <em>admin</em> en <code>192.168.1.1</code>, serveur web…). L’outil <strong>valide</strong> l’adresse (dans le bon sous-réseau, pas déjà prise) et l’ajoute aux <strong>enregistrements DNS</strong>.</div>
+            {(ctx.hosts || []).map((h, idx) => {
+              const ph = plan.hosts.find(p => p.id === h.id);
+              const bad = ph && !ph.ok;
+              return (
+                <div key={h.id} style={{ display: 'grid', gridTemplateColumns: 'minmax(120px,1.2fr) minmax(140px,1.4fr) minmax(120px,1fr) auto', gap: 8, marginBottom: 6, alignItems: 'center' }}>
+                  <input style={field} value={h.name} onChange={e => setHost(idx, { name: e.target.value })} placeholder="Nom (ex. srv-web)" />
+                  <select style={field} value={h.subId} onChange={e => setHost(idx, { subId: e.target.value })}>
+                    <option value="">— sous-réseau —</option>
+                    {plan.subs.map(s => <option key={s.id} value={s.id}>{s.kind === 'link' ? '🔗 ' : ''}{s.name} ({ipToStr(s.net)}/{s.cidr})</option>)}
+                  </select>
+                  <input style={{ ...field, ...mono, borderColor: bad ? '#dc2626' : 'var(--border)' }} value={h.ip} onChange={e => setHost(idx, { ip: e.target.value })} placeholder="192.168.1.1" />
+                  <button type="button" onClick={() => delHost(idx)} style={smallBtn}>✕</button>
+                  {ph && ph.note && <div style={{ gridColumn: '1 / -1', fontSize: 11, marginTop: -2, color: bad ? '#dc2626' : 'var(--text-muted)' }}>{bad ? '⚠ ' : 'ℹ️ '}{ph.name || 'hôte'} : {ph.note}</div>}
+                </div>
+              );
+            })}
+            <button type="button" onClick={addHost} style={btn}>+ Hôte fixe</button>
+            {!!plan.hosts.filter(h => h.ok).length && (
+              <div style={{ marginTop: 10, fontSize: 12, color: 'var(--text-muted)' }}>
+                {plan.hosts.filter(h => h.ok).length} hôte(s) valide(s) — ajoutés au DNS ({ctx.domaine.trim() || 'lan'}).
+              </div>
+            )}
           </div>
           <StepNav step={step} setStep={setStep} />
         </div>
@@ -768,6 +995,7 @@ export function NetworkWorkshop() {
       {/* ── Étape 4 : Schéma ── */}
       {step === 4 && (
         <div>
+          {s4('schema') && (<>
           {plan.error && <div style={{ ...group, borderColor: '#dc2626' }}><strong style={{ color: '#dc2626' }}>⚠ {plan.error}</strong></div>}
           <div style={group}>
             <div style={legend}>🗺️ Schéma du réseau</div>
@@ -792,6 +1020,11 @@ export function NetworkWorkshop() {
                       {s.switchIp !== null && (<><span style={{ color: 'var(--text-muted)' }}>switch</span><span>{ipToStr(s.switchIp)}</span></>)}
                       <span style={{ color: 'var(--text-muted)' }}>clients</span><span>{cr ? `${ipToStr(cr[0])} – ${ipToStr(cr[1])}` : '—'}</span>
                     </div>
+                    {(() => { const hs = plan.hosts.filter(h => h.subId === s.id && h.ip !== null); return hs.length ? (
+                      <div style={{ marginTop: 6, borderTop: '1px dashed var(--border)', paddingTop: 5, display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '2px 8px', fontSize: 12, ...mono }}>
+                        {hs.map(h => (<Fragment key={h.id}><span style={{ color: h.ok ? 'var(--text-muted)' : '#dc2626' }}>{h.ok ? '📌' : '⚠'} {h.name || 'hôte'}</span><span style={{ color: h.ok ? 'var(--text)' : '#dc2626' }}>{ipToStr(h.ip!)}</span></Fragment>))}
+                      </div>
+                    ) : null; })()}
                     <div style={{ marginTop: 6, fontSize: 11, color: 'var(--text-muted)' }}>{s.dhcp ? '📶 DHCP' : '📌 statique'} · {ctx.routers.find(r => r.id === s.routerId)?.name || 'sans routeur'}</div>
                   </div>
                 );
@@ -799,19 +1032,21 @@ export function NetworkWorkshop() {
               {!lanSubs.length && <div className="meta">Définis des sous-réseaux à l’étape 1 et une topologie à l’étape 3.</div>}
             </div>
           </div>
+          </>)}
 
+          {s4('routeurs') && (<>
           <div style={group}>
             <div style={legend}>
               🧨 Étape 0 — Réinitialiser (matériel réutilisé)
               <button type="button" onClick={() => copy('reset', resetText)} style={{ ...smallBtn, marginLeft: 'auto' }}>{copied === 'reset' ? '✓ Copié' : 'Copier'}</button>
             </div>
-            <div className="meta" style={{ fontSize: 11.5, margin: '0 0 8px' }}>Sur un routeur/switch déjà utilisé, une config parasite (routes, ACL, VLAN) peut tout bloquer. À passer <strong>avant</strong> toute configuration.</div>
+            <div className="meta" style={{ fontSize: 11.5, margin: '0 0 8px' }}>Sur un routeur/switch déjà utilisé, une config parasite (routes, ACL, VLAN) peut tout bloquer. À passer <strong>avant</strong> toute configuration. Aux invites : <em>« Save? [yes/no] »</em> → <code>no</code>, <em>« Proceed with reload? [confirm] »</em> → <kbd>Entrée</kbd>. Sur un switch, faire aussi <code>delete flash:vlan.dat</code> avant le <code>reload</code>.</div>
             <pre style={preStyle}><code>{resetText}</code></pre>
           </div>
 
           <div style={group}>
             <div style={legend}>
-              📟 Configuration des routeurs (CLI + routes statiques)
+              📟 Configuration complète des routeurs (à coller telle quelle)
               <button type="button" onClick={() => copy('rcfgAll', routerCfg.full)} style={{ ...btn, marginLeft: 'auto' }}>{copied === 'rcfgAll' ? '✓ Copié' : 'Tout copier'}</button>
             </div>
             {routerCfg.byRouter.map(b => (
@@ -825,12 +1060,14 @@ export function NetworkWorkshop() {
               </div>
             ))}
             {!routerCfg.byRouter.length && <div className="meta">Ajoute des routeurs à l’étape 3.</div>}
-            <div className="meta" style={{ fontSize: 11.5, marginTop: 4 }}>Interfaces (IP + <code>no shutdown</code>, <code>clock rate</code> côté DCE) et <strong>routes statiques</strong> vers tous les sous-réseaux non directement connectés (prochain saut calculé par plus court chemin). À coller dans la CLI de chaque routeur.</div>
+            <div className="meta" style={{ fontSize: 11.5, marginTop: 4 }}><strong>Config complète</strong>, à coller telle quelle dans la CLI de chaque routeur : <strong>sécurité</strong> (<code>enable secret</code>, compte privilège 15, <code>service password-encryption</code>), <strong>interfaces</strong> (IP, <code>no shutdown</code>, <code>clock rate</code> DCE, <code>ip nat inside</code>, relais <code>ip helper-address</code>), <strong>routes statiques</strong> (plus court chemin) + route par défaut, <strong>NAT/PAT</strong> sur le routeur de bordure, et <strong>SSH</strong> (clé RSA, lignes vty/console). Le routeur de sortie NAT se choisit à l’onglet <strong>Internet / NAT</strong>.</div>
           </div>
+          </>)}
 
+          {s4('nat') && (<>
           <div style={group}>
-            <div style={legend}>🌍 Sortie Internet — NAT/PAT (routeur de bordure)</div>
-            <div className="meta" style={{ fontSize: 11.5, margin: '0 0 10px' }}>Choisis le routeur relié à l’extérieur : l’outil génère le <strong>PAT (overload)</strong>, la <strong>route par défaut</strong> et, en option, la <strong>publication d’un serveur web</strong> (redirection de port).</div>
+            <div style={legend}>🌍 Sortie Internet / Firewall — NAT (statique · PAT · redirection de port)</div>
+            <div className="meta" style={{ fontSize: 11.5, margin: '0 0 10px' }}>Choisis le routeur relié à l’extérieur (le « Firewall ») : l’outil génère le <strong>NAT statique (1:1)</strong>, le <strong>PAT (overload)</strong>, la <strong>route par défaut</strong> et la <strong>redirection de port</strong> d’un serveur web — de quoi réaliser un <strong>TP NAT complet</strong> (statique → surchargé → port forward).</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(150px,1fr))', gap: 10, marginBottom: 10 }}>
               <div><label style={label}>Routeur de sortie</label>
                 <select value={ctx.internetRouterId} onChange={e => set({ internetRouterId: e.target.value })} style={field}>
@@ -845,6 +1082,21 @@ export function NetworkWorkshop() {
               <div><label style={label}>Serveur web (option)</label><input value={ctx.webIp} onChange={e => set({ webIp: e.target.value })} style={field} placeholder="192.5.10.12" /></div>
               <div><label style={label}>Port web</label><input value={ctx.webPort} onChange={e => set({ webPort: e.target.value })} style={field} placeholder="8080" /></div>
             </div>
+            <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 13, cursor: 'pointer', margin: '2px 0 10px' }}>
+              <input type="checkbox" checked={ctx.natOverload} onChange={e => set({ natOverload: e.target.checked })} /> <b>PAT (overload)</b> — traduire tout le LAN derrière l’IP WAN <span className="meta" style={{ fontSize: 11 }}>(décoche pour du NAT statique seul, Partie 1 du TP)</span>
+            </label>
+            <div style={{ marginBottom: 10 }}>
+              <label style={label}>NAT statique (1:1) — IP interne → IP publique</label>
+              {(ctx.natStatics || []).map((s, idx) => (
+                <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr auto', gap: 8, marginBottom: 6, alignItems: 'center' }}>
+                  <input style={{ ...field, ...mono }} value={s.inside} onChange={e => setStat(idx, { inside: e.target.value })} placeholder="192.168.1.1 (interne)" />
+                  <span style={{ color: 'var(--text-muted)', fontWeight: 700 }}>→</span>
+                  <input style={{ ...field, ...mono }} value={s.pub} onChange={e => setStat(idx, { pub: e.target.value })} placeholder="45.25.23.101 (publique)" />
+                  <button type="button" onClick={() => delStat(idx)} style={smallBtn}>✕</button>
+                </div>
+              ))}
+              <button type="button" onClick={addStat} style={btn}>+ NAT statique</button>
+            </div>
             {nat ? (
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', marginBottom: 5 }}>
@@ -855,7 +1107,54 @@ export function NetworkWorkshop() {
                 <div className="meta" style={{ fontSize: 11.5, marginTop: 6 }}>⚠️ L’<strong>interface WAN</strong> doit être une interface <strong>libre</strong> de ce routeur (non utilisée par un sous-réseau). Le <strong>serveur web</strong> est publié en <code>ip nat inside source static tcp</code> ; le DNS ne portant pas de port, l’accès externe se fait par <code>http://&lt;IP WAN&gt;:{ctx.webPort || '80'}</code>.</div>
               </div>
             ) : <div className="meta">Sélectionne un <strong>routeur de sortie</strong> pour générer la configuration NAT/PAT.</div>}
+
+            {!!natTable.length && (
+              <div style={{ marginTop: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
+                  <strong style={{ fontSize: 13 }}>📋 Table de NAT prévisionnelle</strong>
+                  <span style={{ fontSize: 11.5, color: 'var(--text-muted)', marginLeft: 8 }}>— pré-remplit le tableau 3 du dossier (<code>show ip nat translation</code>)</span>
+                </div>
+                <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: 8 }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12.5 }}>
+                    <thead>
+                      <tr style={{ background: 'var(--surface-2)' }}>
+                        {['Pro', 'IP local inside', 'Port', 'IP global inside', 'Port', 'Commentaire'].map(h => (
+                          <th key={h} style={{ textAlign: 'left', padding: '6px 9px', borderBottom: '1px solid var(--border)', whiteSpace: 'nowrap', fontWeight: 700 }}>{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {natTable.map((r, i) => (
+                        <tr key={i} style={{ borderBottom: i < natTable.length - 1 ? '1px solid var(--border)' : 'none' }}>
+                          <td style={{ padding: '5px 9px', ...mono, color: 'var(--text-muted)' }}>{r.proto}</td>
+                          <td style={{ padding: '5px 9px', ...mono }}>{r.localInside}</td>
+                          <td style={{ padding: '5px 9px', ...mono }}>{r.localPort}</td>
+                          <td style={{ padding: '5px 9px', ...mono }}>{r.globalInside}</td>
+                          <td style={{ padding: '5px 9px', ...mono }}>{r.globalPort}</td>
+                          <td style={{ padding: '5px 9px', color: 'var(--text-muted)' }}>{r.note}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="meta" style={{ fontSize: 11.5, marginTop: 6 }}>Le NAT statique n’affiche <strong>pas de port</strong> (<code>---</code>) : toute connexion de l’IP est traduite. Les lignes <strong>PAT</strong> sont des <strong>exemples</strong> — les ports réels sont attribués dynamiquement à chaque flux et n’apparaissent qu’après du trafic (ping/HTTP).</div>
+              </div>
+            )}
+
+            <details style={{ marginTop: 14, border: '1px solid var(--border)', borderRadius: 8, padding: '8px 12px', background: 'var(--surface-2)' }}>
+              <summary style={{ cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>📝 Rappel — les tableaux du dossier technique</summary>
+              <div style={{ fontSize: 12.5, marginTop: 8, lineHeight: 1.55 }}>
+                <p style={{ margin: '0 0 8px' }}>Pour chaque partie du TP, renseigne ces tableaux à partir des valeurs générées ci-dessus :</p>
+                <ol style={{ margin: 0, paddingLeft: 20 }}>
+                  <li style={{ marginBottom: 6 }}><strong>Interfaces du Firewall</strong> — <em>Interface · IP · inside/outside · commentaire</em>. Les interfaces LAN sont <code>ip nat inside</code>, l’interface WAN (<code>{ctx.wanIf || 'Gig0/1'}</code>) est <code>ip nat outside</code>.</li>
+                  <li style={{ marginBottom: 6 }}><strong>Route(s) statique(s)</strong> — <em>IDSR · MSR · passerelle · commentaire</em>. Ici la route par défaut : IDSR <code>0.0.0.0</code>, MSR <code>0.0.0.0</code>, passerelle = <code>{ctx.faiGw || 'passerelle FAI'}</code>.</li>
+                  <li style={{ marginBottom: 6 }}><strong>ACL (réseaux à NAT)</strong> — <em>ACE · autorisation · IDSR · wildcard · commentaire</em>. Uniquement pour le PAT : <code>access-list 1 permit &lt;réseau&gt; &lt;wildcard&gt;</code> (wildcard = masque inversé, ex. <code>/24 → 0.0.0.255</code>).</li>
+                  <li><strong>Table de NAT</strong> — <em>IP local inside · port · IP global inside · port · commentaire</em>. → voir la <strong>table prévisionnelle</strong> ci-dessus (relevée réellement avec <code>show ip nat translation</code>).</li>
+                </ol>
+              </div>
+            </details>
           </div>
+          </>)}
           <StepNav step={step} setStep={setStep} />
         </div>
       )}
@@ -1033,35 +1332,101 @@ const CLOUD_COLORS = ['#ec4899', '#22c55e', '#eab308', '#38bdf8', '#a855f7', '#f
 function SchemaSvg({ ctx, plan }: { ctx: Ctx; plan: Plan }) {
   const routers = ctx.routers;
   if (!routers.length) return <div className="meta">Ajoute des routeurs (étape 3) pour afficher le schéma.</div>;
-  const idx = new Map(routers.map((r, i) => [r.id, i] as const));
   const lanSubs = plan.subs.filter(s => s.kind === 'lan');
   const linkSubs = plan.subs.filter(s => s.kind === 'link');
 
-  // Répartition des LAN de chaque routeur : alternance dessus / dessous la dorsale.
-  const lansByRouter = routers.map(r => lanSubs.filter(s => s.routerId === r.id));
-  let aboveMax = 0, belowMax = 0;
-  lansByRouter.forEach(list => {
-    const ab = list.filter((_, j) => j % 2 === 0).length;
-    const be = list.length - ab;
-    aboveMax = Math.max(aboveMax, ab); belowMax = Math.max(belowMax, be);
-  });
+  // ── Graphe de placement : nœuds = routeurs + UN switch par interconnexion
+  //    Ethernet. Le switch d'une liaison à N routeurs devient un vrai nœud
+  //    (au centre de l'étoile) au lieu d'un barycentre qui tomberait sur un
+  //    routeur. Les liaisons série (point-à-point) relient 2 routeurs directement.
+  const rKey = (id: string) => `r:${id}`;
+  const sKey = (s: Sub) => `s:${s.id}`;
+  const memberIds = (s: Sub) => (s.routerIds || []).filter(id => routers.some(r => r.id === id));
+  const nodeKeys: string[] = routers.map(r => rKey(r.id));
+  const adjN = new Map<string, string[]>(nodeKeys.map(k => [k, [] as string[]]));
+  const link = (a: string, b: string) => { if (!adjN.get(a)!.includes(b)) adjN.get(a)!.push(b); if (!adjN.get(b)!.includes(a)) adjN.get(b)!.push(a); };
+  for (const s of linkSubs) {
+    const ids = memberIds(s); if (ids.length < 2) continue;
+    if (s.media === 'serial') { link(rKey(ids[0]), rKey(ids[1])); }
+    else { const k = sKey(s); adjN.set(k, []); nodeKeys.push(k); for (const id of ids) link(k, rKey(id)); }
+  }
+  const degN = (k: string) => (adjN.get(k) || []).length;
 
-  const rPitch = 300, rW = 84, rH = 46, marginX = 130;
-  const cloudRx = 110, cloudRy = 72, lvl0 = 158, lvlGap = 176;
-  const segRx = 92, segRy = 50;
-  const routerX = (i: number) => marginX + i * rPitch;
-  const topSpace = aboveMax > 0 ? (lvl0 + (aboveMax - 1) * lvlGap + cloudRy + 24) : 78;
-  const bottomSpace = belowMax > 0 ? (lvl0 + (belowMax - 1) * lvlGap + cloudRy + 24) : 78;
-  const backboneY = topSpace;
-  const height = backboneY + bottomSpace;
-  const width = Math.max(380, routerX(routers.length - 1) + marginX);
+  // ── Placement RADIAL (arbre BFS depuis le nœud le plus connecté de chaque
+  //    composante). Un switch relié à N routeurs se retrouve au centre, ses
+  //    routeurs tout autour → gère l'étoile (N connexions), la chaîne et l'arbre.
+  const childrenN = new Map<string, string[]>(nodeKeys.map(k => [k, [] as string[]]));
+  const seen = new Set<string>();
+  const rootsN: string[] = [];
+  for (const k0 of [...nodeKeys].sort((a, b) => degN(b) - degN(a))) {
+    if (seen.has(k0)) continue;
+    rootsN.push(k0); seen.add(k0);
+    const q = [k0];
+    while (q.length) { const cur = q.shift()!; for (const nb of (adjN.get(cur) || [])) if (!seen.has(nb)) { seen.add(nb); childrenN.get(cur)!.push(nb); q.push(nb); } }
+  }
+  const leavesN = new Map<string, number>();
+  const countLeaves = (k: string): number => { const ch = childrenN.get(k)!; if (!ch.length) { leavesN.set(k, 1); return 1; } let s = 0; for (const c of ch) s += countLeaves(c); leavesN.set(k, s); return s; };
+  rootsN.forEach(countLeaves);
+  const ANG = new Map<string, number>(), DEP = new Map<string, number>();
+  const assign = (k: string, a0: number, a1: number, d: number) => {
+    DEP.set(k, d); ANG.set(k, (a0 + a1) / 2);
+    const ch = childrenN.get(k)!; if (!ch.length) return;
+    const tot = ch.reduce((s, c) => s + leavesN.get(c)!, 0) || 1; let a = a0;
+    for (const c of ch) { const span = (a1 - a0) * (leavesN.get(c)! / tot); assign(c, a, a + span, d + 1); a += span; }
+  };
+  let acc = 0; const totL = rootsN.reduce((s, k) => s + leavesN.get(k)!, 0) || 1;
+  for (const root of rootsN) { const span = 2 * Math.PI * (leavesN.get(root)! / totL); assign(root, acc, acc + span, 0); acc += span; }
+
+  const ringGap = 235, cloudDist = 200;
+  const rW = 84, rH = 46, cloudRx = 104, cloudRy = 70, segRx = 88, segRy = 50;
+  const PXk = (k: string) => Math.cos(ANG.get(k) ?? 0) * (DEP.get(k) ?? 0) * ringGap;
+  const PYk = (k: string) => Math.sin(ANG.get(k) ?? 0) * (DEP.get(k) ?? 0) * ringGap;
+  const RX = (id: string) => PXk(rKey(id)), RY = (id: string) => PYk(rKey(id));
+  // Direction « vers l'extérieur » d'un routeur = plus grand secteur libre entre
+  // ses voisins de graphe (switches / routeurs) → on y accroche ses LAN.
+  const outAngleR = (id: string): number => {
+    const k = rKey(id); const nbs = adjN.get(k) || [];
+    if (!nbs.length) return Math.PI / 2;
+    const dirs = nbs.map(nb => Math.atan2(PYk(nb) - PYk(k), PXk(nb) - PXk(k))).sort((a, b) => a - b);
+    let best = -1, mid = Math.PI / 2;
+    for (let i = 0; i < dirs.length; i++) { const a = dirs[i], b = i + 1 < dirs.length ? dirs[i + 1] : dirs[0] + 2 * Math.PI; if (b - a > best) { best = b - a; mid = (a + b) / 2; } }
+    return mid;
+  };
+
+  // ── Positions calculées ──
+  const routerNodes = routers.map(r => ({ r, x: RX(r.id), y: RY(r.id) }));
+  const lanNodes = routers.flatMap(r => {
+    const list = lanSubs.filter(s => s.routerId === r.id);
+    const base = outAngleR(r.id), spread = list.length <= 1 ? 0 : Math.min(Math.PI * 0.82, 0.6 * list.length);
+    return list.map((s, k) => {
+      const a = base - spread / 2 + (list.length <= 1 ? 0 : spread * (k / (list.length - 1)));
+      return { s, rid: r.id, rx: RX(r.id), ry: RY(r.id), x: RX(r.id) + Math.cos(a) * cloudDist, y: RY(r.id) + Math.sin(a) * cloudDist, color: CLOUD_COLORS[Math.max(0, lanSubs.indexOf(s)) % CLOUD_COLORS.length] };
+    });
+  });
+  type LinkNode = { s: Sub; serial: boolean; parts: { rid: string; ip: number; x: number; y: number }[]; cx: number; cy: number };
+  const linkNodes = linkSubs.map((s): LinkNode | null => {
+    const ids = memberIds(s); if (ids.length < 2) return null;
+    const parts = ids.map((rid, k) => { const ip = plan.ifaces.find(f => f.routerId === rid && f.ip > s.net && f.ip < s.bc)?.ip ?? ((s.first + k) >>> 0); return { rid, ip, x: RX(rid), y: RY(rid) }; });
+    const serial = s.media === 'serial';
+    return { s, serial, parts, cx: serial ? (parts[0].x + parts[1].x) / 2 : PXk(sKey(s)), cy: serial ? (parts[0].y + parts[1].y) / 2 : PYk(sKey(s)) };
+  }).filter((n): n is LinkNode => !!n);
+
+  // ── Cadre : boîte englobante de tout ce qui est dessiné ──
+  const xs: number[] = [], ys: number[] = [];
+  routerNodes.forEach(n => { xs.push(n.x - rW / 2, n.x + rW / 2); ys.push(n.y - rH / 2, n.y + rH / 2); });
+  lanNodes.forEach(n => { xs.push(n.x - cloudRx, n.x + cloudRx); ys.push(n.y - cloudRy, n.y + cloudRy); });
+  linkNodes.forEach(n => { xs.push(n.cx - segRx, n.cx + segRx); ys.push(n.cy - segRy, n.cy + segRy); });
+  if (!xs.length) { xs.push(-rW, rW); ys.push(-rH, rH); }
+  const pad = 42;
+  const minX = Math.min(...xs) - pad, maxX = Math.max(...xs) + pad, minY = Math.min(...ys) - pad, maxY = Math.max(...ys) + pad;
+  const width = Math.max(360, maxX - minX), height = Math.max(240, maxY - minY);
 
   // Un « nuage » de sous-réseau : ellipse colorée + switch central + 3 machines + libellés.
   const cloud = (cx: number, cy: number, color: string, title: string, subtitle: string, info: string) => (
     <g>
       <ellipse cx={cx} cy={cy} rx={cloudRx} ry={cloudRy} fill={color} fillOpacity={0.15} stroke={color} strokeWidth={1.4} />
-      <text x={cx} y={cy - cloudRy + 17} textAnchor="middle" fontSize={12} fontWeight={800} fill="var(--text)">{title}</text>
-      <text x={cx} y={cy - cloudRy + 31} textAnchor="middle" fontSize={9.5} fill="var(--text-muted)">{subtitle}</text>
+      <text x={cx} y={cy - cloudRy + 16} textAnchor="middle" fontSize={12} fontWeight={800} fill="var(--text)">{title}</text>
+      <text x={cx} y={cy - cloudRy + 30} textAnchor="middle" fontSize={9.5} fill="var(--text-muted)">{subtitle}</text>
       <rect x={cx - 22} y={cy - 12} width={44} height={22} rx={5} fill="var(--surface)" stroke={color} strokeWidth={1.3} />
       <text x={cx} y={cy + 3} textAnchor="middle" fontSize={11}>🔀</text>
       {[-44, 0, 44].map((dx, k) => (
@@ -1076,70 +1441,57 @@ function SchemaSvg({ ctx, plan }: { ctx: Ctx; plan: Plan }) {
 
   return (
     <div style={{ overflowX: 'auto' }}>
-      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ maxWidth: 'none', display: 'block' }}>
-        {/* dorsale */}
-        <line x1={marginX - 34} y1={backboneY} x2={routerX(routers.length - 1) + 34} y2={backboneY} stroke="var(--border)" strokeWidth={2} />
-
-        {/* segments inter-routeurs (sur la dorsale) — avec l'IP de chaque routeur */}
-        {linkSubs.map(s => {
-          const pts = (s.routerIds || []).map((rid, k) => { const ri = idx.get(rid); return ri === undefined ? null : { x: routerX(ri), ip: (s.first + k) >>> 0 }; }).filter((p): p is { x: number; ip: number } => !!p);
-          if (pts.length < 2) return null;
+      <svg width={width} height={height} viewBox={`${minX} ${minY} ${width} ${height}`} style={{ maxWidth: 'none', display: 'block' }}>
+        {/* Segments inter-routeurs : chaque routeur relié au switch central de la liaison */}
+        {linkNodes.map(({ s, parts, cx, cy }) => {
           if (s.media === 'serial') {
-            const mx = (pts[0].x + pts[1].x) / 2;
+            const mx = (parts[0].x + parts[1].x) / 2, my = (parts[0].y + parts[1].y) / 2;
             return (
               <g key={s.id}>
-                <line x1={pts[0].x} y1={backboneY} x2={pts[1].x} y2={backboneY} stroke="var(--accent)" strokeWidth={2.4} strokeDasharray="7 4" />
-                <text x={mx} y={backboneY - 13} textAnchor="middle" fontSize={9.5} fontWeight={600} fill="var(--text-muted)">série · {ipToStr(s.net)}/{s.cidr}</text>
-                {pts.map((p, k) => <text key={k} x={p.x + (mx > p.x ? 28 : -28)} y={backboneY - 3} textAnchor="middle" fontSize={8.5} fill="var(--text-muted)">{ipToStr(p.ip)}</text>)}
+                <line x1={parts[0].x} y1={parts[0].y} x2={parts[1].x} y2={parts[1].y} stroke="var(--accent)" strokeWidth={2.4} strokeDasharray="7 4" />
+                <text x={mx} y={my - 8} textAnchor="middle" fontSize={9.5} fontWeight={600} fill="var(--text-muted)">série · {ipToStr(s.net)}/{s.cidr}</text>
+                {parts.map((p, k) => <text key={k} x={p.x + (cx - p.x) * 0.3} y={p.y + (cy - p.y) * 0.3 - 4} textAnchor="middle" fontSize={8.5} fill="var(--text-muted)">{ipToStr(p.ip)}</text>)}
               </g>
             );
           }
-          const cxS = pts.reduce((a, p) => a + p.x, 0) / pts.length;
           return (
             <g key={s.id}>
-              {pts.map((p, j) => (
+              {parts.map((p, j) => (
                 <g key={j}>
-                  <line x1={p.x} y1={backboneY} x2={cxS} y2={backboneY} stroke="var(--accent)" strokeWidth={1.8} />
-                  <text x={p.x + (cxS - p.x) * 0.34} y={backboneY - 6} textAnchor="middle" fontSize={8.5} fill="var(--text-muted)">{ipToStr(p.ip)}</text>
+                  <line x1={p.x} y1={p.y} x2={cx} y2={cy} stroke="var(--accent)" strokeWidth={1.8} />
+                  <text x={p.x + (cx - p.x) * 0.33} y={p.y + (cy - p.y) * 0.33 - 4} textAnchor="middle" fontSize={8.5} fill="var(--text-muted)">{ipToStr(p.ip)}</text>
                 </g>
               ))}
-              <ellipse cx={cxS} cy={backboneY} rx={segRx} ry={segRy} fill="var(--accent)" fillOpacity={0.08} stroke="var(--accent)" strokeWidth={1.3} strokeDasharray="4 4" />
-              <text x={cxS} y={backboneY - segRy + 14} textAnchor="middle" fontSize={10} fontWeight={700} fill="var(--text)">{s.name}</text>
-              <rect x={cxS - 20} y={backboneY - 11} width={40} height={22} rx={5} fill="var(--surface)" stroke="var(--accent)" strokeWidth={1.3} />
-              <text x={cxS} y={backboneY + 4} textAnchor="middle" fontSize={11}>🔀</text>
-              <text x={cxS} y={backboneY + segRy - 6} textAnchor="middle" fontSize={9.5} fill="var(--text-muted)">{ipToStr(s.net)}/{s.cidr}</text>
+              <ellipse cx={cx} cy={cy} rx={segRx} ry={segRy} fill="var(--accent)" fillOpacity={0.08} stroke="var(--accent)" strokeWidth={1.3} strokeDasharray="4 4" />
+              <text x={cx} y={cy - segRy + 14} textAnchor="middle" fontSize={10} fontWeight={700} fill="var(--text)">{s.name}</text>
+              <rect x={cx - 20} y={cy - 11} width={40} height={22} rx={5} fill="var(--surface)" stroke="var(--accent)" strokeWidth={1.3} />
+              <text x={cx} y={cy + 4} textAnchor="middle" fontSize={11}>🔀</text>
+              <text x={cx} y={cy + segRy - 6} textAnchor="middle" fontSize={9.5} fill="var(--text-muted)">{ipToStr(s.net)}/{s.cidr}</text>
             </g>
           );
         })}
 
-        {/* LAN (nuages) + routeurs */}
-        {routers.map((r, i) => {
-          const x = routerX(i);
-          const lans = lansByRouter[i];
-          let ab = 0, be = 0;
+        {/* LAN : liaison routeur → nuage + nuage */}
+        {lanNodes.map(({ s, rid, rx, ry, x, y, color }) => {
+          const ifc = s.gw !== null ? plan.ifaces.find(f => f.routerId === rid && f.ip === s.gw) : undefined;
+          const info = `gw ${s.gw !== null ? ipToStr(s.gw) : '-'}${s.switchIp !== null ? ' · sw ' + ipToStr(s.switchIp) : ''}${s.dhcp ? ' · DHCP' : ''}`;
           return (
-            <g key={r.id}>
-              {lans.map((s, j) => {
-                const above = j % 2 === 0;
-                const lvl = above ? ab++ : be++;
-                const cy = above ? backboneY - (lvl0 + lvl * lvlGap) : backboneY + (lvl0 + lvl * lvlGap);
-                const color = CLOUD_COLORS[Math.max(0, lanSubs.indexOf(s)) % CLOUD_COLORS.length];
-                const ifc = s.gw !== null ? plan.ifaces.find(f => f.routerId === r.id && f.ip === s.gw) : undefined;
-                const info = `gw ${s.gw !== null ? ipToStr(s.gw) : '-'}${s.switchIp !== null ? ' · sw ' + ipToStr(s.switchIp) : ''}${s.dhcp ? ' · DHCP' : ''}`;
-                return (
-                  <g key={s.id}>
-                    <line x1={x} y1={backboneY} x2={x} y2={cy} stroke={color} strokeWidth={1.8} />
-                    {ifc && <text x={x + 6} y={(backboneY + cy) / 2 + 3} fontSize={8.5} fontWeight={600} fill={color}>{ifAbbr(ifc.iface)} · {ipToStr(ifc.ip)}</text>}
-                    {cloud(x, cy, color, s.name, `${ipToStr(s.net)}/${s.cidr} · ${s.usable} h`, info)}
-                  </g>
-                );
-              })}
-              <rect x={x - rW / 2} y={backboneY - rH / 2} width={rW} height={rH} rx={9} fill="var(--accent)" />
-              <text x={x} y={backboneY - 2} textAnchor="middle" fontSize={13} fontWeight={700} fill="#fff">🧭 {r.name}</text>
-              <text x={x} y={backboneY + 13} textAnchor="middle" fontSize={9} fill="rgba(255,255,255,.85)">{r.model}</text>
+            <g key={s.id}>
+              <line x1={rx} y1={ry} x2={x} y2={y} stroke={color} strokeWidth={1.8} />
+              {ifc && <text x={rx + (x - rx) * 0.42} y={ry + (y - ry) * 0.42 - 4} textAnchor="middle" fontSize={8.5} fontWeight={600} fill={color}>{ifAbbr(ifc.iface)} · {ipToStr(ifc.ip)}</text>}
+              {cloud(x, y, color, s.name, `${ipToStr(s.net)}/${s.cidr} · ${s.usable} h`, info)}
             </g>
           );
         })}
+
+        {/* Routeurs (au-dessus) */}
+        {routerNodes.map(({ r, x, y }) => (
+          <g key={r.id}>
+            <rect x={x - rW / 2} y={y - rH / 2} width={rW} height={rH} rx={9} fill="var(--accent)" />
+            <text x={x} y={y - 2} textAnchor="middle" fontSize={13} fontWeight={700} fill="#fff">🧭 {r.name}</text>
+            <text x={x} y={y + 13} textAnchor="middle" fontSize={9} fill="rgba(255,255,255,.85)">{r.model}{r.mod ? ' +mod' : ''}</text>
+          </g>
+        ))}
       </svg>
     </div>
   );

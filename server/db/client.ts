@@ -334,6 +334,15 @@ CREATE TABLE IF NOT EXISTS notes (
   created_at TEXT DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS atelier_projects (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  owner_kind TEXT NOT NULL,
+  owner_id INTEGER NOT NULL,
+  name TEXT NOT NULL DEFAULT 'Projet réseau',
+  data TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+);
 `);
 
 // Migrations idempotentes
@@ -367,6 +376,7 @@ CREATE INDEX IF NOT EXISTS idx_forum_topics_category ON forum_topics(category_id
 CREATE INDEX IF NOT EXISTS idx_forum_topics_activity ON forum_topics(last_activity_at);
 CREATE INDEX IF NOT EXISTS idx_forum_replies_topic ON forum_replies(topic_id);
 CREATE INDEX IF NOT EXISTS idx_user_files_customer ON user_files(customer_id);
+CREATE INDEX IF NOT EXISTS idx_atelier_projects_owner ON atelier_projects(owner_kind, owner_id);
 `);
 
 const adminCount = sqlite.prepare('SELECT COUNT(*) AS count FROM admins').get() as { count: number };

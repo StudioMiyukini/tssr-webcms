@@ -33,19 +33,29 @@ const D_IFACES: Iface[] = [
 ];
 const D_ROUTES: Route[] = [{ net: '192.168.20.0', cidr: 24, hop: '10.0.0.2' }];
 
+type NatRule = { type: 'pf' | 'static'; proto: 'tcp' | 'udp'; ip: string; port: string; pub: string; extPort: string };
+type Nat = { on: boolean; inside: string; outside: string; overload: boolean; nets: { net: string; cidr: number }[]; rules: NatRule[] };
+const D_NAT: Nat = {
+  on: false, inside: 'GigabitEthernet0/0', outside: 'Serial0/0/0', overload: true,
+  nets: [{ net: '192.168.10.0', cidr: 24 }], rules: [],
+};
+
 export function RouterConfigurator() {
   const [hostname, setHostname] = useState(() => load('router_host', 'R1'));
   const [ifaces, setIfaces] = useState<Iface[]>(() => load('router_ifaces', D_IFACES));
   const [routes, setRoutes] = useState<Route[]>(() => load('router_routes', D_ROUTES));
   const [defRoute, setDefRoute] = useState(() => load('router_defroute', ''));
+  const [nat, setNat] = useState<Nat>(() => load('router_nat', D_NAT));
   const [copied, setCopied] = useState(false);
 
   useEffect(() => { try {
     localStorage.setItem('router_host', JSON.stringify(hostname)); localStorage.setItem('router_ifaces', JSON.stringify(ifaces));
     localStorage.setItem('router_routes', JSON.stringify(routes)); localStorage.setItem('router_defroute', JSON.stringify(defRoute));
-  } catch { /* */ } }, [hostname, ifaces, routes, defRoute]);
+    localStorage.setItem('router_nat', JSON.stringify(nat));
+  } catch { /* */ } }, [hostname, ifaces, routes, defRoute, nat]);
 
   const mask = (c: number) => CIDR_TO_MASK[c] || '255.255.255.0';
+  const wildcard = (c: number) => mask(c).split('.').map(o => 255 - Number(o)).join('.');
   const isSerial = (n: string) => /^Serial/i.test(n);
 
   const cli = useMemo(() => {
@@ -54,23 +64,34 @@ export function RouterConfigurator() {
     o.push('configure terminal');
     o.push(`hostname ${hostname || 'R1'}`);
     o.push('no ip domain-lookup');
-    o.push('!');
     for (const i of ifaces) {
       o.push(`interface ${i.name}`);
       if (i.desc.trim()) o.push(` description ${i.desc.trim()}`);
       if (i.ip.trim()) o.push(` ip address ${i.ip.trim()} ${mask(i.cidr)}`);
+      if (nat.on && i.name === nat.inside) o.push(' ip nat inside');
+      if (nat.on && i.name === nat.outside) o.push(' ip nat outside');
       if (isSerial(i.name) && i.dce) o.push(' clock rate 64000');
       o.push(i.up ? ' no shutdown' : ' shutdown');
       o.push(' exit');
-      o.push('!');
     }
     for (const r of routes) if (r.net.trim() && r.hop.trim()) o.push(`ip route ${r.net.trim()} ${mask(r.cidr)} ${r.hop.trim()}`);
     if (defRoute.trim()) o.push(`ip route 0.0.0.0 0.0.0.0 ${defRoute.trim()}`);
-    if (routes.length || defRoute.trim()) o.push('!');
+    if (nat.on) {
+      if (nat.overload) {
+        const nets = nat.nets.filter(n => n.net.trim());
+        nets.forEach(n => o.push(`access-list 1 permit ${n.net.trim()} ${wildcard(n.cidr)}`));
+        if (nat.outside) o.push(`ip nat inside source list 1 interface ${nat.outside} overload`);
+      }
+      for (const r of nat.rules) {
+        if (!r.ip.trim()) continue;
+        if (r.type === 'static') { if (r.pub.trim()) o.push(`ip nat inside source static ${r.ip.trim()} ${r.pub.trim()}`); }
+        else if (r.port.trim() && nat.outside) o.push(`ip nat inside source static ${r.proto} ${r.ip.trim()} ${r.port.trim()} interface ${nat.outside} ${(r.extPort.trim() || r.port.trim())}`);
+      }
+    }
     o.push('end');
     o.push('write memory');
     return o.join('\n');
-  }, [hostname, ifaces, routes, defRoute]);
+  }, [hostname, ifaces, routes, defRoute, nat]);
 
   const copy = () => { navigator.clipboard?.writeText(cli).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1600); }).catch(() => {}); };
   const download = () => {
@@ -86,6 +107,12 @@ export function RouterConfigurator() {
   const setRt = (idx: number, p: Partial<Route>) => setRoutes(a => a.map((x, i) => i === idx ? { ...x, ...p } : x));
   const addRt = () => setRoutes(a => [...a, { net: '', cidr: 24, hop: '' }]);
   const delRt = (idx: number) => setRoutes(a => a.filter((_, i) => i !== idx));
+  const setNatNet = (idx: number, p: Partial<{ net: string; cidr: number }>) => setNat(n => ({ ...n, nets: n.nets.map((x, i) => i === idx ? { ...x, ...p } : x) }));
+  const addNatNet = () => setNat(n => ({ ...n, nets: [...n.nets, { net: '', cidr: 24 }] }));
+  const delNatNet = (idx: number) => setNat(n => ({ ...n, nets: n.nets.filter((_, i) => i !== idx) }));
+  const setRule = (idx: number, p: Partial<NatRule>) => setNat(n => ({ ...n, rules: n.rules.map((x, i) => i === idx ? { ...x, ...p } : x) }));
+  const addRule = () => setNat(n => ({ ...n, rules: [...n.rules, { type: 'pf', proto: 'tcp', ip: '', port: '', pub: '', extPort: '' }] }));
+  const delRule = (idx: number) => setNat(n => ({ ...n, rules: n.rules.filter((_, i) => i !== idx) }));
 
   return (
     <div style={{ margin: '14px 0' }}>
@@ -138,6 +165,61 @@ export function RouterConfigurator() {
           <label style={labelStyle} htmlFor="defr">Route par défaut (0.0.0.0/0) — prochain saut :</label>
           <input id="defr" style={{ ...fieldStyle, maxWidth: 220, fontFamily: 'ui-monospace,monospace' }} value={defRoute} onChange={e => setDefRoute(e.target.value)} placeholder="ex. 10.0.0.2 (laisser vide si aucune)" />
         </div>
+      </div>
+
+      <div style={groupStyle}>
+        <div style={legendStyle}>
+          <label style={{ display: 'flex', gap: 8, alignItems: 'center', cursor: 'pointer' }}>
+            <input type="checkbox" checked={nat.on} onChange={e => setNat(n => ({ ...n, on: e.target.checked }))} /> 🌐 NAT / PAT
+          </label>
+          <span className="meta" style={{ fontWeight: 400, fontSize: 12 }}>— sortie Internet + publication de services</span>
+        </div>
+        {nat.on && <>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 12 }}>
+            <div><label style={labelStyle}>Interface interne (inside)</label>
+              <select style={fieldStyle} value={nat.inside} onChange={e => setNat(n => ({ ...n, inside: e.target.value }))}>{ifaces.map(i => <option key={i.name} value={i.name}>{i.name}</option>)}</select></div>
+            <div><label style={labelStyle}>Interface externe (outside)</label>
+              <select style={fieldStyle} value={nat.outside} onChange={e => setNat(n => ({ ...n, outside: e.target.value }))}>{ifaces.map(i => <option key={i.name} value={i.name}>{i.name}</option>)}</select></div>
+          </div>
+          <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 13.5, cursor: 'pointer', marginBottom: 8 }}>
+            <input type="checkbox" checked={nat.overload} onChange={e => setNat(n => ({ ...n, overload: e.target.checked }))} /> <b>PAT (overload)</b> — tout le LAN sort derrière l’IP de l’interface externe
+          </label>
+          {nat.overload && <div style={{ marginLeft: 6, marginBottom: 10 }}>
+            <label style={labelStyle}>Réseaux internes à traduire (ACL 1)</label>
+            {nat.nets.map((n, idx) => (
+              <div key={idx} style={{ display: 'grid', gridTemplateColumns: '1.4fr 1fr auto', gap: 8, marginBottom: 6, alignItems: 'center' }}>
+                <input style={{ ...fieldStyle, fontFamily: 'ui-monospace,monospace' }} value={n.net} onChange={e => setNatNet(idx, { net: e.target.value })} placeholder="192.168.10.0" />
+                <select style={fieldStyle} value={n.cidr} onChange={e => setNatNet(idx, { cidr: Number(e.target.value) })}>{CIDRS.map(c => <option key={c} value={c}>/{c}</option>)}</select>
+                <button style={smallBtn} onClick={() => delNatNet(idx)}>✕</button>
+              </div>
+            ))}
+            <button style={smallBtn} onClick={addNatNet}>+ Réseau</button>
+          </div>}
+          <div style={{ borderTop: '1px dashed var(--border)', paddingTop: 10 }}>
+            <label style={labelStyle}>Publications — NAT statique (1:1) / redirection de port</label>
+            {nat.rules.map((r, idx) => (
+              <div key={idx} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 10, marginBottom: 8, background: 'var(--surface)' }}>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <select style={{ ...fieldStyle, maxWidth: 200 }} value={r.type} onChange={e => setRule(idx, { type: e.target.value as NatRule['type'] })}>
+                    <option value="pf">Redirection de port</option>
+                    <option value="static">NAT statique 1:1</option>
+                  </select>
+                  {r.type === 'pf' && <select style={{ ...fieldStyle, maxWidth: 90 }} value={r.proto} onChange={e => setRule(idx, { proto: e.target.value as NatRule['proto'] })}><option value="tcp">TCP</option><option value="udp">UDP</option></select>}
+                  <button style={{ ...smallBtn, marginLeft: 'auto' }} onClick={() => delRule(idx)}>✕</button>
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 8, alignItems: 'center' }}>
+                  <input style={{ ...fieldStyle, maxWidth: 180, fontFamily: 'ui-monospace,monospace' }} value={r.ip} onChange={e => setRule(idx, { ip: e.target.value })} placeholder="IP interne (192.168.10.51)" />
+                  {r.type === 'pf' ? <>
+                    <input style={{ ...fieldStyle, maxWidth: 130, fontFamily: 'ui-monospace,monospace' }} value={r.port} onChange={e => setRule(idx, { port: e.target.value })} placeholder="port interne (8080)" />
+                    <input style={{ ...fieldStyle, maxWidth: 150, fontFamily: 'ui-monospace,monospace' }} value={r.extPort} onChange={e => setRule(idx, { extPort: e.target.value })} placeholder="port externe (= interne)" />
+                  </> : <input style={{ ...fieldStyle, maxWidth: 180, fontFamily: 'ui-monospace,monospace' }} value={r.pub} onChange={e => setRule(idx, { pub: e.target.value })} placeholder="IP publique (203.0.113.10)" />}
+                </div>
+              </div>
+            ))}
+            <button style={btnStyle} onClick={addRule}>+ Publication</button>
+            <p className="meta" style={{ fontSize: 11.5, marginTop: 6 }}>Redirection de port = publier un <b>service</b> (un port) ; NAT statique 1:1 = mapper toute une <b>IP publique</b>. La redirection utilise l’<b>IP de l’interface externe</b>.</p>
+          </div>
+        </>}
       </div>
 
       <div style={{ marginTop: 6 }}>

@@ -17,6 +17,7 @@ const BLOCKS: Record<string, BlockDef> = {
   'vm-configurator': { load: () => named(import('./VmConfigurator'), 'VmConfigurator') },
   'ad-configurator': { load: () => named(import('./AdConfigurator'), 'AdConfigurator') },
   'ad-bulk-configurator': { load: () => named(import('./AdBulkConfigurator'), 'AdBulkConfigurator') },
+  'file-server-builder': { load: () => named(import('./FileServerBuilder'), 'FileServerBuilder') },
   'net-diagnostic': { load: () => named(import('./NetDiagnostic'), 'NetDiagnostic') },
   'subnet-trainer': { load: () => named(import('./SubnetTrainer'), 'SubnetTrainer') },
   'agdlp-builder': { load: () => named(import('./AgdlpBuilder'), 'AgdlpBuilder') },
@@ -27,6 +28,27 @@ const BLOCKS: Record<string, BlockDef> = {
   'ssh-configurator': { load: () => named(import('./SshConfigurator'), 'SshConfigurator') },
   'network-workshop': { load: () => named(import('./NetworkWorkshop'), 'NetworkWorkshop') },
   'hex-converter': { load: () => named(import('./HexConverter'), 'HexConverter') },
+  'realisation1-trainer': { load: () => named(import('./Realisation1Trainer'), 'Realisation1Trainer') },
+  'cmd-emulator': { load: () => named(import('./CmdEmulator'), 'CmdEmulator') },
+  'pdf-download': { load: () => named(import('./PrintPdfButton'), 'PrintPdfButton'), props: n => ({ title: n.getAttribute('data-title') || '', label: n.getAttribute('data-label') || 'Télécharger en PDF' }) },
+  'windows-sim': { load: () => named(import('./WindowsSim'), 'WindowsSim') },
+  'virtual-lab': { load: () => named(import('./VirtualLab'), 'VirtualLab') },
+  'wizard-pager': { load: () => named(import('./WizardPager'), 'WizardPager'), props: n => ({ slides: Array.from(n.querySelectorAll(':scope > figure')).map(f => (f as HTMLElement).outerHTML), title: n.getAttribute('data-title') || '' }) },
+  'doc-pager': {
+    load: () => named(import('./WizardPager'), 'WizardPager'),
+    props: n => {
+      const secs: { l: string; h: string }[] = [];
+      n.childNodes.forEach(node => {
+        const el = node as HTMLElement;
+        if (node.nodeType === 1 && el.classList?.contains('dp-break')) {
+          secs.push({ l: el.getAttribute('data-label') || `Section ${secs.length + 1}`, h: '' });
+        } else if (secs.length) {
+          secs[secs.length - 1].h += node.nodeType === 1 ? el.outerHTML : (node.textContent || '');
+        }
+      });
+      return { slides: secs.map(s => s.h), labels: secs.map(s => s.l) };
+    },
+  },
 };
 const LAZY: Record<string, ComponentType<any>> = Object.fromEntries(Object.entries(BLOCKS).map(([k, d]) => [k, lazy(d.load)]));
 

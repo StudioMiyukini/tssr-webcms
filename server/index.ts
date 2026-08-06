@@ -28,6 +28,7 @@ import postsRouter from './routes/posts';
 import commentsRouter from './routes/comments';
 import searchRouter from './routes/search';
 import notesRouter from './routes/notes';
+import atelierRouter from './routes/atelier';
 import planningsRouter from './routes/plannings';
 import forumRouter from './routes/forum';
 import backupRouter from './routes/backup';
@@ -43,7 +44,7 @@ import { eq, and, asc } from 'drizzle-orm';
 
 // Données de page exposées au public (sans builder_json) — doit refléter PAGE_PUBLIC_COLS de routes/public.ts.
 const PAGE_BOOT_COLS = { id: pages.id, title: pages.title, slug: pages.slug, content: pages.content, excerpt: pages.excerpt, published: pages.published, updated_at: pages.updated_at };
-const RESERVED_SLUGS = new Set(['shop', 'cart', 'checkout', 'account', 'devis', 'blog', 'agenda', 'forum', 'recherche', 'admin', 'products', 'f', 'planning', 'uploads', 'assets', 'api']);
+const RESERVED_SLUGS = new Set(['shop', 'cart', 'checkout', 'account', 'devis', 'blog', 'agenda', 'forum', 'recherche', 'admin', 'products', 'f', 'planning', 'atelier', 'uploads', 'assets', 'api']);
 /** Slug de page CMS correspondant à un chemin (/, /pages/x, /x), ou null si route réservée. */
 function pageSlugForPath(p: string): string | null {
   if (p === '/') return 'accueil';
@@ -112,6 +113,7 @@ async function createServer() {
   app.use(commentsRouter);
   app.use(searchRouter);
   app.use(notesRouter);
+  app.use(atelierRouter);
   app.use(planningsRouter);
   app.use(forumRouter);
   app.use(backupRouter);

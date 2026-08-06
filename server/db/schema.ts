@@ -332,6 +332,19 @@ export const forum_replies = sqliteTable('forum_replies', {
   created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
+// Projets de l'Atelier Réseau : un blob JSON (le contexte de l'atelier) par projet nommé,
+// possédé par l'admin OU un compte client (owner_kind + owner_id).
+export const atelier_projects = sqliteTable('atelier_projects', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  owner_kind: text('owner_kind').notNull(),        // 'admin' | 'customer'
+  owner_id: integer('owner_id').notNull(),
+  name: text('name').notNull().default('Projet réseau'),
+  data: text('data').notNull().default('{}'),      // JSON = Ctx de l'atelier
+  created_at: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updated_at: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+});
+export type AtelierProject = typeof atelier_projects.$inferSelect;
+
 export const user_files = sqliteTable('user_files', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   customer_id: integer('customer_id').notNull(),
