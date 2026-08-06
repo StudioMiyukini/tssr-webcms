@@ -87,6 +87,8 @@ async function createWindow() {
     title: 'TSSR — Local', backgroundColor: '#0f1115', autoHideMenuBar: false,
     webPreferences: { contextIsolation: true, nodeIntegration: false },
   });
+  // Garde le titre natif « TSSR — Local » : le SPA a son propre <title> (« CMS »).
+  win.on('page-title-updated', (e) => e.preventDefault());
   await win.loadURL(`http://127.0.0.1:${port}`);
   win.on('closed', () => { win = null; });
 }
