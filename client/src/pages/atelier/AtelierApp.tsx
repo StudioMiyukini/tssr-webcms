@@ -29,6 +29,7 @@ const NAV: { title: string; items: NavItem[] }[] = [
     { key: 'dns', icon: '🌐', label: 'DNS', step: 6 },
     { key: 'ssh', icon: '🔑', label: 'SSH', step: 7 },
     { key: 'nat', icon: '🌍', label: 'Internet / NAT', step: 4, s4: 'nat' },
+    { key: 'vlan', icon: '🔀', label: 'VLAN & switches', step: 9 },
   ] },
   { title: 'Validation', items: [
     { key: 'tests', icon: '🔌', label: 'Tests', step: 8 },

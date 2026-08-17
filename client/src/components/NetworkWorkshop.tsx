@@ -34,7 +34,15 @@ export type LinkMedia = 'serial' | 'gig';
 // Un réseau de base à découper (on peut en avoir plusieurs, distincts).
 export type BaseNet = { id: string; name: string; ip: string; cidr: string };
 // Un sous-réseau : 1 routeur = LAN (passerelle), 2+ routeurs = segment d'interconnexion. baseId = bloc d'adresses.
-export type Service = { id: string; name: string; hosts: string; routerIds: string[]; hasSwitch: boolean; dhcp: boolean; media?: LinkMedia; baseId?: string };
+// `vlan` : identifiant 802.1Q (1-4094). Vide = pas de VLAN, le sous-reseau prend
+// une interface physique a lui, comme avant.
+export type Service = { id: string; name: string; hosts: string; routerIds: string[]; hasSwitch: boolean; dhcp: boolean; media?: LinkMedia; baseId?: string; vlan?: string };
+
+/** VLAN ID valide d'un service, ou null. Hors de 1-4094 = pas de VLAN. */
+export function vlanOf(s: { vlan?: string }): number | null {
+  const n = Number(String(s.vlan ?? '').trim());
+  return Number.isInteger(n) && n >= 1 && n <= 4094 ? n : null;
+}
 export type RouterDef = { id: string; name: string; model: RouterModel; mod?: boolean };
 
 export type Ctx = {
@@ -80,9 +88,9 @@ export const DEFAULT_CTX: Ctx = {
   baseIp: '192.168.10.0', baseCidr: '24',
   bases: [{ id: 'b1', name: 'Réseau principal', ip: '192.168.10.0', cidr: '24' }],
   services: [
-    { id: 'sA', name: 'Production', hosts: '100', routerIds: ['rA'], hasSwitch: true, dhcp: true, baseId: 'b1' },
-    { id: 'sB', name: 'Bureaux', hosts: '50', routerIds: ['rA'], hasSwitch: true, dhcp: true, baseId: 'b1' },
-    { id: 'sC', name: 'Wi-Fi', hosts: '20', routerIds: ['rB'], hasSwitch: true, dhcp: true, baseId: 'b1' },
+    { id: 'sA', name: 'Production', hosts: '100', routerIds: ['rA'], hasSwitch: true, dhcp: true, baseId: 'b1', vlan: '10' },
+    { id: 'sB', name: 'Bureaux', hosts: '50', routerIds: ['rA'], hasSwitch: true, dhcp: true, baseId: 'b1', vlan: '20' },
+    { id: 'sC', name: 'Wi-Fi', hosts: '20', routerIds: ['rB'], hasSwitch: true, dhcp: true, baseId: 'b1', vlan: '30' },
     { id: 'sD', name: 'Dorsale R1-R2', hosts: '2', routerIds: ['rA', 'rB'], hasSwitch: true, dhcp: false, media: 'gig', baseId: 'b1' },
   ],
   routers: [
@@ -124,6 +132,9 @@ export function migrateCtx(raw: unknown): Ctx {
     dhcp: typeof s?.dhcp === 'boolean' ? s.dhcp : true,
     media: s?.media === 'serial' ? ('serial' as LinkMedia) : undefined,
     baseId: (typeof s?.baseId === 'string' && baseIds.has(s.baseId)) ? s.baseId : firstBase,
+    // Absent des projets enregistres avant les VLAN : on laisse vide, le
+    // sous-reseau garde alors son interface physique dediee.
+    vlan: typeof s?.vlan === 'string' || typeof s?.vlan === 'number' ? String(s.vlan) : '',
   }));
   // Anciens liens inter-routeurs → sous-réseaux d'interconnexion (2+ routeurs).
   for (const l of (Array.isArray(r.links) ? r.links : [])) {
@@ -152,10 +163,14 @@ export type Sub = {
   kind: 'lan' | 'link'; id: string; name: string;
   net: number; first: number; last: number; bc: number; usable: number; mask: number; cidr: number;
   gw: number | null; switchIp: number | null; routerId?: string; dhcp?: boolean; media?: LinkMedia; routerIds?: string[];
+  /** VLAN 802.1Q du sous-reseau, si le service en declare un. */
+  vlan?: number;
 };
 export type Iface = {
   routerId: string; routerName: string; iface: string; target: string;
   ip: number; mask: number; cidr: number; role: string; clock: boolean;
+  /** Sous-interface 802.1Q : le VLAN encapsule, et l'interface physique porteuse. */
+  vlan?: number; parent?: string;
 };
 export type BaseSummary = { id: string; name: string; net: number; cidr: number; used: number; total: number };
 // Un hôte fixe résolu par le moteur : IP validée + rattachement + éventuel problème.
@@ -243,6 +258,12 @@ export function computePlan(ctx: Ctx): Plan {
     return n >>> 0;
   };
 
+  // Routeur sur un baton : tous les VLAN d'un meme routeur partagent UNE interface
+  // physique, chacun sur sa sous-interface. C'est ce qui distingue un plan avec
+  // VLAN d'un plan sans : sans eux, il faut une interface par sous-reseau, et un
+  // 2811 en a deux.
+  const trunkIf = new Map<string, string>();
+
   for (const s of ctx.services) {
     const a = alloc.get('svc:' + s.id); if (!a) continue;
     const m = meta.get('svc:' + s.id)!;
@@ -253,10 +274,21 @@ export function computePlan(ctx: Ctx): Plan {
       const switchIp = s.hasSwitch ? (ctx.gwPos === 'last' ? (a.last - 1) >>> 0 : (a.first + 1) >>> 0) : null;
       // Interface (et donc IP de passerelle, éventuellement forcée manuellement)
       let ifc: string | null = null;
-      if (r) { ifc = nextEth(r); if (ifc) gw = applyOv(r.id, ifc, gw, a.net, a.bc); }
-      subs.push({ kind: 'lan', id: 'svc:' + s.id, name: s.name || 'LAN', net: a.net, first: a.first, last: a.last, bc: a.bc, usable: a.usable, mask: a.mask, cidr: a.cidr, gw, switchIp, routerId: r?.id, routerIds: r ? [r.id] : [], dhcp: s.dhcp });
+      let parent: string | null = null;
+      const vlanId = vlanOf(s);
+      if (r) {
+        if (vlanId !== null) {
+          parent = trunkIf.get(r.id) ?? null;
+          if (!parent) { parent = nextEth(r); if (parent) trunkIf.set(r.id, parent); }
+          ifc = parent ? `${parent}.${vlanId}` : null;
+        } else {
+          ifc = nextEth(r);
+        }
+        if (ifc) gw = applyOv(r.id, ifc, gw, a.net, a.bc);
+      }
+      subs.push({ kind: 'lan', id: 'svc:' + s.id, name: s.name || 'LAN', net: a.net, first: a.first, last: a.last, bc: a.bc, usable: a.usable, mask: a.mask, cidr: a.cidr, gw, switchIp, routerId: r?.id, routerIds: r ? [r.id] : [], dhcp: s.dhcp, vlan: vlanId ?? undefined });
       if (!r) { warnings.push(`« ${s.name || 'LAN'} » n'a pas de routeur passerelle assigné.`); continue; }
-      if (ifc) ifaces.push({ routerId: r.id, routerName: r.name, iface: ifc, target: `LAN ${s.name || ''}`.trim(), ip: gw, mask: a.mask, cidr: a.cidr, role: 'Passerelle LAN', clock: false });
+      if (ifc) ifaces.push({ routerId: r.id, routerName: r.name, iface: ifc, target: `LAN ${s.name || ''}`.trim(), ip: gw, mask: a.mask, cidr: a.cidr, role: vlanId !== null ? `Passerelle VLAN ${vlanId}` : 'Passerelle LAN', clock: false, vlan: vlanId ?? undefined, parent: parent ?? undefined });
     } else {
       // Interconnexion : 2+ routeurs, une IP par routeur (pas de DHCP)
       const parts = m.serial ? m.rs.slice(0, 2) : m.rs;
@@ -411,12 +443,25 @@ export function buildRouterConfigs(ctx: Ctx, plan: Plan): { byRouter: RouterCfg[
 
     // -- Interfaces (IP, NAT inside, relais DHCP, horloge DCE) --
     lines.push('! --- Interfaces ---');
+    // L'interface physique qui porte les VLAN n'a pas d'adresse : elle est activee
+    // une fois, puis chaque VLAN prend la sienne sur une sous-interface. L'oublier
+    // est l'erreur classique du routeur sur un baton — les sous-interfaces restent
+    // muettes sans que rien ne le signale.
+    const porteuses = new Set<string>();
     for (const i of myIf) {
-      lines.push(`interface ${i.iface}`, ` description ${i.target}`, ` ip address ${ipToStr(i.ip)} ${ipToStr(i.mask)}`);
+      if (i.vlan && i.parent && !porteuses.has(i.parent)) {
+        porteuses.add(i.parent);
+        lines.push(`interface ${i.parent}`, ' description Trunk 802.1Q vers le switch', ' no ip address', ' no shutdown', ' exit');
+      }
+      lines.push(`interface ${i.iface}`, ` description ${i.target}`);
+      if (i.vlan) lines.push(` encapsulation dot1Q ${i.vlan}`);
+      lines.push(` ip address ${ipToStr(i.ip)} ${ipToStr(i.mask)}`);
       if (isBorder && i.iface !== wanIf) lines.push(' ip nat inside');
       if (dhcpGwIps.has(i.ip)) lines.push(` ip helper-address ${relayServer || '<IP_serveur_DHCP>'}`);
       if (i.clock) lines.push(' clock rate 64000');
-      lines.push(' no shutdown', ' exit');
+      // Une sous-interface suit l'etat de sa porteuse : pas de `no shutdown`.
+      if (!i.vlan) lines.push(' no shutdown');
+      lines.push(' exit');
     }
 
     // -- Sortie Internet (NAT/PAT) — routeur de bordure uniquement --
@@ -466,6 +511,125 @@ export function buildRouterConfigs(ctx: Ctx, plan: Plan): { byRouter: RouterCfg[
 }
 
 // Configuration SSH pour chaque routeur et chaque switch (avec SVI de gestion).
+// ---------------------------------------------------------------------------
+// Configurations des switches d'acces (VLAN 802.1Q).
+//
+// Sans VLAN, chaque sous-reseau a son switch et son interface de routeur : la
+// configuration du switch se resume a une IP de gestion. Avec des VLAN, un seul
+// switch porte plusieurs sous-reseaux, et il faut alors dire trois choses :
+// quels VLAN existent, quels ports appartiennent a quel VLAN, et par ou sortir.
+//
+// Les plages de ports sont reparties au prorata des hotes declares, avec un
+// minimum d'un port, sur les 24 ports d'acces d'un 2960. Le dernier port
+// gigabit sert de trunk vers le routeur — c'est le lien qui porte tous les
+// VLAN, donc le seul par ou passe le routage inter-VLAN.
+// ---------------------------------------------------------------------------
+
+/** Nom de VLAN Cisco : majuscules, sans accents ni espaces. */
+const vlanName = (s: string) => (s || 'VLAN').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'VLAN';
+
+export type SwitchVlanRow = { vlan: number; name: string; net: string; gw: string; ports: string; hosts: number };
+export type SwitchCfg = {
+  routerId: string; routerName: string; name: string;
+  mgmtIp: string; mgmtVlan: number; gw: string;
+  rows: SwitchVlanRow[]; uplink: string; nativeVlan: number; text: string;
+};
+
+/** Nombre de ports d'acces d'un switch d'atelier (2960 24 ports). */
+const SW_PORTS = 24;
+/** VLAN natif dedie : jamais le 1, jamais un VLAN de donnees. */
+export const NATIVE_VLAN = 999;
+
+export function buildSwitchConfigs(ctx: Ctx, plan: Plan): SwitchCfg[] {
+  // Un switch par routeur portant au moins un VLAN : c'est tout l'interet des
+  // VLAN — mutualiser le materiel au lieu d'un switch par sous-reseau.
+  const parRouteur = new Map<string, Sub[]>();
+  for (const sub of plan.subs) {
+    if (sub.kind !== 'lan' || !sub.vlan || !sub.routerId) continue;
+    const l = parRouteur.get(sub.routerId) ?? [];
+    l.push(sub);
+    parRouteur.set(sub.routerId, l);
+  }
+
+  const out: SwitchCfg[] = [];
+  for (const [routerId, subs] of parRouteur) {
+    const r = ctx.routers.find(x => x.id === routerId);
+    const routerName = r?.name || 'R';
+    subs.sort((a, b) => (a.vlan || 0) - (b.vlan || 0));
+
+    // Repartition des ports au prorata des hotes, un port minimum chacun.
+    const besoins = subs.map(sub => Math.max(1, (sub.usable || 1)));
+    const total = besoins.reduce((a, b) => a + b, 0);
+    let libre = SW_PORTS;
+    const parts = besoins.map((b, i) => {
+      if (i === besoins.length - 1) return libre;
+      const n = Math.max(1, Math.min(libre - (besoins.length - 1 - i), Math.round((b / total) * SW_PORTS)));
+      libre -= n;
+      return n;
+    });
+
+    const uplink = 'GigabitEthernet0/1';
+    const mgmt = subs[0];
+    const mgmtIp = mgmt.switchIp !== null ? ipToStr(mgmt.switchIp) : '';
+    const gw = mgmt.gw !== null ? ipToStr(mgmt.gw) : '';
+    const nom = `SW-${vlanName(routerName)}`;
+
+    const lines: string[] = ['enable', 'configure terminal', `hostname ${nom}`];
+    lines.push('! --- Les VLAN ---');
+    for (const sub of subs) lines.push(`vlan ${sub.vlan}`, ` name ${vlanName(sub.name)}`, ' exit');
+    lines.push(`vlan ${NATIVE_VLAN}`, ' name NATIF-INUTILISE', ' exit');
+
+    lines.push('! --- Ports d\'acces ---');
+    const rows: SwitchVlanRow[] = [];
+    let debut = 1;
+    subs.forEach((sub, i) => {
+      const n = parts[i]!;
+      const fin = debut + n - 1;
+      const ports = n === 1 ? `FastEthernet0/${debut}` : `FastEthernet0/${debut} - ${fin}`;
+      lines.push(
+        n === 1 ? `interface FastEthernet0/${debut}` : `interface range FastEthernet0/${debut} - ${fin}`,
+        ` description ${sub.name}`,
+        ' switchport mode access',
+        ` switchport access vlan ${sub.vlan}`,
+        ' exit',
+      );
+      rows.push({
+        vlan: sub.vlan!, name: vlanName(sub.name),
+        net: `${ipToStr(sub.net)}/${sub.cidr}`,
+        gw: sub.gw !== null ? ipToStr(sub.gw) : '—',
+        ports: n === 1 ? `fa0/${debut}` : `fa0/${debut}-${fin}`,
+        hosts: sub.usable,
+      });
+      debut = fin + 1;
+    });
+
+    lines.push('! --- Trunk vers le routeur ---');
+    lines.push(
+      `interface ${uplink}`,
+      ' description Trunk 802.1Q vers ' + routerName,
+      ' switchport mode trunk',
+      ` switchport trunk allowed vlan ${subs.map(x => x.vlan).join(',')}`,
+      ` switchport trunk native vlan ${NATIVE_VLAN}`,
+      ' exit',
+    );
+
+    if (mgmtIp) {
+      lines.push('! --- Gestion ---');
+      lines.push(`interface vlan ${mgmt.vlan}`, ` ip address ${mgmtIp} ${ipToStr(mgmt.mask)}`, ' no shutdown', ' exit');
+      if (gw) lines.push(`ip default-gateway ${gw}`);
+    }
+    lines.push('end', 'write memory');
+
+    out.push({
+      routerId, routerName, name: nom,
+      mgmtIp, mgmtVlan: mgmt.vlan!, gw,
+      rows, uplink, nativeVlan: NATIVE_VLAN,
+      text: lines.join('\n'),
+    });
+  }
+  return out;
+}
+
 export type SshCfg = { name: string; ip: string; text: string };
 export function buildSsh(ctx: Ctx, plan: Plan): { routers: SshCfg[]; switches: SshCfg[] } {
   const dom = (ctx.domaine || '').trim() || 'lan';
@@ -486,10 +650,26 @@ export function buildSsh(ctx: Ctx, plan: Plan): { routers: SshCfg[]; switches: S
     'end', 'write memory',
   ].filter(Boolean).join('\n');
   const routers: SshCfg[] = ctx.routers.map(r => ({ name: r.name, ip: '', text: base(r.name, []) }));
-  const switches: SshCfg[] = plan.subs.filter(s => s.switchIp !== null).map(s => {
-    const host = /sw|switch/i.test(s.name) ? s.name.replace(/\s+/g, '-') : 'SW-' + s.name.replace(/\s+/g, '-');
+  // Les sous-reseaux en VLAN partagent un switch par routeur : on ne garde que
+  // le premier de chaque routeur, sinon on configurerait quatre switches la ou
+  // il n'y en a que deux, avec quatre IP de gestion pour deux equipements.
+  const dejaVu = new Set<string>();
+  const switches: SshCfg[] = plan.subs.filter(s => {
+    if (s.switchIp === null) return false;
+    if (!s.vlan || !s.routerId) return true;
+    if (dejaVu.has(s.routerId)) return false;
+    dejaVu.add(s.routerId);
+    return true;
+  }).map(s => {
+    const rName = s.routerId ? (ctx.routers.find(r => r.id === s.routerId)?.name || '') : '';
+    const host = s.vlan && rName ? 'SW-' + rName.replace(/\s+/g, '-')
+      : /sw|switch/i.test(s.name) ? s.name.replace(/\s+/g, '-')
+        : 'SW-' + s.name.replace(/\s+/g, '-');
     const gw = s.gw !== null ? s.gw : s.first;                  // switch de dorsale → 1re IP routeur
-    const extra = ['interface vlan 1', ` ip address ${ipToStr(s.switchIp!)} ${ipToStr(s.mask)}`, ' no shutdown', ' exit', `ip default-gateway ${ipToStr(gw)}`];
+    // L'IP de gestion vit dans le VLAN du sous-reseau, pas dans le VLAN 1 : sur
+    // un switch decoupe, le VLAN 1 ne porte aucune adresse et le switch serait
+    // injoignable.
+    const extra = [`interface vlan ${s.vlan ?? 1}`, ` ip address ${ipToStr(s.switchIp!)} ${ipToStr(s.mask)}`, ' no shutdown', ' exit', `ip default-gateway ${ipToStr(gw)}`];
     return { name: host, ip: ipToStr(s.switchIp!), text: base(host, extra) };
   });
   return { routers, switches };
@@ -596,6 +776,7 @@ const STEPS = [
   { n: 5, icon: '📶', title: 'DHCP' },
   { n: 6, icon: '🌐', title: 'DNS' },
   { n: 7, icon: '🔑', title: 'SSH' },
+  { n: 9, icon: '🔀', title: 'VLAN & switches' },
   { n: 8, icon: '🔌', title: 'Tests' },
 ];
 const STORAGE_KEY = 'net_workshop_v1';
@@ -684,6 +865,7 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
   const dns = useMemo(() => buildDns(ctx, plan), [ctx, plan]);
   const routerCfg = useMemo(() => buildRouterConfigs(ctx, plan), [ctx, plan]);
   const ssh = useMemo(() => buildSsh(ctx, plan), [ctx, plan]);
+  const switches = useMemo(() => buildSwitchConfigs(ctx, plan), [ctx, plan]);
   const nat = useMemo(() => buildNat(ctx, plan), [ctx, plan]);
   const natTable = useMemo(() => buildNatTable(ctx, plan, nat), [ctx, plan, nat]);
   const tests = useMemo(() => buildTests(ctx, plan, nat), [ctx, plan, nat]);
@@ -699,14 +881,14 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
       {/* Stepper (masqué quand une navigation externe pilote les étapes, ex. sidebar Atelier) */}
       {showStepper && (
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
-        {STEPS.map(s => {
+        {STEPS.map((s, i) => {
           const active = step === s.n;
           return (
             <button key={s.n} type="button" onClick={() => setStep(s.n)}
               style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 9, cursor: 'pointer', fontSize: 12.5, fontWeight: 600,
                 border: `1px solid ${active ? 'var(--accent)' : 'var(--border)'}`, background: active ? 'var(--accent)' : 'var(--surface)', color: active ? '#fff' : 'var(--text)' }}>
               <span style={{ opacity: active ? 1 : .85 }}>{s.icon}</span>
-              <span>{s.n}. {s.title}</span>
+              <span>{i + 1}. {s.title}</span>
             </button>
           );
         })}
@@ -871,6 +1053,10 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                     <span style={{ fontSize: 11.5, color: 'var(--text-muted)', ...mono }}>{s.hosts} hôtes</span>
                     <span style={{ fontSize: 11, fontWeight: 700, padding: '1px 9px', borderRadius: 999, color: badge.c, background: badge.bg }}>{badge.t}</span>
                     <div style={{ marginLeft: 'auto', display: 'flex', gap: 14, alignItems: 'center' }}>
+                      <label style={{ fontSize: 12, display: 'flex', gap: 5, alignItems: 'center', cursor: transit ? 'not-allowed' : 'pointer', opacity: transit ? .4 : 1 }} title={transit ? 'Pas de VLAN sur un segment d’interconnexion' : 'Identifiant 802.1Q (1-4094) — vide = interface physique dédiée'}>
+                        VLAN
+                        <input type="text" inputMode="numeric" disabled={transit} value={transit ? '' : (s.vlan ?? '')} onChange={e => setSvc(s.id, { vlan: e.target.value.replace(/[^0-9]/g, '').slice(0, 4) })} placeholder="—" style={{ width: 52, padding: '2px 6px', fontSize: 12, border: '1px solid var(--border)', borderRadius: 5, background: 'var(--surface)', color: 'inherit', ...mono }} />
+                      </label>
                       <label style={{ fontSize: 12, display: 'flex', gap: 5, alignItems: 'center', cursor: 'pointer' }}><input type="checkbox" checked={s.hasSwitch} onChange={e => setSvc(s.id, { hasSwitch: e.target.checked })} /> switch</label>
                       <label style={{ fontSize: 12, display: 'flex', gap: 5, alignItems: 'center', cursor: transit ? 'not-allowed' : 'pointer', opacity: transit ? .4 : 1 }} title={transit ? 'Pas de DHCP sur un segment d’interconnexion' : ''}><input type="checkbox" disabled={transit} checked={s.dhcp && !transit} onChange={e => setSvc(s.id, { dhcp: e.target.checked })} /> DHCP</label>
                     </div>
@@ -1250,6 +1436,81 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
         </div>
       )}
 
+      {/* ── Étape 9 : VLAN & switches ── */}
+      {step === 9 && (
+        <div>
+          <div style={group}>
+            <div style={legend}>🔀 VLAN — ce que ça change</div>
+            <div className="meta" style={{ fontSize: 11.5, margin: '0 0 6px' }}>
+              Donne un <strong>numéro de VLAN</strong> à un sous-réseau (étape 3) et il cesse de consommer une interface
+              de routeur à lui seul : tous les VLAN d’un même routeur partagent <strong>un seul lien physique</strong>,
+              chacun sur sa <strong>sous-interface</strong> <code>.{'{'}vlan{'}'}</code> en <code>encapsulation dot1Q</code>.
+              C’est le <strong>routeur sur un bâton</strong> — et c’est ce qui permet de tenir dix réseaux sur un 2811 qui
+              n’a que deux interfaces.
+            </div>
+            <div className="meta" style={{ fontSize: 11.5 }}>
+              Laisse le champ vide et rien ne change : le sous-réseau garde son interface physique dédiée.
+            </div>
+          </div>
+
+          {switches.length === 0 ? (
+            <div style={group}>
+              <div style={legend}>Aucun VLAN déclaré</div>
+              <div className="meta" style={{ fontSize: 12 }}>
+                Reviens à l’étape <strong>Segmentation</strong> et saisis un numéro dans la case <strong>VLAN</strong>
+                d’au moins un sous-réseau (10, 20, 30…). Les configurations de switch apparaîtront ici.
+              </div>
+            </div>
+          ) : switches.map(sw => (
+            <div key={sw.name} style={group}>
+              <div style={legend}>
+                🔀 {sw.name} — {sw.rows.length} VLAN, trunk vers {sw.routerName}
+                <button type="button" onClick={() => copy('sw' + sw.name, sw.text)} style={{ ...smallBtn, marginLeft: 'auto' }}>{copied === 'sw' + sw.name ? '✓ Copié' : 'Copier'}</button>
+              </div>
+              <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12, margin: '4px 0 10px' }}>
+                <thead>
+                  <tr>
+                    {['VLAN', 'Nom', 'Réseau', 'Passerelle', 'Ports d’accès', 'Hôtes'].map(h => (
+                      <th key={h} style={{ textAlign: 'left', padding: '5px 8px', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', fontWeight: 600 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {sw.rows.map(r => (
+                    <tr key={r.vlan}>
+                      <td style={{ padding: '5px 8px', borderBottom: '1px solid var(--border)', ...mono }}>{r.vlan}</td>
+                      <td style={{ padding: '5px 8px', borderBottom: '1px solid var(--border)' }}>{r.name}</td>
+                      <td style={{ padding: '5px 8px', borderBottom: '1px solid var(--border)', ...mono }}>{r.net}</td>
+                      <td style={{ padding: '5px 8px', borderBottom: '1px solid var(--border)', ...mono }}>{r.gw}</td>
+                      <td style={{ padding: '5px 8px', borderBottom: '1px solid var(--border)', ...mono }}>{r.ports}</td>
+                      <td style={{ padding: '5px 8px', borderBottom: '1px solid var(--border)', ...mono }}>{r.hosts}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <pre style={preStyle}><code>{sw.text}</code></pre>
+              <div className="meta" style={{ fontSize: 11.5, marginTop: 6 }}>
+                Le trunk <code>{sw.uplink}</code> ne laisse passer que les VLAN de la liste : tout le reste est bloqué sur
+                ce lien. Le <strong>VLAN natif {sw.nativeVlan}</strong> est volontairement un VLAN vide — le laisser à 1
+                est la porte ouverte au double marquage.
+              </div>
+            </div>
+          ))}
+
+          {switches.length > 0 && (
+            <div style={group}>
+              <div style={legend}>📟 Côté routeur</div>
+              <div className="meta" style={{ fontSize: 11.5 }}>
+                Les sous-interfaces correspondantes sont déjà dans <strong>Routeurs &amp; reset</strong>. Vérifie que
+                l’interface physique porteuse est bien montée (<code>no shutdown</code>) et <strong>sans adresse</strong> :
+                c’est l’oubli classique, et les sous-interfaces restent muettes sans que rien ne le signale.
+              </div>
+            </div>
+          )}
+          <StepNav step={step} setStep={setStep} />
+        </div>
+      )}
+
       {/* ── Étape 7 : SSH ── */}
       {step === 7 && (
         <div>
@@ -1497,11 +1758,17 @@ function SchemaSvg({ ctx, plan }: { ctx: Ctx; plan: Plan }) {
   );
 }
 
+// Navigue selon l'ORDRE de STEPS et non par `step ± 1` : les identifiants
+// d'etape ne sont plus contigus depuis l'ajout des VLAN, et l'arithmetique
+// sautait l'etape ajoutee tout en desactivant « Suivant » une etape trop tot.
 function StepNav({ step, setStep }: { step: number; setStep: (n: number) => void }) {
+  const i = STEPS.findIndex(s => s.n === step);
+  const prev = i > 0 ? STEPS[i - 1]!.n : null;
+  const next = i >= 0 && i < STEPS.length - 1 ? STEPS[i + 1]!.n : null;
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginTop: 4 }}>
-      <button type="button" onClick={() => setStep(Math.max(1, step - 1))} disabled={step <= 1} style={{ ...smallBtn, opacity: step <= 1 ? .4 : 1 }}>← Précédent</button>
-      <button type="button" onClick={() => setStep(Math.min(8, step + 1))} disabled={step >= 8} style={{ ...btn, opacity: step >= 8 ? .4 : 1 }}>Suivant →</button>
+      <button type="button" onClick={() => prev !== null && setStep(prev)} disabled={prev === null} style={{ ...smallBtn, opacity: prev === null ? .4 : 1 }}>← Précédent</button>
+      <button type="button" onClick={() => next !== null && setStep(next)} disabled={next === null} style={{ ...btn, opacity: next === null ? .4 : 1 }}>Suivant →</button>
     </div>
   );
 }
