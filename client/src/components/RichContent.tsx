@@ -13,6 +13,7 @@ const BLOCKS: Record<string, BlockDef> = {
   'events': { query: true, load: () => named(import('./LatestEvents'), 'LatestEvents'), props: n => ({ count: Number(n.getAttribute('data-count')) || 3, title: n.getAttribute('data-title') || '' }) },
   'planning': { query: true, load: () => named(import('./PlanningEmbed'), 'PlanningEmbed'), props: n => ({ slug: n.getAttribute('data-slug') || '' }) },
   'glossaire': { query: true, load: () => named(import('./Glossary'), 'Glossary') },
+  'gpo-inventory': { load: () => named(import('./GpoInventory'), 'GpoInventory') },
   'note': { query: true, load: () => named(import('./PublicNoteBlock'), 'PublicNoteBlock'), props: n => ({ noteId: Number(n.getAttribute('data-note-id')) || 0, title: n.getAttribute('data-title') || '' }) },
   'vm-configurator': { load: () => named(import('./VmConfigurator'), 'VmConfigurator') },
   'ad-configurator': { load: () => named(import('./AdConfigurator'), 'AdConfigurator') },
