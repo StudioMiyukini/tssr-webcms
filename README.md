@@ -1,38 +1,95 @@
-# Web CMS
+# tssr-webcms
 
-CMS/mini WordPress maison, réutilisable et neutre. À dupliquer pour démarrer un nouveau projet.
+Le site de cours **TSSR** (technicien supérieur systèmes et réseaux), en
+production sur `https://tssr.miyukini.com`.
 
-Fonctions :
-- CRUD Pages (+ page builder en blocs)
-- CRUD Menu
-- CRUD Produits / boutique en ligne
-- Formulaires de devis
-- Vitrine publique + back-office `/admin`
-- Thème & branding éditables (nom de marque, logo, couleurs)
+Le moteur est un CMS maison réutilisable (voir plus bas) ; ce dépôt en est
+l'instance TSSR, avec tout le contenu pédagogique : cours, procédures, quiz,
+glossaire, et un **Atelier Réseau** avec ses simulateurs.
 
-## Accès initial
-- Utilisateur : `admin`
-- Mot de passe : `changeme`
+| | |
+| --- | --- |
+| Process | PM2 `webcms` (`tsx server/index.ts`) |
+| Port | 3470, exposé par le tunnel Cloudflare |
+| Base | `cms.sqlite` (SQLite, mode WAL) |
+| Front | React + Vite · Back : Express + Drizzle |
 
-> ⚠️ Change le mot de passe et `SESSION_SECRET` avant toute mise en production
-> (via variables d'environnement ou `ecosystem.config.cjs`).
+---
 
-## Lancement
+## Deux choses se déploient, et pas de la même façon
+
+C'est la distinction la plus utile à connaître ici, parce que les deux se
+confondent facilement.
+
+| Ce qu'on modifie | Comment ça arrive en production |
+| --- | --- |
+| **Le code** (`client/`, `server/`) | `git push` sur `main`, puis la tâche planifiée `TSSR-WebCMS-AutoUpdate` fait le reste |
+| **Le contenu** (pages de cours) | on exécute le script de la page, qui écrit dans la base par l'API |
+
+Autrement dit : **pousser sur GitHub ne publie aucune page**, et publier une page
+ne demande aucun commit. Le contenu vit dans `cms.sqlite`, pas dans le dépôt ;
+les scripts de `scripts/` en sont la source reproductible.
+
+## Le contenu : les scripts `scripts/seed-*.ts`
+
+Quatre-vingt-quinze scripts, un par page. Chacun décrit sa page en **blocs**
+(`makePageBlock`), puis se connecte à l'admin et crée ou met à jour la page.
+
 ```bash
-npm install
-npm run seed     # contenu de démarrage neutre (page accueil, à-propos, démo boutique)
-npm start
+cd miyukini-cms
+BASE=https://tssr.miyukini.com ADMIN_PW='…' npx tsx scripts/seed-procedure-vlan.ts
 ```
 
-Port par défaut : `3460`
+- `BASE` — le site visé. Par défaut `https://tssr.miyukini.com`, donc **la
+  production** : pense à le pointer sur `http://localhost:3470` pour essayer.
+- `ADMIN_PW` — le mot de passe du compte `admin`. Sans lui, le script s'arrête
+  sur `login 401`.
 
-## Dupliquer pour un nouveau projet
-1. Copier le dossier (sans `cms.sqlite*`, `node_modules`, `dist`, `uploads`).
-2. `npm install` puis `npm run seed`.
-3. Personnaliser le branding dans **Admin → Thème** (nom de marque, logo, favicon, couleurs).
-4. Définir les variables d'environnement : `SESSION_SECRET`, `CMS_ADMIN_PASSWORD`, `PUBLIC_BASE_URL`, et le SMTP si besoin.
+Le script est **idempotent** : il met à jour la page si le `slug` existe déjà,
+la crée sinon, puis vide le cache du serveur. On peut donc le relancer autant de
+fois qu'on veut, et c'est le mode de travail normal — on édite le script, on
+relance, on recharge la page.
+
+> ⚠️ `npm run seed` est **autre chose** : c'est le contenu neutre de démarrage du
+> CMS (`server/db/seed.ts`), utile pour un nouveau projet. Il n'a rien à voir avec
+> les pages TSSR, et le lancer sur la production n'est pas ce qu'on veut.
+
+### Écrire ou modifier une page
+
+1. Repérer le script — le nom suit le `slug` : `/pages/les-vlan` →
+   `scripts/seed-cours-vlan.ts`.
+2. L'éditer. Les briques disponibles : `block('heading' | 'html' | 'hero', …)`,
+   plus les aides locales définies en tête de chaque script (`cmd()` pour un bloc
+   de commandes, `flow()` pour un schéma en monospace, `note()` pour un encadré,
+   `check()` pour un point de contrôle).
+3. Vérifier la syntaxe sans rien publier :
+   `./node_modules/.bin/esbuild scripts/le-script.ts --outfile=/tmp/v.js`
+4. Publier avec la commande ci-dessus.
+5. Commiter le script — c'est lui qui garde l'historique du contenu.
+
+Les schémas en `flow()` sont rendus en chasse fixe : **une bordure décalée d'un
+caractère se voit**. Mieux vaut les construire à partir des colonnes que les
+aligner à l'œil.
+
+## Développement
+
+```bash
+npm install
+npm run dev          # client + serveur en parallèle
+npm run typecheck
+npm run test
+npm run build        # build du front
+pm2 restart webcms   # après modification du code serveur
+```
+
+## Accès initial
+
+- Utilisateur : `admin`
+- Mot de passe : `changeme` (à changer, ainsi que `SESSION_SECRET`, avant toute
+  mise en production)
 
 ## Variables d'environnement
+
 | Variable | Défaut | Rôle |
 |---|---|---|
 | `PORT` | `3460` | Port d'écoute Express |
@@ -43,4 +100,28 @@ Port par défaut : `3460`
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | — | Envoi d'emails transactionnels |
 | `STRIPE_SECRET_KEY` / `STRIPE_PUBLIC_KEY` | — | Paiement boutique (optionnel) |
 
-En production, le serveur refuse de démarrer si `SESSION_SECRET` ou `CMS_ADMIN_PASSWORD` ne sont pas définis.
+En production, le serveur refuse de démarrer si `SESSION_SECRET` ou
+`CMS_ADMIN_PASSWORD` ne sont pas définis.
+
+## Le moteur, hors TSSR
+
+Le CMS lui-même est neutre et se duplique pour un autre projet :
+
+- CRUD Pages (avec page builder en blocs), Menu, Produits / boutique
+- Formulaires de devis, vitrine publique, back-office `/admin`
+- Thème et branding éditables (nom de marque, logo, couleurs)
+
+Pour repartir d'une base vierge : copier le dossier sans `cms.sqlite*`,
+`node_modules`, `dist` ni `uploads`, puis `npm install`, `npm run seed`, et
+personnaliser dans **Admin → Thème**.
+
+## Mise à jour automatique
+
+La tâche planifiée Windows `TSSR-WebCMS-AutoUpdate` exécute
+`scripts/auto-update.ps1` toutes les deux heures. Elle est volontairement timide :
+elle refuse d'agir si l'arbre de travail est modifié, ou si l'historique local est
+en avance ou divergent.
+
+**Conséquence pratique : une modification du code n'est déployée que si elle est
+commitée *et* poussée sur `origin/main`.** Un commit local non poussé bloque le
+mécanisme (`SKIP : historique divergent`). Journal : `logs/auto-update.log`.
