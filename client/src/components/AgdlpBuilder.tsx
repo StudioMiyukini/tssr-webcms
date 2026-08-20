@@ -95,10 +95,28 @@ const login = (p: string, n: string) => `${clean(p)}.${clean(n)}`.toLowerCase();
 const domainToDN = (d: string) => d.split('.').filter(Boolean).map(x => `DC=${x}`).join(',');
 const uid = (p: string) => p + Math.random().toString(36).slice(2, 8);
 
-// Bloc PowerShell d'assertions : tests unitaires [OK]/[KO] avec récapitulatif.
+/**
+ * La boîte à outils PowerShell posée en tête de chaque script.
+ *
+ * `Assert` vérifie après coup, `Gate` vérifie avant d'agir. La distinction
+ * compte : un script lancé sur le mauvais domaine, sur une machine sans le
+ * module AD ou avec un lecteur absent produisait vingt lignes rouges avant
+ * qu'on voie laquelle comptait — et il avait déjà à moitié agi.
+ *
+ * Un `Gate` qui échoue arrête tout et dit quoi faire. Un `Verrou` fait la même
+ * chose au milieu du script, quand la suite n'aurait plus de sens : créer des
+ * groupes dans une UO qui n'existe pas produit une erreur par groupe, toutes
+ * identiques, aucune ne nommant la vraie cause.
+ */
 const PS_ASSERT = [
   'function Assert($label,[scriptblock]$c){ $r=$false; try{ $r=[bool](& $c) }catch{}; if($r){ $global:T.ok++; Write-Host ("  [OK]  " + $label) -ForegroundColor Green } else { $global:T.ko++; Write-Host ("  [KO]  " + $label) -ForegroundColor Red } }',
   'function Show-Summary($t){ $c = if($global:T.ko -eq 0){"Green"}else{"Red"}; Write-Host ""; Write-Host ("== " + $t + " : " + $global:T.ok + " OK / " + $global:T.ko + " KO ==") -ForegroundColor $c }',
+  '',
+  '# --- Verifications AVANT d agir. Un echec arrete tout, sans rien modifier. ---',
+  'function Gate($label,[scriptblock]$c,$remede){ $r=$false; try{ $r=[bool](& $c) }catch{}; if($r){ Write-Host ("  [PRET] " + $label) -ForegroundColor DarkGray; return }; Write-Host ""; Write-Host ("  [STOP] " + $label) -ForegroundColor Red; Write-Host ("         " + $remede) -ForegroundColor Yellow; Write-Host "  Rien n a ete modifie." -ForegroundColor Yellow; exit 2 }',
+  'function Verrou($label,[scriptblock]$c,$remede){ $r=$false; try{ $r=[bool](& $c) }catch{}; if($r){ return }; Write-Host ""; Write-Host ("  [STOP] " + $label) -ForegroundColor Red; Write-Host ("         " + $remede) -ForegroundColor Yellow; Write-Host "  Le script s arrete ici : la suite n aurait plus de sens." -ForegroundColor Yellow; exit 3 }',
+  '# Code de sortie : 0 si tout passe. Un appelant peut donc enchainer les scripts.',
+  'function Fin($t){ Show-Summary $t; if($global:T.ko -gt 0){ exit 1 }; exit 0 }',
 ];
 
 const fieldStyle: React.CSSProperties = { width: '100%', padding: '7px 9px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface)', color: 'var(--text)', fontSize: 13.5, boxSizing: 'border-box' };
@@ -277,23 +295,49 @@ export function AgdlpBuilder() {
     o.push(`#  AGDLP (1/2) - CONTROLEUR DE DOMAINE (${domain})`);
     o.push('#  Cree OU -> Globaux -> Domaine Local -> imbrication -> utilisateurs, puis TESTS.');
     o.push('# ============================================================');
-    o.push('Import-Module ActiveDirectory');
     o.push('$global:T = @{ ok = 0; ko = 0 }');
     o.push(...PS_ASSERT);
+    o.push('');
+    o.push('Write-Host "===== PREALABLES =====" -ForegroundColor Yellow');
+    o.push("Gate \"Module ActiveDirectory disponible\" { Get-Module -ListAvailable ActiveDirectory } \"Installe-le : Add-WindowsFeature RSAT-AD-PowerShell (serveur) ou Add-WindowsCapability -Online -Name Rsat.ActiveDirectory.DS-LDS.Tools~~~~0.0.1.0 (poste).\"");
+    o.push('Import-Module ActiveDirectory -ErrorAction Stop');
+    o.push("Gate \"Annuaire joignable\" { Get-ADDomain -ErrorAction Stop } \"Aucun controleur de domaine ne repond. Verifie le reseau, le DNS, et que cette machine est bien membre du domaine.\"");
+    // Le verrou qui evite le plus gros degat : creer l'arborescence d'un TP
+    // dans l'annuaire d'un autre domaine, et devoir l'y retrouver pour l'effacer.
+    o.push(`Gate "Le domaine est bien ${domain}" { (Get-ADDomain).DNSRoot -eq '${domain}' } "Cette machine appartient a un autre domaine : $((Get-ADDomain).DNSRoot). Corrige le domaine dans l outil, ou lance ce script sur le bon controleur."`);
+    o.push(`Gate "L emplacement racine existe" { Get-ADObject -Identity '${domainDN}' -ErrorAction Stop } "Le DN ${domainDN} est introuvable. Le nom de domaine saisi ne correspond pas a cet annuaire."`);
+    // Un sAMAccountName depasse 20 caracteres : l'annuaire le refuse, mais une
+    // fois seulement -- au milieu de la creation, apres les precedents.
+    const tropLongs = [...ggroups.map(g => gName(g.id)), ...dlGroups.map(g => dlName(g.f, g.rule))].filter(n => n.length > 20);
+    for (const n of tropLongs) {
+      o.push(`Gate "Nom de groupe trop long : ${n}" { $false } "Un sAMAccountName tient en 20 caracteres. Raccourcis le code du dossier ou le nom du groupe dans l outil."`);
+    }
+    o.push('');
     o.push('function Ensure-OU($n,$p){ if(-not(Get-ADOrganizationalUnit -Filter "Name -eq \'$n\'" -SearchBase $p -ErrorAction SilentlyContinue)){ New-ADOrganizationalUnit -Name $n -Path $p -ProtectedFromAccidentalDeletion:$false } }');
     o.push('function Ensure-Grp($n,$s,$p){ if(-not(Get-ADGroup -Filter "Name -eq \'$n\'" -ErrorAction SilentlyContinue)){ New-ADGroup -Name $n -SamAccountName $n -GroupScope $s -GroupCategory Security -Path $p } }');
     o.push('');
     o.push('Write-Host "[1/5] Unites d organisation..." -ForegroundColor Cyan');
     sortedOus.forEach(ou => o.push(`Ensure-OU '${ou.name}' '${ouParent(ou)}'`));
+    // Sans ce verrou, chaque groupe echoue separement avec la meme erreur, et
+    // aucune ne nomme la cause : l'UO d'accueil n'a pas ete creee.
+    sortedOus.forEach(ou => o.push(`Verrou "UO ${ou.name} creee" { Get-ADOrganizationalUnit -Filter "Name -eq '${ou.name}'" -SearchBase '${ouParent(ou)}' } "La creation de l UO a echoue. Verifie les droits du compte et que le parent existe."`));
     o.push('Write-Host "[2/5] Groupes GLOBAUX..." -ForegroundColor Cyan');
     ggroups.forEach(g => o.push(`Ensure-Grp '${gName(g.id)}' Global '${dnOfOu(g.ou)}'`));
     o.push('Write-Host "[3/5] Groupes DOMAINE LOCAL..." -ForegroundColor Cyan');
     dlGroups.forEach(g => o.push(`Ensure-Grp '${dlName(g.f, g.rule)}' DomainLocal '${dnOfOu(dlOu)}'`));
     o.push('Start-Sleep -Seconds 2   # laisser l annuaire enregistrer les groupes avant de les utiliser');
+    // L'imbrication est le coeur d'AGDLP : si l'un des deux groupes manque,
+    // `Add-ADGroupMember -ErrorAction SilentlyContinue` n'en dirait rien, et la
+    // chaine serait rompue sans que personne le voie.
+    ggroups.forEach(g => o.push(`Verrou "Groupe global ${gName(g.id)} cree" { Get-ADGroup -Identity '${gName(g.id)}' } "Sa creation a echoue : l imbrication qui suit serait silencieusement incomplete."`));
+    dlGroups.forEach(g => o.push(`Verrou "Groupe DL ${dlName(g.f, g.rule)} cree" { Get-ADGroup -Identity '${dlName(g.f, g.rule)}' } "Sa creation a echoue : le droit correspondant ne sera porte par personne."`));
     o.push('Write-Host "[4/5] Imbrication Global -> Domaine Local..." -ForegroundColor Cyan');
     for (const f of folders) for (const rl of f.rules) o.push(`Add-ADGroupMember '${dlName(f, rl)}' -Members '${gName(rl.group)}' -ErrorAction SilentlyContinue`);
     o.push('Write-Host "[5/5] Utilisateurs..." -ForegroundColor Cyan');
     o.push('$pwd = Read-Host "Mot de passe initial des comptes" -AsSecureString');
+    // Un mot de passe vide passe la saisie et fait echouer chaque New-ADUser
+    // avec un message sur la « strategie de mot de passe » qui n'aide personne.
+    o.push('Verrou "Mot de passe saisi" { $pwd -and $pwd.Length -gt 0 } "Aucun mot de passe n a ete saisi. Relance le script et entre celui de la strategie du domaine."');
     for (const u of users) {
       const l = login(u.prenom, u.nom);
       o.push(`if(-not(Get-ADUser -Filter "SamAccountName -eq '${l}'" -ErrorAction SilentlyContinue)){ New-ADUser -Name '${u.prenom} ${u.nom}' -GivenName '${u.prenom}' -Surname '${u.nom}' -SamAccountName '${l}' -UserPrincipalName '${l}@${domain}' -Path '${dnOfOu(u.ou)}' -AccountPassword $pwd -Enabled $true -ChangePasswordAtLogon $true }`);
@@ -311,13 +355,16 @@ export function AgdlpBuilder() {
       o.push(`Assert "Utilisateur ${l}" { Get-ADUser -Identity '${l}' }`);
       if (u.group) o.push(`Assert "${l} membre de ${gName(u.group)}" { Get-ADGroupMember '${gName(u.group)}' | Where-Object { $_.SamAccountName -eq '${l}' } }`);
     }
-    o.push('Show-Summary "AD (script 1)"');
+    o.push('Fin "AD (script 1)"');
     return o.join('\n');
   }, [domain, domainDN, ous, ggroups, dlOu, folders, dlGroups, users]);
 
   // ---- Script 2 : serveur de fichiers (dossiers + partage, droits par défaut ; NTFS manuel) ----
   const scriptFS = useMemo(() => {
     const o: string[] = [];
+    // « E:\Partages » → « E:\ ». Un chemin UNC n'a pas de lettre : on verifie
+    // alors le partage lui-meme plutot qu'un lecteur qui n'existe pas.
+    const racineLecteur = /^[A-Za-z]:/.test(basePath) ? basePath.slice(0, 2) + '\\' : basePath;
     const sortedF = [...folders].sort((a, b) => depthF(a) - depthF(b));
     o.push('#Requires -RunAsAdministrator');
     o.push('# ============================================================');
@@ -333,7 +380,25 @@ export function AgdlpBuilder() {
       o.push("$AuthUsers = (New-Object System.Security.Principal.SecurityIdentifier('S-1-5-11')).Translate([System.Security.Principal.NTAccount]).Value");
     }
     o.push('');
-    o.push('Write-Host "[1/2] Dossier racine + partage..." -ForegroundColor Cyan');
+    o.push('Write-Host "===== PREALABLES =====" -ForegroundColor Yellow');
+    // La panne la plus frequente d'une salle de TP, et la plus opaque : le
+    // script vise E:\ sur une machine qui n'a qu'un C:. `New-Item -Force` cree
+    // alors joyeusement l'arborescence... nulle part d'utile.
+    o.push(`Gate "Le lecteur ${racineLecteur} existe" { Test-Path '${racineLecteur}' } "Ce script ecrit dans ${basePath}. Cree ce volume, ou change le dossier racine dans l outil."`);
+    if (shareRoot || folders.some(f => f.share)) {
+      o.push("Gate \"Les partages SMB sont gerables ici\" { Get-Command New-SmbShare -ErrorAction SilentlyContinue } \"Le module SmbShare manque : installe le role Serveur de fichiers (Add-WindowsFeature FS-FileServer).\"");
+    }
+    if (modeDroits === 'icacls') {
+      o.push("Gate \"La machine est membre d un domaine\" { (Get-CimInstance Win32_ComputerSystem).PartOfDomain } \"Les groupes de domaine local ne peuvent pas etre resolus sur une machine hors domaine : icacls echouerait sur chaque dossier.\"");
+      // Un groupe DL absent fait echouer `icacls /grant` avec « Aucun mappage
+      // entre les noms de comptes » -- un message qui ne dit pas lequel manque.
+      for (const g of dlGroups) {
+        const n = dlName(g.f, g.rule);
+        o.push(`Gate "Groupe ${n} resolvable" { try { ([System.Security.Principal.NTAccount]"${n}").Translate([System.Security.Principal.SecurityIdentifier]) } catch { $false } } "Ce groupe n existe pas encore. Lance d abord le script 1 sur le controleur de domaine, puis attends la replication."`);
+      }
+    }
+    o.push('');
+    o.push('Write-Host "[1/3] Dossier racine + partage..." -ForegroundColor Cyan');
     o.push(`New-Item -ItemType Directory -Path '${basePath}' -Force | Out-Null`);
     if (shareRoot) o.push(`if(-not(Get-SmbShare -Name '${shareName}' -ErrorAction SilentlyContinue)){ New-SmbShare -Name '${shareName}' -Path '${basePath}' -FullAccess $AuthUsers | Out-Null }`);
     o.push('Write-Host "[2/3] Sous-dossiers..." -ForegroundColor Cyan');
@@ -341,6 +406,7 @@ export function AgdlpBuilder() {
     o.push('');
 
     if (modeDroits === 'icacls') {
+      sortedF.forEach(f => o.push(`Verrou "Dossier cree : ${f.name}" { Test-Path '${pathOf(f.id)}' } "Sa creation a echoue (droits, ou chemin invalide) : poser des droits dessus n a pas de sens."`));
       o.push('Write-Host "[3/3] Droits NTFS et partages..." -ForegroundColor Cyan');
       for (const f of sortedF) {
         const chemin = pathOf(f.id);
@@ -396,9 +462,9 @@ export function AgdlpBuilder() {
         }
       }
     }
-    o.push('Show-Summary "Dossiers & partage (script 2)"');
+    o.push('Fin "Dossiers & partage (script 2)"');
     return o.join('\n');
-  }, [folders, basePath, shareRoot, shareName, modeDroits, domain]);
+  }, [folders, basePath, shareRoot, shareName, modeDroits, domain, dlGroups]);
 
   // ---- Script 3 : vérification autonome (rejouable, tests [OK]/[KO]) ----
   const scriptVerify = useMemo(() => {
@@ -416,12 +482,32 @@ export function AgdlpBuilder() {
       o.push(`Assert "Partage ${shareName} : Utilisateurs authentifies = Controle total" { Get-SmbShareAccess -Name '${shareName}' | Where-Object { $_.AccessRight -eq 'Full' } }`);
     }
     sortedF.forEach(f => o.push(`Assert "Dossier existe : ${f.name}" { Test-Path '${pathOf(f.id)}' }`));
+    // Le script ne verifiait que l'existence des dossiers. Or ce qui casse en
+    // TP, ce n'est presque jamais le dossier -- c'est le droit qui manque
+    // dessus, ou l'heritage coupe qui a emporte le socle avec lui.
+    o.push('Write-Host "== Droits NTFS et partages ==" -ForegroundColor Yellow');
+    for (const f of sortedF) {
+      const chemin = pathOf(f.id);
+      if (f.share) {
+        o.push(`Assert "Partage ${nomPartage(f)} existe" { Get-SmbShare -Name '${nomPartage(f)}' }`);
+        if (f.abe) o.push(`Assert "Partage ${nomPartage(f)} : ABE actif" { (Get-SmbShare -Name '${nomPartage(f)}').FolderEnumerationMode -eq 'AccessBased' }`);
+      }
+      if (f.noInherit) {
+        o.push(`Assert "${f.name} : heritage coupe" { (Get-Acl '${chemin}').AreAccessRulesProtected }`);
+        for (const q of SOCLE_NTFS) {
+          o.push(`Assert "${f.name} : ${q.nom} conserve" { (Get-Acl '${chemin}').Access | Where-Object { $_.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value -eq '${q.sid}' } }`);
+        }
+      }
+      for (const rl of f.rules) {
+        o.push(`Assert "${f.name} : ${dlName(f, rl)} present" { (icacls '${chemin}') -match '${dlName(f, rl)}' }`);
+      }
+    }
     o.push('Write-Host "== Active Directory (si module dispo) ==" -ForegroundColor Yellow');
     o.push('if(Get-Module -ListAvailable ActiveDirectory){ Import-Module ActiveDirectory');
     ggroups.forEach(g => o.push(`  Assert "Groupe global ${gName(g.id)}" { Get-ADGroup -Identity '${gName(g.id)}' }`));
     for (const f of folders) for (const rl of f.rules) o.push(`  Assert "${gName(rl.group)} membre de ${dlName(f, rl)}" { Get-ADGroupMember '${dlName(f, rl)}' | Where-Object { $_.SamAccountName -eq '${gName(rl.group)}' } }`);
     o.push('} else { Write-Host "  (module ActiveDirectory absent : tests AD ignores)" -ForegroundColor DarkGray }');
-    o.push('Show-Summary "Verification"');
+    o.push('Fin "Verification"');
     return o.join('\n');
   }, [folders, basePath, shareRoot, shareName, ggroups, dlGroups]);
 
