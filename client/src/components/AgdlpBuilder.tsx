@@ -1,11 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
 
 /**
- * Constructeur AGDLP — arborescences éditables (UO & dossiers imbriqués), groupes Globaux,
- * utilisateurs, et par dossier : droit de PARTAGE (coarse) + droits NTFS GRANULAIRES par groupe.
- * Respecte AGDLP (Account → Global → Domain Local → Permission) et la convention de nommage.
- * Sorties : arbo UO, arbo dossiers+NTFS, 2 scripts (DC + serveur de fichiers).
- * Îlot React hydraté via RichContent (data-block="agdlp-builder").
+ * Constructeur AGDLP & serveur de fichiers.
+ *
+ * Un seul outil, parce que c'était un seul sujet : AGDLP existe précisément
+ * pour poser des droits sur des partages. Les deux constructeurs faisaient
+ * chacun une moitié du travail — l'un tenait la chaîne Account → Global →
+ * Domain Local mais s'arrêtait au bord du partage, l'autre savait partager et
+ * poser des ACL mais demandait de retaper les noms de groupes à la main, ce qui
+ * est exactement la faute qu'AGDLP existe pour éviter.
+ *
+ * Il produit : l'arborescence des UO, celle des dossiers avec leurs droits, et
+ * trois scripts PowerShell — le contrôleur de domaine, le serveur de fichiers,
+ * et une vérification rejouable.
+ *
+ * Îlot React hydraté via RichContent (data-block="agdlp-builder", et
+ * "file-server-builder" pour les pages écrites avant la fusion).
  */
 
 type NtfsKey = 'F' | 'M' | 'MND' | 'RX' | 'R' | 'W' | 'CUSTOM';
@@ -19,6 +29,23 @@ const NTFS: Array<{ key: NtfsKey; label: string; icacls: string; suffix: string 
   { key: 'CUSTOM', label: 'Personnalisé (icacls)…', icacls: '', suffix: 'Perso' },
 ];
 const ntfs = (k: NtfsKey) => NTFS.find(x => x.key === k) || NTFS[1];
+
+/**
+ * Le socle d'un dossier dont on a coupé l'héritage.
+ *
+ * Couper l'héritage sans rien reposer laisse un dossier qui n'appartient plus à
+ * personne — pas même à qui voudrait y remettre des droits. Ces comptes-là
+ * restent donc toujours, en plus des groupes de domaine local.
+ *
+ * Ils sont désignés par leur **SID** et non par leur nom : « Administrateurs »
+ * s'appelle « Administrators » sur un Windows anglais, et un script qui les
+ * nomme échoue sur la moitié des postes d'une salle.
+ */
+const SOCLE_NTFS: { sid: string; nom: string; droit: string; pourquoi: string }[] = [
+  { sid: 'S-1-5-32-544', nom: 'Administrateurs', droit: 'F', pourquoi: 'sans eux, plus personne ne peut reprendre la main sur le dossier' },
+  { sid: 'S-1-5-18', nom: 'SYSTEM', droit: 'F', pourquoi: 'sauvegarde, indexation et antivirus passent par ce compte' },
+  { sid: 'S-1-5-11', nom: 'Utilisateurs authentifiés', droit: 'RX', pourquoi: 'traverser le dossier pour atteindre les sous-dossiers auxquels on a droit' },
+];
 // Codes de droit courts pour tenir le nom de groupe DL sous la limite AD (sAMAccountName ≤ 20).
 const RIGHT_CODE: Record<NtfsKey, string> = { F: 'CT', M: 'M', MND: 'MND', RX: 'RX', R: 'L', W: 'E', CUSTOM: 'P' };
 
@@ -26,7 +53,42 @@ type Ou = { id: string; name: string; parent: string };
 type GGroup = { id: string; name: string; ou: string };
 type User = { id: string; prenom: string; nom: string; ou: string; group: string };
 type Rule = { group: string; right: NtfsKey; custom?: string };
-type Folder = { id: string; name: string; code: string; parent: string; abs?: string; noInherit?: boolean; rules: Rule[] };
+type Folder = {
+  id: string; name: string; code: string; parent: string; abs?: string; noInherit?: boolean; rules: Rule[];
+  /** Partager ce dossier, et sous quel nom (vide = le nom du dossier). */
+  share?: boolean; shareName?: string;
+  /**
+   * Énumération basée sur l'accès.
+   *
+   * Un dossier qu'on n'a pas le droit d'ouvrir cesse d'apparaître dans la
+   * liste. Ce n'est pas une sécurité — les droits NTFS le sont déjà — mais
+   * c'est ce qui évite la question « pourquoi je vois un dossier interdit ? ».
+   */
+  abe?: boolean;
+};
+
+/**
+ * Droits NTFS avancés, en codes icacls.
+ *
+ * Les deux suppressions sont distinctes et c'est le piège classique : `DE`
+ * supprime l'objet lui-même, `DC` supprime le contenu d'un dossier. « Modifier
+ * sans suppression » consiste exactement à retirer ces deux-là.
+ */
+const SPECIAUX: { code: string; label: string; suppr?: boolean }[] = [
+  { code: 'X', label: 'Parcours du dossier / exécuter le fichier' },
+  { code: 'RD', label: 'Liste du dossier / lecture de données' },
+  { code: 'RA', label: 'Attributs de lecture' },
+  { code: 'REA', label: 'Attributs étendus de lecture' },
+  { code: 'WD', label: 'Création de fichiers / écriture de données' },
+  { code: 'AD', label: 'Création de dossiers / ajout de données' },
+  { code: 'WA', label: 'Attributs d’écriture' },
+  { code: 'WEA', label: 'Attributs étendus d’écriture' },
+  { code: 'DC', label: 'Suppression de sous-dossier et fichier', suppr: true },
+  { code: 'DE', label: 'Suppression', suppr: true },
+  { code: 'RC', label: 'Autorisations de lecture' },
+  { code: 'WDAC', label: 'Modification des autorisations' },
+  { code: 'WO', label: 'Appropriation' },
+];
 
 const clean = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '');
 const login = (p: string, n: string) => `${clean(p)}.${clean(n)}`.toLowerCase();
@@ -81,6 +143,15 @@ export function AgdlpBuilder() {
   const [ggroups, setGgroups] = useState<GGroup[]>(() => load('agdlp2_gg', D_GG));
   const [users, setUsers] = useState<User[]>(() => load('agdlp2_users', D_USERS));
   const [folders, setFolders] = useState<Folder[]>(() => load('agdlp2_folders', D_FOLDERS));
+  /**
+   * Qui pose les droits NTFS.
+   *
+   * « A la main » etait le seul mode : le TP demande de passer par l'onglet
+   * Securite, et le script se contentait de rappeler ce qu'on attendait. C'est
+   * pedagogiquement juste la premiere fois, et penible les suivantes -- d'ou
+   * `icacls`, qui applique ce que l'arborescence decrit.
+   */
+  const [modeDroits, setModeDroits] = useState<'manuel' | 'icacls'>(() => load('agdlp2_mode', 'manuel'));
   const [copiedId, setCopiedId] = useState('');
   const [bulk, setBulk] = useState(''); const [bulkOu, setBulkOu] = useState(''); const [bulkGrp, setBulkGrp] = useState('');
   const [bulkGg, setBulkGg] = useState(''); const [bulkGgOu, setBulkGgOu] = useState('');
@@ -93,7 +164,8 @@ export function AgdlpBuilder() {
     localStorage.setItem('agdlp2_ous', JSON.stringify(ous)); localStorage.setItem('agdlp2_dlou', JSON.stringify(dlOu));
     localStorage.setItem('agdlp2_gg', JSON.stringify(ggroups)); localStorage.setItem('agdlp2_users', JSON.stringify(users));
     localStorage.setItem('agdlp2_folders', JSON.stringify(folders));
-  } catch { /* */ } }, [domain, basePath, shareRoot, shareName, ous, dlOu, ggroups, users, folders]);
+    localStorage.setItem('agdlp2_mode', JSON.stringify(modeDroits));
+  } catch { /* */ } }, [domain, basePath, shareRoot, shareName, ous, dlOu, ggroups, users, folders, modeDroits]);
 
   // Auto-répare : garantit une OU pour les groupes Domaine Local (« GDL ») et y pointe dlOu.
   useEffect(() => {
@@ -121,6 +193,16 @@ export function AgdlpBuilder() {
   const dlName = (f: Folder, rl: Rule) => `DL_${clean(f.code || f.name).slice(0, 15)}_${RIGHT_CODE[rl.right]}`.slice(0, 20);
   const rightLabel = (rl: Rule) => rl.right === 'CUSTOM' ? `icacls ${rl.custom || '?'}` : ntfs(rl.right).label;
   // Chaîne d'autorisation icacls : (OI)(CI) + le droit (lettre simple, combo, ou personnalisé).
+  // (OI) hérite sur les fichiers, (CI) sur les dossiers : sans les deux, le droit
+  // s'arrête au dossier lui-même et le contenu reste inaccessible.
+  const icaclsDe = (rl: Rule) => {
+    const codes = rl.right === 'CUSTOM'
+      ? (rl.custom || '').split(',').map(x => x.trim()).filter(Boolean).join(',')
+      : ntfs(rl.right).icacls;
+    if (!codes) return null;
+    return codes.startsWith('(') ? `(OI)(CI)${codes}` : `(OI)(CI)${codes}`;
+  };
+  const nomPartage = (f: Folder) => (f.shareName || clean(f.name) || 'Partage').slice(0, 80);
 
   const dlGroups = useMemo(() => {
     const m = new Map<string, { f: Folder; rule: Rule }>();
@@ -145,9 +227,11 @@ export function AgdlpBuilder() {
   const ntfsTree = useMemo(() => {
     const L: string[] = [];
     const walk = (f: Folder, prefix: string, last: boolean) => {
-      L.push(`${prefix}${last ? '└─' : '├─'} 📂 ${f.name}${f.noInherit ? '   ⛔ héritage désactivé' : ''}`);
+      const part = f.share ? `   📤 Partage « ${nomPartage(f)} »${f.abe ? ' · ABE' : ''}` : '';
+      L.push(`${prefix}${last ? '└─' : '├─'} 📂 ${f.name}${f.noInherit ? '   ⛔ héritage désactivé' : ''}${part}`);
       const sub = prefix + (last ? '    ' : '│   ');
       f.rules.forEach(rl => L.push(`${sub}   🔒 ${dlName(f, rl)} → ${rightLabel(rl)}  (⟵ ${gName(rl.group)})`));
+      if (f.noInherit) SOCLE_NTFS.forEach(q => L.push(`${sub}   🛡️ ${q.nom} → ${q.droit === 'F' ? 'Contrôle total' : 'Lecture et exécution'}  (socle conservé)`));
       const kids = folders.filter(c => c.parent === f.id);
       kids.forEach((c, i) => walk(c, sub, i === kids.length - 1));
     };
@@ -217,27 +301,78 @@ export function AgdlpBuilder() {
     o.push('# ============================================================');
     o.push('$global:T = @{ ok = 0; ko = 0 }');
     o.push(...PS_ASSERT);
-    if (shareRoot) o.push("$AuthUsers = (New-Object System.Security.Principal.SecurityIdentifier('S-1-5-11')).Translate([System.Security.Principal.NTAccount]).Value");
+    // Le nom du groupe « Utilisateurs authentifies » depend de la langue de
+    // Windows : on le retrouve par son SID, qui, lui, ne change pas.
+    if (shareRoot || (modeDroits === 'icacls' && folders.some(f => f.share))) {
+      o.push("$AuthUsers = (New-Object System.Security.Principal.SecurityIdentifier('S-1-5-11')).Translate([System.Security.Principal.NTAccount]).Value");
+    }
     o.push('');
     o.push('Write-Host "[1/2] Dossier racine + partage..." -ForegroundColor Cyan');
     o.push(`New-Item -ItemType Directory -Path '${basePath}' -Force | Out-Null`);
     if (shareRoot) o.push(`if(-not(Get-SmbShare -Name '${shareName}' -ErrorAction SilentlyContinue)){ New-SmbShare -Name '${shareName}' -Path '${basePath}' -FullAccess $AuthUsers | Out-Null }`);
-    o.push('Write-Host "[2/2] Sous-dossiers (droits par defaut, herites)..." -ForegroundColor Cyan');
+    o.push('Write-Host "[2/3] Sous-dossiers..." -ForegroundColor Cyan');
     sortedF.forEach(f => o.push(`New-Item -ItemType Directory -Path '${pathOf(f.id)}' -Force | Out-Null`));
     o.push('');
-    o.push('# --- Droits NTFS : A APPLIQUER MANUELLEMENT sur les groupes DL (onglet Securite) ---');
-    o.push('# Rappel des grants attendus (voir l apercu "Arborescence des droits NTFS") :');
-    sortedF.forEach(f => { for (const rl of f.rules) o.push(`#   ${dlName(f, rl)}  ->  ${ntfs(rl.right).label}  sur  ${pathOf(f.id)}`); });
-    o.push('');
+
+    if (modeDroits === 'icacls') {
+      o.push('Write-Host "[3/3] Droits NTFS et partages..." -ForegroundColor Cyan');
+      for (const f of sortedF) {
+        const chemin = pathOf(f.id);
+        if (!f.rules.length && !f.share && !f.noInherit) continue;
+        o.push(`# --- ${f.name} ---`);
+        if (f.noInherit) {
+          // `/inheritance:d` copie les ACE heritees avant de couper le lien ;
+          // `/inheritance:r` les supprimerait, et le dossier deviendrait
+          // inaccessible a tout le monde, y compris a qui doit le reparer.
+          o.push(`icacls '${chemin}' /inheritance:d | Out-Null`);
+          o.push('# Le socle reste, quels que soient les groupes DL poses ensuite :');
+          for (const q of SOCLE_NTFS) {
+            o.push(`icacls '${chemin}' /grant '*${q.sid}:(OI)(CI)${q.droit}' | Out-Null   # ${q.nom} - ${q.pourquoi}`);
+          }
+        }
+        for (const rl of f.rules) {
+          const droit = icaclsDe(rl);
+          if (!droit) continue;
+          o.push(`icacls '${chemin}' /grant '${dlName(f, rl)}:${droit}' | Out-Null`);
+        }
+        if (f.share) {
+          const nom = nomPartage(f);
+          // Controle total au niveau du partage, et c'est voulu : c'est NTFS qui
+          // tranche. Deux jeux de droits qui se croisent donnent un resultat que
+          // personne ne sait predire, et l'ecran de securite ne le montre pas.
+          o.push(`if(-not(Get-SmbShare -Name '${nom}' -ErrorAction SilentlyContinue)){ New-SmbShare -Name '${nom}' -Path '${chemin}' -FullAccess $AuthUsers${f.abe ? ' -FolderEnumerationMode AccessBased' : ''} | Out-Null }`);
+          if (f.abe) o.push(`Set-SmbShare -Name '${nom}' -FolderEnumerationMode AccessBased -Force | Out-Null`);
+        }
+      }
+      o.push('');
+    } else {
+      o.push('# --- Droits NTFS : A APPLIQUER MANUELLEMENT sur les groupes DL (onglet Securite) ---');
+      o.push('# Rappel des grants attendus (voir l apercu "Arborescence des droits NTFS") :');
+      sortedF.forEach(f => { for (const rl of f.rules) o.push(`#   ${dlName(f, rl)}  ->  ${ntfs(rl.right).label}  sur  ${pathOf(f.id)}`); });
+      o.push('');
+    }
     o.push('Write-Host "===== TESTS Dossiers & partage =====" -ForegroundColor Yellow');
     if (shareRoot) {
       o.push(`Assert "Partage ${shareName} existe" { Get-SmbShare -Name '${shareName}' }`);
       o.push(`Assert "Partage ${shareName} : Utilisateurs authentifies = Controle total" { Get-SmbShareAccess -Name '${shareName}' | Where-Object { $_.AccessRight -eq 'Full' } }`);
     }
     sortedF.forEach(f => o.push(`Assert "Dossier existe : ${f.name}" { Test-Path '${pathOf(f.id)}' }`));
+    if (modeDroits === 'icacls') {
+      for (const f of sortedF) {
+        if (f.share) o.push(`Assert "Partage ${nomPartage(f)} existe" { Get-SmbShare -Name '${nomPartage(f)}' }`);
+        for (const rl of f.rules) {
+          o.push(`Assert "${dlName(f, rl)} a un droit sur ${f.name}" { (icacls '${pathOf(f.id)}') -match '${dlName(f, rl)}' }`);
+        }
+        if (f.noInherit) {
+          for (const q of SOCLE_NTFS) {
+            o.push(`Assert "${f.name} : ${q.nom} conserve" { (Get-Acl '${pathOf(f.id)}').Access | Where-Object { $_.IdentityReference.Translate([System.Security.Principal.SecurityIdentifier]).Value -eq '${q.sid}' } }`);
+          }
+        }
+      }
+    }
     o.push('Show-Summary "Dossiers & partage (script 2)"');
     return o.join('\n');
-  }, [folders, basePath, shareRoot, shareName]);
+  }, [folders, basePath, shareRoot, shareName, modeDroits, domain]);
 
   // ---- Script 3 : vérification autonome (rejouable, tests [OK]/[KO]) ----
   const scriptVerify = useMemo(() => {
@@ -402,11 +537,26 @@ export function AgdlpBuilder() {
               <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap' }} title="Désactiver l'héritage NTFS (le dossier n'hérite plus des droits du parent)">
                 <input type="checkbox" checked={!!f.noInherit} onChange={e => patchFolder(f.id, { noInherit: e.target.checked })} /> ⛔ héritage
               </label>
+              <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap' }} title="Publier ce dossier comme partage réseau (New-SmbShare)">
+                <input type="checkbox" checked={!!f.share} onChange={e => patchFolder(f.id, { share: e.target.checked })} /> 📤 partager
+              </label>
               <button style={smallBtn} onClick={() => delFolder(f.id)} title="Supprimer (et sous-dossiers)">✕</button>
             </div>
             {f.abs
               ? <input style={{ ...fieldStyle, fontFamily: 'ui-monospace,monospace', marginTop: 4 }} value={f.abs} onChange={e => patchFolder(f.id, { abs: e.target.value })} title="Chemin absolu du dossier" />
               : <div className="meta" style={{ fontSize: 11, marginTop: 4, fontFamily: 'ui-monospace,monospace' }}>{pathOf(f.id)}</div>}
+            {f.share && (
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6, flexWrap: 'wrap' }}>
+                <span className="meta" style={{ fontSize: 12 }}>Nom du partage</span>
+                <input style={{ ...fieldStyle, ...auto, width: 170 }} value={f.shareName ?? ''} placeholder={clean(f.name)}
+                  onChange={e => patchFolder(f.id, { shareName: e.target.value })} />
+                <code style={{ fontSize: 11, color: 'var(--text-muted)' }}>\\\\{'{serveur}'}\\{nomPartage(f)}</code>
+                <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, cursor: 'pointer' }}
+                  title="Énumération basée sur l'accès : un dossier qu'on n'a pas le droit d'ouvrir cesse d'apparaître dans la liste.">
+                  <input type="checkbox" checked={!!f.abe} onChange={e => patchFolder(f.id, { abe: e.target.checked })} /> ABE
+                </label>
+              </div>
+            )}
             <div style={{ marginTop: 8, paddingLeft: 8, borderLeft: '2px solid var(--border)' }}>
               {f.rules.map((rl, j) => (
                 <div key={j} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6, flexWrap: 'wrap' }}>
@@ -414,7 +564,33 @@ export function AgdlpBuilder() {
                   <select style={{ ...fieldStyle, ...auto }} value={rl.group} onChange={e => patchRule(f.id, j, { group: e.target.value })}>{ggroups.map(g => <option key={g.id} value={g.id}>{gName(g.id)}</option>)}</select>
                   <span className="meta" style={{ fontSize: 12 }}>→</span>
                   <select style={{ ...fieldStyle, ...auto }} value={rl.right} onChange={e => patchRule(f.id, j, { right: e.target.value as NtfsKey })}>{NTFS.map(n => <option key={n.key} value={n.key}>{n.label}</option>)}</select>
-                  {rl.right === 'CUSTOM' && <input style={{ ...fieldStyle, width: 150, fontFamily: 'ui-monospace,monospace' }} value={rl.custom || ''} onChange={e => patchRule(f.id, j, { custom: e.target.value })} placeholder="ex. RD,WD,AD,X" title="Droits spéciaux icacls séparés par des virgules (RD,WD,AD,X,REA,WEA,RA,WA,DE,RC…)" />}
+                  {/* Les codes icacls se tapaient a la main : une faute de frappe
+                      passait sans bruit jusqu'a l'execution du script. */}
+                  {rl.right === 'CUSTOM' && (() => {
+                    const coches = (rl.custom || '').split(',').map(x => x.trim()).filter(Boolean);
+                    const basculer = (code: string) => patchRule(f.id, j, {
+                      custom: (coches.includes(code) ? coches.filter(x => x !== code) : [...coches, code]).join(','),
+                    });
+                    return (
+                      <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', flexBasis: '100%', margin: '2px 0 4px 12px' }}>
+                        {SPECIAUX.map(sp => {
+                          const on = coches.includes(sp.code);
+                          return (
+                            <button key={sp.code} type="button" title={sp.label} onClick={() => basculer(sp.code)}
+                              style={{ ...smallBtn, padding: '2px 7px', fontSize: 11,
+                                borderColor: on ? (sp.suppr ? '#dc2626' : 'var(--accent)') : 'var(--border)',
+                                color: on ? (sp.suppr ? '#dc2626' : 'var(--accent)') : 'var(--text-muted)' }}>
+                              {sp.code}
+                            </button>
+                          );
+                        })}
+                        <span className="meta" style={{ fontSize: 11, width: '100%' }}>
+                          <strong>DE</strong> supprime l'objet, <strong>DC</strong> son contenu — « modifier sans
+                          suppression » consiste exactement à retirer ces deux-là.
+                        </span>
+                      </div>
+                    );
+                  })()}
                   <code style={{ fontSize: 11, color: 'var(--text-muted)' }}>{dlName(f, rl)}</code>
                   <button style={{ ...smallBtn, marginLeft: 'auto' }} onClick={() => delRule(f.id, j)}>✕</button>
                 </div>
@@ -475,8 +651,21 @@ export function AgdlpBuilder() {
       </div>
       <div style={{ marginTop: 14 }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '0 0 6px' }}>
-          <div style={{ fontWeight: 700, fontSize: 14 }}>📜 ② Serveur de fichiers — dossiers (droits par défaut) + partage racine</div>
+          <div style={{ fontWeight: 700, fontSize: 14 }}>
+            📜 ② Serveur de fichiers — dossiers, partages{modeDroits === 'icacls' ? ' et droits NTFS' : ' (droits NTFS à la main)'}
+          </div>
           {outBtns('fs', scriptFS, 'agdlp-partages.ps1')}
+        </div>
+        {/* Le TP demande de poser les droits par l'onglet Securite : c'est
+            formateur la premiere fois, et penible les suivantes. */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap', margin: '0 0 8px' }}>
+          <span className="meta" style={{ fontSize: 12 }}>Les droits NTFS :</span>
+          {([['manuel', 'à poser à la main (onglet Sécurité)'], ['icacls', 'appliqués par le script (icacls)']] as const).map(([v, lib]) => (
+            <button key={v} type="button" onClick={() => setModeDroits(v)}
+              style={{ ...smallBtn, borderColor: modeDroits === v ? 'var(--accent)' : 'var(--border)', color: modeDroits === v ? 'var(--accent)' : 'var(--text-soft)' }}>
+              {lib}
+            </button>
+          ))}
         </div>
         <pre style={preStyle}><code>{scriptFS}</code></pre>
       </div>

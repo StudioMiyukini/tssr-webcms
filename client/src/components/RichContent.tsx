@@ -18,7 +18,10 @@ const BLOCKS: Record<string, BlockDef> = {
   'vm-configurator': { load: () => named(import('./VmConfigurator'), 'VmConfigurator') },
   'ad-configurator': { load: () => named(import('./AdConfigurator'), 'AdConfigurator') },
   'ad-bulk-configurator': { load: () => named(import('./AdBulkConfigurator'), 'AdBulkConfigurator') },
-  'file-server-builder': { load: () => named(import('./FileServerBuilder'), 'FileServerBuilder') },
+  // Fusionne avec AGDLP : c'etait un seul sujet traite par deux outils, dont l'un
+  // demandait de retaper les noms de groupes que l'autre calculait. Les pages
+  // ecrites avant la fusion continuent de fonctionner.
+  'file-server-builder': { load: () => named(import('./AgdlpBuilder'), 'AgdlpBuilder') },
   'net-diagnostic': { load: () => named(import('./NetDiagnostic'), 'NetDiagnostic') },
   'subnet-trainer': { load: () => named(import('./SubnetTrainer'), 'SubnetTrainer') },
   'agdlp-builder': { load: () => named(import('./AgdlpBuilder'), 'AgdlpBuilder') },
