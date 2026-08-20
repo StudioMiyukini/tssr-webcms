@@ -136,7 +136,28 @@ export interface PortAlloc {
 export const NATIF_PAR_DEFAUT = 999;
 
 /** Ports d'un 2960 courant. */
-export const PORTS_PAR_DEFAUT = 24;
+/**
+ * Les ports d'acces d'un 2960-24TT : FastEthernet0/1 a 24.
+ *
+ * Les deux Gigabit qui suivent ne sont pas des ports d'acces — on y monte, on
+ * n'y branche pas de poste.
+ */
+export const PORTS_ACCES = 24;
+
+/** Ports d'un 2960-24TT : 24 FastEthernet + 2 GigabitEthernet. */
+export const PORTS_PAR_DEFAUT = 26;
+
+/**
+ * Le nom d'une interface de 2960, d'apres son numero de port.
+ *
+ * La numerotation du materiel est continue — c'est ce qu'on lit sur la face
+ * avant, et ce que la couche 1 manipule — mais l'IOS la coupe en deux familles :
+ * `FastEthernet0/1-24`, puis `GigabitEthernet0/1-2` pour les deux montants.
+ * Les confondre produit une interface qui n'existe pas.
+ */
+export function nomPort(p: number): string {
+  return p > PORTS_ACCES ? `GigabitEthernet0/${p - PORTS_ACCES}` : `FastEthernet0/${p}`;
+}
 
 /** Écrit une plage de ports : `1` seul, `1-10` sinon. */
 export function plagePorts(debut: number, fin: number): string {
@@ -160,8 +181,10 @@ export function repartirPorts(sw: AccessSwitch): PortAlloc[] {
   // en étendant la plage : sur un uplink au milieu (port 23 d'un 24 ports), la
   // plage l'englobait au lieu de l'éviter. Un trunk qui écrase un port d'accès
   // ne se voit pas — tout le reste marche.
+  // Les Gigabit ne comptent pas : y repartir des VLAN d'acces produirait un
+  // `FastEthernet0/25` qui n'existe pas.
   const dispo: number[] = [];
-  for (let p = 1; p <= sw.ports; p++) if (p !== sw.uplink) dispo.push(p);
+  for (let p = 1; p <= Math.min(sw.ports, PORTS_ACCES); p++) if (p !== sw.uplink) dispo.push(p);
   if (!sw.vlans.length || !dispo.length) return [];
 
   const base = Math.floor(dispo.length / sw.vlans.length);
@@ -371,7 +394,11 @@ export function configMls(plan: MlsPlan, mls: Multicouche = plan.multicouches[0]
 export function configAcces(sw: AccessSwitch, plan: MlsPlan): string {
   const nomDe = (id: number) => plan.vlans.find(v => v.id === id)?.name || `VLAN${id}`;
   const parts = affectations(plan, sw);
-  const l: string[] = ['enable', 'configure terminal', `hostname ${sw.name}`, '!'];
+  const l: string[] = [
+    `! ${sw.name} — Cisco Catalyst 2960 : FastEthernet0/1-${PORTS_ACCES} en acces, GigabitEthernet0/1-2 en montant.`,
+    "! Pas de 'switchport trunk encapsulation dot1q' ici : le 2960 ne connait que dot1Q et refuse la commande.",
+    'enable', 'configure terminal', `hostname ${sw.name}`, '!',
+  ];
 
   l.push('! --- Les VLAN doivent exister ici aussi ---');
   for (const v of [...sw.vlans].sort((a, b) => a - b)) l.push(`vlan ${v}`, ` name ${nomDe(v)}`);
@@ -387,8 +414,8 @@ export function configAcces(sw: AccessSwitch, plan: MlsPlan): string {
       for (const r of enPlages(analyserPlage(a.plage))) {
         l.push(
           r.debut === r.fin
-            ? `interface FastEthernet0/${r.debut}`
-            : `interface range FastEthernet0/${r.debut} - ${r.fin}`,
+            ? `interface ${nomPort(r.debut)}`
+            : `interface range ${nomPort(r.debut)} - ${r.fin}`,
           ` description ${nomDe(a.vlan ?? 0)}`,
           ' switchport mode access',
           ` switchport access vlan ${a.vlan ?? 1}`,
@@ -405,7 +432,7 @@ export function configAcces(sw: AccessSwitch, plan: MlsPlan): string {
 
   l.push(
     '! --- Le lien montant ---',
-    `interface GigabitEthernet0/${sw.uplink}`,
+    `interface ${nomPort(sw.uplink)}`,
     ' description Trunk 802.1Q vers ' + (plan.multicouches.find(m => m.id === sw.mlsId)?.nom
       ?? plan.acces.find(a => a.id === sw.mlsId)?.name ?? '<inconnu>'),
     ' switchport mode trunk',
@@ -426,7 +453,7 @@ export function configAcces(sw: AccessSwitch, plan: MlsPlan): string {
     l.push('! --- Les switches raccordes en dessous ---');
     for (const e of enfants) {
       l.push(
-        `interface GigabitEthernet0/${e.portMls}`,
+        `interface ${nomPort(e.portMls)}`,
         ` description Trunk 802.1Q vers ${e.name}`,
         ' switchport mode trunk',
         ` switchport trunk allowed vlan ${vlansTransportes(plan, e).join(',')}`,

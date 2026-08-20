@@ -49,7 +49,8 @@ export interface DefautPhysique {
 /** Les ports d'un modèle, quand on n'en dit rien. */
 export const PORTS_TYPIQUES: Record<TypeMateriel, number> = {
   routeur: 4,
-  switch: 24,
+  // Un 2960-24TT : 24 FastEthernet d'acces, puis 2 Gigabit pour monter.
+  switch: 26,
   multicouche: 24,
   serveur: 1,
   poste: 1,

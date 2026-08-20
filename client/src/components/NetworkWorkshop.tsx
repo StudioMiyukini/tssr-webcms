@@ -22,7 +22,7 @@ import {
   type AccesClients,
   PREFIXE_3560, PREFIXE_EMPILE, chevauchements, configRouteurExterne, ficheSite,
   vlansDe, accesDe, enfantsDe, verifierMulticouches, type Multicouche,
-  affectations, verifierPorts, PORTS_PAR_DEFAUT as PORTS_DEF, type AffectationPort,
+  affectations, verifierPorts, PORTS_ACCES, PORTS_PAR_DEFAUT as PORTS_DEF, type AffectationPort,
   type AccessSwitch, type MlsPlan, type SortieInternet, type ReseauExterne,
   sortieEffective, verifierSortie, type SegmentSortie,
 } from '@/lib/mls';
@@ -274,7 +274,10 @@ export function migrateCtx(raw: unknown): Ctx {
   const premierMls = c.materiels.find((m: Materiel) => m.type === 'multicouche')!.id;
   for (const sw of (Array.isArray(r.mlsAcces) ? r.mlsAcces : [])) {
     if (typeof sw?.id !== 'string') continue;
-    const ports = Number(sw?.ports) > 0 ? Number(sw.ports) : 24;
+    // Un projet enregistre declarait 24 ports : c'etait le compte des ports
+    // d'acces. Le materiel en a deux de plus, les Gigabit du haut.
+    const declares = Number(sw?.ports) > 0 ? Number(sw.ports) : PORTS_ACCES;
+    const ports = declares <= PORTS_ACCES ? PORTS_PAR_DEFAUT : declares;
     poser({ id: sw.id, nom: String(sw?.name ?? 'Sw'), type: 'switch', modele: '2960', ports });
     c.optSwitches[sw.id] = { vlans: Array.isArray(sw?.vlans) ? sw.vlans : [], ports_: Array.isArray(sw?.ports_) ? sw.ports_ : undefined };
     // La remontee devient un cable : c'est le meme lien, dit en couche 1.
@@ -1354,8 +1357,15 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
     }
     if (patch.mlsId !== undefined || patch.uplink !== undefined || patch.portMls !== undefined) {
       const vers = patch.mlsId ?? sw.mlsId;
-      const mien = patch.uplink ?? sw.uplink;
-      const sien = patch.portMls ?? sw.portMls;
+      // Un switch sans remontee a `uplink` et `portMls` a zero : les reprendre
+      // tels quels fabriquerait un cable sur le port 0, qui n'existe nulle part.
+      // On prend alors le premier port libre de chaque cote.
+      const libre = (id: string, defaut: number) => {
+        const m = ctx.materiels.find(x => x.id === id);
+        return m ? (portsLibres(m, ctx.cables)[0] ?? defaut) : defaut;
+      };
+      const mien = patch.uplink ?? (sw.uplink || libre(sw.id, 1));
+      const sien = patch.portMls ?? (sw.portMls || libre(vers, 1));
       const autres = ctx.cables.filter(c => !((c.deId === sw.id && c.versId === sw.mlsId) || (c.versId === sw.id && c.deId === sw.mlsId)));
       p.cables = vers ? [...autres, { id: uid('cab'), deId: vers, dePort: sien, versId: sw.id, versPort: mien, media: 'croise' as Media }] : autres;
     }
@@ -2351,7 +2361,7 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                       optSwitches: { ...ctx.optSwitches, [id]: { vlans: mlsPlan.vlans.slice(0, 2).map(v => v.id) } },
                       // Un switch neuf arrive cable au premier multicouche : c'est
                       // ce que faisait l'ancien `mlsId` par defaut, dit en couche 1.
-                      ...(cible ? { cables: [...ctx.cables, { id: uid('cab'), deId: cible.id, dePort: switchesDe(ctx).length + 1, versId: id, versPort: PORTS_PAR_DEFAUT, media: 'croise' as Media }] } : {}),
+                      ...(cible ? { cables: [...ctx.cables, { id: uid('cab'), deId: cible.id, dePort: switchesDe(ctx).length + 1, versId: id, versPort: PORTS_ACCES + 1, media: 'croise' as Media }] } : {}),
                     }); }}>+ Ajouter</button>
                 </div>
                 {switchesDe(ctx).length === 0 && (
@@ -2993,10 +3003,10 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                     {/* Le modele d'un routeur decide de ses interfaces : le laisser
                         en texte libre laissait retomber toute faute de frappe sur
                         le 2911, sans le dire. */}
-                    {m.type === 'routeur' ? (
+                    {m.type === 'routeur' || m.type === 'switch' || m.type === 'multicouche' ? (
                       <select value={m.modele} style={{ ...field, width: 90 }}
                         onChange={e => majMat({ modele: e.target.value })}>
-                        {(['2911', '2811'] as const).map(x => <option key={x} value={x}>{x}</option>)}
+                        {(m.type === 'routeur' ? ['2911', '2811'] : m.type === 'switch' ? ['2960'] : ['3560', '3750']).map(x => <option key={x} value={x}>{x}</option>)}
                       </select>
                     ) : (
                       <input value={m.modele} placeholder="modele" style={{ ...field, width: 90 }}
@@ -3265,7 +3275,9 @@ function SchemaMls({ ctx, plan, onPos }: { ctx: Ctx; plan: Plan; onPos?: (id: st
   }));
   const routeurs = routeursDe(ctx).filter(r => segments.some(g => g.membres.includes(r.id))
     || plan.subs.some(z => z.kind === 'lan' && z.routerId === r.id));
-  const yRouteurs = 168;
+  // Assez haut pour qu'une etiquette de segment tienne entre les deux : a
+  // quarante pixels du sommet de l'arbre, elle se posait sur le multicouche.
+  const yRouteurs = 110;
   const xRouteur = (i: number) => ((i + 0.5) * W) / Math.max(1, routeurs.length);
   const posR = (r: RouterDef, i: number) => ctx.mlsPos[r.id] ?? { x: xRouteur(i), y: yRouteurs };
   const rangR = new Map(routeurs.map((r, i) => [r.id, i]));
@@ -3322,8 +3334,9 @@ function SchemaMls({ ctx, plan, onPos }: { ctx: Ctx; plan: Plan; onPos?: (id: st
           <g key={'l' + n.id}>
             <line x1={a.x} y1={a.y + HAUT_BOITE / 2} x2={b.x} y2={b.y - HAUT_BOITE / 2} stroke="var(--border)" strokeWidth={2} />
             {sw && (
-              <text x={(a.x + b.x) / 2 + 5} y={(a.y + b.y) / 2} fontSize={9} fill="var(--text-muted)">
-                trunk {sw.portMls} ↔ {sw.uplink}
+              <text x={(a.x + b.x) / 2 + 5} y={(a.y + b.y) / 2} fontSize={9}
+                fill={sw.uplink && sw.portMls ? 'var(--text-muted)' : '#ca8a04'}>
+                {sw.uplink && sw.portMls ? `trunk ${sw.portMls} ↔ ${sw.uplink}` : 'ports à définir'}
               </text>
             )}
           </g>
@@ -3334,17 +3347,25 @@ function SchemaMls({ ctx, plan, onPos }: { ctx: Ctx; plan: Plan; onPos?: (id: st
       {segments.map(g => {
         const pts = g.membres.map(ancre).filter((q): q is { x: number; y: number } => !!q);
         if (pts.length < 2) return null;
-        const cx = pts.reduce((t, q) => t + q.x, 0) / pts.length;
-        const cy = pts.reduce((t, q) => t + q.y, 0) / pts.length;
+        const texte = `${g.sub.name} · ${ipToStr(g.sub.net)}/${g.sub.cidr}`;
+        const l = Math.max(120, texte.length * 4.9 + 16);
+        // A deux, un segment est un cable : une ligne d'un bout a l'autre, et
+        // l'etiquette au milieu. Au-dela, c'est un domaine de diffusion partage,
+        // et l'etoile depuis son centre dit mieux ce qu'il est.
+        const duo = pts.length === 2;
+        const cx = duo ? (pts[0]!.x + pts[1]!.x) / 2 : pts.reduce((t, q) => t + q.x, 0) / pts.length;
+        const cy = duo ? (pts[0]!.y + pts[1]!.y) / 2 : pts.reduce((t, q) => t + q.y, 0) / pts.length;
+        // Une etiquette qui deborde du dessin est illisible a droite comme a gauche.
+        const lx = Math.min(Math.max(cx, l / 2 + 2), W - l / 2 - 2);
         return (
           <g key={'seg' + g.sub.id}>
-            {pts.map((q, k) => (
-              <line key={k} x1={cx} y1={cy} x2={q.x} y2={q.y} stroke="var(--accent)" strokeWidth={1.6} strokeDasharray="5 3" />
-            ))}
-            <rect x={cx - 74} y={cy - 9} width={148} height={18} rx={9} fill="var(--surface)" stroke="var(--accent)" strokeWidth={1} />
-            <text x={cx} y={cy + 4} textAnchor="middle" fontSize={8.5} fill="var(--text)">
-              {g.sub.name} · {ipToStr(g.sub.net)}/{g.sub.cidr}
-            </text>
+            {duo
+              ? <line x1={pts[0]!.x} y1={pts[0]!.y} x2={pts[1]!.x} y2={pts[1]!.y} stroke="var(--accent)" strokeWidth={1.6} strokeDasharray="5 3" />
+              : pts.map((q, k) => (
+                <line key={k} x1={cx} y1={cy} x2={q.x} y2={q.y} stroke="var(--accent)" strokeWidth={1.6} strokeDasharray="5 3" />
+              ))}
+            <rect x={lx - l / 2} y={cy - 9} width={l} height={18} rx={9} fill="var(--surface)" stroke="var(--accent)" strokeWidth={1} />
+            <text x={lx} y={cy + 4} textAnchor="middle" fontSize={8.5} fill="var(--text)">{texte}</text>
           </g>
         );
       })}
@@ -3365,15 +3386,21 @@ function SchemaMls({ ctx, plan, onPos }: { ctx: Ctx; plan: Plan; onPos?: (id: st
             </g>
             {/* Les LAN du routeur se posent a DROITE de sa boite, pas au-dessus :
                 au-dessus, ils entraient dans la chaine vers l'exterieur. */}
-            {siens.map((z, k) => (
-              <g key={z.id}>
-                <rect x={q.x + 68} y={q.y - 9 + k * 20} width={186} height={17} rx={8.5}
-                  fill="color-mix(in srgb, var(--accent) 10%, transparent)" stroke="var(--accent)" strokeWidth={0.8} />
-                <text x={q.x + 161} y={q.y + 3 + k * 20} textAnchor="middle" fontSize={8.5} fill="var(--text)">
-                  {z.vlan ? `VLAN ${z.vlan} · ` : ''}{z.name} · {ipToStr(z.net)}/{z.cidr}
-                </text>
-              </g>
-            ))}
+            {siens.map((z, k) => {
+              // A droite du routeur, sauf quand l'etiquette sortirait du dessin :
+              // elle passe alors a gauche, plutot que d'etre coupee au bord.
+              const large = 186;
+              const rx = q.x + 68 + large <= W ? q.x + 68 : Math.max(2, q.x - 68 - large);
+              return (
+                <g key={z.id}>
+                  <rect x={rx} y={q.y - 9 + k * 20} width={large} height={17} rx={8.5}
+                    fill="color-mix(in srgb, var(--accent) 10%, transparent)" stroke="var(--accent)" strokeWidth={0.8} />
+                  <text x={rx + large / 2} y={q.y + 3 + k * 20} textAnchor="middle" fontSize={8.5} fill="var(--text)">
+                    {z.vlan ? `VLAN ${z.vlan} · ` : ''}{z.name} · {ipToStr(z.net)}/{z.cidr}
+                  </text>
+                </g>
+              );
+            })}
           </g>
         );
       })}

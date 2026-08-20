@@ -5,7 +5,7 @@ import {
   texteDesPlages, configSortieMls, configPareFeu, tableNat, wildcard,
   etendues, configDhcpSurMls, configResolution, verificationsClient, type AccesClients,
   chevauchements, configRouteurExterne, ficheSite, type ReseauExterne,
-  NATIF_PAR_DEFAUT, PORTS_PAR_DEFAUT, PREFIXE_3560, vlansDe, accesDe, verifierMulticouches, type Multicouche,
+  NATIF_PAR_DEFAUT, PORTS_PAR_DEFAUT, PORTS_ACCES, nomPort, PREFIXE_3560, vlansDe, accesDe, verifierMulticouches, type Multicouche,
   mlsDe, enfantsDe, vlansTransportes,
   analyserPlage, ecrirePlage, affectations, verifierPorts, portsAccesDe, portsTrunkDe, type MlsPlan, type AccessSwitch, type SortieInternet,
   sortieEffective, verifierSortie, type SegmentSortie,
@@ -251,7 +251,26 @@ test('un plan minimal ne casse rien', () => {
 });
 
 test('les ports par défaut correspondent à un 2960 courant', () => {
-  assert.equal(PORTS_PAR_DEFAUT, 24);
+  // Un 2960-24TT compte 26 ports : 24 FastEthernet d'accès, puis 2 Gigabit
+  // pour monter. La numérotation de la face avant est continue ; c'est l'IOS
+  // qui la coupe en deux familles.
+  assert.equal(PORTS_ACCES, 24);
+  assert.equal(PORTS_PAR_DEFAUT, 26);
+});
+
+test('LE NOM D’UNE INTERFACE SUIT LA COUPURE DU 2960', () => {
+  // Confondre les deux familles produit une interface qui n'existe pas, et
+  // l'IOS refuse sans dire laquelle il attendait.
+  assert.equal(nomPort(1), 'FastEthernet0/1');
+  assert.equal(nomPort(24), 'FastEthernet0/24');
+  assert.equal(nomPort(25), 'GigabitEthernet0/1');
+  assert.equal(nomPort(26), 'GigabitEthernet0/2');
+});
+
+test('aucun VLAN d’accès n’est réparti sur les ports Gigabit', () => {
+  const sw: AccessSwitch = { id: 'x', name: 'Sw', vlans: [10, 20], ports: 26, uplink: 25, portMls: 1, mlsId: 'm1' };
+  const tous = repartirPorts(sw).flatMap(a => a.ranges).flatMap(r => [r.debut, r.fin]);
+  assert.ok(Math.max(...tous) <= PORTS_ACCES, `un port d’accès au-delà de ${PORTS_ACCES} : ${Math.max(...tous)}`);
 });
 
 /* ─────────────────────────── Sortie Internet ─────────────────────────── */
@@ -716,7 +735,9 @@ test('le switch intermédiaire câble le switch qui pend sous lui', () => {
   const txt = configAcces(CASCADE.acces[0]!, CASCADE);
   assert.ok(txt.includes('Les switches raccordes en dessous'));
   assert.ok(txt.includes('description Trunk 802.1Q vers Sw-etage2'));
-  assert.ok(txt.includes('interface GigabitEthernet0/23'), 'sur le port declare');
+  // Le port 23 d'un 2960 est un FastEthernet : l'ancienne version l'annoncait
+  // en GigabitEthernet0/23, une interface qui n'existe sur aucun 2960.
+  assert.ok(txt.includes('interface FastEthernet0/23'), 'sur le port declare');
 });
 
 test('le switch du bout ne câble rien en dessous de lui', () => {

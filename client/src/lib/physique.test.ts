@@ -53,7 +53,9 @@ test('la couche de chaque type est déclarée', () => {
 });
 
 test('les ports typiques correspondent au matériel courant', () => {
-  assert.equal(PORTS_TYPIQUES.switch, 24);
+  // Un 2960-24TT en compte 26 : 24 FastEthernet d'accès, 2 Gigabit pour monter.
+  // Ne lui en donner que 24 rendait impossible de câbler l'uplink sur un Gi.
+  assert.equal(PORTS_TYPIQUES.switch, 26);
   assert.equal(PORTS_TYPIQUES.poste, 1);
 });
 
