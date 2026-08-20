@@ -1363,6 +1363,15 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
   };
   const switches = useMemo(() => buildSwitchConfigs(ctx, plan), [ctx, plan]);
   const mlsPlan = useMemo(() => buildMlsPlan(ctx, plan), [ctx, plan]);
+  /**
+   * Le multicouche est-il en jeu ?
+   *
+   * La question se decidait a une case a cocher, qui pouvait contredire les
+   * donnees : cinq sous-reseaux designaient une SVI comme passerelle pendant
+   * que la case disait le contraire, et trois ecrans les ignoraient.
+   * Un sous-reseau qui designe un multicouche suffit desormais a le mettre en jeu.
+   */
+  const mlsEnJeu = ctx.mlsActif || ctx.services.some(x => !!x.svi);
   const mlsTables = useMemo(() => dossierMls(mlsPlan), [mlsPlan]);
   // Rien n'est redemande ici : le DNS, le domaine et le bail viennent des ecrans
   // DNS et DHCP. Deux endroits pour la meme valeur finiraient par diverger.
@@ -1552,7 +1561,13 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
 
           <div style={group}>
             <div style={legend}>🔀 Assignation des sous-réseaux</div>
-            <div className="meta" style={{ fontSize: 11.5, margin: '0 0 12px' }}>Sélectionne les routeurs connectés à chaque sous-réseau : <strong>1 routeur</strong> = LAN (passerelle + DHCP possible) ; <strong>2 routeurs ou plus</strong> = segment d’interconnexion (une IP par routeur, via un switch — comme « Switch 1 »).</div>
+            <div className="meta" style={{ fontSize: 11.5, margin: '0 0 12px' }}>
+              Qui porte la passerelle de chaque sous-réseau ? <strong>1 routeur</strong> = LAN classique ;
+              <strong> 1 multicouche</strong> 🗼 = la passerelle est une <strong>interface Vlan</strong> (SVI) et non une
+              sous-interface de routeur ; <strong>2 équipements ou plus</strong> = segment d’interconnexion, une IP de
+              chaque côté. Le <strong>numéro de VLAN</strong> à droite décide de la suite : rempli, le sous-réseau
+              partage un lien physique avec les autres ; vide, il garde une interface à lui.
+            </div>
             {ctx.services.map(s => {
               const transit = s.routerIds.length + (s.svi && s.routerIds.length >= 1 ? 1 : 0) >= 2;
               const badge = transit ? { t: `🔗 interconnexion · ${s.routerIds.length + (s.svi ? 1 : 0)} equipements`, c: 'var(--accent)', bg: 'color-mix(in srgb,var(--accent) 15%,transparent)' }
@@ -1803,7 +1818,7 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
           {plan.error && <div style={{ ...group, borderColor: '#dc2626' }}><strong style={{ color: '#dc2626' }}>⚠ {plan.error}</strong></div>}
           <div style={group}>
             <div style={legend}>🗺️ Schéma du réseau</div>
-            {ctx.mlsActif ? (
+            {mlsEnJeu ? (
               <>
                 <SchemaMls ctx={ctx} plan={plan}
                   onPos={(id, q) => {
@@ -2087,11 +2102,38 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
             </div>
           </div>
 
-          {switches.length === 0 ? (
+          {/* Un VLAN porte par une SVI n'apparait pas ici : sa configuration de
+              switch est celle des switches d'acces, produite par l'ecran SVI.
+              L'annoncer comme « aucun VLAN declare » etait faux et renvoyait
+              corriger une saisie qui etait deja bonne. */}
+          {(() => {
+            const parSvi = plan.subs.filter(z => z.kind === 'lan' && z.vlan && !z.routerId
+              && ctx.services.some(x => 'svc:' + x.id === z.id && x.svi));
+            if (!parSvi.length) return null;
+            return (
+              <div style={group}>
+                <div style={legend}>🗼 {parSvi.length} VLAN porté(s) par une SVI</div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 7 }}>
+                  {parSvi.map(z => (
+                    <span key={z.id} style={{ fontSize: 11.5, fontWeight: 700, padding: '1px 9px', borderRadius: 999, color: '#fff', background: couleurVlan(z.vlan!, mlsPlan.vlans.map(v => v.id)) }}>
+                      {z.vlan} {z.name}
+                    </span>
+                  ))}
+                </div>
+                <div className="meta" style={{ fontSize: 12 }}>
+                  Leur passerelle est une <strong>interface Vlan</strong> sur le multicouche, pas une sous-interface de
+                  routeur : il n'y a donc pas de configuration « routeur sur un bâton » à produire ici. Les
+                  configurations de switch correspondantes sont à l'étape <strong>Switch multicouche (SVI)</strong>.
+                </div>
+              </div>
+            );
+          })()}
+
+          {switches.length === 0 && !ctx.services.some(x => x.svi && vlanOf(x) !== null) ? (
             <div style={group}>
               <div style={legend}>Aucun VLAN déclaré</div>
               <div className="meta" style={{ fontSize: 12 }}>
-                Reviens à l’étape <strong>Segmentation</strong> et saisis un numéro dans la case <strong>VLAN</strong>
+                Reviens à l’étape <strong>Adressage</strong> et saisis un numéro dans la case <strong>VLAN</strong>
                 d’au moins un sous-réseau (10, 20, 30…). Les configurations de switch apparaîtront ici.
               </div>
             </div>
@@ -2194,12 +2236,13 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
             <div style={legend}>
               🗼 Le routage porte par le switch, pas par un routeur
               <label style={{ marginLeft: 'auto', fontSize: 11.5, fontWeight: 400 }}>
-                <input type="checkbox" checked={ctx.mlsActif} style={{ marginRight: 5 }}
+                <input type="checkbox" checked={mlsEnJeu} disabled={!ctx.mlsActif && mlsEnJeu} style={{ marginRight: 5 }}
+                  title={!ctx.mlsActif && mlsEnJeu ? 'Des sous-reseaux designent deja une SVI comme passerelle : le multicouche est en jeu, cochee ou non.' : undefined}
                   onChange={e => set({ mlsActif: e.target.checked })} />
                 c'est la methode de cette maquette
               </label>
             </div>
-            {ctx.mlsActif && (
+            {mlsEnJeu && (
               <div className="meta" style={{ fontSize: 11.5, margin: '0 0 6px' }}>
                 Le <strong>Schema</strong> montre desormais cette topologie — multicouche, switches d'acces et VLAN —
                 au lieu des routeurs et de leurs sous-interfaces.
@@ -2337,8 +2380,12 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                           style={{ ...field, width: 62 }} />
                       </label>
                       <label style={{ fontSize: 11.5 }} title="un multicouche, ou un autre switch en cascade">remonte vers&nbsp;
-                        <select value={sw.mlsId} style={{ ...field, width: 150 }}
+                        {/* Sans option vide, un switch qu'aucun cable ne relie
+                            affichait le premier multicouche de la liste : la
+                            valeur montree n'etait pas la sienne. */}
+                        <select value={sw.mlsId} style={{ ...field, width: 150, borderColor: sw.mlsId ? 'var(--border)' : '#ca8a04' }}
                           onChange={e => majAcces(i, { mlsId: e.target.value })}>
+                          <option value="">— non câblé —</option>
                           {multicouchesDe(ctx).map(m => <option key={m.id} value={m.id}>{m.nom}</option>)}
                           {switchesDe(ctx).filter(x => x.id !== sw.id).map(x => <option key={x.id} value={x.id}>{x.name} (cascade)</option>)}
                         </select>
