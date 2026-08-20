@@ -174,6 +174,18 @@ export const DEFAULT_CTX: Ctx = {
 
 const MODELES_ROUTEUR: RouterModel[] = ['2911', '2811'];
 
+/**
+ * La couleur d'un VLAN, la meme dans tout l'outil.
+ *
+ * Le schema du multicouche avait la sienne dans son coin : un VLAN change de
+ * couleur en changeant d'ecran, et on ne peut plus suivre le meme du regard.
+ */
+export const COULEURS_VLAN = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#ef4444', '#10b981', '#0ea5e9'];
+export function couleurVlan(id: number, tous: number[]): string {
+  const i = tous.indexOf(id);
+  return COULEURS_VLAN[(i < 0 ? id : i) % COULEURS_VLAN.length]!;
+}
+
 export function routeursDe(ctx: Ctx): RouterDef[] {
   return ctx.materiels.filter(m => m.type === 'routeur').map(m => ({
     id: m.id, name: m.nom,
@@ -1246,6 +1258,9 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
   const setStep = (n: number) => { if (stepControlled) onStep!(n); else setInternalStep(n); };
 
   const [copied, setCopied] = useState('');
+  // Les cartes pour comprendre, le tableau pour recopier : les deux servent, a
+  // des moments differents.
+  const [vuePlan, setVuePlan] = useState<'cartes' | 'tableau'>('cartes');
 
   // Persistance locale uniquement en mode autonome (îlot CMS) ; en mode contrôlé,
   // l'état est porté par le projet (serveur).
@@ -1610,26 +1625,111 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
           <div style={group}>
             <div style={legend}>
               📋 Plan d’adressage — {plan.subs.length} sous-réseaux
-              <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 500, color: 'var(--text-muted)' }}>{plan.bases.length > 1 ? `${plan.bases.length} réseaux · ${plan.used}/${plan.totalAddr} adr.` : `${ipToStr(plan.baseNet)}/${plan.cidr} · ${plan.used}/${plan.totalAddr} adr.`}</span>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>
+                <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-muted)' }}>{plan.bases.length > 1 ? `${plan.bases.length} réseaux · ${plan.used}/${plan.totalAddr} adr.` : `${ipToStr(plan.baseNet)}/${plan.cidr} · ${plan.used}/${plan.totalAddr} adr.`}</span>
+                {(['cartes', 'tableau'] as const).map(v => (
+                  <button key={v} type="button" onClick={() => setVuePlan(v)}
+                    style={{ ...smallBtn, borderColor: vuePlan === v ? 'var(--accent)' : 'var(--border)', color: vuePlan === v ? 'var(--accent)' : 'var(--text-soft)' }}>{v}</button>
+                ))}
+              </div>
             </div>
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 640 }}>
-                <thead><tr><th style={th}>Sous-réseau</th><th style={th}>Réseau/CIDR</th><th style={th}>Masque</th><th style={th}>Plage utilisable</th><th style={th}>Broadcast</th><th style={th}>Passerelle</th><th style={th}>Hôtes</th></tr></thead>
-                <tbody>
-                  {plan.subs.map(s => (
-                    <tr key={s.id}>
-                      <td style={{ ...td, fontWeight: 600 }}>{s.kind === 'link' ? '🔗 ' : ''}{s.name}</td>
-                      <td style={{ ...td, ...mono }}>{ipToStr(s.net)}/{s.cidr}</td>
-                      <td style={{ ...td, ...mono }}>{ipToStr(s.mask)}</td>
-                      <td style={{ ...td, ...mono }}>{ipToStr(s.first)} – {ipToStr(s.last)}</td>
-                      <td style={{ ...td, ...mono }}>{ipToStr(s.bc)}</td>
-                      <td style={{ ...td, ...mono }}>{s.gw !== null ? ipToStr(s.gw) : '—'}</td>
-                      <td style={{ ...td, ...mono }}>{s.usable}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+
+            {vuePlan === 'cartes' ? (
+              <div style={{ display: 'grid', gap: 10 }}>
+                {plan.subs.map(sub => {
+                  const svc = ctx.services.find(x => 'svc:' + x.id === sub.id);
+                  const vlan = sub.vlan ?? null;
+                  const couleur = vlan !== null ? couleurVlan(vlan, mlsPlan.vlans.map(v => v.id)) : 'var(--border)';
+                  const routeur = sub.routerId ? routeursDe(ctx).find(r => r.id === sub.routerId) : undefined;
+                  const iface = routeur && sub.gw !== null ? ifaceFor(routeur.id, sub.gw) : undefined;
+                  const mls = svc?.svi ? multicouchesDe(ctx).find(m => m.id === svc.svi) : undefined;
+                  // Ou vit ce VLAN, d'apres le cablage : c'est la question qu'on se
+                  // pose devant un poste qui ne pingue pas, et elle n'etait nulle part.
+                  const sur = vlan === null ? [] : switchesDe(ctx).filter(w => w.vlans.includes(vlan));
+                  const demande = Math.max(0, Number(svc?.hosts) || 0);
+                  const trop = demande > sub.usable;
+                  const remplissage = sub.usable ? Math.min(100, (demande / sub.usable) * 100) : 0;
+                  const ligne = (k: string, v: React.ReactNode) => (
+                    <div style={{ display: 'flex', gap: 6, fontSize: 12 }}>
+                      <span style={{ color: 'var(--text-muted)', minWidth: 74 }}>{k}</span>
+                      <span style={{ ...mono }}>{v}</span>
+                    </div>
+                  );
+                  return (
+                    <div key={sub.id} style={{ border: '1px solid var(--border)', borderLeft: `4px solid ${couleur}`, borderRadius: 10, padding: '10px 13px', background: 'var(--surface)' }}>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                        {vlan !== null && (
+                          <span style={{ fontSize: 11.5, fontWeight: 700, padding: '1px 9px', borderRadius: 999, color: '#fff', background: couleur }}>VLAN {vlan}</span>
+                        )}
+                        <strong style={{ fontSize: 14 }}>{sub.kind === 'link' ? '🔗 ' : ''}{sub.name}</strong>
+                        <span style={{ marginLeft: 'auto', fontSize: 14, fontWeight: 700, ...mono }}>{ipToStr(sub.net)}/{sub.cidr}</span>
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(215px, 1fr))', gap: '3px 18px' }}>
+                        {ligne('Masque', ipToStr(sub.mask))}
+                        {ligne('Passerelle', sub.gw !== null
+                          ? <>{ipToStr(sub.gw)} <span style={{ color: 'var(--text-muted)' }}>{routeur ? `· ${routeur.name}${iface ? ' ' + ifAbbr(iface.iface) : ''}` : ''}</span></>
+                          : mls ? <span style={{ color: '#14b8a6' }}>SVI {mls.nom} · interface Vlan{vlan ?? '?'}</span>
+                          : <span style={{ color: '#dc2626' }}>aucune</span>)}
+                        {ligne('Plage', `${ipToStr(sub.first)} – ${ipToStr(sub.last)}`)}
+                        {ligne('Switch', sub.switchIp !== null ? ipToStr(sub.switchIp) : '—')}
+                        {ligne('Broadcast', ipToStr(sub.bc))}
+                        {ligne('DHCP', sub.dhcp ? 'oui' : 'statique')}
+                      </div>
+
+                      {/* On ne parle des switches que s'il y en a : sans switch
+                          d'accès déclaré, un montage router-on-a-stick est normal,
+                          et annoncer un manque serait accuser à tort. */}
+                      {vlan !== null && switchesDe(ctx).length > 0 && (
+                        <div style={{ fontSize: 11.5, marginTop: 7, display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                          <span style={{ color: 'var(--text-muted)' }}>Présent sur</span>
+                          {sur.length ? sur.map(w => (
+                            <span key={w.id} style={{ padding: '1px 8px', borderRadius: 999, border: `1px solid ${couleur}`, color: 'var(--text)' }}>
+                              🗄️ {w.name}{w.mlsId ? '' : ' ⚠ non câblé'}
+                            </span>
+                          )) : <span style={{ color: '#ca8a04' }}>aucun switch ne porte ce VLAN — ses postes n’auront aucun port où se brancher</span>}
+                        </div>
+                      )}
+
+                      {sub.kind === 'lan' && (
+                        <div style={{ marginTop: 7 }}>
+                          <div style={{ height: 5, borderRadius: 3, background: 'var(--surface-3)', overflow: 'hidden' }}>
+                            <div style={{ width: `${remplissage}%`, height: '100%', background: trop ? '#dc2626' : couleur }} />
+                          </div>
+                          <div style={{ fontSize: 11, marginTop: 3, color: trop ? '#dc2626' : 'var(--text-muted)' }}>
+                            {trop
+                              ? `⚠ ${demande} hôtes demandés pour ${sub.usable} adresses disponibles — le bloc est trop petit.`
+                              : `${demande} hôtes demandés · ${sub.usable} adresses disponibles`}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+                {!plan.subs.length && <div className="meta">Ajoute des sous-réseaux à l’étape 1.</div>}
+              </div>
+            ) : (
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 720 }}>
+                  <thead><tr><th style={th}>VLAN</th><th style={th}>Sous-réseau</th><th style={th}>Réseau/CIDR</th><th style={th}>Masque</th><th style={th}>Plage utilisable</th><th style={th}>Broadcast</th><th style={th}>Passerelle</th><th style={th}>Switch</th><th style={th}>Hôtes</th></tr></thead>
+                  <tbody>
+                    {plan.subs.map(sub => (
+                      <tr key={sub.id}>
+                        <td style={{ ...td, ...mono }}>{sub.vlan ?? '—'}</td>
+                        <td style={{ ...td, fontWeight: 600 }}>{sub.kind === 'link' ? '🔗 ' : ''}{sub.name}</td>
+                        <td style={{ ...td, ...mono }}>{ipToStr(sub.net)}/{sub.cidr}</td>
+                        <td style={{ ...td, ...mono }}>{ipToStr(sub.mask)}</td>
+                        <td style={{ ...td, ...mono }}>{ipToStr(sub.first)} – {ipToStr(sub.last)}</td>
+                        <td style={{ ...td, ...mono }}>{ipToStr(sub.bc)}</td>
+                        <td style={{ ...td, ...mono }}>{sub.gw !== null ? ipToStr(sub.gw) : '—'}</td>
+                        <td style={{ ...td, ...mono }}>{sub.switchIp !== null ? ipToStr(sub.switchIp) : '—'}</td>
+                        <td style={{ ...td, ...mono }}>{sub.usable}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
 
           <div style={group}>
@@ -3048,8 +3148,8 @@ function SchemaMls({ ctx, plan, onPos }: { ctx: Ctx; plan: Plan; onPos?: (id: st
     return <div className="meta">Donne un numéro de VLAN à au moins un sous-réseau (Segmentation) pour afficher le schéma.</div>;
   }
 
-  const COULEURS = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#ef4444', '#10b981', '#0ea5e9'];
-  const couleurVlan = (id: number) => COULEURS[Math.max(0, mlsPlan.vlans.findIndex(v => v.id === id)) % COULEURS.length]!;
+  const COULEURS = COULEURS_VLAN;
+  const couleur = (id: number) => couleurVlan(id, mlsPlan.vlans.map(v => v.id));
 
   // ── L'arbre : racines = multicouches, enfants = switches qui y remontent ──
   type Noeud = { id: string; nom: string; profondeur: number; vlans: number[]; parent: string | null; sousTitre: string };
@@ -3252,7 +3352,7 @@ function SchemaMls({ ctx, plan, onPos }: { ctx: Ctx; plan: Plan; onPos?: (id: st
             {!racineIci && n.vlans.map((id, k) => {
               const v = mlsPlan.vlans.find(z => z.id === id);
               const yv = y + HAUT_BOITE / 2 + 8 + k * HAUT_PASTILLE;
-              const c = couleurVlan(id);
+              const c = couleur(id);
               return (
                 <g key={id}>
                   <rect x={x - 95} y={yv} width={190} height={17} rx={8.5}
