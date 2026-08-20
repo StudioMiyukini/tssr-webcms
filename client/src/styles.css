@@ -275,6 +275,19 @@ table.wp-list .column-primary { font-weight: 600; }
 .cart-count { background: var(--accent); color: #fff; font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 999px; min-width: 18px; text-align: center; }
 .public-content { padding: 24px 0 60px; min-height: calc(100vh - 60px - 70px); }
 .public-content .public-wrap { max-width: 1200px; margin: 0 auto; padding: 0 24px; }
+
+/* Un ilot d'outil deborde la colonne de lecture.
+   820px sont justes pour du texte suivi et etranglent un tableau de droits ou
+   un plan d'adressage. Les marges deviennent negatives des que la largeur
+   demandee depasse celle de l'article, ce qui recentre l'ilot sur la page.
+   Pas de `transform` ici : il ferait de l'ilot le repere de tout descendant en
+   position fixe, et une fenetre modale s'ancrerait sur lui au lieu de l'ecran. */
+.rich .outil-large {
+  --outil-l: min(1280px, calc(100vw - 40px));
+  width: var(--outil-l);
+  margin-inline: calc((100% - var(--outil-l)) / 2);
+}
+@media (max-width: 900px) { .rich .outil-large { --outil-l: 100%; } }
 .public-footer { border-top: 1px solid var(--border); background: var(--surface-2); padding: 22px 0; color: var(--text-muted); font-size: 12.5px; }
 .public-footer .public-wrap { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
 

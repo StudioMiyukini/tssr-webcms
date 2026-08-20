@@ -469,7 +469,7 @@ export function AgdlpBuilder() {
   );
 
   return (
-    <div style={{ margin: '14px 0' }}>
+    <div className="outil-large">
       {/* Domaine */}
       <div style={groupStyle}>
         <div style={legendStyle}>🌐 Domaine & bases</div>
@@ -528,23 +528,42 @@ export function AgdlpBuilder() {
         <div style={legendStyle}>📂 Arborescence des dossiers — partage & droits NTFS granulaires</div>
         {folders.map(f => (
           <div key={f.id} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: 10, marginBottom: 10, background: 'var(--surface)' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1.4fr 0.9fr auto auto auto', gap: 8, alignItems: 'center' }}>
-              <input style={fieldStyle} value={f.name} onChange={e => patchFolder(f.id, { name: e.target.value })} placeholder="Nom du dossier" />
-              <input style={fieldStyle} value={f.code} onChange={e => patchFolder(f.id, { code: clean(e.target.value) })} placeholder="Code (→ DL_)" title="Code court utilisé dans le nom des groupes DL (≤ 15 caractères)" />
-              {f.abs
-                ? <span className="meta" style={{ fontSize: 12 }}>chemin absolu</span>
-                : <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}><span className="meta" style={{ fontSize: 12 }}>sous</span>{parentSel(f.id, f.parent, v => patchFolder(f.id, { parent: v }), folders, folders)}</div>}
-              <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap' }} title="Désactiver l'héritage NTFS (le dossier n'hérite plus des droits du parent)">
-                <input type="checkbox" checked={!!f.noInherit} onChange={e => patchFolder(f.id, { noInherit: e.target.checked })} /> ⛔ héritage
+            {/* Une rangee par question : ce que c'est, ou c'est, comment ca se
+                comporte. La grille a colonnes fixes renvoyait la croix a la ligne
+                des qu'un libelle s'allongeait. */}
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 15 }}>📂</span>
+              <input style={{ ...fieldStyle, ...auto, flex: '1 1 220px', fontWeight: 600 }} value={f.name}
+                onChange={e => patchFolder(f.id, { name: e.target.value })} placeholder="Nom du dossier" />
+              <label style={{ display: 'flex', gap: 5, alignItems: 'center', fontSize: 12, whiteSpace: 'nowrap' }}
+                title="Code court utilisé dans le nom des groupes DL (≤ 15 caractères)">
+                <span className="meta">code DL</span>
+                <input style={{ ...fieldStyle, ...auto, width: 130 }} value={f.code}
+                  onChange={e => patchFolder(f.id, { code: clean(e.target.value) })} placeholder={clean(f.name).slice(0, 15)} />
               </label>
-              <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap' }} title="Publier ce dossier comme partage réseau (New-SmbShare)">
-                <input type="checkbox" checked={!!f.share} onChange={e => patchFolder(f.id, { share: e.target.checked })} /> 📤 partager
-              </label>
-              <button style={smallBtn} onClick={() => delFolder(f.id)} title="Supprimer (et sous-dossiers)">✕</button>
+              {!f.abs && (
+                <label style={{ display: 'flex', gap: 5, alignItems: 'center', fontSize: 12, whiteSpace: 'nowrap' }}>
+                  <span className="meta">sous</span>
+                  {parentSel(f.id, f.parent, v => patchFolder(f.id, { parent: v }), folders, folders)}
+                </label>
+              )}
+              <button style={{ ...smallBtn, marginLeft: 'auto' }} onClick={() => delFolder(f.id)} title="Supprimer (et sous-dossiers)">✕</button>
             </div>
-            {f.abs
-              ? <input style={{ ...fieldStyle, fontFamily: 'ui-monospace,monospace', marginTop: 4 }} value={f.abs} onChange={e => patchFolder(f.id, { abs: e.target.value })} title="Chemin absolu du dossier" />
-              : <div className="meta" style={{ fontSize: 11, marginTop: 4, fontFamily: 'ui-monospace,monospace' }}>{pathOf(f.id)}</div>}
+
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap', marginTop: 6 }}>
+              {f.abs
+                ? <input style={{ ...fieldStyle, ...auto, flex: '1 1 320px', fontFamily: 'ui-monospace,monospace' }} value={f.abs}
+                    onChange={e => patchFolder(f.id, { abs: e.target.value })} title="Chemin absolu du dossier" />
+                : <code style={{ fontSize: 11.5, color: 'var(--text-muted)' }}>{pathOf(f.id)}</code>}
+              <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap', marginLeft: 'auto' }}
+                title="Désactiver l'héritage NTFS (le dossier n'hérite plus des droits du parent)">
+                <input type="checkbox" checked={!!f.noInherit} onChange={e => patchFolder(f.id, { noInherit: e.target.checked })} /> ⛔ héritage rompu
+              </label>
+              <label style={{ display: 'flex', gap: 6, alignItems: 'center', fontSize: 12, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                title="Publier ce dossier comme partage réseau (New-SmbShare)">
+                <input type="checkbox" checked={!!f.share} onChange={e => patchFolder(f.id, { share: e.target.checked })} /> 📤 partagé
+              </label>
+            </div>
             {f.share && (
               <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6, flexWrap: 'wrap' }}>
                 <span className="meta" style={{ fontSize: 12 }}>Nom du partage</span>
@@ -560,10 +579,10 @@ export function AgdlpBuilder() {
             <div style={{ marginTop: 8, paddingLeft: 8, borderLeft: '2px solid var(--border)' }}>
               {f.rules.map((rl, j) => (
                 <div key={j} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 6, flexWrap: 'wrap' }}>
-                  <span className="meta" style={{ fontSize: 12 }}>NTFS :</span>
-                  <select style={{ ...fieldStyle, ...auto }} value={rl.group} onChange={e => patchRule(f.id, j, { group: e.target.value })}>{ggroups.map(g => <option key={g.id} value={g.id}>{gName(g.id)}</option>)}</select>
-                  <span className="meta" style={{ fontSize: 12 }}>→</span>
-                  <select style={{ ...fieldStyle, ...auto }} value={rl.right} onChange={e => patchRule(f.id, j, { right: e.target.value as NtfsKey })}>{NTFS.map(n => <option key={n.key} value={n.key}>{n.label}</option>)}</select>
+                  <select style={{ ...fieldStyle, ...auto, minWidth: 190 }} value={rl.group} onChange={e => patchRule(f.id, j, { group: e.target.value })}>{ggroups.map(g => <option key={g.id} value={g.id}>{gName(g.id)}</option>)}</select>
+                  <span className="meta" style={{ fontSize: 12 }}>obtient</span>
+                  <select style={{ ...fieldStyle, ...auto, minWidth: 210 }} value={rl.right} onChange={e => patchRule(f.id, j, { right: e.target.value as NtfsKey })}>{NTFS.map(n => <option key={n.key} value={n.key}>{n.label}</option>)}</select>
+                  <span className="meta" style={{ fontSize: 12 }}>via</span>
                   {/* Les codes icacls se tapaient a la main : une faute de frappe
                       passait sans bruit jusqu'a l'execution du script. */}
                   {rl.right === 'CUSTOM' && (() => {
