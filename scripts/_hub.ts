@@ -87,6 +87,9 @@ export const DOMAINS: Domain[] = [
       ] },
       { name: 'Commutation & VLAN', courses: [
         { href: '/pages/les-vlan', title: 'Les VLAN & le routage inter-VLAN', desc: 'Segmenter (access/trunk, 802.1Q, VLAN natif) et faire communiquer les VLAN (router-on-a-stick, switch L3). Config CLI Cisco.' },
+        { href: '/pages/vlan-securite', title: 'Sécuriser les VLAN', desc: 'Saut de VLAN (switch spoofing, double marquage), VLAN natif dédié, port-security, ports inutilisés.' },
+        { href: '/pages/vlan-vtp', title: 'VTP : propager les VLAN', desc: 'Modes server/client/transparent, le piège du numéro de révision, insertion sûre d’un switch, pruning.' },
+        { href: '/pages/vlan-voix', title: 'Le VLAN voix (téléphonie IP)', desc: 'Téléphone + PC sur une prise, CDP/LLDP-MED, PoE et QoS. Dépannage.' },
       ] },
       { name: 'Protocoles', courses: [
         { href: '/pages/tcp-et-udp', title: 'TCP & UDP', desc: 'Fiable ou rapide : les deux protocoles de transport.' },

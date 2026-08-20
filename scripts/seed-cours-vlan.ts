@@ -4,7 +4,7 @@ import { makePageBlock, renderPageBlocksToHtml, serializePageBlocks, type PageBl
 
 const BASE = process.env.BASE || 'https://tssr.miyukini.com';
 const PW = process.env.ADMIN_PW || 'changeme';
-const PAGE = { slug: 'les-vlan', title: 'Les VLAN & le routage inter-VLAN', excerpt: 'Segmenter un réseau logiquement : VLAN, ports access/trunk, marquage 802.1Q et VLAN natif, puis faire communiquer les VLAN (router-on-a-stick avec sous-interfaces ou switch niveau 3). Config CLI Cisco et vérifications.' };
+const PAGE = { slug: 'les-vlan', title: 'Les VLAN & le routage inter-VLAN', excerpt: 'Segmenter un réseau logiquement : VLAN, ports access/trunk, marquage 802.1Q et VLAN natif, puis faire communiquer les VLAN par les deux méthodes — router-on-a-stick avec sous-interfaces, et switch multicouche avec SVI. Config CLI Cisco, comparaison et vérifications.' };
 const block = (type: Parameters<typeof makePageBlock>[0], patch: Partial<PageBlock>) => Object.assign(makePageBlock(type), patch);
 const note = (cls: string, title: string, html: string) => block('html', { html: `<aside class="pb-note pb-note-${cls}"><p class="pb-note-title">${title}</p>${html}</aside>` });
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -81,9 +81,26 @@ interface GigabitEthernet0/0.20
   note('yellow', '💡 Les clients pointent vers leur sous-interface', '<p>Un PC du VLAN 10 prend comme <strong>passerelle</strong> <code>192.168.10.1</code> (la sous-interface <code>.10</code>) ; un PC du VLAN 20 → <code>192.168.20.1</code>. C’est le routeur qui achemine d’un VLAN à l’autre.</p>'),
 
   block('heading', { level: 3, text: '② Switch multicouche (SVI, niveau 3)' }),
-  block('html', { html: '<p>Sur un <strong>switch L3</strong>, on active le routage et on crée une <strong>interface virtuelle (SVI)</strong> par VLAN — plus rapide (pas de goulot sur un seul lien).</p>' }),
-  cmd(`ip routing
+  block('html', { html: '<p>Ici, <strong>plus de routeur</strong> : le switch route lui-même. Chaque VLAN reçoit une <strong>interface virtuelle</strong> — une <strong>SVI</strong> (<em>Switched Virtual Interface</em>) — qui porte sa passerelle. Plus rapide, parce que le trafic inter-VLAN ne fait plus l’aller-retour par un lien unique.</p><p>Quatre choses à poser, <strong>dans cet ordre</strong> :</p>' }),
+  cmd(`! 1. Les VLAN doivent exister sur le switch L3 aussi
+vlan 10
+ name ADMIN
+ exit
+vlan 20
+ name PRODUCTION
+ exit
 !
+! 2. Le lien vers les autres switches reste un trunk
+interface GigabitEthernet0/1
+ switchport trunk encapsulation dot1q   ! obligatoire sur 3560, absent du 2960
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20
+ exit
+!
+! 3. Activer le routage — sans cette ligne, rien ne passe entre VLAN
+ip routing
+!
+! 4. Une SVI par VLAN : c'est elle qui porte la passerelle
 interface vlan 10
  ip address 192.168.10.1 255.255.255.0
  no shutdown
@@ -92,6 +109,17 @@ interface vlan 20
  ip address 192.168.20.1 255.255.255.0
  no shutdown
  exit`),
+  note('yellow', '💡 Les clients ne changent pas', '<p>Un PC du VLAN 10 garde <code>192.168.10.1</code> comme <strong>passerelle</strong>. Seul l’équipement qui la porte change : la <strong>SVI</strong> du switch au lieu de la <strong>sous-interface</strong> du routeur. Le plan d’adressage, lui, est identique.</p>'),
+  note('blue', '🔎 Une SVI ne monte pas toute seule', '<p>Trois conditions, toutes nécessaires :</p><ol><li>le VLAN <strong>existe</strong> dans la base du switch ;</li><li><strong>au moins un port actif</strong> appartient à ce VLAN — un port access branché, ou un trunk qui le transporte ;</li><li>la SVI n’est pas <code>shutdown</code>.</li></ol><p>Sinon elle reste <code>down/down</code> alors que la configuration <em>semble</em> juste. C’est le pendant exact du <code>no shutdown</code> oublié sur l’interface physique en router-on-a-stick.</p>'),
+
+  block('html', { html: `<table class="vl-t"><thead><tr><th></th><th>① Router-on-a-stick</th><th>② Switch multicouche</th></tr></thead><tbody>
+    <tr><td><strong>Passerelle portée par</strong></td><td><code>interface Gi0/0.10</code></td><td><code>interface vlan 10</code></td></tr>
+    <tr><td><strong>Encapsulation à déclarer</strong></td><td><code>encapsulation dot1Q 10</code></td><td>inutile : le VLAN est déjà connu du switch</td></tr>
+    <tr><td><strong>Ligne à ne pas oublier</strong></td><td><code>no shutdown</code> sur l’interface physique</td><td><code>ip routing</code></td></tr>
+    <tr><td><strong>Débit</strong></td><td>tout passe deux fois par le même lien</td><td>commutation matérielle, sans goulot</td></tr>
+    <tr><td><strong>Usage</strong></td><td>petit site, maquette, examen</td><td>réseau d’entreprise</td></tr>
+  </tbody></table>` }),
+  note('green', '🔗 Le faire pas à pas', '<p>Les deux méthodes sont montées entièrement, avec un contrôle après chaque étape et les pannes classiques, dans la procédure <a href="/pages/procedure-vlan-packet-tracer">Mettre en place des VLAN (Packet Tracer)</a>.</p>'),
 
   block('heading', { level: 2, text: '5) DHCP à travers les VLAN' }),
   block('html', { html: '<p>Si un <strong>serveur DHCP unique</strong> sert plusieurs VLAN, ajoute un <strong>relais</strong> sur chaque interface/sous-interface de passerelle : <code>ip helper-address &lt;IP_serveur_DHCP&gt;</code> (voir <a href="/pages/procedure-dhcp-relais">DHCP par relais</a>).</p>' }),
@@ -101,7 +129,7 @@ interface vlan 20
 show interfaces trunk
 show ip interface brief
 ! test : un PC du VLAN 10 doit pinguer un PC du VLAN 20 (via la passerelle)`),
-  note('yellow', '🛠️ Dépannage courant', '<ul><li>Deux PC du même VLAN ne se voient pas → mauvais <code>access vlan</code> ou VLAN non créé.</li><li>Pas de communication inter-VLAN → passerelle du PC absente/erronée, ou sous-interface/SVI mal configurée.</li><li>Trunk KO → <strong>VLAN natif</strong> différent des deux côtés, ou VLAN absent de la liste <code>allowed</code>.</li></ul>'),
+  note('yellow', '🛠️ Dépannage courant', '<ul><li>Deux PC du même VLAN ne se voient pas → mauvais <code>access vlan</code> ou VLAN non créé.</li><li>Pas de communication inter-VLAN → passerelle du PC absente/erronée, ou sous-interface/SVI mal configurée.</li><li>Sur switch L3 : tout semble juste mais rien ne passe → <code>ip routing</code> oublié, ou SVI <code>down/down</code> faute de port actif dans le VLAN.</li><li>Trunk KO → <strong>VLAN natif</strong> différent des deux côtés, ou VLAN absent de la liste <code>allowed</code>.</li></ul>'),
 
   note('green', '🔗 Pour aller plus loin', '<p>Cours liés : <a href="/pages/le-switch">Le switch</a>, <a href="/pages/bases-du-reseau">Les bases du réseau</a>, <a href="/pages/adresses-ip">Les adresses IP</a>. Procédures : <a href="/pages/procedure-cisco-routeur-cli">Configurer un routeur en CLI</a>, <a href="/pages/procedure-dhcp-relais">DHCP par relais</a>. Outil : <a href="/pages/atelier-reseau">Atelier Réseau</a>.</p>'),
 ];
