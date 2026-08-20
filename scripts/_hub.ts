@@ -57,6 +57,8 @@ export const DOMAINS: Domain[] = [
       { name: 'Serveur de fichiers', courses: [
         { href: '/pages/permissions-partage-ntfs', title: 'Permissions : Partage & NTFS', desc: 'Partage vs NTFS, cumul (le plus restrictif), héritage, bonne pratique.' },
         { href: '/pages/gestion-avancee-utilisateurs', title: 'Gestion avancée (profils, home, scripts, quotas)', desc: 'Horaires, profils itinérants, dossier de base, scripts de session, ABE, quotas.' },
+        { href: '/pages/lecteurs-reseau', title: 'Les lecteurs réseau', desc: 'UNC, net use et New-PSDrive, puis les préférences de GPO avec ciblage par groupe. Dépannage : le jeton, l’action « Créer », la croix rouge.' },
+        { href: '/pages/profils-itinerants', title: 'Les profils itinérants (AD)', desc: 'Ce qu’un profil contient, les droits exacts de Profils$, le suffixe .V6, la redirection de dossiers, et la panne du profil temporaire.' },
       ] },
       { name: 'Virtualisation', courses: [
         { href: '/pages/virtualisation-theorie', title: 'La virtualisation : théorie & concepts', desc: 'Abstraction, types, hyperviseurs, VM vs conteneur — et la place en TSSR.' },
