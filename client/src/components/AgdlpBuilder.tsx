@@ -153,6 +153,14 @@ export function AgdlpBuilder() {
    */
   const [modeDroits, setModeDroits] = useState<'manuel' | 'icacls'>(() => load('agdlp2_mode', 'manuel'));
   const [copiedId, setCopiedId] = useState('');
+  const [razArme, setRazArme] = useState(false);
+  // La question posee s'oublie d'elle-meme : un bouton rouge laisse arme est un
+  // piege pour le clic suivant.
+  useEffect(() => {
+    if (!razArme) return;
+    const t = setTimeout(() => setRazArme(false), 6000);
+    return () => clearTimeout(t);
+  }, [razArme]);
   const [bulk, setBulk] = useState(''); const [bulkOu, setBulkOu] = useState(''); const [bulkGrp, setBulkGrp] = useState('');
   const [bulkGg, setBulkGg] = useState(''); const [bulkGgOu, setBulkGgOu] = useState('');
   const [bulkFold, setBulkFold] = useState('');
@@ -179,6 +187,24 @@ export function AgdlpBuilder() {
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  /**
+   * Tout remettre a l'etat d'un projet neuf.
+   *
+   * On efface aussi les cles du navigateur : les laisser ferait revenir
+   * l'ancien contenu au prochain chargement, et on chercherait pourquoi.
+   */
+  const toutRemettreAZero = () => {
+    setDomain('miyukini.lan'); setBasePath('E:\\Partages');
+    setShareRoot(true); setShareName('Partages');
+    setOus(D_OUS); setDlOu('gdl'); setGgroups(D_GG); setUsers(D_USERS); setFolders(D_FOLDERS);
+    setModeDroits('manuel');
+    setBulk(''); setBulkOu(''); setBulkGrp(''); setBulkGg(''); setBulkGgOu(''); setBulkFold('');
+    setRazArme(false);
+    try {
+      for (const k of Object.keys(localStorage)) if (k.startsWith('agdlp2_')) localStorage.removeItem(k);
+    } catch { /* navigation privee : l'etat en memoire suffit */ }
+  };
 
   const domainDN = domainToDN(domain);
   const ggOuDefault = ous.find(o => clean(o.name).toUpperCase() === 'GG')?.id || ous.find(o => o.parent === 'ROOT')?.id || ous[0]?.id || 'ROOT';
@@ -470,6 +496,27 @@ export function AgdlpBuilder() {
 
   return (
     <div className="outil-large">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+        <div style={{ fontWeight: 700, fontSize: 15 }}>🔐 AGDLP &amp; serveur de fichiers</div>
+        <span className="meta" style={{ fontSize: 11.5 }}>
+          {folders.length} dossier(s) · {ggroups.length} groupe(s) global · {users.length} utilisateur(s) — gardés dans ce navigateur
+        </span>
+        {/* En deux temps : un clic maladroit effacerait une arborescence qui a
+            coute une heure, et rien ici n'est recuperable ailleurs. */}
+        <div style={{ marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>
+          {razArme && <span style={{ fontSize: 11.5, color: '#dc2626' }}>Tout effacer et repartir de l’exemple ?</span>}
+          {/* Pas de `onBlur` pour desarmer : il se declenche avant le `click`, et le
+              bouton se serait desarme juste avant d'agir -- il n'aurait jamais
+              rien remis a zero. Un delai s'en charge, sans toucher au clic. */}
+          <button type="button" onClick={() => (razArme ? toutRemettreAZero() : setRazArme(true))}
+            title="Revenir au contenu d’exemple et vider ce qui est gardé dans le navigateur"
+            style={{ ...smallBtn, borderColor: razArme ? '#dc2626' : 'var(--border)', color: razArme ? '#dc2626' : 'var(--text-soft)', fontWeight: razArme ? 700 : 600 }}>
+            {razArme ? 'Oui, remettre à zéro' : '↺ Remettre à zéro'}
+          </button>
+          {razArme && <button type="button" style={smallBtn} onClick={() => setRazArme(false)}>Annuler</button>}
+        </div>
+      </div>
+
       {/* Domaine */}
       <div style={groupStyle}>
         <div style={legendStyle}>🌐 Domaine & bases</div>
