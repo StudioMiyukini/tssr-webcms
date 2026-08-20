@@ -27,7 +27,7 @@ import {
   sortieEffective, verifierSortie, type SegmentSortie,
 } from '@/lib/mls';
 import {
-  cableAttendu, nomDuMedia, portsLibres, verifierCablage, cheminPhysique, voisinsDe,
+  cableAttendu, nomDuMedia, portsLibres, verifierCablage, cheminPhysique, voisinsDe, remontees,
   COUCHE_DE, PORTS_TYPIQUES, type Cable, type Materiel, type Media, type TypeMateriel,
 } from '@/lib/physique';
 
@@ -72,6 +72,17 @@ export function vlanOf(s: { vlan?: string }): number | null {
 }
 export type RouterDef = { id: string; name: string; model: RouterModel; mod?: boolean };
 
+/**
+ * Ce qu'une couche haute sait d'un equipement, et que la couche 1 ignore.
+ *
+ * L'identite — nom, type, modele, nombre de ports — vit dans l'inventaire, et
+ * les liens dans le cablage. Ne restent ici que les attributs propres a la
+ * couche : le module d'un routeur, les VLAN d'un switch.
+ */
+export type OptRouteur = { mod?: boolean };
+export type OptMls = { prefixe: string; vlans: number[] };
+export type OptSwitch = { vlans: number[]; ports_?: AffectationPort[] };
+
 export type Ctx = {
   // 1. Contexte
   entreprise: string; domaine: string; mode: 'neuf' | 'extension';
@@ -79,7 +90,7 @@ export type Ctx = {
   bases: BaseNet[];                              // un ou plusieurs réseaux de base distincts
   services: Service[];
   // 3. Topologie
-  routers: RouterDef[];
+  // (les routeurs, multicouches et switches vivent dans `materiels` — cf. optRouteurs)
   // 2. Préférences
   login: string; mdp: string; secret: string;
   gwPos: 'last' | 'first';                 // position IP passerelle (routeur) dans le sous-réseau
@@ -100,8 +111,10 @@ export type Ctx = {
   // Switch multicouche (SVI) : le routage inter-VLAN porte par un switch L3
   // plutot que par un routeur. Optionnel — sans lui, rien ne change.
   mlsActif: boolean;
-  mlsMulticouches: Multicouche[];
-  mlsAcces: AccessSwitch[];
+  /** Ce que les couches hautes ajoutent a l'inventaire, par id de materiel. */
+  optRouteurs: Record<string, OptRouteur>;
+  optMls: Record<string, OptMls>;
+  optSwitches: Record<string, OptSwitch>;
   /** La sortie Internet du multicouche : pare-feu, NAT surcharge. '' = aucune. */
   mlsSortie: SortieInternet | null;
   /** Le site que les postes doivent joindre (celui de l'exemple du TP). */
@@ -138,25 +151,131 @@ export const DEFAULT_CTX: Ctx = {
     { id: 'sC', name: 'Wi-Fi', hosts: '20', routerIds: ['rB'], hasSwitch: true, dhcp: true, baseId: 'b1', vlan: '30' },
     { id: 'sD', name: 'Dorsale R1-R2', hosts: '2', routerIds: ['rA', 'rB'], hasSwitch: true, dhcp: false, media: 'gig', baseId: 'b1' },
   ],
-  routers: [
-    { id: 'rA', name: 'R1', model: '2911' },
-    { id: 'rB', name: 'R2', model: '2811' },
-  ],
+  // (les routeurs vivent dans `materiels` : cf. DEFAULT_CTX_ROUTEURS)
   login: 'admin', mdp: 'Azerty77', secret: 'MonSecretEnable',
   gwPos: 'last', switchPos: 'beforeRouter', linkCidr: '30', dnsServer: '192.168.10.11', dhcpServer: '192.168.10.11', leaseDays: '7',
   internetRouterId: '', wanIf: 'GigabitEthernet0/1', wanIp: '', wanCidr: '30', faiGw: '', webIp: '', webPort: '80',
   natOverload: true, natStatics: [],
-  mlsActif: false, mlsMulticouches: [{ id: 'm1', nom: 'MLS-Core', prefixe: 'FastEthernet0/', vlans: [] }], mlsAcces: [], mlsSortie: null, mlsSite: null, mlsExterne: null, mlsPos: {}, materiels: [], cables: [], physPos: {},
+  mlsActif: false, mlsSortie: null, mlsSite: null, mlsExterne: null, mlsPos: {},
+  materiels: [
+    { id: 'm1', nom: 'MLS-Core', type: 'multicouche', modele: '3560', ports: 24 },
+    { id: 'rA', nom: 'R1', type: 'routeur', modele: '2911', ports: 4 },
+    { id: 'rB', nom: 'R2', type: 'routeur', modele: '2811', ports: 4 },
+  ],
+  cables: [], physPos: {},
+  optRouteurs: {}, optMls: { m1: { prefixe: 'FastEthernet0/', vlans: [] } }, optSwitches: {},
   ifaceIps: {}, hosts: [],
 };
 
+/* ── Les projections : une couche haute lit l'inventaire ───────────────────
+   Elles remplacent `routeursDe(ctx)`, `multicouchesDe(ctx)` et `switchesDe(ctx)`, qui
+   tenaient une seconde liste des memes equipements. Un ajout en couche 1 se
+   voit donc partout, et un cable tire remplace trois champs a saisir. */
+
+const MODELES_ROUTEUR: RouterModel[] = ['2911', '2811'];
+
+export function routeursDe(ctx: Ctx): RouterDef[] {
+  return ctx.materiels.filter(m => m.type === 'routeur').map(m => ({
+    id: m.id, name: m.nom,
+    model: (MODELES_ROUTEUR as string[]).includes(m.modele) ? (m.modele as RouterModel) : '2911',
+    mod: ctx.optRouteurs[m.id]?.mod,
+  }));
+}
+
+export function multicouchesDe(ctx: Ctx): Multicouche[] {
+  return ctx.materiels.filter(m => m.type === 'multicouche').map(m => ({
+    id: m.id, nom: m.nom,
+    prefixe: ctx.optMls[m.id]?.prefixe ?? PREFIXE_3560,
+    vlans: ctx.optMls[m.id]?.vlans ?? [],
+  }));
+}
+
+/**
+ * Les switches d'acces, avec leur remontee lue dans le cablage.
+ *
+ * Un switch qu'aucun cable ne relie au coeur garde `mlsId` vide : c'est la
+ * situation que `verifierMulticouches` signale deja — un switch rattache a
+ * rien — plutot qu'une remontee inventee qui masquerait le debranchement.
+ */
+export function switchesDe(ctx: Ctx): AccessSwitch[] {
+  const commutation = ctx.materiels.filter(m => m.type === 'switch' || m.type === 'multicouche');
+  const racines = commutation.filter(m => m.type === 'multicouche').map(m => m.id);
+  const arbre = new Map(remontees(ctx.cables, racines, commutation.map(m => m.id)).map(x => [x.id, x]));
+  return ctx.materiels.filter(m => m.type === 'switch').map(m => {
+    const haut = arbre.get(m.id);
+    return {
+      id: m.id, name: m.nom, ports: m.ports,
+      vlans: ctx.optSwitches[m.id]?.vlans ?? [],
+      ports_: ctx.optSwitches[m.id]?.ports_,
+      uplink: haut?.monPort ?? 0,
+      portMls: haut?.sonPort ?? 0,
+      mlsId: haut?.parentId ?? '',
+    };
+  });
+}
+
 // Normalise un contexte issu du localStorage (tolère les anciens formats :
 // services {routerId} → {routerIds}, et anciens links → sous-réseaux d'interconnexion).
+/** Les routeurs d'un projet neuf — les memes que ceux de DEFAULT_CTX. */
+const DEFAULT_CTX_ROUTEURS = [{ id: 'rA', name: 'R1', model: '2911' }, { id: 'rB', name: 'R2', model: '2811' }];
+
 export function migrateCtx(raw: unknown): Ctx {
   const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, any>;
   const c = { ...DEFAULT_CTX, ...r } as Ctx;
   delete (c as any).links;
-  c.routers = dedupeIds((Array.isArray(c.routers) ? c.routers : DEFAULT_CTX.routers).map((rt: any) => ({ id: rt?.id, name: String(rt?.name ?? 'R'), model: rt?.model === '2811' ? '2811' : '2911', mod: !!rt?.mod } as RouterDef)), 'r');
+  /* L'inventaire absorbe les trois anciennes listes.
+     Elles decrivaient les memes equipements que `materiels`, chacune de son
+     cote ; on les y verse une fois, avec leurs cables d'uplink, puis elles
+     disparaissent. Un projet enregistre avant ce changement s'ouvre donc avec
+     son materiel deja pose et deja cable. */
+  // On repart de ce qui est enregistre, jamais des objets de DEFAULT_CTX :
+  // `{ ...DEFAULT_CTX, ...r }` en copie les references, et tout `push` ici
+  // allongerait le contexte par defaut pour tous les projets suivants.
+  c.materiels = Array.isArray(r.materiels) ? [...r.materiels] : [];
+  c.cables = Array.isArray(r.cables) ? [...r.cables] : [];
+  c.optRouteurs = (r.optRouteurs && typeof r.optRouteurs === 'object') ? { ...r.optRouteurs } : {};
+  c.optMls = (r.optMls && typeof r.optMls === 'object') ? { ...r.optMls } : {};
+  c.optSwitches = (r.optSwitches && typeof r.optSwitches === 'object') ? { ...r.optSwitches } : {};
+  const connus = new Set(c.materiels.map((m: Materiel) => m?.id));
+  const poser = (m: Materiel) => { if (m.id && !connus.has(m.id)) { connus.add(m.id); c.materiels.push(m); } };
+
+  for (const rt of (Array.isArray(r.routers) ? r.routers : DEFAULT_CTX_ROUTEURS)) {
+    if (typeof rt?.id !== 'string') continue;
+    const modele = rt?.model === '2811' ? '2811' : '2911';
+    poser({ id: rt.id, nom: String(rt?.name ?? 'R'), type: 'routeur', modele, ports: 4 });
+    if (rt?.mod) c.optRouteurs[rt.id] = { mod: true };
+  }
+  const anciensMls = (Array.isArray(r.mlsMulticouches) && r.mlsMulticouches.length)
+    ? r.mlsMulticouches
+    : [{ id: 'm1', nom: typeof (r as { mlsNom?: string }).mlsNom === 'string' ? (r as { mlsNom?: string }).mlsNom : 'MLS-Core', prefixe: 'FastEthernet0/', vlans: [] }];
+  for (const m of anciensMls) {
+    if (typeof m?.id !== 'string') continue;
+    poser({ id: m.id, nom: String(m?.nom ?? 'MLS'), type: 'multicouche', modele: '3560', ports: 24 });
+    c.optMls[m.id] = { prefixe: String(m?.prefixe ?? PREFIXE_3560), vlans: Array.isArray(m?.vlans) ? m.vlans : [] };
+  }
+  // Si aucun multicouche n'a survecu, le contexte par defaut en fournit un :
+  // sans racine, tout switch se retrouverait rattache a rien.
+  if (!c.materiels.some((m: Materiel) => m.type === 'multicouche')) {
+    poser({ id: 'm1', nom: 'MLS-Core', type: 'multicouche', modele: '3560', ports: 24 });
+    c.optMls.m1 = { prefixe: PREFIXE_3560, vlans: [] };
+  }
+  const premierMls = c.materiels.find((m: Materiel) => m.type === 'multicouche')!.id;
+  for (const sw of (Array.isArray(r.mlsAcces) ? r.mlsAcces : [])) {
+    if (typeof sw?.id !== 'string') continue;
+    const ports = Number(sw?.ports) > 0 ? Number(sw.ports) : 24;
+    poser({ id: sw.id, nom: String(sw?.name ?? 'Sw'), type: 'switch', modele: '2960', ports });
+    c.optSwitches[sw.id] = { vlans: Array.isArray(sw?.vlans) ? sw.vlans : [], ports_: Array.isArray(sw?.ports_) ? sw.ports_ : undefined };
+    // La remontee devient un cable : c'est le meme lien, dit en couche 1.
+    const vers = typeof sw?.mlsId === 'string' && sw.mlsId ? sw.mlsId : premierMls;
+    const mien = Number(sw?.uplink) > 0 ? Number(sw.uplink) : ports;
+    const sien = Number(sw?.portMls) > 0 ? Number(sw.portMls) : 1;
+    if (!c.cables.some((x: Cable) => x?.deId === vers && x?.versId === sw.id)) {
+      c.cables.push({ id: 'up' + sw.id, deId: vers, dePort: sien, versId: sw.id, versPort: mien, media: 'croise' });
+    }
+  }
+  delete (c as any).routers;
+  delete (c as any).mlsMulticouches;
+  delete (c as any).mlsAcces;
   c.natStatics = Array.isArray((c as any).natStatics) ? (c as any).natStatics.filter((s: any) => s && typeof s === 'object').map((s: any) => ({ inside: String(s.inside ?? ''), pub: String(s.pub ?? '') })) : [];
   c.natOverload = typeof (c as any).natOverload === 'boolean' ? (c as any).natOverload : true;
   c.ifaceIps = (r.ifaceIps && typeof r.ifaceIps === 'object' && !Array.isArray(r.ifaceIps))
@@ -192,24 +311,11 @@ export function migrateCtx(raw: unknown): Ctx {
   // Brouillons d'avant le switch multicouche : on pose les defauts plutot que
   // de laisser des champs absents faire tomber le rendu.
   if (typeof c.mlsActif !== 'boolean') c.mlsActif = false;
-  // Brouillons d'avant les multicouches multiples : on transpose l'unique.
-  if (!Array.isArray(c.mlsMulticouches) || !c.mlsMulticouches.length) {
-    const ancien = typeof (c as { mlsNom?: string }).mlsNom === 'string' ? (c as { mlsNom?: string }).mlsNom! : 'MLS-Core';
-    c.mlsMulticouches = [{ id: 'm1', nom: ancien, prefixe: 'FastEthernet0/', vlans: [] }];
-  }
-  if (!Array.isArray(c.mlsAcces)) c.mlsAcces = [];
-  c.mlsMulticouches = dedupeIds(c.mlsMulticouches as Multicouche[], 'm');
-  c.mlsAcces = dedupeIds(c.mlsAcces as AccessSwitch[], 'sw');
-  // Un switch d'acces sans rattachement rejoint le premier multicouche.
-  const premier = c.mlsMulticouches[0]?.id ?? 'm1';
-  c.mlsAcces = (c.mlsAcces as AccessSwitch[]).map(a => (a.mlsId ? a : { ...a, mlsId: premier }));
   if (c.mlsSortie === undefined) c.mlsSortie = null;
   if (c.mlsSite === undefined) c.mlsSite = null;
   if (c.mlsExterne === undefined) c.mlsExterne = null;
-  if (!c.mlsPos || typeof c.mlsPos !== 'object') c.mlsPos = {};
-  if (!c.physPos || typeof c.physPos !== 'object') c.physPos = {};
-  if (!Array.isArray(c.materiels)) c.materiels = [];
-  if (!Array.isArray(c.cables)) c.cables = [];
+  c.mlsPos = (r.mlsPos && typeof r.mlsPos === 'object') ? { ...r.mlsPos } : {};
+  c.physPos = (r.physPos && typeof r.physPos === 'object') ? { ...r.physPos } : {};
   c.materiels = dedupeIds(c.materiels as Materiel[], 'mat');
   c.cables = dedupeIds(c.cables as Cable[], 'cab');
   return c;
@@ -260,7 +366,7 @@ export type Plan = {
 };
 
 export function computePlan(ctx: Ctx): Plan {
-  ctx = { ...ctx, services: Array.isArray(ctx.services) ? ctx.services : [], routers: Array.isArray(ctx.routers) ? ctx.routers : [], bases: Array.isArray(ctx.bases) && ctx.bases.length ? ctx.bases : [{ id: 'b1', name: 'Réseau', ip: ctx.baseIp || '192.168.10.0', cidr: ctx.baseCidr || '24' }] };
+  ctx = { ...ctx, services: Array.isArray(ctx.services) ? ctx.services : [], bases: Array.isArray(ctx.bases) && ctx.bases.length ? ctx.bases : [{ id: 'b1', name: 'Réseau', ip: ctx.baseIp || '192.168.10.0', cidr: ctx.baseCidr || '24' }] };
   const warnings: string[] = [];
   const linkCidr = clampNum(Number(ctx.linkCidr) || 30, 8, 30);
 
@@ -283,7 +389,7 @@ export function computePlan(ctx: Ctx): Plan {
   type Item = { id: string; need: number; cidr: number; baseId: string };
   const items: Item[] = [];
   for (const s of ctx.services) {
-    const rs = (Array.isArray(s.routerIds) ? s.routerIds : []).map(id => ctx.routers.find(r => r.id === id)).filter((r): r is RouterDef => !!r);
+    const rs = (Array.isArray(s.routerIds) ? s.routerIds : []).map(id => routeursDe(ctx).find(r => r.id === id)).filter((r): r is RouterDef => !!r);
     // Un multicouche compte comme membre : le lien MLS <-> routeur est un vrai
     // segment d'interconnexion, avec une adresse de chaque cote.
     const sviMembre = !!s.svi && rs.length >= 1;
@@ -315,7 +421,7 @@ export function computePlan(ctx: Ctx): Plan {
   const subs: Sub[] = [];
   const ifaces: Iface[] = [];
   const cap = new Map<string, { eth: number; ser: number }>();
-  ctx.routers.forEach(r => cap.set(r.id, { eth: 0, ser: 0 }));
+  routeursDe(ctx).forEach(r => cap.set(r.id, { eth: 0, ser: 0 }));
   const nextEth = (r: RouterDef): string | null => {
     const c = cap.get(r.id)!; const slots = ethSlots(r.model, r.mod);
     if (c.eth >= slots.length) {
@@ -430,7 +536,7 @@ export function buildDhcp(ctx: Ctx, plan: Plan): { relays: DhcpRelay[]; pools: D
   const server = (ctx.dhcpServer || '').trim() || (ctx.dnsServer || '').trim();
   // Relais : ip helper-address sur chaque interface LAN dont les clients sont en DHCP.
   const relays: DhcpRelay[] = [];
-  for (const r of ctx.routers) {
+  for (const r of routeursDe(ctx)) {
     const lans = plan.subs.filter(s => s.kind === 'lan' && s.dhcp && s.routerId === r.id && s.gw !== null)
       .map(s => ({ s, ifc: plan.ifaces.find(i => i.routerId === r.id && i.ip === s.gw) }))
       .filter(x => !!x.ifc);
@@ -454,7 +560,7 @@ export function buildDns(ctx: Ctx, plan: Plan): { recs: DnsRec[]; domain: string
   const domain = ctx.domaine.trim() || 'lan';
   const recs: DnsRec[] = [];
   const seen = new Set<string>();
-  for (const r of ctx.routers) {
+  for (const r of routeursDe(ctx)) {
     const ifc = plan.ifaces.find(i => i.routerId === r.id);
     if (ifc) { const host = (r.name || 'r').toLowerCase(); recs.push({ host, fqdn: `${host}.${domain}`, ip: ifc.ip }); seen.add(host); }
   }
@@ -496,7 +602,7 @@ export type RouterCfg = { routerId: string; routerName: string; text: string; ro
 export function buildRouterConfigs(ctx: Ctx, plan: Plan): { byRouter: RouterCfg[]; full: string } {
   // Graphe des routeurs via les sous-réseaux d'interconnexion.
   const edges = new Map<string, { to: string; viaIp: number }[]>();
-  ctx.routers.forEach(r => edges.set(r.id, []));
+  routeursDe(ctx).forEach(r => edges.set(r.id, []));
   for (const s of plan.subs) {
     if (s.kind !== 'link' || !s.routerIds) continue;
     // Prochain saut = IP réelle de l'interface du voisin sur cette liaison (respecte les IP manuelles).
@@ -513,7 +619,7 @@ export function buildRouterConfigs(ctx: Ctx, plan: Plan): { byRouter: RouterCfg[
   };
   const relayServer = (ctx.dhcpServer || '').trim() || (ctx.dnsServer || '').trim();
   const dom = (ctx.domaine || '').trim() || 'lan';
-  const byRouter: RouterCfg[] = ctx.routers.map(r => {
+  const byRouter: RouterCfg[] = routeursDe(ctx).map(r => {
     const myIf = plan.ifaces.filter(i => i.routerId === r.id);
     const nh = nextHopFrom(r.id);
     const isBorder = !!ctx.internetRouterId && ctx.internetRouterId === r.id;
@@ -642,7 +748,7 @@ export function buildSwitchConfigs(ctx: Ctx, plan: Plan): SwitchCfg[] {
 
   const out: SwitchCfg[] = [];
   for (const [routerId, subs] of parRouteur) {
-    const r = ctx.routers.find(x => x.id === routerId);
+    const r = routeursDe(ctx).find(x => x.id === routerId);
     const routerName = r?.name || 'R';
     subs.sort((a, b) => (a.vlan || 0) - (b.vlan || 0));
 
@@ -757,10 +863,10 @@ export function buildMlsPlan(ctx: Ctx, plan: Plan): MlsPlan {
     // La repartition vient de la Segmentation quand elle y est declaree : un
     // second endroit ou dire quel switch porte quel VLAN finirait par diverger.
     multicouches: quelquUnChoisit
-      ? ctx.mlsMulticouches.map(m => ({ ...m, vlans: [...new Set(parSvi.get(m.id) ?? [])].sort((a, b) => a - b) }))
-      : ctx.mlsMulticouches,
+      ? multicouchesDe(ctx).map(m => ({ ...m, vlans: [...new Set(parSvi.get(m.id) ?? [])].sort((a, b) => a - b) }))
+      : multicouchesDe(ctx),
     vlans,
-    acces: ctx.mlsAcces,
+    acces: switchesDe(ctx),
     dhcpServer: ctx.dhcpServer || '',
     natif: NATIVE_VLAN,
   };
@@ -785,7 +891,7 @@ export function buildSsh(ctx: Ctx, plan: Plan): { routers: SshCfg[]; switches: S
     ' exit',
     'end', 'write memory',
   ].filter(Boolean).join('\n');
-  const routers: SshCfg[] = ctx.routers.map(r => ({ name: r.name, ip: '', text: base(r.name, []) }));
+  const routers: SshCfg[] = routeursDe(ctx).map(r => ({ name: r.name, ip: '', text: base(r.name, []) }));
   // Les sous-reseaux en VLAN partagent un switch par routeur : on ne garde que
   // le premier de chaque routeur, sinon on configurerait quatre switches la ou
   // il n'y en a que deux, avec quatre IP de gestion pour deux equipements.
@@ -797,7 +903,7 @@ export function buildSsh(ctx: Ctx, plan: Plan): { routers: SshCfg[]; switches: S
     dejaVu.add(s.routerId);
     return true;
   }).map(s => {
-    const rName = s.routerId ? (ctx.routers.find(r => r.id === s.routerId)?.name || '') : '';
+    const rName = s.routerId ? (routeursDe(ctx).find(r => r.id === s.routerId)?.name || '') : '';
     const host = s.vlan && rName ? 'SW-' + rName.replace(/\s+/g, '-')
       : /sw|switch/i.test(s.name) ? s.name.replace(/\s+/g, '-')
         : 'SW-' + s.name.replace(/\s+/g, '-');
@@ -823,7 +929,7 @@ export function buildReset(): string {
 // Sortie Internet : NAT/PAT (overload) sur le routeur de bordure + route par défaut + publication de port.
 export type NatCfg = { text: string; router: string };
 export function buildNat(ctx: Ctx, plan: Plan): NatCfg | null {
-  const r = ctx.routers.find(x => x.id === ctx.internetRouterId);
+  const r = routeursDe(ctx).find(x => x.id === ctx.internetRouterId);
   if (!r) return null;
   const wanCidr = clampNum(Number(ctx.wanCidr) || 30, 1, 32);
   const wanMask = ipToStr(maskFromCidr(wanCidr));
@@ -1080,7 +1186,7 @@ function segmentsDeSortie(ctx: Ctx, plan: Plan): SegmentSortie[] {
   return plan.subs
     .filter(z => z.kind === 'link' && z.sviId && z.sviIp != null && (z.routerIds?.length ?? 0) >= 1)
     .map(z => {
-      const r = ctx.routers.find(x => x.id === z.routerIds![0]);
+      const r = routeursDe(ctx).find(x => x.id === z.routerIds![0]);
       return {
         id: z.id, nom: z.name, cidr: z.cidr,
         ipMls: ipToStr(z.sviIp!), ipFirewall: ipToStr(z.first), nomRouteur: r?.name ?? 'Firewall',
@@ -1157,14 +1263,25 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
   const delBase = (id: string) => { if (bases.length <= 1) return; const rest = bases.filter(b => b.id !== id); const fb = rest[0].id; set({ bases: rest, services: ctx.services.map(s => (s.baseId === id ? { ...s, baseId: fb } : s)) }); };
   // — sous-réseaux —
   const setSvc = (id: string, p: Partial<Service>) => set({ services: ctx.services.map(s => s.id === id ? { ...s, ...p } : s) });
-  const addSvc = () => set({ services: [...ctx.services, { id: uid('s'), name: 'Nouveau sous-réseau', hosts: '10', routerIds: ctx.routers[0] ? [ctx.routers[0].id] : [], hasSwitch: true, dhcp: true, baseId: bases[0].id }] });
+  const addSvc = () => set({ services: [...ctx.services, { id: uid('s'), name: 'Nouveau sous-réseau', hosts: '10', routerIds: routeursDe(ctx)[0] ? [routeursDe(ctx)[0].id] : [], hasSwitch: true, dhcp: true, baseId: bases[0].id }] });
   const delSvc = (id: string) => set({ services: ctx.services.filter(s => s.id !== id) });
   // Cocher un routeur retire la SVI, et inversement : une passerelle et une seule.
   const toggleSvcRouter = (id: string, rid: string) => set({ services: ctx.services.map(s => s.id === id ? { ...s, ...(s.routerIds.length >= 1 ? {} : { svi: undefined }), routerIds: s.routerIds.includes(rid) ? s.routerIds.filter(x => x !== rid) : [...s.routerIds, rid] } : s) });
   // — routers —
-  const setRtr = (id: string, p: Partial<RouterDef>) => set({ routers: ctx.routers.map(r => r.id === id ? { ...r, ...p } : r) });
-  const addRtr = () => set({ routers: [...ctx.routers, { id: uid('r'), name: 'R' + (ctx.routers.length + 1), model: '2911' }] });
-  const delRtr = (id: string) => set({ routers: ctx.routers.filter(r => r.id !== id), services: ctx.services.map(s => ({ ...s, routerIds: s.routerIds.filter(x => x !== id) })) });
+  // Un routeur est un materiel : son nom et son modele vivent dans l'inventaire,
+  // et seul le module — que la couche 1 ignore — se range a cote.
+  const setRtr = (id: string, p: Partial<RouterDef>) => set({
+    ...(p.name !== undefined || p.model !== undefined
+      ? { materiels: ctx.materiels.map(m => m.id === id ? { ...m, ...(p.name !== undefined ? { nom: p.name } : {}), ...(p.model !== undefined ? { modele: p.model } : {}) } : m) }
+      : {}),
+    ...(p.mod !== undefined ? { optRouteurs: { ...ctx.optRouteurs, [id]: { ...ctx.optRouteurs[id], mod: p.mod } } } : {}),
+  });
+  const addRtr = () => set({ materiels: [...ctx.materiels, { id: uid('r'), nom: 'R' + (routeursDe(ctx).length + 1), type: 'routeur' as TypeMateriel, modele: '2911', ports: PORTS_TYPIQUES.routeur }] });
+  const delRtr = (id: string) => set({
+    materiels: ctx.materiels.filter(m => m.id !== id),
+    cables: ctx.cables.filter(c => c.deId !== id && c.versId !== id),
+    services: ctx.services.map(s => ({ ...s, routerIds: s.routerIds.filter(x => x !== id) })),
+  });
   // Repartir d'un atelier vierge (efface le contexte enregistré dans le navigateur).
   const resetCtx = () => { if (typeof window !== 'undefined' && !window.confirm('Réinitialiser l’atelier ? (réseaux, routeurs et sous-réseaux reviennent aux valeurs par défaut)')) return; if (!ctxControlled) { try { localStorage.removeItem(STORAGE_KEY); } catch { /* */ } } setCtx(DEFAULT_CTX); setStep(1); };
   // — NAT statique (1:1) —
@@ -1193,10 +1310,42 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
   const dns = useMemo(() => buildDns(ctx, plan), [ctx, plan]);
   const routerCfg = useMemo(() => buildRouterConfigs(ctx, plan), [ctx, plan]);
   const ssh = useMemo(() => buildSsh(ctx, plan), [ctx, plan]);
-  const majMls = (i: number, patch: Partial<Multicouche>) =>
-    set({ mlsMulticouches: ctx.mlsMulticouches.map((x, k) => (k === i ? { ...x, ...patch } : x)) });
-  const majAcces = (i: number, patch: Partial<AccessSwitch>) =>
-    set({ mlsAcces: ctx.mlsAcces.map((x, k) => (k === i ? { ...x, ...patch } : x)) });
+  const majMls = (i: number, patch: Partial<Multicouche>) => {
+    const m = multicouchesDe(ctx)[i];
+    if (!m) return;
+    set({
+      ...(patch.nom !== undefined ? { materiels: ctx.materiels.map(x => x.id === m.id ? { ...x, nom: patch.nom! } : x) } : {}),
+      optMls: { ...ctx.optMls, [m.id]: { prefixe: patch.prefixe ?? m.prefixe, vlans: patch.vlans ?? m.vlans } },
+    });
+  };
+  /**
+   * Modifier un switch d'acces.
+   *
+   * Le nom et le nombre de ports vont a l'inventaire, les VLAN et les
+   * affectations a la surcouche, et la remontee au cablage : `mlsId`, `uplink`
+   * et `portMls` sont trois facons de decrire un cable, et c'est desormais le
+   * cable qui les porte.
+   */
+  const majAcces = (i: number, patch: Partial<AccessSwitch>) => {
+    const sw = switchesDe(ctx)[i];
+    if (!sw) return;
+    const p: Partial<Ctx> = {};
+    if (patch.name !== undefined || patch.ports !== undefined) {
+      p.materiels = ctx.materiels.map(x => x.id === sw.id
+        ? { ...x, ...(patch.name !== undefined ? { nom: patch.name } : {}), ...(patch.ports !== undefined ? { ports: patch.ports } : {}) } : x);
+    }
+    if (patch.vlans !== undefined || patch.ports_ !== undefined) {
+      p.optSwitches = { ...ctx.optSwitches, [sw.id]: { vlans: patch.vlans ?? sw.vlans, ports_: patch.ports_ ?? sw.ports_ } };
+    }
+    if (patch.mlsId !== undefined || patch.uplink !== undefined || patch.portMls !== undefined) {
+      const vers = patch.mlsId ?? sw.mlsId;
+      const mien = patch.uplink ?? sw.uplink;
+      const sien = patch.portMls ?? sw.portMls;
+      const autres = ctx.cables.filter(c => !((c.deId === sw.id && c.versId === sw.mlsId) || (c.versId === sw.id && c.deId === sw.mlsId)));
+      p.cables = vers ? [...autres, { id: uid('cab'), deId: vers, dePort: sien, versId: sw.id, versPort: mien, media: 'croise' as Media }] : autres;
+    }
+    set(p);
+  };
   const switches = useMemo(() => buildSwitchConfigs(ctx, plan), [ctx, plan]);
   const mlsPlan = useMemo(() => buildMlsPlan(ctx, plan), [ctx, plan]);
   const mlsTables = useMemo(() => dossierMls(mlsPlan), [mlsPlan]);
@@ -1360,7 +1509,7 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
               <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 340 }}>
                 <thead><tr><th style={th}>Nom</th><th style={th}>Modèle</th><th style={th}>Interfaces</th><th style={th}></th></tr></thead>
                 <tbody>
-                  {ctx.routers.map(r => (
+                  {routeursDe(ctx).map(r => (
                     <tr key={r.id}>
                       <td style={td}><input style={{ ...field, width: 90 }} value={r.name} onChange={e => setRtr(r.id, { name: e.target.value.replace(/\s+/g, '') })} /></td>
                       <td style={td}>
@@ -1393,7 +1542,7 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
               const transit = s.routerIds.length + (s.svi && s.routerIds.length >= 1 ? 1 : 0) >= 2;
               const badge = transit ? { t: `🔗 interconnexion · ${s.routerIds.length + (s.svi ? 1 : 0)} equipements`, c: 'var(--accent)', bg: 'color-mix(in srgb,var(--accent) 15%,transparent)' }
                 : s.routerIds.length === 1 ? { t: '🖥️ LAN', c: 'var(--text-muted)', bg: 'var(--surface-3)' }
-                : s.svi ? { t: `🗼 SVI ${ctx.mlsMulticouches.find(m => m.id === s.svi)?.nom ?? ''}`.trim(), c: '#14b8a6', bg: 'color-mix(in srgb,#14b8a6 15%,transparent)' }
+                : s.svi ? { t: `🗼 SVI ${multicouchesDe(ctx).find(m => m.id === s.svi)?.nom ?? ''}`.trim(), c: '#14b8a6', bg: 'color-mix(in srgb,#14b8a6 15%,transparent)' }
                 : { t: '⚠ aucune passerelle', c: '#dc2626', bg: 'color-mix(in srgb,#dc2626 12%,transparent)' };
               return (
                 <div key={s.id} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', marginBottom: 10, background: 'var(--surface)' }}>
@@ -1411,7 +1560,7 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                     </div>
                   </div>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-                    {ctx.routers.map(r => {
+                    {routeursDe(ctx).map(r => {
                       const on = s.routerIds.includes(r.id);
                       const ord = s.routerIds.indexOf(r.id);
                       const tag = on && transit && s.media === 'serial' ? (ord === 0 ? 'DCE · ' : 'DTE · ') : '';
@@ -1420,7 +1569,7 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                     {/* Les multicouches : l'autre facon de porter la passerelle. Le choix est
                         exclusif — un reseau n'a qu'une passerelle, et en declarer deux, c'est
                         en declarer deux. */}
-                    {ctx.mlsMulticouches.map(m => {
+                    {multicouchesDe(ctx).map(m => {
                       const on = s.svi === m.id;
                       return (
                         <button key={m.id} type="button"
@@ -1437,7 +1586,7 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                         </button>
                       );
                     })}
-                    {ctx.routers.length === 0 && <span className="meta" style={{ fontSize: 11.5 }}>Ajoute d’abord des routeurs ci-dessus.</span>}
+                    {routeursDe(ctx).length === 0 && <span className="meta" style={{ fontSize: 11.5 }}>Ajoute d’abord des routeurs ci-dessus.</span>}
                     {transit && <select style={{ ...field, width: 165, marginLeft: 6 }} value={s.media || 'gig'} onChange={e => setSvc(s.id, { media: e.target.value as LinkMedia })}>
                       <option value="gig">Ethernet (switch)</option>
                       <option value="serial" disabled={s.routerIds.length !== 2}>Série (2 routeurs)</option>
@@ -1596,7 +1745,7 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                         {hs.map(h => (<Fragment key={h.id}><span style={{ color: h.ok ? 'var(--text-muted)' : '#dc2626' }}>{h.ok ? '📌' : '⚠'} {h.name || 'hôte'}</span><span style={{ color: h.ok ? 'var(--text)' : '#dc2626' }}>{ipToStr(h.ip!)}</span></Fragment>))}
                       </div>
                     ) : null; })()}
-                    <div style={{ marginTop: 6, fontSize: 11, color: 'var(--text-muted)' }}>{s.dhcp ? '📶 DHCP' : '📌 statique'} · {ctx.routers.find(r => r.id === s.routerId)?.name || 'sans routeur'}</div>
+                    <div style={{ marginTop: 6, fontSize: 11, color: 'var(--text-muted)' }}>{s.dhcp ? '📶 DHCP' : '📌 statique'} · {routeursDe(ctx).find(r => r.id === s.routerId)?.name || 'sans routeur'}</div>
                   </div>
                 );
               })}
@@ -1643,7 +1792,7 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
               <div><label style={label}>Routeur de sortie</label>
                 <select value={ctx.internetRouterId} onChange={e => set({ internetRouterId: e.target.value })} style={field}>
                   <option value="">— aucun (pas de NAT) —</option>
-                  {ctx.routers.map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                  {routeursDe(ctx).map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
                 </select>
               </div>
               <div><label style={label}>Interface WAN</label><input value={ctx.wanIf} onChange={e => set({ wanIf: e.target.value })} style={field} placeholder="GigabitEthernet0/1" /></div>
@@ -1981,19 +2130,18 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                 <div style={legend}>
                   ⚙️ Les switches multicouches
                   <button type="button" style={{ ...smallBtn, marginLeft: 'auto' }}
-                    onClick={() => set({ mlsMulticouches: [...ctx.mlsMulticouches, {
-                      id: 'm' + Date.now().toString(36),
-                      nom: 'MLS-' + (ctx.mlsMulticouches.length + 1),
-                      prefixe: PREFIXE_3560, vlans: [],
-                    }] })}>+ Ajouter</button>
+                    onClick={() => { const id = uid('m'); set({
+                      materiels: [...ctx.materiels, { id, nom: 'MLS-' + (multicouchesDe(ctx).length + 1), type: 'multicouche' as TypeMateriel, modele: '3560', ports: PORTS_TYPIQUES.multicouche }],
+                      optMls: { ...ctx.optMls, [id]: { prefixe: PREFIXE_3560, vlans: [] } },
+                    }); }}>+ Ajouter</button>
                 </div>
                 <div className="meta" style={{ fontSize: 11.5, margin: '0 0 6px' }}>
                   {mlsPlan.vlans.length} VLAN · relais DHCP&nbsp;
                   {ctx.dhcpServer ? <code>{ctx.dhcpServer}</code> : <em>aucun (etape DHCP)</em>}
-                  {ctx.mlsMulticouches.length > 1 && <> · <strong>chaque VLAN n'a qu'une passerelle</strong> : sa SVI vit sur un seul switch.</>}
+                  {multicouchesDe(ctx).length > 1 && <> · <strong>chaque VLAN n'a qu'une passerelle</strong> : sa SVI vit sur un seul switch.</>}
                 </div>
 
-                {ctx.mlsMulticouches.map((m, i) => (
+                {multicouchesDe(ctx).map((m, i) => (
                   <div key={m.id} style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '8px 10px', margin: '6px 0' }}>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                       <input value={m.nom} style={{ ...field, width: 140 }}
@@ -2006,12 +2154,16 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                       <span className="meta" style={{ fontSize: 11.5 }}>
                         {vlansDe(mlsPlan, m).length} SVI · {accesDe(mlsPlan, m).length} switch(es)
                       </span>
-                      {ctx.mlsMulticouches.length > 1 && (
+                      {multicouchesDe(ctx).length > 1 && (
                         <button type="button" style={{ ...smallBtn, marginLeft: 'auto' }}
-                          onClick={() => set({ mlsMulticouches: ctx.mlsMulticouches.filter(x => x.id !== m.id) })}>Retirer</button>
+                          onClick={() => set({
+                            materiels: ctx.materiels.filter(x => x.id !== m.id),
+                            cables: ctx.cables.filter(c => c.deId !== m.id && c.versId !== m.id),
+                            services: ctx.services.map(x => (x.svi === m.id ? { ...x, svi: undefined } : x)),
+                          })}>Retirer</button>
                       )}
                     </div>
-                    {ctx.mlsMulticouches.length > 1 && (
+                    {multicouchesDe(ctx).length > 1 && (
                       <>
                         <div className="meta" style={{ fontSize: 11, marginTop: 5 }}>
                           Les VLAN dont il porte la SVI. Rien de coche = tous ceux que les autres ne prennent pas.
@@ -2051,22 +2203,21 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                 <div style={legend}>
                   🗄️ Les switches d'acces
                   <button type="button" style={{ ...smallBtn, marginLeft: 'auto' }}
-                    onClick={() => set({ mlsAcces: [...ctx.mlsAcces, {
-                      id: 'sw' + Date.now().toString(36),
-                      name: 'Sw-' + (ctx.mlsAcces.length + 1),
-                      vlans: mlsPlan.vlans.slice(0, 2).map(v => v.id),
-                      ports: PORTS_PAR_DEFAUT, uplink: PORTS_PAR_DEFAUT,
-                      portMls: ctx.mlsAcces.length + 1,
-                      mlsId: ctx.mlsMulticouches[0]?.id ?? 'm1',
-                    }] })}>+ Ajouter</button>
+                    onClick={() => { const id = uid('sw'); const cible = multicouchesDe(ctx)[0]; set({
+                      materiels: [...ctx.materiels, { id, nom: 'Sw-' + (switchesDe(ctx).length + 1), type: 'switch' as TypeMateriel, modele: '2960', ports: PORTS_PAR_DEFAUT }],
+                      optSwitches: { ...ctx.optSwitches, [id]: { vlans: mlsPlan.vlans.slice(0, 2).map(v => v.id) } },
+                      // Un switch neuf arrive cable au premier multicouche : c'est
+                      // ce que faisait l'ancien `mlsId` par defaut, dit en couche 1.
+                      ...(cible ? { cables: [...ctx.cables, { id: uid('cab'), deId: cible.id, dePort: switchesDe(ctx).length + 1, versId: id, versPort: PORTS_PAR_DEFAUT, media: 'croise' as Media }] } : {}),
+                    }); }}>+ Ajouter</button>
                 </div>
-                {ctx.mlsAcces.length === 0 && (
+                {switchesDe(ctx).length === 0 && (
                   <div className="meta" style={{ fontSize: 12 }}>
                     Aucun switch d'acces. Ajoutes-en un par local ou par batiment — c'est ce decoupage que le
                     dossier technique demande de justifier.
                   </div>
                 )}
-                {ctx.mlsAcces.map((sw, i) => (
+                {switchesDe(ctx).map((sw, i) => (
                   <div key={sw.id} style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '8px 10px', margin: '6px 0' }}>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                       <input value={sw.name} onChange={e => majAcces(i, { name: e.target.value })} style={{ ...field, width: 130 }} />
@@ -2088,12 +2239,15 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                       <label style={{ fontSize: 11.5 }} title="un multicouche, ou un autre switch en cascade">remonte vers&nbsp;
                         <select value={sw.mlsId} style={{ ...field, width: 150 }}
                           onChange={e => majAcces(i, { mlsId: e.target.value })}>
-                          {ctx.mlsMulticouches.map(m => <option key={m.id} value={m.id}>{m.nom}</option>)}
-                          {ctx.mlsAcces.filter(x => x.id !== sw.id).map(x => <option key={x.id} value={x.id}>{x.name} (cascade)</option>)}
+                          {multicouchesDe(ctx).map(m => <option key={m.id} value={m.id}>{m.nom}</option>)}
+                          {switchesDe(ctx).filter(x => x.id !== sw.id).map(x => <option key={x.id} value={x.id}>{x.name} (cascade)</option>)}
                         </select>
                       </label>
                       <button type="button" style={{ ...smallBtn, marginLeft: 'auto' }}
-                        onClick={() => set({ mlsAcces: ctx.mlsAcces.filter(x => x.id !== sw.id) })}>Retirer</button>
+                        onClick={() => set({
+                          materiels: ctx.materiels.filter(x => x.id !== sw.id),
+                          cables: ctx.cables.filter(c => c.deId !== sw.id && c.versId !== sw.id),
+                        })}>Retirer</button>
                     </div>
                     <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
                       {mlsPlan.vlans.map(v => (
@@ -2151,8 +2305,8 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                                     <select value={a.vers ?? ''} style={{ ...field, width: 130, padding: '4px 6px' }}
                                       onChange={e => majPort({ vers: e.target.value })}>
                                       <option value="">—</option>
-                                      {ctx.mlsMulticouches.map(m => <option key={m.id} value={m.id}>{m.nom}</option>)}
-                                      {ctx.mlsAcces.filter(x => x.id !== sw.id).map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
+                                      {multicouchesDe(ctx).map(m => <option key={m.id} value={m.id}>{m.nom}</option>)}
+                                      {switchesDe(ctx).filter(x => x.id !== sw.id).map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
                                     </select>
                                   )}
                                 </td>
@@ -2217,7 +2371,7 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                 ))}
               </div>
 
-              {ctx.mlsMulticouches.map(m => (
+              {multicouchesDe(ctx).map(m => (
                 <div key={m.id} style={group}>
                   <div style={legend}>
                     📟 {m.nom} — la configuration
@@ -2228,7 +2382,7 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                 </div>
               ))}
 
-              {ctx.mlsAcces.map(sw => (
+              {switchesDe(ctx).map(sw => (
                 <div key={sw.id} style={group}>
                   <div style={legend}>
                     🗄️ {sw.name} — la configuration
@@ -2689,8 +2843,18 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                       {(['routeur', 'multicouche', 'switch', 'serveur', 'poste', 'nuage'] as TypeMateriel[]).map(t =>
                         <option key={t} value={t}>{t}</option>)}
                     </select>
-                    <input value={m.modele} placeholder="modele" style={{ ...field, width: 90 }}
-                      onChange={e => majMat({ modele: e.target.value })} />
+                    {/* Le modele d'un routeur decide de ses interfaces : le laisser
+                        en texte libre laissait retomber toute faute de frappe sur
+                        le 2911, sans le dire. */}
+                    {m.type === 'routeur' ? (
+                      <select value={m.modele} style={{ ...field, width: 90 }}
+                        onChange={e => majMat({ modele: e.target.value })}>
+                        {(['2911', '2811'] as const).map(x => <option key={x} value={x}>{x}</option>)}
+                      </select>
+                    ) : (
+                      <input value={m.modele} placeholder="modele" style={{ ...field, width: 90 }}
+                        onChange={e => majMat({ modele: e.target.value })} />
+                    )}
                     <label style={{ fontSize: 11.5 }}>ports&nbsp;
                       <input type="number" min={1} max={48} value={m.ports} style={{ ...field, width: 62 }}
                         onChange={e => majMat({ ports: Math.max(1, Number(e.target.value) || 1) })} />
@@ -2703,6 +2867,15 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                         // le laisser produirait un lien fantome dans le schema.
                         cables: ctx.cables.filter(c => c.deId !== m.id && c.versId !== m.id),
                         physPos: Object.fromEntries(Object.entries(ctx.physPos).filter(([k]) => k !== m.id)),
+                        // Et les couches hautes le lachent aussi : un sous-reseau
+                        // qui pointe vers un routeur absent n'a plus de passerelle,
+                        // et une SVI vers un multicouche disparu non plus.
+                        services: ctx.services.map(x => ({
+                          ...x,
+                          routerIds: x.routerIds.filter(r => r !== m.id),
+                          svi: x.svi === m.id ? undefined : x.svi,
+                        })),
+                        ...(ctx.internetRouterId === m.id ? { internetRouterId: '' } : {}),
                       })}>Retirer</button>
                   </div>
                 </div>
@@ -2943,7 +3116,7 @@ function SchemaMls({ ctx, plan, onPos }: { ctx: Ctx; plan: Plan; onPos?: (id: st
     sub: z,
     membres: [...(z.routerIds ?? []), ...(svcDuSub(z)?.svi ? [svcDuSub(z)!.svi!] : [])],
   }));
-  const routeurs = ctx.routers.filter(r => segments.some(g => g.membres.includes(r.id))
+  const routeurs = routeursDe(ctx).filter(r => segments.some(g => g.membres.includes(r.id))
     || plan.subs.some(z => z.kind === 'lan' && z.routerId === r.id));
   const yRouteurs = 168;
   const xRouteur = (i: number) => ((i + 0.5) * W) / Math.max(1, routeurs.length);
@@ -3098,7 +3271,7 @@ function SchemaMls({ ctx, plan, onPos }: { ctx: Ctx; plan: Plan; onPos?: (id: st
 }
 
 function SchemaSvg({ ctx, plan }: { ctx: Ctx; plan: Plan }) {
-  const routers = ctx.routers;
+  const routers = routeursDe(ctx);
   if (!routers.length) return <div className="meta">Ajoute des routeurs (étape 3) pour afficher le schéma.</div>;
   const lanSubs = plan.subs.filter(s => s.kind === 'lan');
   const linkSubs = plan.subs.filter(s => s.kind === 'link');

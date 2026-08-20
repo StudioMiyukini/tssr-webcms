@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Link } from '@tanstack/react-router';
 import { useTheme } from '@/lib/theme';
-import { NetworkWorkshop, DEFAULT_CTX, migrateCtx, computePlan, type Ctx, type Plan } from '@/components/NetworkWorkshop';
+import { NetworkWorkshop, DEFAULT_CTX, migrateCtx, computePlan, routeursDe, type Ctx, type Plan } from '@/components/NetworkWorkshop';
 import { apiPut } from '@/api/client';
 import {
   useAtelierMe, useAtelierProjects, useAtelierProject,
@@ -68,7 +68,7 @@ function statusesOf(ctx: Ctx, plan: Plan): Record<string, Status> {
     routeurs: plan.ifaces.length ? 'ok' : 'empty',
     dhcp: dhcpAny ? 'ok' : 'empty',
     dns: ctx.domaine.trim() ? 'ok' : 'empty',
-    ssh: ctx.routers.length ? 'ok' : 'empty',
+    ssh: routeursDe(ctx).length ? 'ok' : 'empty',
     nat: ctx.internetRouterId ? 'ok' : 'empty',
     tests: plan.subs.length ? 'ok' : 'empty',
   };

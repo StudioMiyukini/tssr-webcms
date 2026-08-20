@@ -199,6 +199,50 @@ export function portsLibres(m: Materiel, cables: Cable[]): number[] {
 }
 
 /**
+ * Ce par quoi un équipement remonte vers le cœur du réseau.
+ *
+ * Un switch d'accès déclarait jusqu'ici vers quoi il remonte, par quel port, et
+ * sur quel port d'en face. Ce sont trois façons de décrire un câble ; depuis
+ * que la couche 1 tient le câblage, ils s'en déduisent — et la cascade avec
+ * eux, sans qu'on ait à la déclarer.
+ *
+ * Le parent est le voisin **le plus proche d'une racine**, en largeur d'abord :
+ * dans un montage en cascade, un switch de bâtiment remonte par le switch de
+ * distribution, pas par le poste qu'il alimente.
+ */
+export interface Remontee {
+  id: string;
+  /** Ce vers quoi il remonte : un multicouche, ou un autre switch. */
+  parentId: string;
+  /** Le port de CET équipement. */
+  monPort: number;
+  /** Le port en face — distinct, et c'est ce que la configuration vise. */
+  sonPort: number;
+}
+
+export function remontees(cables: Cable[], racines: string[], membres: string[]): Remontee[] {
+  const dans = new Set(membres);
+  const vus = new Set(racines);
+  const out: Remontee[] = [];
+  let front = [...racines];
+  while (front.length) {
+    const suivant: string[] = [];
+    for (const p of front) {
+      for (const v of voisinsDe(cables, p)) {
+        // On ne descend que dans les équipements de commutation : un poste
+        // relié à deux switches ne doit pas servir de chemin entre eux.
+        if (!dans.has(v.autreId) || vus.has(v.autreId)) continue;
+        vus.add(v.autreId);
+        out.push({ id: v.autreId, parentId: p, monPort: v.sonPort, sonPort: v.monPort });
+        suivant.push(v.autreId);
+      }
+    }
+    front = suivant;
+  }
+  return out;
+}
+
+/**
  * Le chemin physique entre deux équipements, s'il existe.
  *
  * Sert à répondre à « pourquoi ces deux postes ne se voient-ils pas ? » par la
