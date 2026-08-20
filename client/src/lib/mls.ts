@@ -594,6 +594,68 @@ export interface SortieInternet {
    * s'arrête au pare-feu. C'est un choix de sécurité, pas un oubli.
    */
   sortants?: number[];
+  /**
+   * Le segment d'interconnexion que ce lien **est**.
+   *
+   * Le lien multicouche <-> pare-feu peut se declarer a deux endroits : ici, ou
+   * en Segmentation comme segment entre le multicouche et un routeur. Ce sont
+   * deux facons de decrire le meme cable, et tant qu'elles vivaient separement,
+   * elles produisaient deux plans d'adressage differents pour ses deux bouts.
+   *
+   * Renseigne, les adresses viennent du plan d'adressage et ne se saisissent
+   * plus : une seule description, un seul /30.
+   */
+  segmentId?: string;
+}
+
+/** Un segment d'interconnexion candidat, tel que le plan d'adressage le calcule. */
+export interface SegmentSortie {
+  id: string;
+  nom: string;
+  /** L'adresse du multicouche sur ce segment. */
+  ipMls: string;
+  /** L'adresse du routeur d'en face — le pare-feu. */
+  ipFirewall: string;
+  cidr: number;
+  /** Le nom du routeur, pour que la sortie affiche le bon. */
+  nomRouteur: string;
+}
+
+/**
+ * La sortie effective : celle qui part en configuration.
+ *
+ * Quand la sortie adopte un segment, ses adresses de lien viennent du plan
+ * d'adressage plutot que de la saisie. Tout le reste — le WAN, le NAT, la
+ * publication — lui reste propre : un segment ne sait rien de ces choses-la.
+ */
+export function sortieEffective(s: SortieInternet, segments: SegmentSortie[]): SortieInternet {
+  const seg = s.segmentId ? segments.find(z => z.id === s.segmentId) : undefined;
+  if (!seg) return s;
+  return { ...s, ipMls: seg.ipMls, ipFirewall: seg.ipFirewall, lienCidr: seg.cidr, firewall: seg.nomRouteur || s.firewall };
+}
+
+/**
+ * Le meme cable decrit deux fois.
+ *
+ * Signale quand un segment multicouche <-> routeur existe et que la sortie ne
+ * l'adopte pas : les deux descriptions coexistent alors avec des adresses
+ * independantes, et les deux configurations ne se rejoignent nulle part.
+ */
+export function verifierSortie(s: SortieInternet | null, segments: SegmentSortie[]): Incoherence[] {
+  if (!s || !segments.length) return [];
+  if (s.segmentId && segments.some(z => z.id === s.segmentId)) return [];
+  if (s.segmentId) {
+    return [{
+      quoi: 'La sortie Internet renvoie a un segment qui n\u2019existe plus',
+      effet: 'Ses adresses de lien sont retombees sur la saisie manuelle. Choisis un segment, ou repasse en saisie explicitement.',
+    }];
+  }
+  const noms = segments.map(z => z.nom).join(', ');
+  return [{
+    quoi: `Le lien vers le pare-feu est decrit deux fois (ici, et en Segmentation : ${noms})`,
+    effet: `Deux plans d\u2019adressage pour le meme cable : le multicouche prendra ${s.ipMls}/${s.lienCidr} et le routeur celle du segment. `
+      + 'Les deux extremites ne seront pas dans le meme sous-reseau, et rien ne passera. Adopte le segment ci-dessus.',
+  }];
 }
 
 /** Masque générique (wildcard) d'un préfixe : `24` → `0.0.0.255`. */

@@ -24,6 +24,7 @@ import {
   vlansDe, accesDe, enfantsDe, verifierMulticouches, type Multicouche,
   affectations, verifierPorts, PORTS_PAR_DEFAUT as PORTS_DEF, type AffectationPort,
   type AccessSwitch, type MlsPlan, type SortieInternet, type ReseauExterne,
+  sortieEffective, verifierSortie, type SegmentSortie,
 } from '@/lib/mls';
 import {
   cableAttendu, portsLibres, verifierCablage, cheminPhysique, voisinsDe,
@@ -228,6 +229,14 @@ export type Sub = {
   kind: 'lan' | 'link'; id: string; name: string;
   net: number; first: number; last: number; bc: number; usable: number; mask: number; cidr: number;
   gw: number | null; switchIp: number | null; routerId?: string; dhcp?: boolean; media?: LinkMedia; routerIds?: string[];
+  /**
+   * Le multicouche membre du segment, et son adresse.
+   *
+   * Un lien MLS <-> routeur est un segment d'interconnexion comme un autre : il
+   * a une adresse a chaque bout. Le bloc etait deja dimensionne pour elle, mais
+   * personne ne la calculait — le bout du cable restait vide.
+   */
+  sviId?: string; sviIp?: number | null;
   /** VLAN 802.1Q du sous-reseau, si le service en declare un. */
   vlan?: number;
 };
@@ -365,8 +374,12 @@ export function computePlan(ctx: Ctx): Plan {
     } else {
       // Interconnexion : 2+ routeurs, une IP par routeur (pas de DHCP)
       const parts = m.serial ? m.rs.slice(0, 2) : m.rs;
-      const swIp = s.hasSwitch ? (a.first + parts.length) >>> 0 : null;
-      subs.push({ kind: 'link', id: 'svc:' + s.id, name: s.name || 'Interconnexion', net: a.net, first: a.first, last: a.last, bc: a.bc, usable: a.usable, mask: a.mask, cidr: a.cidr, gw: null, switchIp: (swIp !== null && swIp <= a.last) ? swIp : null, media: m.serial ? 'serial' : 'gig', routerIds: parts.map(r => r.id) });
+      // Le multicouche prend l'adresse qui suit celle des routeurs ; la gestion
+      // du switch se decale d'autant, sinon les deux tomberaient sur la meme.
+      const sviIp = s.svi ? (a.first + parts.length) >>> 0 : null;
+      const swIp = s.hasSwitch ? (a.first + parts.length + (s.svi ? 1 : 0)) >>> 0 : null;
+      subs.push({ kind: 'link', id: 'svc:' + s.id, name: s.name || 'Interconnexion', net: a.net, first: a.first, last: a.last, bc: a.bc, usable: a.usable, mask: a.mask, cidr: a.cidr, gw: null, switchIp: (swIp !== null && swIp <= a.last) ? swIp : null, media: m.serial ? 'serial' : 'gig', routerIds: parts.map(r => r.id), sviId: s.svi, sviIp: (sviIp !== null && sviIp <= a.last) ? sviIp : null });
+      if (s.svi && sviIp !== null && sviIp > a.last) warnings.push(`« ${s.name} » : plus de place pour l'adresse du multicouche. Augmente le nombre d'hotes de ce segment.`);
       if (m.serial && m.rs.length > 2) warnings.push(`« ${s.name} » : une liaison série relie exactement 2 routeurs — passe en Ethernet pour en relier davantage.`);
       parts.forEach((r, k) => {
         const ifc = m.serial ? nextSer(r) : nextEth(r);
@@ -902,6 +915,24 @@ const STEPS = [
   { n: 8, icon: '🔌', title: 'Tests' },
 ];
 const STORAGE_KEY = 'net_workshop_v1';
+/**
+ * Les segments qui relient un multicouche a un routeur.
+ *
+ * Ce sont les candidats a porter la sortie Internet : plutot que de lui laisser
+ * inventer ses propres adresses, elle en adopte un et lit les siennes.
+ */
+function segmentsDeSortie(ctx: Ctx, plan: Plan): SegmentSortie[] {
+  return plan.subs
+    .filter(z => z.kind === 'link' && z.sviId && z.sviIp != null && (z.routerIds?.length ?? 0) >= 1)
+    .map(z => {
+      const r = ctx.routers.find(x => x.id === z.routerIds![0]);
+      return {
+        id: z.id, nom: z.name, cidr: z.cidr,
+        ipMls: ipToStr(z.sviIp!), ipFirewall: ipToStr(z.first), nomRouteur: r?.name ?? 'Firewall',
+      };
+    });
+}
+
 /** Une sortie Internet plausible : adresses de documentation (RFC 5737) cote
  *  WAN, pour qu'on ne recopie pas par megarde une adresse publique reelle. */
 const SORTIE_DEFAUT: SortieInternet = {
@@ -1026,6 +1057,12 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
   const natTable = useMemo(() => buildNatTable(ctx, plan, nat), [ctx, plan, nat]);
   const tests = useMemo(() => buildTests(ctx, plan, nat), [ctx, plan, nat]);
   const resetText = buildReset();
+  const segmentsSortie = segmentsDeSortie(ctx, plan);
+  // La sortie telle qu'elle part en configuration : adresses du segment adopte,
+  // ou saisie a la main. Tout ce qui suit doit lire celle-ci, pas ctx.mlsSortie.
+  const sortie = ctx.mlsSortie ? sortieEffective(ctx.mlsSortie, segmentsSortie) : null;
+  const sortieAdoptee = !!ctx.mlsSortie?.segmentId && segmentsSortie.some(z => z.id === ctx.mlsSortie!.segmentId);
+
   const lanSubs = plan.subs.filter(s => s.kind === 'lan');
   const linkSubs = plan.subs.filter(s => s.kind === 'link');
   const ifaceFor = (routerId: string, ip: number) => plan.ifaces.find(i => i.routerId === routerId && i.ip === ip);
@@ -2078,6 +2115,33 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                       entre VLAN), puis par le <strong>pare-feu</strong> (qui traduit), puis par le <strong>FAI</strong>.
                       Le lien multicouche‑pare-feu est un <strong>port route</strong>, pas un VLAN.
                     </div>
+
+                    {/* Le meme cable pouvait se decrire ici et en Segmentation, avec
+                        deux plans d'adressage. Il se decrit desormais une fois. */}
+                    {segmentsSortie.length > 0 && (
+                      <div style={{ border: '1px solid var(--accent)', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 4 }}>Le lien vers le pare-feu</div>
+                        <select value={ctx.mlsSortie.segmentId ?? ''} style={{ ...field, width: 340 }}
+                          onChange={e => set({ mlsSortie: { ...ctx.mlsSortie!, segmentId: e.target.value || undefined } })}>
+                          <option value="">— saisi ici (indépendant du plan d’adressage)</option>
+                          {segmentsSortie.map(z => (
+                            <option key={z.id} value={z.id}>{z.nom} · {z.ipMls} ↔ {z.ipFirewall}/{z.cidr}</option>
+                          ))}
+                        </select>
+                        <div className="meta" style={{ fontSize: 11.5, marginTop: 4 }}>
+                          {sortieAdoptee
+                            ? 'Les adresses du lien viennent du plan d’adressage : elles suivront toute modification du segment, et les deux bouts resteront dans le meme sous-reseau.'
+                            : 'Un segment multicouche ↔ routeur est declare en Segmentation. Tant qu’il n’est pas choisi ici, le meme cable porte deux plans d’adressage.'}
+                        </div>
+                      </div>
+                    )}
+
+                    {verifierSortie(ctx.mlsSortie, segmentsSortie).map((x, k) => (
+                      <div key={k} style={{ border: '1px solid var(--danger, #c4462f)', borderRadius: 8, padding: '8px 10px', marginBottom: 10 }}>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--danger, #c4462f)' }}>⚠ {x.quoi}</div>
+                        <div style={{ fontSize: 11.5 }}>{x.effet}</div>
+                      </div>
+                    ))}
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       {([
                         ['firewall', 'Nom du pare-feu', 130],
@@ -2088,12 +2152,18 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                         ['ifWan', 'If. WAN (pare-feu)', 170],
                         ['ipWan', 'IP WAN', 110],
                         ['passerelleFai', 'Passerelle FAI', 110],
-                      ] as [keyof SortieInternet, string, number][]).map(([k, lib, w]) => (
-                        <label key={k} style={{ fontSize: 11.5 }}>{lib}<br />
-                          <input value={String(ctx.mlsSortie?.[k] ?? '')} style={{ ...field, width: w }}
-                            onChange={e => set({ mlsSortie: { ...ctx.mlsSortie!, [k]: e.target.value } })} />
+                      ] as [keyof SortieInternet, string, number][]).map(([k, lib, w]) => {
+                        // Adopter un segment, c'est lui laisser ces trois-la : les
+                        // reouvrir a la saisie rendrait la divergence possible a nouveau.
+                        const derive = sortieAdoptee && (k === 'ipMls' || k === 'ipFirewall' || k === 'firewall');
+                        return (
+                        <label key={k} style={{ fontSize: 11.5, opacity: derive ? .65 : 1 }}>{lib}{derive ? ' · du segment' : ''}<br />
+                          <input value={String(sortie?.[k] ?? '')} style={{ ...field, width: w }} readOnly={derive}
+                            title={derive ? 'Vient du segment d\u2019interconnexion choisi ci-dessus.' : undefined}
+                            onChange={e => { if (!derive) set({ mlsSortie: { ...ctx.mlsSortie!, [k]: e.target.value } }); }} />
                         </label>
-                      ))}
+                        );
+                      })}
                       <label style={{ fontSize: 11.5 }}>Serveur publie (IP)<br />
                         <input value={ctx.mlsSortie.publie?.ip ?? ''} style={{ ...field, width: 120 }}
                           placeholder="aucun"
@@ -2130,18 +2200,18 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                       <div style={legend}>
                         🗼 Sur {mlsPlan.multicouches[0]?.nom} — le port route et la route par defaut
                         <button type="button" style={{ ...smallBtn, marginLeft: 'auto' }}
-                          onClick={() => copy('mlsout', configSortieMls(mlsPlan, ctx.mlsSortie!))}>{copied === 'mlsout' ? '✓ Copie' : 'Copier'}</button>
+                          onClick={() => copy('mlsout', configSortieMls(mlsPlan, sortie!))}>{copied === 'mlsout' ? '✓ Copie' : 'Copier'}</button>
                       </div>
-                      <pre style={preStyle}><code>{configSortieMls(mlsPlan, ctx.mlsSortie)}</code></pre>
+                      <pre style={preStyle}><code>{configSortieMls(mlsPlan, sortie!)}</code></pre>
                     </div>
 
                     <div style={{ marginTop: 10 }}>
                       <div style={legend}>
-                        🔒 Sur {ctx.mlsSortie.firewall} — traduction et routes de retour
+                        🔒 Sur {sortie!.firewall} — traduction et routes de retour
                         <button type="button" style={{ ...smallBtn, marginLeft: 'auto' }}
-                          onClick={() => copy('fw', configPareFeu(mlsPlan, ctx.mlsSortie!))}>{copied === 'fw' ? '✓ Copie' : 'Copier'}</button>
+                          onClick={() => copy('fw', configPareFeu(mlsPlan, sortie!))}>{copied === 'fw' ? '✓ Copie' : 'Copier'}</button>
                       </div>
-                      <pre style={preStyle}><code>{configPareFeu(mlsPlan, ctx.mlsSortie)}</code></pre>
+                      <pre style={preStyle}><code>{configPareFeu(mlsPlan, sortie!)}</code></pre>
                       <div className="meta" style={{ fontSize: 11.5 }}>
                         Les <strong>routes de retour</strong> en bas de configuration sont l'oubli classique : sans elles,
                         le pare-feu traduit le trafic sortant sans savoir par ou renvoyer les reponses. Depuis le pare-feu,
@@ -2158,7 +2228,7 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                           ))}</tr>
                         </thead>
                         <tbody>
-                          {tableNat(mlsPlan, ctx.mlsSortie).map((r, i) => (
+                          {tableNat(mlsPlan, sortie!).map((r, i) => (
                             <tr key={i}>
                               <td style={tdMls}>{r.proto}</td>
                               <td style={tdMls}><code style={{ fontSize: 11 }}>{r.interne}</code></td>
@@ -2222,7 +2292,7 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                       </div>
 
                       {(() => {
-                        const conflits = chevauchements(mlsPlan, ctx.mlsExterne!, ctx.mlsSortie!);
+                        const conflits = chevauchements(mlsPlan, ctx.mlsExterne!, sortie!);
                         if (!conflits.length) {
                           return (
                             <div className="meta" style={{ fontSize: 11.5, marginTop: 8, color: 'var(--ok, #059669)' }}>
@@ -2256,9 +2326,9 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                         <div style={legend}>
                           📟 {ctx.mlsExterne.routeur} — la configuration
                           <button type="button" style={{ ...smallBtn, marginLeft: 'auto' }}
-                            onClick={() => copy('ext', configRouteurExterne(ctx.mlsExterne!, ctx.mlsSortie!))}>{copied === 'ext' ? '✓ Copie' : 'Copier'}</button>
+                            onClick={() => copy('ext', configRouteurExterne(ctx.mlsExterne!, sortie!))}>{copied === 'ext' ? '✓ Copie' : 'Copier'}</button>
                         </div>
-                        <pre style={preStyle}><code>{configRouteurExterne(ctx.mlsExterne, ctx.mlsSortie)}</code></pre>
+                        <pre style={preStyle}><code>{configRouteurExterne(ctx.mlsExterne, sortie!)}</code></pre>
                         <div className="meta" style={{ fontSize: 11.5 }}>
                           Ni NAT ni route par defaut : la traduction a lieu une seule fois, au pare-feu, et deux routes
                           par defaut qui se designent mutuellement font tourner les paquets inconnus entre les deux.
@@ -2365,7 +2435,7 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
 
                 <div style={{ marginTop: 10 }}>
                   <div style={legend}>🧭 Tester depuis un poste, dans l'ordre</div>
-                  {verificationsClient(mlsPlan, mlsClients, ctx.mlsSortie ?? undefined).map(sec => (
+                  {verificationsClient(mlsPlan, mlsClients, sortie ?? undefined).map(sec => (
                     <div key={sec.titre} style={{ margin: '6px 0' }}>
                       <div style={{ fontWeight: 600, fontSize: 12.5 }}>{sec.titre}</div>
                       <pre style={preStyle}><code>{sec.lignes.join('\n')}</code></pre>
@@ -2732,7 +2802,9 @@ function SchemaMls({ ctx, plan, onPos }: { ctx: Ctx; plan: Plan; onPos?: (id: st
     return n ? pos(n) : null;
   };
 
-  const sortie = ctx.mlsSortie;
+  // La meme sortie effective que l'ecran : un schema qui dessinerait les
+  // adresses saisies alors que la configuration en emet d'autres serait faux.
+  const sortie = ctx.mlsSortie ? sortieEffective(ctx.mlsSortie, segmentsDeSortie(ctx, plan)) : null;
   const externe = ctx.mlsExterne;
   const racine = noeuds.find(n => n.profondeur === 0);
   const xSortie = racine ? pos(racine).x : W / 2;

@@ -8,6 +8,7 @@ import {
   NATIF_PAR_DEFAUT, PORTS_PAR_DEFAUT, PREFIXE_3560, vlansDe, accesDe, verifierMulticouches, type Multicouche,
   mlsDe, enfantsDe, vlansTransportes,
   analyserPlage, ecrirePlage, affectations, verifierPorts, portsAccesDe, portsTrunkDe, type MlsPlan, type AccessSwitch, type SortieInternet,
+  sortieEffective, verifierSortie, type SegmentSortie,
 } from './mls.ts';
 
 /* La maquette du TP VLAN 3 (Donatien&co) sert de cas de référence : cinq VLAN,
@@ -903,4 +904,60 @@ test('un switch sans aucun trunk est signalé', () => {
 
 test('une affectation saine ne signale rien', () => {
   assert.deepEqual(verifierPorts(MANUEL, MANUEL.acces[0]!), []);
+});
+
+/* ── Le lien multicouche ↔ pare-feu, décrit une seule fois ─────────────────
+   Il se déclarait à deux endroits — comme segment d'interconnexion en
+   Segmentation, et ici — chacun avec ses propres adresses. La sortie adopte
+   désormais le segment plutôt que de le redécrire. */
+
+const SEGMENT: SegmentSortie = {
+  id: 'svc:s9', nom: 'Lien MLS-Routeur', ipMls: '192.168.99.2', ipFirewall: '192.168.99.1',
+  cidr: 30, nomRouteur: 'Routeur1',
+};
+
+test('sans segment déclaré, la sortie garde ce qu’on a saisi', () => {
+  assert.deepEqual(sortieEffective(SORTIE, []), SORTIE);
+  assert.deepEqual(verifierSortie(SORTIE, []), []);
+});
+
+test('LA SORTIE ADOPTE LE SEGMENT : les adresses viennent du plan d’adressage', () => {
+  const eff = sortieEffective({ ...SORTIE, segmentId: 'svc:s9' }, [SEGMENT]);
+  assert.equal(eff.ipMls, '192.168.99.2');
+  assert.equal(eff.ipFirewall, '192.168.99.1');
+  assert.equal(eff.lienCidr, 30);
+  assert.equal(eff.firewall, 'Routeur1', 'c’est le même équipement, il porte un seul nom');
+  // Le WAN et le NAT restent à la sortie : un segment n'en sait rien.
+  assert.equal(eff.ipWan, '203.0.113.2');
+  assert.equal(eff.passerelleFai, '203.0.113.1');
+  assert.deepEqual(verifierSortie(eff, [SEGMENT]), []);
+});
+
+test('LE MÊME CÂBLE DÉCRIT DEUX FOIS est signalé, avec ce que ça provoque', () => {
+  // Le défaut qu'on répare : deux plans d'adressage pour un seul lien, et
+  // deux extrémités qui ne sont pas dans le même sous-réseau.
+  const pb = verifierSortie(SORTIE, [SEGMENT]);
+  assert.equal(pb.length, 1);
+  assert.ok(pb[0]!.quoi.includes('deux fois'), pb[0]!.quoi);
+  assert.ok(pb[0]!.quoi.includes('Lien MLS-Routeur'), 'il faut nommer le segment concerné');
+  assert.ok(pb[0]!.effet.includes('rien ne passera'), pb[0]!.effet);
+});
+
+test('un segment supprimé ne laisse pas la sortie pointer dans le vide', () => {
+  const orpheline = { ...SORTIE, segmentId: 'svc:disparu' };
+  // Les adresses retombent sur la saisie plutôt que de devenir vides.
+  assert.equal(sortieEffective(orpheline, [SEGMENT]).ipMls, '10.0.0.1');
+  const pb = verifierSortie(orpheline, [SEGMENT]);
+  assert.equal(pb.length, 1);
+  assert.ok(pb[0]!.quoi.includes('n’existe plus'), pb[0]!.quoi);
+});
+
+test('la configuration émise suit le segment adopté', () => {
+  // La vérification qui compte : ce n'est pas la structure qui doit changer,
+  // c'est le texte que l'élève va coller dans l'IOS.
+  const eff = sortieEffective({ ...SORTIE, segmentId: 'svc:s9' }, [SEGMENT]);
+  const cfg = configSortieMls({ multicouches: [], vlans: [], acces: [], dhcpServer: '', natif: 999 }, eff);
+  assert.ok(cfg.includes('ip address 192.168.99.2 255.255.255.252'), cfg);
+  assert.ok(cfg.includes('ip route 0.0.0.0 0.0.0.0 192.168.99.1'), cfg);
+  assert.ok(!cfg.includes('10.0.0.'), 'l’adresse saisie ne doit plus apparaître nulle part');
 });
