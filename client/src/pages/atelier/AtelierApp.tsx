@@ -17,24 +17,35 @@ interface NavItem { key: string; icon: string; label: string; step: number; s4?:
 // Sidebar réorganisée selon l'audit : Réseau (conception + schéma) · Configurations (tous les
 // configs générés) · Validation. L'étape 4 surchargée est éclatée en Schéma / Routeurs / NAT.
 const NAV: { title: string; items: NavItem[] }[] = [
-  { title: 'Réseau', items: [
+  // Regroupement par couches OSI : c'est l'ordre du montage reel — on pose le
+  // materiel, on cable, on decoupe en VLAN, on adresse, puis on sert. L'ancien
+  // classement (« Reseau / Configurations / Validation ») rangeait une couche 2
+  // et une couche 7 sous le meme titre.
+  { title: 'Couche 1 — Physique', items: [
     { key: 'contexte', icon: '🧾', label: 'Contexte', step: 1 },
-    { key: 'preferences', icon: '⚙️', label: 'Préférences', step: 2 },
-    { key: 'segmentation', icon: '🧮', label: 'Segmentation', step: 3 },
-    { key: 'schema', icon: '🗺️', label: 'Schéma', step: 4, s4: 'schema' },
+    { key: 'materiel', icon: '🔌', label: 'Matériel & câblage', step: 11 },
   ] },
-  { title: 'Configurations', items: [
+  { title: 'Couche 2 — Liaison', items: [
+    { key: 'vlan', icon: '🔀', label: 'VLAN & switches', step: 9 },
+  ] },
+  { title: 'Couche 3 — Réseau', items: [
+    { key: 'preferences', icon: '⚙️', label: 'Préférences', step: 2 },
+    { key: 'segmentation', icon: '🧮', label: 'Adressage', step: 3 },
+    { key: 'schema', icon: '🗺️', label: 'Schéma', step: 4, s4: 'schema' },
     { key: 'routeurs', icon: '📟', label: 'Routeurs & reset', step: 4, s4: 'routeurs' },
+    { key: 'mls', icon: '🗼', label: 'Switch multicouche (SVI)', step: 10 },
+    { key: 'nat', icon: '🌍', label: 'Internet / NAT', step: 4, s4: 'nat' },
+  ] },
+  { title: 'Couches 4-7 — Services', items: [
     { key: 'dhcp', icon: '📶', label: 'DHCP', step: 5 },
     { key: 'dns', icon: '🌐', label: 'DNS', step: 6 },
     { key: 'ssh', icon: '🔑', label: 'SSH', step: 7 },
-    { key: 'nat', icon: '🌍', label: 'Internet / NAT', step: 4, s4: 'nat' },
-    { key: 'vlan', icon: '🔀', label: 'VLAN & switches', step: 9 },
   ] },
   { title: 'Validation', items: [
-    { key: 'tests', icon: '🔌', label: 'Tests', step: 8 },
+    { key: 'tests', icon: '🔎', label: 'Tests', step: 8 },
   ] },
 ];
+
 
 const navBtn: CSSProperties = { width: '100%', textAlign: 'left', border: 'none', background: 'none', cursor: 'pointer', font: 'inherit', display: 'flex', alignItems: 'center' };
 

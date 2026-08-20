@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { Fragment, useEffect, useMemo, useState, type CSSProperties, useRef} from 'react';
 
 /**
  * Atelier Réseau & Packet Tracer — assistant multi-étapes à contexte partagé.
@@ -14,6 +14,22 @@ import { Fragment, useEffect, useMemo, useState, type CSSProperties } from 'reac
 
 // ─────────────────────────────────────────── Helpers IP ───────────────────────────────────────────
 const ipToStr = (n: number) => [(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].join('.');
+import {
+  configAcces, configMls, dossier as dossierMls, verifications as verifsMls,
+  PANNES as PANNES_MLS, NATIF_PAR_DEFAUT, PORTS_PAR_DEFAUT,
+  configSortieMls, configPareFeu, tableNat, PANNES_INTERNET,
+  etendues, configDhcpSurMls, configResolution, verificationsClient, PANNES_CLIENT,
+  type AccesClients,
+  PREFIXE_3560, PREFIXE_EMPILE, chevauchements, configRouteurExterne, ficheSite,
+  vlansDe, accesDe, enfantsDe, verifierMulticouches, type Multicouche,
+  affectations, verifierPorts, PORTS_PAR_DEFAUT as PORTS_DEF, type AffectationPort,
+  type AccessSwitch, type MlsPlan, type SortieInternet, type ReseauExterne,
+} from '@/lib/mls';
+import {
+  cableAttendu, portsLibres, verifierCablage, cheminPhysique, voisinsDe,
+  COUCHE_DE, PORTS_TYPIQUES, type Cable, type Materiel, type Media, type TypeMateriel,
+} from '@/lib/physique';
+
 function strToIp(s: string): number | null {
   if (typeof s !== 'string') return null;
   const m = s.trim().match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
@@ -36,7 +52,17 @@ export type BaseNet = { id: string; name: string; ip: string; cidr: string };
 // Un sous-réseau : 1 routeur = LAN (passerelle), 2+ routeurs = segment d'interconnexion. baseId = bloc d'adresses.
 // `vlan` : identifiant 802.1Q (1-4094). Vide = pas de VLAN, le sous-reseau prend
 // une interface physique a lui, comme avant.
-export type Service = { id: string; name: string; hosts: string; routerIds: string[]; hasSwitch: boolean; dhcp: boolean; media?: LinkMedia; baseId?: string; vlan?: string };
+export type Service = {
+  id: string; name: string; hosts: string; routerIds: string[]; hasSwitch: boolean; dhcp: boolean;
+  media?: LinkMedia; baseId?: string; vlan?: string;
+  /**
+   * Le multicouche qui porte la SVI de ce sous-reseau. Vide = c'est un routeur.
+   *
+   * Une passerelle et une seule : declarer les deux serait declarer deux
+   * passerelles pour un meme reseau. La selection est donc exclusive.
+   */
+  svi?: string;
+};
 
 /** VLAN ID valide d'un service, ou null. Hors de 1-4094 = pas de VLAN. */
 export function vlanOf(s: { vlan?: string }): number | null {
@@ -70,6 +96,22 @@ export type Ctx = {
   natOverload: boolean;                     // générer le PAT (overload) — décocher pour du NAT statique seul
   natStatics: { inside: string; pub: string }[]; // NAT statique 1:1 : IP interne -> IP publique
   // Adressage manuel (facultatif — sinon calcul automatique)
+  // Switch multicouche (SVI) : le routage inter-VLAN porte par un switch L3
+  // plutot que par un routeur. Optionnel — sans lui, rien ne change.
+  mlsActif: boolean;
+  mlsMulticouches: Multicouche[];
+  mlsAcces: AccessSwitch[];
+  /** La sortie Internet du multicouche : pare-feu, NAT surcharge. '' = aucune. */
+  mlsSortie: SortieInternet | null;
+  /** Le site que les postes doivent joindre (celui de l'exemple du TP). */
+  mlsSite: { nom: string; ip: string } | null;
+  /** Le reseau externe simule : le routeur d'en face et le site. */
+  mlsExterne: ReseauExterne | null;
+  /** Positions choisies a la main dans le schema. Absent = place tout seul. */
+  mlsPos: Record<string, { x: number; y: number }>;
+  /** Couche 1 : l'inventaire et le cablage, poses avant toute adresse. */
+  materiels: Materiel[];
+  cables: Cable[];
   ifaceIps: Record<string, string>;         // IP forcée d'une interface routeur, clé `${routerId}|${iface}`
   hosts: StaticHost[];                       // end-points à IP fixe (serveurs, postes)
 };
@@ -101,6 +143,7 @@ export const DEFAULT_CTX: Ctx = {
   gwPos: 'last', switchPos: 'beforeRouter', linkCidr: '30', dnsServer: '192.168.10.11', dhcpServer: '192.168.10.11', leaseDays: '7',
   internetRouterId: '', wanIf: 'GigabitEthernet0/1', wanIp: '', wanCidr: '30', faiGw: '', webIp: '', webPort: '80',
   natOverload: true, natStatics: [],
+  mlsActif: false, mlsMulticouches: [{ id: 'm1', nom: 'MLS-Core', prefixe: 'FastEthernet0/', vlans: [] }], mlsAcces: [], mlsSortie: null, mlsSite: null, mlsExterne: null, mlsPos: {}, materiels: [], cables: [],
   ifaceIps: {}, hosts: [],
 };
 
@@ -143,6 +186,28 @@ export function migrateCtx(raw: unknown): Ctx {
   }
   if (!c.services.length) c.services = DEFAULT_CTX.services;
   c.services = dedupeIds(c.services, 's');
+  // Brouillons d'avant le switch multicouche : on pose les defauts plutot que
+  // de laisser des champs absents faire tomber le rendu.
+  if (typeof c.mlsActif !== 'boolean') c.mlsActif = false;
+  // Brouillons d'avant les multicouches multiples : on transpose l'unique.
+  if (!Array.isArray(c.mlsMulticouches) || !c.mlsMulticouches.length) {
+    const ancien = typeof (c as { mlsNom?: string }).mlsNom === 'string' ? (c as { mlsNom?: string }).mlsNom! : 'MLS-Core';
+    c.mlsMulticouches = [{ id: 'm1', nom: ancien, prefixe: 'FastEthernet0/', vlans: [] }];
+  }
+  if (!Array.isArray(c.mlsAcces)) c.mlsAcces = [];
+  c.mlsMulticouches = dedupeIds(c.mlsMulticouches as Multicouche[], 'm');
+  c.mlsAcces = dedupeIds(c.mlsAcces as AccessSwitch[], 'sw');
+  // Un switch d'acces sans rattachement rejoint le premier multicouche.
+  const premier = c.mlsMulticouches[0]?.id ?? 'm1';
+  c.mlsAcces = (c.mlsAcces as AccessSwitch[]).map(a => (a.mlsId ? a : { ...a, mlsId: premier }));
+  if (c.mlsSortie === undefined) c.mlsSortie = null;
+  if (c.mlsSite === undefined) c.mlsSite = null;
+  if (c.mlsExterne === undefined) c.mlsExterne = null;
+  if (!c.mlsPos || typeof c.mlsPos !== 'object') c.mlsPos = {};
+  if (!Array.isArray(c.materiels)) c.materiels = [];
+  if (!Array.isArray(c.cables)) c.cables = [];
+  c.materiels = dedupeIds(c.materiels as Materiel[], 'mat');
+  c.cables = dedupeIds(c.cables as Cable[], 'cab');
   return c;
 }
 
@@ -207,10 +272,14 @@ export function computePlan(ctx: Ctx): Plan {
   const items: Item[] = [];
   for (const s of ctx.services) {
     const rs = (Array.isArray(s.routerIds) ? s.routerIds : []).map(id => ctx.routers.find(r => r.id === id)).filter((r): r is RouterDef => !!r);
-    const transit = rs.length >= 2;
+    // Un multicouche compte comme membre : le lien MLS <-> routeur est un vrai
+    // segment d'interconnexion, avec une adresse de chaque cote.
+    const sviMembre = !!s.svi && rs.length >= 1;
+    const membres = rs.length + (sviMembre ? 1 : 0);
+    const transit = membres >= 2;
     const serial = transit && s.media === 'serial';
     const hostsNeed = Math.max(1, Number(s.hosts) || 0);
-    const need = serial ? 2 : transit ? Math.max(hostsNeed, rs.length + (s.hasSwitch ? 1 : 0)) : hostsNeed;
+    const need = serial ? 2 : transit ? Math.max(hostsNeed, membres + (s.hasSwitch ? 1 : 0)) : hostsNeed;
     const c = serial ? linkCidr : 32 - hostBitsFor(need);
     const baseId = binfoById.has(s.baseId || '') ? (s.baseId as string) : firstBaseId;
     meta.set('svc:' + s.id, { s, rs, transit, serial });
@@ -287,7 +356,11 @@ export function computePlan(ctx: Ctx): Plan {
         if (ifc) gw = applyOv(r.id, ifc, gw, a.net, a.bc);
       }
       subs.push({ kind: 'lan', id: 'svc:' + s.id, name: s.name || 'LAN', net: a.net, first: a.first, last: a.last, bc: a.bc, usable: a.usable, mask: a.mask, cidr: a.cidr, gw, switchIp, routerId: r?.id, routerIds: r ? [r.id] : [], dhcp: s.dhcp, vlan: vlanId ?? undefined });
-      if (!r) { warnings.push(`« ${s.name || 'LAN'} » n'a pas de routeur passerelle assigné.`); continue; }
+      if (!r) {
+        // Porte par une SVI : ce n'est pas un oubli, c'est l'autre methode.
+        if (!s.svi) warnings.push(`« ${s.name || 'LAN'} » n'a ni routeur ni SVI comme passerelle.`);
+        continue;
+      }
       if (ifc) ifaces.push({ routerId: r.id, routerName: r.name, iface: ifc, target: `LAN ${s.name || ''}`.trim(), ip: gw, mask: a.mask, cidr: a.cidr, role: vlanId !== null ? `Passerelle VLAN ${vlanId}` : 'Passerelle LAN', clock: false, vlan: vlanId ?? undefined, parent: parent ?? undefined });
     } else {
       // Interconnexion : 2+ routeurs, une IP par routeur (pas de DHCP)
@@ -630,6 +703,53 @@ export function buildSwitchConfigs(ctx: Ctx, plan: Plan): SwitchCfg[] {
   return out;
 }
 
+/**
+ * Traduit le plan de l'atelier en plan de switch multicouche.
+ *
+ * Les VLAN ne sont pas ressaisis : ce sont ceux de la Segmentation. C'est ce qui
+ * garantit que les deux ecrans racontent la meme maquette — un second endroit ou
+ * declarer les reseaux finirait par diverger du premier.
+ */
+export function buildMlsPlan(ctx: Ctx, plan: Plan): MlsPlan {
+  // Quels VLAN reviennent au multicouche ? Ceux dont le sous-reseau le designe.
+  // Tant que personne ne le fait, on garde tous les VLAN : c'est le mode « tout
+  // au multicouche », celui du TP, et il ne demande alors rien a cocher.
+  const parSvi = new Map<string, number[]>();
+  let quelquUnChoisit = false;
+  for (const svc of ctx.services) {
+    const n = Number(svc.vlan);
+    if (!svc.svi || !Number.isInteger(n)) continue;
+    quelquUnChoisit = true;
+    parSvi.set(svc.svi, [...(parSvi.get(svc.svi) ?? []), n]);
+  }
+  const portesParSvi = new Set([...parSvi.values()].flat());
+
+  const vlans = plan.subs
+    .filter(s => s.kind === 'lan' && s.vlan && (!quelquUnChoisit || portesParSvi.has(s.vlan)))
+    .sort((a, b) => (a.vlan || 0) - (b.vlan || 0))
+    .map(s => ({
+      id: s.vlan!,
+      name: vlanName(s.name),
+      reseau: ipToStr(s.net),
+      cidr: s.cidr,
+      // La passerelle du sous-reseau devient l'adresse de la SVI : le plan
+      // d'adressage ne bouge pas, seul l'equipement qui la porte change.
+      passerelle: s.gw !== null ? ipToStr(s.gw) : '',
+      dhcp: !!s.dhcp,
+    }));
+  return {
+    // La repartition vient de la Segmentation quand elle y est declaree : un
+    // second endroit ou dire quel switch porte quel VLAN finirait par diverger.
+    multicouches: quelquUnChoisit
+      ? ctx.mlsMulticouches.map(m => ({ ...m, vlans: [...new Set(parSvi.get(m.id) ?? [])].sort((a, b) => a - b) }))
+      : ctx.mlsMulticouches,
+    vlans,
+    acces: ctx.mlsAcces,
+    dhcpServer: ctx.dhcpServer || '',
+    natif: NATIVE_VLAN,
+  };
+}
+
 export type SshCfg = { name: string; ip: string; text: string };
 export function buildSsh(ctx: Ctx, plan: Plan): { routers: SshCfg[]; switches: SshCfg[] } {
   const dom = (ctx.domaine || '').trim() || 'lan';
@@ -777,9 +897,30 @@ const STEPS = [
   { n: 6, icon: '🌐', title: 'DNS' },
   { n: 7, icon: '🔑', title: 'SSH' },
   { n: 9, icon: '🔀', title: 'VLAN & switches' },
+  { n: 10, icon: '🗼', title: 'Switch multicouche (SVI)' },
+  { n: 11, icon: '🔌', title: 'Materiel & cablage' },
   { n: 8, icon: '🔌', title: 'Tests' },
 ];
 const STORAGE_KEY = 'net_workshop_v1';
+/** Une sortie Internet plausible : adresses de documentation (RFC 5737) cote
+ *  WAN, pour qu'on ne recopie pas par megarde une adresse publique reelle. */
+const SORTIE_DEFAUT: SortieInternet = {
+  firewall: 'Firewall',
+  ipMls: '10.0.0.1', ipFirewall: '10.0.0.2', lienCidr: 30,
+  portMls: 'GigabitEthernet1/0/24',
+  ifInside: 'GigabitEthernet0/0', ifWan: 'GigabitEthernet0/1',
+  ipWan: '203.0.113.2', cidrWan: 30, passerelleFai: '203.0.113.1',
+};
+/** Un reseau externe qui ne recoupe aucun reseau interne courant. */
+const EXTERNE_DEFAUT: ReseauExterne = {
+  routeur: 'Router1',
+  ifVersPareFeu: 'FastEthernet0/0', ifVersSite: 'FastEthernet0/1',
+  ipVersPareFeu: '85.85.85.2',
+  reseauSite: '200.200.200.0', cidrSite: 24,
+  ipRouteurSite: '200.200.200.254', ipSite: '200.200.200.1',
+  nomSite: 'www.exemple.lan',
+};
+const tdMls: CSSProperties = { padding: '4px 7px', borderBottom: '1px solid var(--border)', verticalAlign: 'top' };
 
 // ─────────────────────────────────────────── Composant principal ───────────────────────────────────────────
 export interface NetworkWorkshopProps {
@@ -832,7 +973,8 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
   const setSvc = (id: string, p: Partial<Service>) => set({ services: ctx.services.map(s => s.id === id ? { ...s, ...p } : s) });
   const addSvc = () => set({ services: [...ctx.services, { id: uid('s'), name: 'Nouveau sous-réseau', hosts: '10', routerIds: ctx.routers[0] ? [ctx.routers[0].id] : [], hasSwitch: true, dhcp: true, baseId: bases[0].id }] });
   const delSvc = (id: string) => set({ services: ctx.services.filter(s => s.id !== id) });
-  const toggleSvcRouter = (id: string, rid: string) => set({ services: ctx.services.map(s => s.id === id ? { ...s, routerIds: s.routerIds.includes(rid) ? s.routerIds.filter(x => x !== rid) : [...s.routerIds, rid] } : s) });
+  // Cocher un routeur retire la SVI, et inversement : une passerelle et une seule.
+  const toggleSvcRouter = (id: string, rid: string) => set({ services: ctx.services.map(s => s.id === id ? { ...s, ...(s.routerIds.length >= 1 ? {} : { svi: undefined }), routerIds: s.routerIds.includes(rid) ? s.routerIds.filter(x => x !== rid) : [...s.routerIds, rid] } : s) });
   // — routers —
   const setRtr = (id: string, p: Partial<RouterDef>) => set({ routers: ctx.routers.map(r => r.id === id ? { ...r, ...p } : r) });
   const addRtr = () => set({ routers: [...ctx.routers, { id: uid('r'), name: 'R' + (ctx.routers.length + 1), model: '2911' }] });
@@ -865,7 +1007,21 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
   const dns = useMemo(() => buildDns(ctx, plan), [ctx, plan]);
   const routerCfg = useMemo(() => buildRouterConfigs(ctx, plan), [ctx, plan]);
   const ssh = useMemo(() => buildSsh(ctx, plan), [ctx, plan]);
+  const majMls = (i: number, patch: Partial<Multicouche>) =>
+    set({ mlsMulticouches: ctx.mlsMulticouches.map((x, k) => (k === i ? { ...x, ...patch } : x)) });
+  const majAcces = (i: number, patch: Partial<AccessSwitch>) =>
+    set({ mlsAcces: ctx.mlsAcces.map((x, k) => (k === i ? { ...x, ...patch } : x)) });
   const switches = useMemo(() => buildSwitchConfigs(ctx, plan), [ctx, plan]);
+  const mlsPlan = useMemo(() => buildMlsPlan(ctx, plan), [ctx, plan]);
+  const mlsTables = useMemo(() => dossierMls(mlsPlan), [mlsPlan]);
+  // Rien n'est redemande ici : le DNS, le domaine et le bail viennent des ecrans
+  // DNS et DHCP. Deux endroits pour la meme valeur finiraient par diverger.
+  const mlsClients: AccesClients = useMemo(() => ({
+    dns: (ctx.dnsServer || '').trim(),
+    domaine: (ctx.domaine || '').trim(),
+    bailJours: Number(ctx.leaseDays) || 7,
+    site: ctx.mlsSite && ctx.mlsSite.nom && ctx.mlsSite.ip ? ctx.mlsSite : undefined,
+  }), [ctx.dnsServer, ctx.domaine, ctx.leaseDays, ctx.mlsSite]);
   const nat = useMemo(() => buildNat(ctx, plan), [ctx, plan]);
   const natTable = useMemo(() => buildNatTable(ctx, plan, nat), [ctx, plan, nat]);
   const tests = useMemo(() => buildTests(ctx, plan, nat), [ctx, plan, nat]);
@@ -1042,10 +1198,11 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
             <div style={legend}>🔀 Assignation des sous-réseaux</div>
             <div className="meta" style={{ fontSize: 11.5, margin: '0 0 12px' }}>Sélectionne les routeurs connectés à chaque sous-réseau : <strong>1 routeur</strong> = LAN (passerelle + DHCP possible) ; <strong>2 routeurs ou plus</strong> = segment d’interconnexion (une IP par routeur, via un switch — comme « Switch 1 »).</div>
             {ctx.services.map(s => {
-              const transit = s.routerIds.length >= 2;
-              const badge = transit ? { t: `🔗 interconnexion · ${s.routerIds.length} routeurs`, c: 'var(--accent)', bg: 'color-mix(in srgb,var(--accent) 15%,transparent)' }
+              const transit = s.routerIds.length + (s.svi && s.routerIds.length >= 1 ? 1 : 0) >= 2;
+              const badge = transit ? { t: `🔗 interconnexion · ${s.routerIds.length + (s.svi ? 1 : 0)} equipements`, c: 'var(--accent)', bg: 'color-mix(in srgb,var(--accent) 15%,transparent)' }
                 : s.routerIds.length === 1 ? { t: '🖥️ LAN', c: 'var(--text-muted)', bg: 'var(--surface-3)' }
-                : { t: '⚠ aucun routeur', c: '#dc2626', bg: 'color-mix(in srgb,#dc2626 12%,transparent)' };
+                : s.svi ? { t: `🗼 SVI ${ctx.mlsMulticouches.find(m => m.id === s.svi)?.nom ?? ''}`.trim(), c: '#14b8a6', bg: 'color-mix(in srgb,#14b8a6 15%,transparent)' }
+                : { t: '⚠ aucune passerelle', c: '#dc2626', bg: 'color-mix(in srgb,#dc2626 12%,transparent)' };
               return (
                 <div key={s.id} style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', marginBottom: 10, background: 'var(--surface)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 8 }}>
@@ -1067,6 +1224,26 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                       const ord = s.routerIds.indexOf(r.id);
                       const tag = on && transit && s.media === 'serial' ? (ord === 0 ? 'DCE · ' : 'DTE · ') : '';
                       return <button key={r.id} type="button" onClick={() => toggleSvcRouter(s.id, r.id)} style={{ padding: '4px 11px', borderRadius: 999, cursor: 'pointer', fontSize: 12, fontWeight: 600, border: `1px solid ${on ? 'var(--accent)' : 'var(--border)'}`, background: on ? 'var(--accent)' : 'var(--surface)', color: on ? '#fff' : 'var(--text)' }}>{tag}{r.name}</button>;
+                    })}
+                    {/* Les multicouches : l'autre facon de porter la passerelle. Le choix est
+                        exclusif — un reseau n'a qu'une passerelle, et en declarer deux, c'est
+                        en declarer deux. */}
+                    {ctx.mlsMulticouches.map(m => {
+                      const on = s.svi === m.id;
+                      return (
+                        <button key={m.id} type="button"
+                          title={`La SVI de ${m.nom} porte la passerelle de ce sous-reseau`}
+                          onClick={() => setSvc(s.id, on
+        ? { svi: undefined }
+        // Sur un LAN, la SVI remplace le routeur : une seule passerelle.
+        // Sur un segment d'interconnexion, elle s'y ajoute : le lien a deux bouts.
+        : { svi: m.id, ...(s.routerIds.length >= 1 ? {} : { routerIds: [] }) })}
+                          style={{ padding: '4px 11px', borderRadius: 999, cursor: 'pointer', fontSize: 12, fontWeight: 600,
+                            border: `1px solid ${on ? '#14b8a6' : 'var(--border)'}`,
+                            background: on ? '#14b8a6' : 'var(--surface)', color: on ? '#fff' : 'var(--text)' }}>
+                          🗼 {m.nom}
+                        </button>
+                      );
                     })}
                     {ctx.routers.length === 0 && <span className="meta" style={{ fontSize: 11.5 }}>Ajoute d’abord des routeurs ci-dessus.</span>}
                     {transit && <select style={{ ...field, width: 165, marginLeft: 6 }} value={s.media || 'gig'} onChange={e => setSvc(s.id, { media: e.target.value as LinkMedia })}>
@@ -1185,7 +1362,23 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
           {plan.error && <div style={{ ...group, borderColor: '#dc2626' }}><strong style={{ color: '#dc2626' }}>⚠ {plan.error}</strong></div>}
           <div style={group}>
             <div style={legend}>🗺️ Schéma du réseau</div>
-            <SchemaSvg ctx={ctx} plan={plan} />
+            {ctx.mlsActif ? (
+              <>
+                <SchemaMls ctx={ctx} plan={plan}
+                  onPos={(id, q) => {
+                    const suite = { ...ctx.mlsPos };
+                    if (q) suite[id] = q; else delete suite[id];
+                    set({ mlsPos: suite });
+                  }} />
+                <div className="meta" style={{ fontSize: 11.5, marginTop: 4 }}>
+                  Glisse un equipement pour le placer · double-clic pour le remettre ou il etait
+                  {Object.keys(ctx.mlsPos).length > 0 && (
+                    <button type="button" style={{ ...smallBtn, marginLeft: 8 }}
+                      onClick={() => set({ mlsPos: {} })}>Tout replacer</button>
+                  )}
+                </div>
+              </>
+            ) : <SchemaSvg ctx={ctx} plan={plan} />}
             <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>Vue topologie : une <strong>dorsale</strong> de routeurs reliés par leurs <strong>segments/switches</strong> ; chaque sous-réseau est un <strong>nuage</strong> (switch + machines) rattaché à son routeur-passerelle, avec l’interface, l’idSR/CIDR, la passerelle et l’IP du switch.</div>
           </div>
 
@@ -1554,6 +1747,847 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
       )}
 
       {/* ── Étape 8 : Tests ── */}
+      {step === 10 && (
+        <div>
+          <div style={group}>
+            <div style={legend}>
+              🗼 Le routage porte par le switch, pas par un routeur
+              <label style={{ marginLeft: 'auto', fontSize: 11.5, fontWeight: 400 }}>
+                <input type="checkbox" checked={ctx.mlsActif} style={{ marginRight: 5 }}
+                  onChange={e => set({ mlsActif: e.target.checked })} />
+                c'est la methode de cette maquette
+              </label>
+            </div>
+            {ctx.mlsActif && (
+              <div className="meta" style={{ fontSize: 11.5, margin: '0 0 6px' }}>
+                Le <strong>Schema</strong> montre desormais cette topologie — multicouche, switches d'acces et VLAN —
+                au lieu des routeurs et de leurs sous-interfaces.
+              </div>
+            )}
+            <div className="meta" style={{ fontSize: 11.5, margin: '0 0 6px' }}>
+              Meme resultat que le <strong>routeur sur un baton</strong> de l'etape precedente, autre equipement : un
+              <strong> switch multicouche</strong> route lui-meme. Chaque VLAN recoit une <strong>SVI</strong>
+              (<em>Switched Virtual Interface</em>) qui porte sa passerelle, et les switches d'acces se contentent de
+              commuter.
+            </div>
+            <div className="meta" style={{ fontSize: 11.5 }}>
+              Les VLAN viennent de la <strong>Segmentation</strong> : rien a ressaisir ici. On declare seulement
+              <strong> quels switches d'acces</strong> existent et <strong>quels VLAN</strong> chacun porte.
+            </div>
+          </div>
+
+          {mlsPlan.vlans.length === 0 ? (
+            <div style={group}>
+              <div style={legend}>Aucun VLAN declare</div>
+              <div className="meta" style={{ fontSize: 12 }}>
+                Reviens a l'etape <strong>Segmentation</strong> et donne un numero de VLAN a au moins un sous-reseau.
+              </div>
+            </div>
+          ) : (
+            <>
+              <div style={group}>
+                <div style={legend}>
+                  ⚙️ Les switches multicouches
+                  <button type="button" style={{ ...smallBtn, marginLeft: 'auto' }}
+                    onClick={() => set({ mlsMulticouches: [...ctx.mlsMulticouches, {
+                      id: 'm' + Date.now().toString(36),
+                      nom: 'MLS-' + (ctx.mlsMulticouches.length + 1),
+                      prefixe: PREFIXE_3560, vlans: [],
+                    }] })}>+ Ajouter</button>
+                </div>
+                <div className="meta" style={{ fontSize: 11.5, margin: '0 0 6px' }}>
+                  {mlsPlan.vlans.length} VLAN · relais DHCP&nbsp;
+                  {ctx.dhcpServer ? <code>{ctx.dhcpServer}</code> : <em>aucun (etape DHCP)</em>}
+                  {ctx.mlsMulticouches.length > 1 && <> · <strong>chaque VLAN n'a qu'une passerelle</strong> : sa SVI vit sur un seul switch.</>}
+                </div>
+
+                {ctx.mlsMulticouches.map((m, i) => (
+                  <div key={m.id} style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '8px 10px', margin: '6px 0' }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <input value={m.nom} style={{ ...field, width: 140 }}
+                        onChange={e => majMls(i, { nom: e.target.value })} />
+                      <select value={m.prefixe} style={{ ...field, width: 200 }}
+                        onChange={e => majMls(i, { prefixe: e.target.value })}>
+                        <option value={PREFIXE_3560}>3560 — FastEthernet0/x</option>
+                        <option value={PREFIXE_EMPILE}>empilable — GigabitEthernet1/0/x</option>
+                      </select>
+                      <span className="meta" style={{ fontSize: 11.5 }}>
+                        {vlansDe(mlsPlan, m).length} SVI · {accesDe(mlsPlan, m).length} switch(es)
+                      </span>
+                      {ctx.mlsMulticouches.length > 1 && (
+                        <button type="button" style={{ ...smallBtn, marginLeft: 'auto' }}
+                          onClick={() => set({ mlsMulticouches: ctx.mlsMulticouches.filter(x => x.id !== m.id) })}>Retirer</button>
+                      )}
+                    </div>
+                    {ctx.mlsMulticouches.length > 1 && (
+                      <>
+                        <div className="meta" style={{ fontSize: 11, marginTop: 5 }}>
+                          Les VLAN dont il porte la SVI. Rien de coche = tous ceux que les autres ne prennent pas.
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 3 }}>
+                          {mlsPlan.vlans.map(v => (
+                            <label key={v.id} style={{ fontSize: 11.5, border: '1px solid var(--border)', borderRadius: 6, padding: '2px 7px', cursor: 'pointer' }}>
+                              <input type="checkbox" checked={m.vlans.includes(v.id)} style={{ marginRight: 4 }}
+                                onChange={e => majMls(i, { vlans: e.target.checked ? [...m.vlans, v.id].sort((a, b) => a - b) : m.vlans.filter(x => x !== v.id) })} />
+                              {v.id} {v.name}
+                            </label>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ))}
+
+                {(() => {
+                  const pb = verifierMulticouches(mlsPlan);
+                  if (!pb.length) return null;
+                  return (
+                    <div style={{ marginTop: 6, border: '1px solid var(--danger, #c4462f)', borderRadius: 8, padding: '8px 11px' }}>
+                      <div style={{ fontWeight: 700, fontSize: 12.5, color: 'var(--danger, #c4462f)' }}>⚠ Repartition incoherente</div>
+                      {pb.map((x, k) => (
+                        <div key={k} style={{ marginTop: 5, fontSize: 12 }}>
+                          <div style={{ fontWeight: 600 }}>{x.quoi}</div>
+                          <div style={{ fontSize: 11.5 }}>{x.effet}</div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })()}
+              </div>
+
+              <div style={group}>
+                <div style={legend}>
+                  🗄️ Les switches d'acces
+                  <button type="button" style={{ ...smallBtn, marginLeft: 'auto' }}
+                    onClick={() => set({ mlsAcces: [...ctx.mlsAcces, {
+                      id: 'sw' + Date.now().toString(36),
+                      name: 'Sw-' + (ctx.mlsAcces.length + 1),
+                      vlans: mlsPlan.vlans.slice(0, 2).map(v => v.id),
+                      ports: PORTS_PAR_DEFAUT, uplink: PORTS_PAR_DEFAUT,
+                      portMls: ctx.mlsAcces.length + 1,
+                      mlsId: ctx.mlsMulticouches[0]?.id ?? 'm1',
+                    }] })}>+ Ajouter</button>
+                </div>
+                {ctx.mlsAcces.length === 0 && (
+                  <div className="meta" style={{ fontSize: 12 }}>
+                    Aucun switch d'acces. Ajoutes-en un par local ou par batiment — c'est ce decoupage que le
+                    dossier technique demande de justifier.
+                  </div>
+                )}
+                {ctx.mlsAcces.map((sw, i) => (
+                  <div key={sw.id} style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '8px 10px', margin: '6px 0' }}>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                      <input value={sw.name} onChange={e => majAcces(i, { name: e.target.value })} style={{ ...field, width: 130 }} />
+                      <label style={{ fontSize: 11.5 }}>ports&nbsp;
+                        <input type="number" min={2} max={48} value={sw.ports}
+                          onChange={e => majAcces(i, { ports: Math.max(2, Number(e.target.value) || PORTS_PAR_DEFAUT) })}
+                          style={{ ...field, width: 62 }} />
+                      </label>
+                      <label style={{ fontSize: 11.5 }} title="le port de l equipement du dessus ou ce lien arrive">port amont&nbsp;
+                        <input type="number" min={1} value={sw.portMls}
+                          onChange={e => majAcces(i, { portMls: Math.max(1, Number(e.target.value) || 1) })}
+                          style={{ ...field, width: 62 }} />
+                      </label>
+                      <label style={{ fontSize: 11.5 }}>uplink&nbsp;
+                        <input type="number" min={1} max={sw.ports} value={sw.uplink}
+                          onChange={e => majAcces(i, { uplink: Math.max(1, Number(e.target.value) || sw.ports) })}
+                          style={{ ...field, width: 62 }} />
+                      </label>
+                      <label style={{ fontSize: 11.5 }} title="un multicouche, ou un autre switch en cascade">remonte vers&nbsp;
+                        <select value={sw.mlsId} style={{ ...field, width: 150 }}
+                          onChange={e => majAcces(i, { mlsId: e.target.value })}>
+                          {ctx.mlsMulticouches.map(m => <option key={m.id} value={m.id}>{m.nom}</option>)}
+                          {ctx.mlsAcces.filter(x => x.id !== sw.id).map(x => <option key={x.id} value={x.id}>{x.name} (cascade)</option>)}
+                        </select>
+                      </label>
+                      <button type="button" style={{ ...smallBtn, marginLeft: 'auto' }}
+                        onClick={() => set({ mlsAcces: ctx.mlsAcces.filter(x => x.id !== sw.id) })}>Retirer</button>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>
+                      {mlsPlan.vlans.map(v => (
+                        <label key={v.id} style={{ fontSize: 11.5, border: '1px solid var(--border)', borderRadius: 6, padding: '2px 7px', cursor: 'pointer' }}>
+                          <input type="checkbox" checked={sw.vlans.includes(v.id)}
+                            onChange={e => majAcces(i, { vlans: e.target.checked ? [...sw.vlans, v.id].sort((a, b) => a - b) : sw.vlans.filter(x => x !== v.id) })}
+                            style={{ marginRight: 4 }} />
+                          {v.id} {v.name}
+                        </label>
+                      ))}
+                    </div>
+
+                    <details style={{ marginTop: 7 }}>
+                      <summary style={{ fontSize: 11.5, cursor: 'pointer', color: 'var(--text-muted)' }}>
+                        Ports — {sw.ports_?.length ? 'affectes a la main' : 'repartis automatiquement'}
+                      </summary>
+                      <div className="meta" style={{ fontSize: 11, margin: '5px 0' }}>
+                        Tant que rien n'est declare, les ports se repartissent tout seuls. Des qu'une ligne existe,
+                        elle fait foi — c'est ce que le dossier technique demande de decider.
+                      </div>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11.5 }}>
+                        <thead>
+                          <tr>{['Ports', 'Role', 'VLAN / vers', ''].map(h => (
+                            <th key={h} style={{ textAlign: 'left', padding: '3px 6px', color: 'var(--text-muted)', fontWeight: 600 }}>{h}</th>
+                          ))}</tr>
+                        </thead>
+                        <tbody>
+                          {affectations(mlsPlan, sw).map((a, k) => {
+                            const declare = !!sw.ports_?.length;
+                            const majPort = (patch: Partial<AffectationPort>) => {
+                              const base = sw.ports_ ?? affectations(mlsPlan, sw);
+                              majAcces(i, { ports_: base.map((x, n) => (n === k ? { ...x, ...patch } : x)) });
+                            };
+                            return (
+                              <tr key={k} style={{ opacity: declare ? 1 : 0.75 }}>
+                                <td style={{ padding: '2px 6px' }}>
+                                  <input value={a.plage} style={{ ...field, width: 80, padding: '4px 6px' }}
+                                    placeholder="1-10" onChange={e => majPort({ plage: e.target.value })} />
+                                </td>
+                                <td style={{ padding: '2px 6px' }}>
+                                  <select value={a.role} style={{ ...field, width: 80, padding: '4px 6px' }}
+                                    onChange={e => majPort({ role: e.target.value as 'access' | 'trunk' })}>
+                                    <option value="access">access</option>
+                                    <option value="trunk">trunk</option>
+                                  </select>
+                                </td>
+                                <td style={{ padding: '2px 6px' }}>
+                                  {a.role === 'access' ? (
+                                    <select value={a.vlan ?? ''} style={{ ...field, width: 130, padding: '4px 6px' }}
+                                      onChange={e => majPort({ vlan: Number(e.target.value) })}>
+                                      <option value="">—</option>
+                                      {mlsPlan.vlans.map(v => <option key={v.id} value={v.id}>{v.id} {v.name}</option>)}
+                                    </select>
+                                  ) : (
+                                    <select value={a.vers ?? ''} style={{ ...field, width: 130, padding: '4px 6px' }}
+                                      onChange={e => majPort({ vers: e.target.value })}>
+                                      <option value="">—</option>
+                                      {ctx.mlsMulticouches.map(m => <option key={m.id} value={m.id}>{m.nom}</option>)}
+                                      {ctx.mlsAcces.filter(x => x.id !== sw.id).map(x => <option key={x.id} value={x.id}>{x.name}</option>)}
+                                    </select>
+                                  )}
+                                </td>
+                                <td style={{ padding: '2px 6px' }}>
+                                  <button type="button" style={{ ...smallBtn, padding: '2px 7px' }}
+                                    onClick={() => majAcces(i, { ports_: (sw.ports_ ?? affectations(mlsPlan, sw)).filter((_, n) => n !== k) })}>✕</button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                      <div style={{ display: 'flex', gap: 6, marginTop: 5 }}>
+                        <button type="button" style={smallBtn}
+                          onClick={() => majAcces(i, { ports_: [...(sw.ports_ ?? affectations(mlsPlan, sw)), { plage: '', role: 'access', vlan: sw.vlans[0] }] })}>+ Ligne</button>
+                        {sw.ports_?.length ? (
+                          <button type="button" style={smallBtn}
+                            onClick={() => majAcces(i, { ports_: undefined })}>Revenir au calcul automatique</button>
+                        ) : null}
+                      </div>
+                      {verifierPorts(mlsPlan, sw).map((x, k) => (
+                        <div key={k} style={{ marginTop: 5, fontSize: 11.5, color: 'var(--danger, #c4462f)' }}>
+                          ⚠ <strong>{x.quoi}</strong> — {x.effet}
+                        </div>
+                      ))}
+                    </details>
+                  </div>
+                ))}
+              </div>
+
+              <div style={group}>
+                <div style={legend}>
+                  📋 Dossier technique — un tableau par switch
+                  <button type="button" style={{ ...smallBtn, marginLeft: 'auto' }}
+                    onClick={() => copy('mlsdoc', mlsTables.map(t => t.switchName + '\n' + t.rows.map(r => [r.vlan, r.nom, r.idsr, r.msr, r.untag || '—', r.tag].join('\t')).join('\n')).join('\n\n'))}>
+                    {copied === 'mlsdoc' ? '✓ Copie' : 'Copier'}
+                  </button>
+                </div>
+                {mlsTables.map(t => (
+                  <div key={t.switchName} style={{ margin: '8px 0' }}>
+                    <div style={{ fontWeight: 600, fontSize: 12.5, marginBottom: 3 }}>{t.switchName}</div>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                      <thead>
+                        <tr>{['VLAN', 'Nom', 'IDSR', 'MSR', 'Ports untag (access)', 'Ports tag (trunk)'].map(h => (
+                          <th key={h} style={{ textAlign: 'left', padding: '4px 7px', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', fontWeight: 600 }}>{h}</th>
+                        ))}</tr>
+                      </thead>
+                      <tbody>
+                        {t.rows.map(r => (
+                          <tr key={r.vlan}>
+                            <td style={tdMls}><strong>{r.vlan}</strong></td>
+                            <td style={tdMls}>{r.nom}</td>
+                            <td style={tdMls}>{r.idsr}</td>
+                            <td style={tdMls}>/{r.msr}</td>
+                            <td style={tdMls}>{r.untag || '—'}</td>
+                            <td style={tdMls}>{r.tag}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ))}
+              </div>
+
+              {ctx.mlsMulticouches.map(m => (
+                <div key={m.id} style={group}>
+                  <div style={legend}>
+                    📟 {m.nom} — la configuration
+                    <button type="button" style={{ ...smallBtn, marginLeft: 'auto' }}
+                      onClick={() => copy('mlscfg' + m.id, configMls(mlsPlan, m))}>{copied === 'mlscfg' + m.id ? '✓ Copie' : 'Copier'}</button>
+                  </div>
+                  <pre style={preStyle}><code>{configMls(mlsPlan, m)}</code></pre>
+                </div>
+              ))}
+
+              {ctx.mlsAcces.map(sw => (
+                <div key={sw.id} style={group}>
+                  <div style={legend}>
+                    🗄️ {sw.name} — la configuration
+                    <button type="button" style={{ ...smallBtn, marginLeft: 'auto' }}
+                      onClick={() => copy('acc' + sw.id, configAcces(sw, mlsPlan))}>{copied === 'acc' + sw.id ? '✓ Copie' : 'Copier'}</button>
+                  </div>
+                  <pre style={preStyle}><code>{configAcces(sw, mlsPlan)}</code></pre>
+                </div>
+              ))}
+
+              <div style={group}>
+                <div style={legend}>🔍 Verifier, dans l'ordre qui elimine une cause</div>
+                {verifsMls(mlsPlan).map(sec => (
+                  <div key={sec.titre} style={{ margin: '6px 0' }}>
+                    <div style={{ fontWeight: 600, fontSize: 12.5 }}>{sec.titre}</div>
+                    <pre style={preStyle}><code>{sec.lignes.join('\n')}</code></pre>
+                  </div>
+                ))}
+              </div>
+
+              <div style={group}>
+                <div style={legend}>
+                  🌍 Sortie Internet — pare-feu et NAT surcharge
+                  <label style={{ marginLeft: 'auto', fontSize: 11.5, fontWeight: 400 }}>
+                    <input type="checkbox" checked={!!ctx.mlsSortie} style={{ marginRight: 5 }}
+                      onChange={e => set({ mlsSortie: e.target.checked ? SORTIE_DEFAUT : null })} />
+                    activer
+                  </label>
+                </div>
+                {!ctx.mlsSortie ? (
+                  <div className="meta" style={{ fontSize: 11.5 }}>
+                    Le « pour aller plus loin » du TP : un <strong>pare-feu</strong> entre le multicouche et le FAI,
+                    qui traduit les adresses privees. Coche pour le configurer.
+                  </div>
+                ) : (
+                  <>
+                    <div className="meta" style={{ fontSize: 11.5, margin: '0 0 8px' }}>
+                      Trois equipements, trois roles : les postes passent par le <strong>multicouche</strong> (qui route
+                      entre VLAN), puis par le <strong>pare-feu</strong> (qui traduit), puis par le <strong>FAI</strong>.
+                      Le lien multicouche‑pare-feu est un <strong>port route</strong>, pas un VLAN.
+                    </div>
+                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                      {([
+                        ['firewall', 'Nom du pare-feu', 130],
+                        ['portMls', 'Port routé du MLS', 170],
+                        ['ipMls', 'IP côté MLS', 110],
+                        ['ipFirewall', 'IP côté pare-feu', 110],
+                        ['ifInside', 'If. interne (pare-feu)', 170],
+                        ['ifWan', 'If. WAN (pare-feu)', 170],
+                        ['ipWan', 'IP WAN', 110],
+                        ['passerelleFai', 'Passerelle FAI', 110],
+                      ] as [keyof SortieInternet, string, number][]).map(([k, lib, w]) => (
+                        <label key={k} style={{ fontSize: 11.5 }}>{lib}<br />
+                          <input value={String(ctx.mlsSortie?.[k] ?? '')} style={{ ...field, width: w }}
+                            onChange={e => set({ mlsSortie: { ...ctx.mlsSortie!, [k]: e.target.value } })} />
+                        </label>
+                      ))}
+                      <label style={{ fontSize: 11.5 }}>Serveur publie (IP)<br />
+                        <input value={ctx.mlsSortie.publie?.ip ?? ''} style={{ ...field, width: 120 }}
+                          placeholder="aucun"
+                          onChange={e => set({ mlsSortie: { ...ctx.mlsSortie!, publie: e.target.value ? { ip: e.target.value, port: ctx.mlsSortie?.publie?.port || '80' } : undefined } })} />
+                      </label>
+                      <label style={{ fontSize: 11.5 }}>Port<br />
+                        <input value={ctx.mlsSortie.publie?.port ?? ''} style={{ ...field, width: 70 }}
+                          placeholder="80"
+                          onChange={e => set({ mlsSortie: { ...ctx.mlsSortie!, publie: ctx.mlsSortie?.publie?.ip ? { ip: ctx.mlsSortie.publie.ip, port: e.target.value } : undefined } })} />
+                      </label>
+                    </div>
+
+                    <div style={{ marginTop: 8 }}>
+                      <div className="meta" style={{ fontSize: 11.5, marginBottom: 4 }}>
+                        <strong>Qui a le droit de sortir ?</strong> Tous les VLAN n ont pas vocation a joindre Internet.
+                        Un VLAN decoche joint toujours les autres VLAN, mais s arrete au pare-feu.
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {mlsPlan.vlans.map(v => {
+                          const sortants = ctx.mlsSortie?.sortants ?? mlsPlan.vlans.map(x => x.id);
+                          const coche = sortants.includes(v.id);
+                          return (
+                            <label key={v.id} style={{ fontSize: 11.5, border: '1px solid var(--border)', borderRadius: 6, padding: '2px 7px', cursor: 'pointer' }}>
+                              <input type="checkbox" checked={coche} style={{ marginRight: 4 }}
+                                onChange={e => set({ mlsSortie: { ...ctx.mlsSortie!, sortants: e.target.checked ? [...sortants, v.id].sort((a, b) => a - b) : sortants.filter(x => x !== v.id) } })} />
+                              {v.id} {v.name}
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: 10 }}>
+                      <div style={legend}>
+                        🗼 Sur {mlsPlan.multicouches[0]?.nom} — le port route et la route par defaut
+                        <button type="button" style={{ ...smallBtn, marginLeft: 'auto' }}
+                          onClick={() => copy('mlsout', configSortieMls(mlsPlan, ctx.mlsSortie!))}>{copied === 'mlsout' ? '✓ Copie' : 'Copier'}</button>
+                      </div>
+                      <pre style={preStyle}><code>{configSortieMls(mlsPlan, ctx.mlsSortie)}</code></pre>
+                    </div>
+
+                    <div style={{ marginTop: 10 }}>
+                      <div style={legend}>
+                        🔒 Sur {ctx.mlsSortie.firewall} — traduction et routes de retour
+                        <button type="button" style={{ ...smallBtn, marginLeft: 'auto' }}
+                          onClick={() => copy('fw', configPareFeu(mlsPlan, ctx.mlsSortie!))}>{copied === 'fw' ? '✓ Copie' : 'Copier'}</button>
+                      </div>
+                      <pre style={preStyle}><code>{configPareFeu(mlsPlan, ctx.mlsSortie)}</code></pre>
+                      <div className="meta" style={{ fontSize: 11.5 }}>
+                        Les <strong>routes de retour</strong> en bas de configuration sont l'oubli classique : sans elles,
+                        le pare-feu traduit le trafic sortant sans savoir par ou renvoyer les reponses. Depuis le pare-feu,
+                        Internet repond ; depuis un poste, rien.
+                      </div>
+                    </div>
+
+                    <div style={{ marginTop: 10 }}>
+                      <div style={legend}>📑 Ce que « show ip nat translations » montrera</div>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                        <thead>
+                          <tr>{['Proto', 'Interne', 'Traduit en', 'Note'].map(h => (
+                            <th key={h} style={{ textAlign: 'left', padding: '4px 7px', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', fontWeight: 600 }}>{h}</th>
+                          ))}</tr>
+                        </thead>
+                        <tbody>
+                          {tableNat(mlsPlan, ctx.mlsSortie).map((r, i) => (
+                            <tr key={i}>
+                              <td style={tdMls}>{r.proto}</td>
+                              <td style={tdMls}><code style={{ fontSize: 11 }}>{r.interne}</code></td>
+                              <td style={tdMls}><code style={{ fontSize: 11 }}>{r.traduit}</code></td>
+                              <td style={tdMls}>{r.note}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+
+                    <div style={{ marginTop: 10 }}>
+                      <div style={legend}>🛠️ Les pannes de la sortie Internet</div>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                        <tbody>
+                          {PANNES_INTERNET.map(x => (
+                            <tr key={x.symptome}>
+                              <td style={tdMls}>{x.symptome}</td>
+                              <td style={tdMls}>{x.cause}</td>
+                              <td style={tdMls}><code style={{ fontSize: 11 }}>{x.verif}</code></td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {ctx.mlsSortie && (
+                <div style={group}>
+                  <div style={legend}>
+                    🌐 Le reseau externe — le routeur d'en face et le site
+                    <label style={{ marginLeft: 'auto', fontSize: 11.5, fontWeight: 400 }}>
+                      <input type="checkbox" checked={!!ctx.mlsExterne} style={{ marginRight: 5 }}
+                        onChange={e => set({ mlsExterne: e.target.checked ? EXTERNE_DEFAUT : null })} />
+                      le simuler
+                    </label>
+                  </div>
+                  {!ctx.mlsExterne ? (
+                    <div className="meta" style={{ fontSize: 11.5 }}>
+                      En maquette, « Internet » est un routeur et un serveur qu'on pose soi-meme. Coche pour les
+                      configurer — et pour verifier que leur adressage ne recoupe pas celui de l'entreprise.
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                        {([
+                          ['routeur', 'Routeur externe', 120],
+                          ['ipVersPareFeu', 'Son IP vers le pare-feu', 120],
+                          ['reseauSite', 'Reseau du site', 130],
+                          ['ipRouteurSite', 'Sa passerelle', 130],
+                          ['ipSite', 'IP du site', 130],
+                          ['nomSite', 'Nom du site', 150],
+                        ] as [keyof ReseauExterne, string, number][]).map(([k, lib, w]) => (
+                          <label key={k} style={{ fontSize: 11.5 }}>{lib}<br />
+                            <input value={String(ctx.mlsExterne?.[k] ?? '')} style={{ ...field, width: w }}
+                              onChange={e => set({ mlsExterne: { ...ctx.mlsExterne!, [k]: e.target.value } })} />
+                          </label>
+                        ))}
+                      </div>
+
+                      {(() => {
+                        const conflits = chevauchements(mlsPlan, ctx.mlsExterne!, ctx.mlsSortie!);
+                        if (!conflits.length) {
+                          return (
+                            <div className="meta" style={{ fontSize: 11.5, marginTop: 8, color: 'var(--ok, #059669)' }}>
+                              ✓ Aucun reseau n'est employe des deux cotes du pare-feu.
+                            </div>
+                          );
+                        }
+                        return (
+                          <div style={{ marginTop: 8, border: '1px solid var(--danger, #c4462f)', borderRadius: 8, padding: '8px 11px' }}>
+                            <div style={{ fontWeight: 700, fontSize: 12.5, color: 'var(--danger, #c4462f)' }}>
+                              ⚠ Le meme reseau est employe des deux cotes du pare-feu
+                            </div>
+                            {conflits.map((c, i) => (
+                              <div key={i} style={{ marginTop: 6, fontSize: 12 }}>
+                                <div style={{ fontWeight: 600 }}>{c.quoi}</div>
+                                <div className="meta" style={{ fontSize: 11.5 }}>
+                                  interne <code>{c.interne}</code> · externe <code>{c.externe}</code>
+                                </div>
+                                <div style={{ fontSize: 11.5, marginTop: 2 }}>{c.effet}</div>
+                              </div>
+                            ))}
+                            <div className="meta" style={{ fontSize: 11.5, marginTop: 6 }}>
+                              La correction est de <strong>renumeroter le cote externe</strong>. Aucune regle de NAT ne
+                              rattrape ceci : la decision est prise par une table de routage qui a raison.
+                            </div>
+                          </div>
+                        );
+                      })()}
+
+                      <div style={{ marginTop: 10 }}>
+                        <div style={legend}>
+                          📟 {ctx.mlsExterne.routeur} — la configuration
+                          <button type="button" style={{ ...smallBtn, marginLeft: 'auto' }}
+                            onClick={() => copy('ext', configRouteurExterne(ctx.mlsExterne!, ctx.mlsSortie!))}>{copied === 'ext' ? '✓ Copie' : 'Copier'}</button>
+                        </div>
+                        <pre style={preStyle}><code>{configRouteurExterne(ctx.mlsExterne, ctx.mlsSortie)}</code></pre>
+                        <div className="meta" style={{ fontSize: 11.5 }}>
+                          Ni NAT ni route par defaut : la traduction a lieu une seule fois, au pare-feu, et deux routes
+                          par defaut qui se designent mutuellement font tourner les paquets inconnus entre les deux.
+                        </div>
+                      </div>
+
+                      <div style={{ marginTop: 10 }}>
+                        <div style={legend}>🖥️ Le serveur qui joue le site</div>
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                          <tbody>
+                            {ficheSite(ctx.mlsExterne).map(f => (
+                              <tr key={f.champ}>
+                                <td style={{ ...tdMls, width: 140, fontWeight: 600 }}>{f.champ}</td>
+                                <td style={tdMls}><code style={{ fontSize: 11 }}>{f.valeur}</code></td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                        <div className="meta" style={{ fontSize: 11.5 }}>
+                          La <strong>passerelle</strong> est aussi indispensable que l'adresse : sans elle, le serveur
+                          repond a ses voisins et a personne d'autre — la demande arrive, la reponse ne repart pas.
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+
+              <div style={group}>
+                <div style={legend}>💻 Ce qu'il faut aux postes pour arriver jusqu'au site</div>
+                <div className="meta" style={{ fontSize: 11.5, margin: '0 0 8px' }}>
+                  Le routage, la traduction et les routes de retour ne suffisent pas : un poste sans
+                  <strong> passerelle</strong> ni <strong>DNS</strong> ne va nulle part. Et l'on cherche alors la panne
+                  dans le pare-feu alors qu'elle est dans l'etendue DHCP.
+                </div>
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                  <div className="meta" style={{ fontSize: 11.5 }}>
+                    DNS distribue : {mlsClients.dns ? <code>{mlsClients.dns}</code> : <em>aucun (ecran DNS)</em>}
+                    {' · '}domaine : {mlsClients.domaine ? <code>{mlsClients.domaine}</code> : <em>aucun</em>}
+                    {' · '}bail : {mlsClients.bailJours} j
+                  </div>
+                  <label style={{ fontSize: 11.5 }}>Site a joindre (nom)<br />
+                    <input value={ctx.mlsSite?.nom ?? ''} placeholder="www.exemple.lan" style={{ ...field, width: 150 }}
+                      onChange={e => set({ mlsSite: { nom: e.target.value, ip: ctx.mlsSite?.ip || '' } })} />
+                  </label>
+                  <label style={{ fontSize: 11.5 }}>son IP<br />
+                    <input value={ctx.mlsSite?.ip ?? ''} placeholder="198.51.100.10" style={{ ...field, width: 130 }}
+                      onChange={e => set({ mlsSite: { nom: ctx.mlsSite?.nom || '', ip: e.target.value } })} />
+                  </label>
+                </div>
+
+                <div style={{ marginTop: 10 }}>
+                  <div style={legend}>📋 Les etendues DHCP — une par VLAN qui en demande</div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                    <thead>
+                      <tr>{['VLAN', 'Etendue', 'Reseau', 'Passerelle', 'Plage distribuee', 'DNS'].map(h => (
+                        <th key={h} style={{ textAlign: 'left', padding: '4px 7px', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', fontWeight: 600 }}>{h}</th>
+                      ))}</tr>
+                    </thead>
+                    <tbody>
+                      {etendues(mlsPlan, mlsClients).map(e => (
+                        <tr key={e.vlan}>
+                          <td style={tdMls}><strong>{e.vlan}</strong></td>
+                          <td style={tdMls}>{e.nom}</td>
+                          <td style={tdMls}>{e.reseau} {e.masque}</td>
+                          <td style={tdMls}><code style={{ fontSize: 11 }}>{e.passerelle}</code></td>
+                          <td style={tdMls}>{e.debut} → {e.fin}</td>
+                          <td style={tdMls}>{e.dns || <em>aucun</em>}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <div className="meta" style={{ fontSize: 11.5, marginTop: 4 }}>
+                    A saisir sur le serveur DHCP. La passerelle de chaque etendue est la <strong>SVI</strong> du VLAN —
+                    c'est elle qui manque quand un poste a une adresse mais ne sort pas.
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 10 }}>
+                  <div style={legend}>
+                    📶 Variante — les etendues portees par {mlsPlan.multicouches[0]?.nom} lui-meme
+                    <button type="button" style={{ ...smallBtn, marginLeft: 'auto' }}
+                      onClick={() => copy('mlsdhcp', configDhcpSurMls(mlsPlan, mlsClients))}>{copied === 'mlsdhcp' ? '✓ Copie' : 'Copier'}</button>
+                  </div>
+                  <pre style={preStyle}><code>{configDhcpSurMls(mlsPlan, mlsClients)}</code></pre>
+                  <div className="meta" style={{ fontSize: 11.5 }}>
+                    Un equipement de moins que le couple serveur + relais — pratique pour savoir si le reste
+                    fonctionne quand le serveur, lui, ne repond pas.
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 10 }}>
+                  <div style={legend}>
+                    🌐 La resolution de noms, sur les equipements
+                    <button type="button" style={{ ...smallBtn, marginLeft: 'auto' }}
+                      onClick={() => copy('mlsdns', configResolution(mlsClients))}>{copied === 'mlsdns' ? '✓ Copie' : 'Copier'}</button>
+                  </div>
+                  <pre style={preStyle}><code>{configResolution(mlsClients)}</code></pre>
+                  <div className="meta" style={{ fontSize: 11.5 }}>
+                    A ne pas confondre avec le DNS des postes : un <code>ping</code> par nom depuis la console echoue
+                    tant que l'equipement lui-meme ne connait pas de serveur DNS, meme quand les postes resolvent.
+                  </div>
+                </div>
+
+                <div style={{ marginTop: 10 }}>
+                  <div style={legend}>🧭 Tester depuis un poste, dans l'ordre</div>
+                  {verificationsClient(mlsPlan, mlsClients, ctx.mlsSortie ?? undefined).map(sec => (
+                    <div key={sec.titre} style={{ margin: '6px 0' }}>
+                      <div style={{ fontWeight: 600, fontSize: 12.5 }}>{sec.titre}</div>
+                      <pre style={preStyle}><code>{sec.lignes.join('\n')}</code></pre>
+                    </div>
+                  ))}
+                </div>
+
+                <div style={{ marginTop: 10 }}>
+                  <div style={legend}>🛠️ Les pannes vues du poste</div>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                    <tbody>
+                      {PANNES_CLIENT.map(x => (
+                        <tr key={x.symptome}>
+                          <td style={tdMls}>{x.symptome}</td>
+                          <td style={tdMls}>{x.cause}</td>
+                          <td style={tdMls}><code style={{ fontSize: 11 }}>{x.verif}</code></td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              <div style={group}>
+                <div style={legend}>🛠️ Les pannes ou tout semble juste</div>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <thead>
+                    <tr>{['Symptome', 'Cause la plus probable', 'Verification'].map(h => (
+                      <th key={h} style={{ textAlign: 'left', padding: '4px 7px', borderBottom: '1px solid var(--border)', color: 'var(--text-muted)', fontWeight: 600 }}>{h}</th>
+                    ))}</tr>
+                  </thead>
+                  <tbody>
+                    {PANNES_MLS.map(x => (
+                      <tr key={x.symptome}>
+                        <td style={tdMls}>{x.symptome}</td>
+                        <td style={tdMls}>{x.cause}</td>
+                        <td style={tdMls}><code style={{ fontSize: 11 }}>{x.verif}</code></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {step === 11 && (
+        <div>
+          <div style={group}>
+            <div style={legend}>🔌 Couche 1 — le materiel, avant toute adresse</div>
+            <div className="meta" style={{ fontSize: 11.5, margin: '0 0 6px' }}>
+              L'atelier travaillait a l'envers du montage reel : on declarait des sous-reseaux et le materiel s'en
+              deduisait. Ici on pose les equipements et on tire les cables — l'adressage vient apres, en couche 3.
+            </div>
+            <div className="meta" style={{ fontSize: 11.5 }}>
+              Cet inventaire ne connait <strong>aucune adresse IP</strong>. C'est voulu : melanger les couches est
+              exactement ce que le modele OSI apprend a ne pas faire.
+            </div>
+          </div>
+
+          <div style={group}>
+            <div style={legend}>
+              🗄️ L'inventaire
+              <span className="meta" style={{ marginLeft: 'auto', fontSize: 11.5, fontWeight: 400 }}>
+                {ctx.materiels.length} equipement(s) · {ctx.cables.length} lien(s)
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+              {(['routeur', 'multicouche', 'switch', 'serveur', 'poste', 'nuage'] as TypeMateriel[]).map(t => (
+                <button key={t} type="button" style={smallBtn}
+                  onClick={() => set({ materiels: [...ctx.materiels, {
+                    id: 'mat' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+                    nom: t.charAt(0).toUpperCase() + t.slice(1) + '-' + (ctx.materiels.filter(m => m.type === t).length + 1),
+                    type: t, modele: '', ports: PORTS_TYPIQUES[t],
+                  }] })}>+ {t}</button>
+              ))}
+            </div>
+
+            {ctx.materiels.length === 0 && (
+              <div className="meta" style={{ fontSize: 12 }}>
+                Aucun equipement. Commence par ce que tu as devant toi — un multicouche, des switches, des postes.
+              </div>
+            )}
+
+            {ctx.materiels.map((m, i) => {
+              const majMat = (patch: Partial<Materiel>) =>
+                set({ materiels: ctx.materiels.map((x, k) => (k === i ? { ...x, ...patch } : x)) });
+              const liens = voisinsDe(ctx.cables, m.id);
+              return (
+                <div key={m.id} style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '8px 10px', margin: '6px 0' }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                    <input value={m.nom} style={{ ...field, width: 140 }} onChange={e => majMat({ nom: e.target.value })} />
+                    <select value={m.type} style={{ ...field, width: 130 }}
+                      onChange={e => majMat({ type: e.target.value as TypeMateriel, ports: PORTS_TYPIQUES[e.target.value as TypeMateriel] })}>
+                      {(['routeur', 'multicouche', 'switch', 'serveur', 'poste', 'nuage'] as TypeMateriel[]).map(t =>
+                        <option key={t} value={t}>{t}</option>)}
+                    </select>
+                    <input value={m.modele} placeholder="modele" style={{ ...field, width: 90 }}
+                      onChange={e => majMat({ modele: e.target.value })} />
+                    <label style={{ fontSize: 11.5 }}>ports&nbsp;
+                      <input type="number" min={1} max={48} value={m.ports} style={{ ...field, width: 62 }}
+                        onChange={e => majMat({ ports: Math.max(1, Number(e.target.value) || 1) })} />
+                    </label>
+                    <span className="meta" style={{ fontSize: 11 }}>couche {COUCHE_DE[m.type]} · {liens.length} lien(s)</span>
+                    <button type="button" style={{ ...smallBtn, marginLeft: 'auto' }}
+                      onClick={() => set({
+                        materiels: ctx.materiels.filter(x => x.id !== m.id),
+                        // Un cable vers un equipement supprime n'a plus de sens :
+                        // le laisser produirait un lien fantome dans le schema.
+                        cables: ctx.cables.filter(c => c.deId !== m.id && c.versId !== m.id),
+                      })}>Retirer</button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div style={group}>
+            <div style={legend}>
+              🧵 Le cablage
+              <button type="button" style={{ ...smallBtn, marginLeft: 'auto' }}
+                disabled={ctx.materiels.length < 2}
+                onClick={() => {
+                  const a = ctx.materiels[0]!, b = ctx.materiels[1]!;
+                  set({ cables: [...ctx.cables, {
+                    id: 'cab' + Date.now().toString(36),
+                    deId: a.id, dePort: portsLibres(a, ctx.cables)[0] ?? 1,
+                    versId: b.id, versPort: portsLibres(b, ctx.cables)[0] ?? 1,
+                    media: cableAttendu(a.type, b.type),
+                  }] });
+                }}>+ Cable</button>
+            </div>
+            {ctx.cables.length === 0 && (
+              <div className="meta" style={{ fontSize: 12 }}>
+                Aucun lien. Le type de cable est propose tout seul : <strong>meme couche → croise</strong>,
+                couches differentes → droit.
+              </div>
+            )}
+            {ctx.cables.map((c, i) => {
+              const majCab = (patch: Partial<Cable>) =>
+                set({ cables: ctx.cables.map((x, k) => (k === i ? { ...x, ...patch } : x)) });
+              const a = ctx.materiels.find(m => m.id === c.deId);
+              const b = ctx.materiels.find(m => m.id === c.versId);
+              const attendu = a && b ? cableAttendu(a.type, b.type) : null;
+              return (
+                <div key={c.id} style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', margin: '5px 0' }}>
+                  <select value={c.deId} style={{ ...field, width: 140 }}
+                    onChange={e => majCab({ deId: e.target.value })}>
+                    {ctx.materiels.map(m => <option key={m.id} value={m.id}>{m.nom}</option>)}
+                  </select>
+                  <input type="number" min={1} value={c.dePort} style={{ ...field, width: 58 }}
+                    onChange={e => majCab({ dePort: Math.max(1, Number(e.target.value) || 1) })} />
+                  <span style={{ fontSize: 12 }}>↔</span>
+                  <select value={c.versId} style={{ ...field, width: 140 }}
+                    onChange={e => majCab({ versId: e.target.value })}>
+                    {ctx.materiels.map(m => <option key={m.id} value={m.id}>{m.nom}</option>)}
+                  </select>
+                  <input type="number" min={1} value={c.versPort} style={{ ...field, width: 58 }}
+                    onChange={e => majCab({ versPort: Math.max(1, Number(e.target.value) || 1) })} />
+                  <select value={c.media} style={{ ...field, width: 150 }}
+                    onChange={e => majCab({ media: e.target.value as Media })}>
+                    {(['droit', 'croise', 'serie', 'fibre'] as Media[]).map(x =>
+                      <option key={x} value={x}>{x}{attendu === x ? ' ✓' : ''}</option>)}
+                  </select>
+                  <button type="button" style={smallBtn}
+                    onClick={() => set({ cables: ctx.cables.filter(x => x.id !== c.id) })}>✕</button>
+                </div>
+              );
+            })}
+          </div>
+
+          {(() => {
+            const pb = verifierCablage(ctx.materiels, ctx.cables);
+            if (!ctx.materiels.length) return null;
+            if (!pb.length) {
+              return (
+                <div style={group}>
+                  <div className="meta" style={{ fontSize: 12, color: 'var(--ok, #059669)' }}>
+                    ✓ Cablage coherent — aucun port double, aucun cable manquant, aucun mauvais type.
+                  </div>
+                </div>
+              );
+            }
+            return (
+              <div style={{ ...group, border: '1px solid var(--danger, #c4462f)' }}>
+                <div style={{ ...legend, color: 'var(--danger, #c4462f)' }}>⚠ Ce que le cablage va provoquer</div>
+                {pb.map((x, k) => (
+                  <div key={k} style={{ marginTop: 5, fontSize: 12 }}>
+                    <div style={{ fontWeight: 600 }}>{x.quoi}</div>
+                    <div style={{ fontSize: 11.5 }}>{x.effet}</div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+
+          {ctx.materiels.length >= 2 && (
+            <div style={group}>
+              <div style={legend}>🧭 Y a-t-il un chemin ?</div>
+              <div className="meta" style={{ fontSize: 11.5, marginBottom: 5 }}>
+                La premiere chose a eliminer devant « ces deux-la ne se voient pas » : sans chemin de cables,
+                aucune configuration n'y changera rien.
+              </div>
+              {(() => {
+                const a = ctx.materiels[0]!, b = ctx.materiels[ctx.materiels.length - 1]!;
+                const chemin = cheminPhysique(ctx.cables, a.id, b.id);
+                const nom = (id: string) => ctx.materiels.find(m => m.id === id)?.nom ?? id;
+                return (
+                  <div style={{ fontSize: 12 }}>
+                    <strong>{a.nom}</strong> → <strong>{b.nom}</strong> :{' '}
+                    {chemin
+                      ? <code style={{ fontSize: 11 }}>{chemin.map(nom).join(' → ')}</code>
+                      : <span style={{ color: 'var(--danger, #c4462f)' }}>aucun chemin physique</span>}
+                  </div>
+                );
+              })()}
+            </div>
+          )}
+        </div>
+      )}
+
       {step === 8 && (
         <div>
           <div style={group}>
@@ -1589,6 +2623,252 @@ function clientRange(ctx: Ctx, s: Sub): [number, number] | null {
 }
 
 const CLOUD_COLORS = ['#ec4899', '#22c55e', '#eab308', '#38bdf8', '#a855f7', '#f97316', '#14b8a6', '#f43f5e'];
+
+/**
+ * Le schéma de la topologie à switch multicouche.
+ *
+ * Distinct de `SchemaSvg`, qui place des routeurs par un algorithme radial :
+ * ici la forme est connue d'avance — un **arbre**. Le multicouche à la racine,
+ * ses switches en dessous, ceux en cascade encore en dessous, et les VLAN sous
+ * chaque switch.
+ *
+ * La première version ne dessinait qu'un niveau : un switch en cascade
+ * disparaissait purement et simplement du schéma, et ses étiquettes de VLAN se
+ * superposaient à celles du voisin. Un schéma faux est pire qu'une absence de
+ * schéma — on le recopie.
+ *
+ * Les hauteurs de niveau sont **calculées**, pas choisies : chaque étage est
+ * assez haut pour ses pastilles de VLAN les plus nombreuses. C'est ce qui
+ * garantit qu'aucune ne chevauche l'étage suivant, quel que soit le montage.
+ */
+function SchemaMls({ ctx, plan, onPos }: { ctx: Ctx; plan: Plan; onPos?: (id: string, p: { x: number; y: number } | null) => void }) {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [attrape, setAttrape] = useState<string | null>(null);
+  const mlsPlan = buildMlsPlan(ctx, plan);
+
+  if (!mlsPlan.vlans.length) {
+    return <div className="meta">Donne un numéro de VLAN à au moins un sous-réseau (Segmentation) pour afficher le schéma.</div>;
+  }
+
+  const COULEURS = ['#6366f1', '#ec4899', '#14b8a6', '#f59e0b', '#8b5cf6', '#ef4444', '#10b981', '#0ea5e9'];
+  const couleurVlan = (id: number) => COULEURS[Math.max(0, mlsPlan.vlans.findIndex(v => v.id === id)) % COULEURS.length]!;
+
+  // ── L'arbre : racines = multicouches, enfants = switches qui y remontent ──
+  type Noeud = { id: string; nom: string; profondeur: number; vlans: number[]; parent: string | null; sousTitre: string };
+  const noeuds: Noeud[] = [];
+  const colonnes = new Map<string, number>();
+  let colonne = 0;
+
+  const descendre = (parent: string, profondeur: number) => {
+    const enfants = enfantsDe(mlsPlan, parent);
+    for (const e of enfants) {
+      noeuds.push({ id: e.id, nom: e.name, profondeur, vlans: e.vlans, parent, sousTitre: `${e.ports} ports · uplink ${e.uplink}` });
+      const avant = colonne;
+      descendre(e.id, profondeur + 1);
+      // Une feuille prend une colonne ; un nœud avec enfants se centre sur eux.
+      if (colonne === avant) { colonnes.set(e.id, colonne); colonne += 1; }
+      else colonnes.set(e.id, (avant + colonne - 1) / 2);
+    }
+  };
+
+  for (const m of mlsPlan.multicouches) {
+    const avant = colonne;
+    noeuds.push({ id: m.id, nom: m.nom, profondeur: 0, vlans: vlansDe(mlsPlan, m).map(v => v.id), parent: null, sousTitre: `ip routing · ${vlansDe(mlsPlan, m).length} SVI` });
+    descendre(m.id, 1);
+    if (colonne === avant) { colonnes.set(m.id, colonne); colonne += 1; }
+    else colonnes.set(m.id, (avant + colonne - 1) / 2);
+  }
+
+  // ── Les hauteurs : chaque étage réserve la place de ses pastilles ─────────
+  const HAUT_BOITE = 40, HAUT_PASTILLE = 20, MARGE = 34;
+  const profondeurMax = Math.max(0, ...noeuds.map(n => n.profondeur));
+  const pastillesMax: number[] = [];
+  for (let d = 0; d <= profondeurMax; d++) {
+    // Le multicouche n'affiche pas ses VLAN en pastilles : ils sont sur ses SVI,
+    // pas sur des ports — les montrer là ferait croire à des postes branchés.
+    pastillesMax[d] = d === 0 ? 0 : Math.max(0, ...noeuds.filter(n => n.profondeur === d).map(n => n.vlans.length));
+  }
+  const yDe = (d: number) => {
+    let y = 210;
+    for (let k = 0; k < d; k++) y += HAUT_BOITE + pastillesMax[k]! * HAUT_PASTILLE + MARGE;
+    return y;
+  };
+
+  // Les routeurs occupent une bande au-dessus du multicouche : sans ce
+  // decalage, leurs LAN se superposeraient a la chaine vers l'exterieur.
+  const LARGEUR_COL = 230;
+  const W = Math.max(760, colonne * LARGEUR_COL);
+  const hauteur = yDe(profondeurMax) + HAUT_BOITE + pastillesMax[profondeurMax]! * HAUT_PASTILLE + 40;
+  const xAuto = (id: string) => (colonnes.get(id)! + 0.5) * (W / Math.max(1, colonne));
+
+  const versDessin = (e: { clientX: number; clientY: number }) => {
+    const r = svgRef.current?.getBoundingClientRect();
+    if (!r || !r.width) return null;
+    return { x: ((e.clientX - r.left) / r.width) * W, y: ((e.clientY - r.top) / r.height) * hauteur };
+  };
+  const pos = (n: Noeud) => ctx.mlsPos[n.id] ?? { x: xAuto(n.id), y: yDe(n.profondeur) };
+  const parId = new Map(noeuds.map(n => [n.id, n]));
+
+  // ── Les routeurs et leurs segments ───────────────────────────────────────
+  // Un segment d'interconnexion relie des routeurs entre eux, et depuis peu un
+  // routeur a un multicouche. Ses membres se lisent a deux endroits : les
+  // routeurs sur le sous-reseau, le multicouche sur le service qui l'a produit.
+  const svcDuSub = (sub: Sub) => ctx.services.find(x => 'svc:' + x.id === sub.id);
+  const segments = plan.subs.filter(z => z.kind === 'link').map(z => ({
+    sub: z,
+    membres: [...(z.routerIds ?? []), ...(svcDuSub(z)?.svi ? [svcDuSub(z)!.svi!] : [])],
+  }));
+  const routeurs = ctx.routers.filter(r => segments.some(g => g.membres.includes(r.id))
+    || plan.subs.some(z => z.kind === 'lan' && z.routerId === r.id));
+  const yRouteurs = 168;
+  const xRouteur = (i: number) => ((i + 0.5) * W) / Math.max(1, routeurs.length);
+  const posR = (r: RouterDef, i: number) => ctx.mlsPos[r.id] ?? { x: xRouteur(i), y: yRouteurs };
+  const rangR = new Map(routeurs.map((r, i) => [r.id, i]));
+  // Ou se trouve un membre de segment : un routeur, ou un multicouche.
+  const ancre = (id: string) => {
+    const i = rangR.get(id);
+    if (i !== undefined) return posR(routeurs[i]!, i);
+    const n = noeuds.find(x => x.id === id);
+    return n ? pos(n) : null;
+  };
+
+  const sortie = ctx.mlsSortie;
+  const externe = ctx.mlsExterne;
+  const racine = noeuds.find(n => n.profondeur === 0);
+  const xSortie = racine ? pos(racine).x : W / 2;
+
+  return (
+    <svg ref={svgRef} viewBox={`0 0 ${W} ${hauteur}`}
+      style={{ width: '100%', height: 'auto', background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', userSelect: 'none' }}
+      onMouseMove={e => { if (!attrape) return; const q = versDessin(e); if (q) onPos?.(attrape, q); }}
+      onMouseUp={() => setAttrape(null)}
+      onMouseLeave={() => setAttrape(null)}>
+
+      {/* La chaîne vers l'extérieur, au-dessus de la racine. */}
+      {sortie && racine && (
+        <g>
+          <line x1={xSortie} y1={pos(racine).y - 22} x2={xSortie} y2={126} stroke="var(--border)" strokeWidth={2} />
+          <text x={xSortie + 8} y={(pos(racine).y + 110) / 2} fontSize={9.5} fill="var(--text-muted)">
+            port routé · {sortie.ipMls} ↔ {sortie.ipFirewall}
+          </text>
+          <rect x={xSortie - 80} y={94} width={160} height={34} rx={7} fill="var(--surface-2)" stroke="#ef4444" strokeWidth={1.5} />
+          <text x={xSortie} y={110} textAnchor="middle" fontSize={11.5} fontWeight={600} fill="var(--text)">🔒 {sortie.firewall}</text>
+          <text x={xSortie} y={123} textAnchor="middle" fontSize={9} fill="var(--text-muted)">NAT surchargé · {sortie.ipWan}</text>
+          {externe && (
+            <g>
+              <line x1={xSortie} y1={94} x2={xSortie} y2={56} stroke="var(--border)" strokeWidth={2} strokeDasharray="4 3" />
+              <rect x={xSortie - 120} y={22} width={240} height={34} rx={7} fill="var(--surface-2)" stroke="var(--border)" strokeWidth={1.5} />
+              <text x={xSortie} y={38} textAnchor="middle" fontSize={11} fontWeight={600} fill="var(--text)">🌐 {externe.routeur} → {externe.nomSite || 'le site'}</text>
+              <text x={xSortie} y={51} textAnchor="middle" fontSize={9} fill="var(--text-muted)">{externe.ipSite} · réseau externe</text>
+            </g>
+          )}
+        </g>
+      )}
+
+      {/* Les liens, tracés avant les boîtes pour passer dessous. */}
+      {noeuds.filter(n => n.parent).map(n => {
+        const p = parId.get(n.parent!);
+        if (!p) return null;
+        const a = pos(p), b = pos(n);
+        const sw = mlsPlan.acces.find(x => x.id === n.id);
+        return (
+          <g key={'l' + n.id}>
+            <line x1={a.x} y1={a.y + HAUT_BOITE / 2} x2={b.x} y2={b.y - HAUT_BOITE / 2} stroke="var(--border)" strokeWidth={2} />
+            {sw && (
+              <text x={(a.x + b.x) / 2 + 5} y={(a.y + b.y) / 2} fontSize={9} fill="var(--text-muted)">
+                trunk {sw.portMls} ↔ {sw.uplink}
+              </text>
+            )}
+          </g>
+        );
+      })}
+
+      {/* Les segments d'interconnexion, routeur <-> routeur ou routeur <-> SVI. */}
+      {segments.map(g => {
+        const pts = g.membres.map(ancre).filter((q): q is { x: number; y: number } => !!q);
+        if (pts.length < 2) return null;
+        const cx = pts.reduce((t, q) => t + q.x, 0) / pts.length;
+        const cy = pts.reduce((t, q) => t + q.y, 0) / pts.length;
+        return (
+          <g key={'seg' + g.sub.id}>
+            {pts.map((q, k) => (
+              <line key={k} x1={cx} y1={cy} x2={q.x} y2={q.y} stroke="var(--accent)" strokeWidth={1.6} strokeDasharray="5 3" />
+            ))}
+            <rect x={cx - 74} y={cy - 9} width={148} height={18} rx={9} fill="var(--surface)" stroke="var(--accent)" strokeWidth={1} />
+            <text x={cx} y={cy + 4} textAnchor="middle" fontSize={8.5} fill="var(--text)">
+              {g.sub.name} · {ipToStr(g.sub.net)}/{g.sub.cidr}
+            </text>
+          </g>
+        );
+      })}
+
+      {/* Les routeurs, et les LAN qu'ils routent eux-memes. */}
+      {routeurs.map((r, i) => {
+        const q = posR(r, i);
+        const siens = plan.subs.filter(z => z.kind === 'lan' && z.routerId === r.id);
+        return (
+          <g key={r.id}>
+            <g style={{ cursor: attrape === r.id ? 'grabbing' : 'grab' }}
+              onMouseDown={e => { e.preventDefault(); setAttrape(r.id); }}
+              onDoubleClick={() => onPos?.(r.id, null)}>
+              <rect x={q.x - 62} y={q.y - 17} width={124} height={34} rx={7}
+                fill="var(--surface-2)" stroke="var(--accent)" strokeWidth={1.5} />
+              <text x={q.x} y={q.y - 1} textAnchor="middle" fontSize={11.5} fontWeight={600} fill="var(--text)">📟 {r.name}</text>
+              <text x={q.x} y={q.y + 11} textAnchor="middle" fontSize={9} fill="var(--text-muted)">{r.model}</text>
+            </g>
+            {/* Les LAN du routeur se posent a DROITE de sa boite, pas au-dessus :
+                au-dessus, ils entraient dans la chaine vers l'exterieur. */}
+            {siens.map((z, k) => (
+              <g key={z.id}>
+                <rect x={q.x + 68} y={q.y - 9 + k * 20} width={186} height={17} rx={8.5}
+                  fill="color-mix(in srgb, var(--accent) 10%, transparent)" stroke="var(--accent)" strokeWidth={0.8} />
+                <text x={q.x + 161} y={q.y + 3 + k * 20} textAnchor="middle" fontSize={8.5} fill="var(--text)">
+                  {z.vlan ? `VLAN ${z.vlan} · ` : ''}{z.name} · {ipToStr(z.net)}/{z.cidr}
+                </text>
+              </g>
+            ))}
+          </g>
+        );
+      })}
+
+      {noeuds.map((n, i) => {
+        const { x, y } = pos(n);
+        const racineIci = n.profondeur === 0;
+        const largeur = racineIci ? 200 : 150;
+        return (
+          <g key={n.id}>
+            <g style={{ cursor: attrape === n.id ? 'grabbing' : 'grab' }}
+              onMouseDown={e => { e.preventDefault(); setAttrape(n.id); }}
+              onDoubleClick={() => onPos?.(n.id, null)}>
+              <rect x={x - largeur / 2} y={y - HAUT_BOITE / 2} width={largeur} height={HAUT_BOITE} rx={7}
+                fill="var(--surface-2)" stroke={racineIci ? COULEURS[i % COULEURS.length] : 'var(--border)'} strokeWidth={1.5} />
+              <text x={x} y={y - 3} textAnchor="middle" fontSize={racineIci ? 12.5 : 11.5} fontWeight={600} fill="var(--text)">
+                {racineIci ? '🗼' : '🗄️'} {n.nom}
+              </text>
+              <text x={x} y={y + 12} textAnchor="middle" fontSize={9} fill="var(--text-muted)">{n.sousTitre}</text>
+            </g>
+
+            {/* Les VLAN portés par ce switch, empilés sous sa boîte. */}
+            {!racineIci && n.vlans.map((id, k) => {
+              const v = mlsPlan.vlans.find(z => z.id === id);
+              const yv = y + HAUT_BOITE / 2 + 8 + k * HAUT_PASTILLE;
+              const c = couleurVlan(id);
+              return (
+                <g key={id}>
+                  <rect x={x - 95} y={yv} width={190} height={17} rx={8.5}
+                    fill={`color-mix(in srgb, ${c} 14%, transparent)`} stroke={c} strokeWidth={1} />
+                  <text x={x} y={yv + 12} textAnchor="middle" fontSize={9} fill="var(--text)">
+                    {id} {v?.name ?? ''} · {v?.reseau}/{v?.cidr}
+                  </text>
+                </g>
+              );
+            })}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
 
 function SchemaSvg({ ctx, plan }: { ctx: Ctx; plan: Plan }) {
   const routers = ctx.routers;
