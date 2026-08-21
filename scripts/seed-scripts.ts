@@ -20,6 +20,7 @@ const CATEGORIES: { id: string; icon: string; label: string }[] = [
   { id: 'reseau', icon: '🌐', label: 'Réseau & adressage' },
   { id: 'ad', icon: '🏢', label: 'Active Directory' },
   { id: 'virtualisation', icon: '🧰', label: 'Hyper-V & VM' },
+  { id: 'linux', icon: '🐧', label: 'Linux & ligne de commande' },
 ];
 const SCRIPTS: Script[] = [
   {
@@ -87,6 +88,18 @@ const SCRIPTS: Script[] = [
     title: 'Configurateur — Routeur Cisco (Packet Tracer)',
     desc: 'Outil interactif : hostname, interfaces (IP fixe + activation, clock rate DCE), routes statiques et NAT/PAT (inside/outside, overload, NAT statique & redirection de port) → configuration CLI IOS prête à coller dans Packet Tracer.',
     tags: ['Interactif', 'Cisco', 'Packet Tracer', 'Routage', 'NAT'], cat: 'cisco',
+  },
+  {
+    slug: 'outils-linux', icon: '🐧',
+    title: 'Aide-mémoire Linux — cherche avec tes mots',
+    desc: 'On ne cherche pas un nom de commande, on cherche ce qu’on veut faire : « gros fichiers », « qui écoute sur un port », « permission denied ». Les anciens noms (ifconfig, netstat) et les équivalents Windows (ipconfig, findstr) mènent au bon endroit. Chaque fiche donne les options utiles, le piège classique, et le pendant Windows.',
+    tags: ['Interactif', 'Linux', 'Ligne de commande', 'Recherche'], cat: 'linux',
+  },
+  {
+    slug: 'outils-linux', icon: '🧱',
+    title: 'Constructeur de script Bash',
+    desc: 'Assemble le squelette d’un script d’administration — mode strict, arguments, journal horodaté, vérification des dépendances, verrou anti-chevauchement, nettoyage garanti par trap, simulation — et dit ce que chaque garde-fou évite. Le script produit est complet et vérifié : bash -n l’accepte dans les 1024 combinaisons.',
+    tags: ['Interactif', 'Linux', 'Bash', 'Scripting'], cat: 'linux',
   },
   {
     slug: 'constructeur-agdlp', icon: '🔐',
