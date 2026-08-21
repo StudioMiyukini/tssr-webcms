@@ -119,8 +119,16 @@ export const DOMAINS: Domain[] = [
     subcats: [
       { name: 'Fondamentaux', courses: [
         { href: '/pages/linux-bases', title: 'Linux : les bases (Debian)', desc: 'Arborescence, commandes essentielles, utilisateurs & droits (rwx / chmod / chown), paquets (apt), services (systemctl) et réseau.' },
+        { href: '/pages/linux-droits', title: 'Utilisateurs, droits et sudo', desc: 'rwx et les trois catégories, chmod en octal, umask, SUID/SGID/sticky, les ACL POSIX et leur masque, et la délégation par sudo — le pendant Linux du cours NTFS.' },
+        { href: '/pages/linux-bash', title: 'Scripts Bash', desc: 'Le squelette d’un script, variables et arguments, conditions, boucles, codes de retour — et un exemple de sauvegarde complet.' },
+      ] },
+      { name: 'Système & stockage', courses: [
+        { href: '/pages/linux-disques', title: 'Disques, partitions & LVM', desc: 'Lister l’espace, partitionner, formater, monter, /etc/fstab et les UUID, puis LVM : PV, VG, LV et l’agrandissement à chaud.' },
+        { href: '/pages/linux-systemd', title: 'systemd : services, démarrage et unités', desc: 'systemctl au quotidien, écrire une unité de service, les dépendances et les cibles, les timers — et lire un démarrage qui traîne.' },
+        { href: '/pages/linux-cron-logs', title: 'Planification (cron) & journaux', desc: 'crontab et ses pièges (PATH, %, l’environnement), les timers systemd, journalctl, /var/log et la rotation.' },
       ] },
       { name: 'Services', courses: [
+        { href: '/pages/linux-reseau', title: 'Configuration réseau', desc: 'ip et ss, IP statique (interfaces Debian / Netplan Ubuntu), résolution DNS, pare-feu UFW, et la méthode de diagnostic couche par couche.' },
         { href: '/pages/linux-ssh', title: 'SSH serveur sous Linux', desc: 'OpenSSH : service sshd, sshd_config, authentification par clé et durcissement.' },
         { href: '/pages/linux-apache', title: 'Apache : héberger un site web', desc: 'apache2, racine /var/www, hôtes virtuels (a2ensite) — l’équivalent d’IIS.' },
         { href: '/pages/linux-samba', title: 'Samba : partage vers Windows', desc: 'Partager un dossier Linux en SMB/CIFS, utilisateurs Samba et permissions.' },
