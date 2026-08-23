@@ -45,11 +45,11 @@ async function runSync() {
 }
 
 async function updateAndReload() {
-  if (win) win.setTitle('TSSR — Local (mise à jour…)');
+  if (win) win.setTitle('IT-miyukini — Local (mise à jour…)');
   const r = await runSync();
   if (win) {
     win.webContents.reload();
-    win.setTitle('TSSR — Local');
+    win.setTitle('IT-miyukini — Local');
     dialog.showMessageBox(win, {
       type: r ? 'info' : 'warning',
       title: 'Mise à jour',
@@ -84,7 +84,7 @@ function buildMenu() {
 async function createWindow() {
   win = new BrowserWindow({
     width: 1280, height: 860, minWidth: 900, minHeight: 600,
-    title: 'TSSR — Local', backgroundColor: '#0f1115', autoHideMenuBar: false,
+    title: 'IT-miyukini — Local', backgroundColor: '#0f1115', autoHideMenuBar: false,
     webPreferences: { contextIsolation: true, nodeIntegration: false },
   });
   // Garde le titre natif « TSSR — Local » : le SPA a son propre <title> (« CMS »).
