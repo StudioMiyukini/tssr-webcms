@@ -42,6 +42,8 @@ which ls             # son chemin`),
     ['<code>whoami</code>', 'Qui je suis.'],
     ['<code>id</code>', 'Mon UID, mon groupe principal et <strong>tous mes groupes</strong>.'],
     ['<code>hostname</code>', 'Le nom de la machine.'],
+    ['<strong><code>ip a</code></strong>', '<strong>Mes adresses IP</strong>, interface par interface. La question qu’on se pose en premier sur une machine qu’on découvre.'],
+    ['<code>ip r</code>', 'La <strong>route par défaut</strong> : par où la machine sort. Sans elle, elle ne joint que son propre réseau.'],
     ['<code>uname -a</code>', 'Noyau, architecture, nom de machine.'],
     ['<code>cat /etc/os-release</code>', 'La <strong>distribution</strong> et sa version.'],
     ['<code>uptime</code>', 'Depuis quand elle tourne, et sa charge.'],
@@ -159,11 +161,40 @@ systemctl --failed               # ce qui est en echec
 journalctl -u ssh -n 50          # les journaux d'un service
 
 # --- Reseau ---
-ip -br a                         # mes adresses, en bref
+ip a                             # mes adresses, en detail
+ip -br a                         # la meme chose en bref : une ligne par interface
 ip r                             # la route par defaut
 ss -tulpn                        # qui ecoute sur quels ports
 ping -c4 1.1.1.1                 # ca sort ?
 dig cisco.com                    # le DNS repond ?`),
+  block('heading', { level: 3, text: 'Lire la sortie de <code>ip a</code>' }),
+  flow(`2: eth0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 ... state UP
+   │   │                            │     │              └─ l'interface fonctionne
+   │   │                            │     └─ LOWER_UP = le cable est branche
+   │   │                            └─ UP = elle est activee (administrativement)
+   │   └─ son NOM (ens18, enp0s3, eth0…)
+   └─ son numero d'index dans le noyau
+
+    link/ether 00:15:5d:38:01:09 brd ff:ff:ff:ff:ff:ff
+               └─ l'adresse MAC, couche 2
+
+    inet 172.29.239.3/20 brd 172.29.239.255 scope global dynamic eth0
+         │              │                              └─ « dynamic » = obtenue en DHCP
+         │              └─ l'adresse de diffusion       (absent si statique)
+         └─ L'ADRESSE ET LE MASQUE, ensemble
+
+    inet6 fe80::.../64 scope link
+          └─ IPv6 de lien local : automatique, pas routable`),
+  table(['État affiché', 'Ce qu’il signifie', 'Ce qu’on fait'], [
+    ['<code>state UP</code> + <code>LOWER_UP</code>', 'Interface activée et lien physique présent.', 'Rien : c’est l’état normal.'],
+    ['<code>state DOWN</code>', 'Interface désactivée.', '<code>sudo ip link set eth0 up</code>, ou vérifier <code>/etc/network/interfaces</code>.'],
+    ['<code>NO-CARRIER</code>', 'Activée, mais <strong>pas de câble</strong> — ou, en VM, aucun commutateur virtuel raccordé.', 'Vérifier le câblage, ou la carte réseau de la machine virtuelle.'],
+    ['Aucune ligne <code>inet</code>', 'L’interface est là, mais <strong>sans adresse IPv4</strong>.', 'DHCP qui ne répond pas, ou configuration statique absente.'],
+    ['<code>inet 169.254.x.x</code>', 'Adresse d’auto-configuration : <strong>le DHCP n’a pas répondu</strong>.', 'Le serveur DHCP, ou le réseau entre lui et la machine.'],
+  ]),
+  note('blue', '💡 <code>lo</code> est toujours là, et c’est normal', '<p>L’interface de bouclage porte <code>127.0.0.1</code> : la machine se parle à elle-même. Beaucoup de services l’utilisent — une base de données qui n’écoute que sur <code>127.0.0.1</code> est volontairement inaccessible depuis le réseau, et c’est une bonne pratique, pas une panne.</p>'),
+  note('green', '🎯 Les deux commandes, dans cet ordre', '<p><code>ip a</code> répond « ai-je une adresse ? », <code>ip r</code> répond « puis-je sortir ? ». Une machine peut avoir une adresse parfaitement correcte et ne joindre personne, faute de ligne <code>default via</code>. Le symptôme trompe : « le serveur voisin répond au ping, donc le réseau va bien » — il ne va pas bien.</p>'),
+
   note('yellow', '⚠️ <code>start</code> n’est pas <code>enable</code>', '<p><code>start</code> démarre maintenant et ne survit pas au redémarrage. <code>enable</code> planifie au boot et ne lance rien tout de suite. Le service qui fonctionnait parfaitement et a disparu après un reboot a été <code>start</code>é sans être <code>enable</code>d.</p>'),
 
   block('heading', { level: 2, text: '10) Les raccourcis qui font gagner le plus de temps' }),
