@@ -119,6 +119,7 @@ export const DOMAINS: Domain[] = [
     subcats: [
       { name: 'Fondamentaux', courses: [
         { href: '/pages/linux-bases', title: 'Linux : les bases (Debian)', desc: 'Arborescence, commandes essentielles, utilisateurs & droits (rwx / chmod / chown), paquets (apt), services (systemctl) et réseau.' },
+        { href: '/pages/linux-commandes-base', title: 'Commandes de base Linux / Bash', desc: 'La fiche à garder ouverte : structure d’une commande, navigation, fichiers, lecture, recherche, tubes et redirections, droits, paquets, services, réseau — et les raccourcis du terminal.' },
         { href: '/pages/linux-droits', title: 'Utilisateurs, droits et sudo', desc: 'rwx et les trois catégories, chmod en octal, umask, SUID/SGID/sticky, les ACL POSIX et leur masque, et la délégation par sudo — le pendant Linux du cours NTFS.' },
         { href: '/pages/linux-bash', title: 'Scripts Bash', desc: 'Le squelette d’un script, variables et arguments, conditions, boucles, codes de retour — et un exemple de sauvegarde complet.' },
       ] },

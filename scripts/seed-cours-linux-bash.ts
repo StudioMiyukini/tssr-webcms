@@ -199,7 +199,103 @@ find "$destination" -name '*.tar.gz' -mtime "+$GARDER" -print -delete
 log "termine sans erreur"`),
   note('green', '🎯 Lire ce script à l’envers', '<p>Les vingt premières lignes ne sauvegardent rien : elles <strong>refusent de travailler</strong> si quelque chose ne va pas. C’est la proportion normale d’un script d’administration — l’essentiel du code sert à ne pas faire de bêtise, et c’est ce qui le distingue d’une suite de commandes.</p>'),
 
-  block('heading', { level: 2, text: '9) Mettre au point' }),
+  block('heading', { level: 2, text: '9) Un second script : installer et durcir SSH' }),
+  block('html', { html: '<p>C’est le premier vrai besoin après l’installation — et le script le plus dangereux qu’on puisse écrire en débutant, parce qu’une erreur dans <code>sshd_config</code> coupe l’accès à la machine. Trois garde-fous le structurent, et ce sont eux qu’il faut retenir.</p>' }),
+  flow(`  1. SAUVEGARDER la configuration avant d'y toucher
+  2. VALIDER la nouvelle avec « sshd -t » AVANT de redemarrer
+  3. NE JAMAIS couper le mot de passe tant qu'aucune cle n'a ete testee`),
+  sh(`#!/usr/bin/env bash
+#
+# installer-ssh.sh — installe OpenSSH et applique un durcissement de base.
+# Usage : sudo ./installer-ssh.sh [port]
+#
+set -euo pipefail
+
+PORT="\${1:-22}"
+CONF=/etc/ssh/sshd_config
+SAUVEGARDE="\$CONF.avant-\$(date +%Y%m%d-%H%M)"
+
+log()    { printf '%s  %s\n' "\$(date '+%F %T')" "\$*" >&2; }
+mourir() { log "ERREUR: \$*"; exit 1; }
+
+# --- Verifications AVANT d'agir -------------------------------------
+[ "\$(id -u)" -eq 0 ] || mourir "a lancer en root : sudo \$0"
+[[ "\$PORT" =~ ^[0-9]+\$ ]] || mourir "port invalide : \$PORT"
+[ "\$PORT" -ge 1 ] && [ "\$PORT" -le 65535 ] || mourir "port hors plage"
+
+# --- Installation ---------------------------------------------------
+if dpkg -s openssh-server >/dev/null 2>&1; then
+  log "openssh-server deja installe"
+else
+  log "installation d'openssh-server"
+  apt-get update -qq
+  DEBIAN_FRONTEND=noninteractive apt-get install -y openssh-server
+fi
+
+# --- Sauvegarde de la configuration ---------------------------------
+cp -a "\$CONF" "\$SAUVEGARDE"
+log "configuration sauvegardee : \$SAUVEGARDE"
+
+# --- Durcissement ---------------------------------------------------
+# Remplace la ligne si elle existe (commentee ou non), l'ajoute sinon.
+# C'est ce qui rend le script idempotent : le relancer ne l'empile pas.
+reglage() {
+  local cle="\$1" val="\$2"
+  if grep -qE "^[#[:space:]]*\${cle}[[:space:]]" "\$CONF"; then
+    sed -i -E "s|^[#[:space:]]*\${cle}[[:space:]].*|\${cle} \${val}|" "\$CONF"
+  else
+    printf '%s %s\n' "\$cle" "\$val" >> "\$CONF"
+  fi
+  log "  \$cle \$val"
+}
+
+log "durcissement"
+reglage Port "\$PORT"
+reglage PermitRootLogin no
+reglage PubkeyAuthentication yes
+reglage X11Forwarding no
+reglage MaxAuthTries 3
+reglage LoginGraceTime 30
+# On ne touche PAS a PasswordAuthentication : voir la note ci-dessous.
+
+# --- Validation AVANT redemarrage -----------------------------------
+if ! sshd -t 2>/dev/null; then
+  cp -a "\$SAUVEGARDE" "\$CONF"
+  mourir "configuration refusee par sshd -t — restauree, rien n'a change"
+fi
+log "configuration valide"
+
+# --- Activation ------------------------------------------------------
+systemctl enable --now ssh
+systemctl restart ssh
+sleep 1
+systemctl is-active --quiet ssh || mourir "le service ne demarre pas"
+
+# --- Pare-feu, s'il est actif ----------------------------------------
+if command -v ufw >/dev/null && ufw status | grep -q "Status: active"; then
+  ufw allow "\${PORT}/tcp"
+  log "regle ufw ajoutee pour le port \$PORT"
+fi
+
+ip="\$(hostname -I | awk '{print \$1}')"
+log "SSH ecoute sur le port \$PORT"
+log "depuis un autre poste :  ssh -p \$PORT \${SUDO_USER:-utilisateur}@\$ip"
+log "retour arriere : cp \$SAUVEGARDE \$CONF && systemctl restart ssh\"`),
+  note('red', '🚫 Pourquoi le script ne coupe pas le mot de passe', '<p>Passer <code>PasswordAuthentication no</code> est la bonne pratique — mais le faire <strong>avant d’avoir testé sa clé</strong> ferme la porte définitivement, et il faut alors la console de l’hyperviseur pour rentrer. Le script s’arrête donc juste avant, et laisse ce geste à la main.</p>'),
+  sh(`# Depuis le POSTE, pas depuis le serveur
+ssh-keygen -t ed25519 -C "miyukini@poste"
+ssh-copy-id -p 2222 miyukini@172.29.239.3
+ssh -p 2222 miyukini@172.29.239.3     # doit entrer SANS mot de passe
+
+# Seulement APRES, sur le serveur, en gardant la session ouverte :
+sudo sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/' /etc/ssh/sshd_config
+sudo sshd -t && sudo systemctl restart ssh
+# puis on ouvre une SECONDE session pour verifier avant de fermer la premiere`),
+  note('green', '🎯 Les trois idées à retenir', '<ul><li><strong><code>sshd -t</code> avant <code>restart</code></strong> : la configuration est validée hors ligne. Sans cela, un service qui refuse de redémarrer laisse la machine injoignable.</li><li><strong>La sauvegarde horodatée</strong>, dont le chemin est affiché en fin d’exécution : le retour arrière tient en une commande qu’on n’a pas à chercher.</li><li><strong>La fonction <code>reglage</code></strong> remplace la ligne si elle existe, commentée ou non. C’est ce qui rend le script <em>idempotent</em> : le relancer dix fois donne le même fichier, là où un <code>echo &gt;&gt;</code> empilerait dix directives contradictoires.</li></ul>'),
+  note('yellow', '⚠️ Changer le port : ce que ça apporte', '<p>Le trafic de balayage automatique vise le 22 : le déplacer fait disparaître l’essentiel du bruit, et les journaux redeviennent lisibles. Ce n’est pas une sécurité pour autant — un balayage de ports retrouve le service en quelques secondes. Ce qui protège, c’est la clé, l’interdiction de root et <code>MaxAuthTries</code>.</p>'),
+  note('gray', '💡 Le tester sans risque', '<p><code>bash -n installer-ssh.sh</code> pour la syntaxe, <code>shellcheck</code> pour les fautes de citation, <code>sudo bash -x installer-ssh.sh 2222</code> pour tracer l’exécution. Et pour la première fois : on garde <strong>la console de l’hyperviseur ouverte</strong>, c’est le filet qui rend l’erreur réparable.</p>'),
+
+  block('heading', { level: 2, text: '10) Mettre au point' }),
   sh(`bash -n script.sh        # la SYNTAXE seule, sans rien executer
 bash -x script.sh        # trace chaque ligne avec ses variables remplacees
 shellcheck script.sh     # l'analyseur : sudo apt install shellcheck
@@ -210,7 +306,7 @@ set -x
 set +x`),
   note('green', '🎯 <code>shellcheck</code> attrape ce qu’aucune relecture ne voit', '<p>Variables non protégées, comparaisons douteuses, <code>cd</code> dont on ne teste pas l’échec, redirections inutiles. Il explique chaque avertissement avec un lien. Une demi-heure d’installation, et il trouve dans le premier script des fautes qu’on aurait découvertes en production.</p>'),
 
-  block('heading', { level: 2, text: '10) Faire tourner le script tout seul' }),
+  block('heading', { level: 2, text: '11) Faire tourner le script tout seul' }),
   sh(`# Le rendre executable et le placer ou il sera trouve
 sudo install -m 755 sauvegarde.sh /usr/local/bin/sauvegarde
 
