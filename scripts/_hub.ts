@@ -120,6 +120,7 @@ export const DOMAINS: Domain[] = [
       { name: 'Fondamentaux', courses: [
         { href: '/pages/linux-bases', title: 'Linux : les bases (Debian)', desc: 'Arborescence, commandes essentielles, utilisateurs & droits (rwx / chmod / chown), paquets (apt), services (systemctl) et réseau.' },
         { href: '/pages/linux-commandes-base', title: 'Commandes de base Linux / Bash', desc: 'La fiche à garder ouverte : structure d’une commande, navigation, fichiers, lecture, recherche, tubes et redirections, droits, paquets, services, réseau — et les raccourcis du terminal.' },
+        { href: '/pages/linux-paquets-essentiels', title: 'Les paquets essentiels', desc: 'Ce qu’on installe sur une Debian fraîche après avoir tout décoché : tree, bash-completion, dnsutils, htop, ncdu, rsync, shellcheck… et pourquoi chacun. Avec la ligne unique, et ce qu’on n’installe pas sur un serveur.' },
         { href: '/pages/linux-droits', title: 'Utilisateurs, droits et sudo', desc: 'rwx et les trois catégories, chmod en octal, umask, SUID/SGID/sticky, les ACL POSIX et leur masque, et la délégation par sudo — le pendant Linux du cours NTFS.' },
         { href: '/pages/linux-bash', title: 'Scripts Bash', desc: 'Le squelette d’un script, variables et arguments, conditions, boucles, codes de retour — et un exemple de sauvegarde complet.' },
       ] },

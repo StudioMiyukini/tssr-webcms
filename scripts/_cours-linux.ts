@@ -42,6 +42,7 @@ export const liens = (sauf: string) => {
   const tous: [string, string][] = [
     ['/pages/linux-bases', 'Linux : les bases'],
     ['/pages/linux-commandes-base', 'Commandes de base'],
+    ['/pages/linux-paquets-essentiels', 'Les paquets essentiels'],
     ['/pages/linux-droits', 'Utilisateurs, droits et sudo'],
     ['/pages/linux-reseau', 'Le réseau sous Linux'],
     ['/pages/linux-stockage', 'Stockage : partitions, LVM et montage'],
