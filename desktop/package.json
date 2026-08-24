@@ -20,7 +20,7 @@
   },
   "build": {
     "appId": "com.miyukini.tssr.local",
-    "productName": "IT-miyukini Local",
+    "productName": "TSSR Local",
     "files": [
       "main.js",
       "server.js",

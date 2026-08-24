@@ -29,7 +29,32 @@ const blocks: PageBlock[] = [
     ['/bin, /usr/bin', 'programmes / commandes'],
     ['/tmp', 'fichiers temporaires'],
     ['/dev', 'périphériques (disques : /dev/sda…)'],
+    ['/mnt', 'point de <strong>montage temporaire</strong> : on y accroche une clé, un partage réseau, un disque le temps d’une intervention'],
+    ['/media', 'montages <strong>automatiques</strong> des supports amovibles (clés USB, CD)'],
+    ['/opt', 'logiciels installés <strong>hors gestionnaire de paquets</strong> : chacun dans son sous-dossier'],
+    ['/proc', '<strong>vue du noyau</strong>, pas un vrai dossier : un dossier par processus, et l’état du système'],
+    ['/sys', '<strong>vue du matériel</strong> : périphériques, pilotes, réglages du noyau'],
   ]),
+
+  note('blue', '💡 /proc et /sys ne sont pas sur le disque', '<p>Ce sont des <strong>systèmes de fichiers virtuels</strong> : le noyau les fabrique à la volée quand on les lit. Rien n’y occupe d’espace, et rien n’y survit au redémarrage. C’est ce qui explique le détail troublant : <code>ls -l /proc/cpuinfo</code> annonce <strong>0 octet</strong> alors que <code>cat</code> en affiche cinquante lignes. La taille n’existe qu’au moment de la lecture.</p>'),
+
+  block('html', { html: '<p>Ce qu’on y lit vraiment, au quotidien :</p>' }),
+  block('html', { html: '<div class="lx-cmd">'
+    + 'cat /proc/cpuinfo          # processeur : modele, nombre de coeurs\n'
+    + 'cat /proc/meminfo          # memoire : totale, libre, cache\n'
+    + 'cat /proc/mounts           # ce qui est REELLEMENT monte\n'
+    + 'cat /proc/uptime           # depuis combien de secondes la machine tourne\n'
+    + 'ls /proc/1234/             # tout sur le processus 1234 (PID)\n'
+    + 'cat /proc/1234/cmdline     # avec quelle ligne de commande il a demarre\n'
+    + '\n'
+    + 'ls /sys/class/net/         # les interfaces reseau vues par le noyau\n'
+    + 'cat /sys/class/net/ens18/address    # adresse MAC\n'
+    + 'cat /sys/block/sda/size    # taille du disque, en secteurs de 512 o'
+    + '</div>' }),
+  note('gray', '🧭 À quoi ça sert en dépannage', '<p>Les commandes usuelles ne font souvent que <strong>mettre en forme</strong> ces fichiers : <code>free</code> lit <code>/proc/meminfo</code>, <code>ps</code> parcourt les dossiers de <code>/proc</code>, <code>df</code> s’appuie sur <code>/proc/mounts</code>. Le savoir dépanne le jour où un outil manque sur une machine minimale ou dans un conteneur : la source, elle, est toujours là.</p>'),
+  note('yellow', '⚠️ Écrire dans /proc et /sys agit immédiatement', '<p>Certains fichiers sont modifiables et changent le comportement du noyau à la seconde — activer le routage, par exemple : <code>echo 1 &gt; /proc/sys/net/ipv4/ip_forward</code>. Mais <strong>rien n’est conservé au redémarrage</strong> : pour que le réglage tienne, il faut l’écrire dans <code>/etc/sysctl.conf</code> ou <code>/etc/sysctl.d/</code>. C’est la cause classique du « ça marchait hier » après un redémarrage.</p>'),
+  note('gray', '📦 /opt, /usr/local et les paquets', '<p><code>apt</code> installe dans <code>/usr</code> : on n’y touche pas à la main, le gestionnaire de paquets en est propriétaire. Ce qu’on ajoute soi-même va dans <code>/opt</code> (un logiciel livré en bloc, chacun dans son dossier) ou <code>/usr/local</code> (ce qu’on a compilé soi-même). La séparation a un but précis : une mise à jour du système n’écrase jamais ce qui est dans <code>/opt</code>.</p>'),
+  note('yellow', '⚠️ /mnt : monter n’efface pas, ça masque', '<p>Monter un support sur un dossier <strong>non vide</strong> ne supprime rien : le contenu d’origine disparaît de la vue tant que le montage tient, et réapparaît au démontage. C’est la façon classique de croire qu’on a perdu des données. → <a href="/pages/linux-disques">Disques, partitions et LVM</a>.</p>'),
 
   block('heading', { level: 2, text: '2) Se déplacer et manipuler les fichiers' }),
   tbl(['Commande', 'Rôle'], [
