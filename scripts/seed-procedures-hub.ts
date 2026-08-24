@@ -16,6 +16,7 @@ const CATEGORIES: { id: string; icon: string; label: string }[] = [
   { id: 'ad', icon: '🏢', label: 'Active Directory' },
   { id: 'reseau', icon: '🌐', label: 'Réseau & adressage' },
   { id: 'windows', icon: '🪟', label: 'Poste Windows & disques' },
+  { id: 'linux', icon: '🐧', label: 'Linux & Debian' },
   { id: 'services', icon: '📶', label: 'Services : DHCP · DNS · Web · Fichiers' },
   { id: 'cisco', icon: '🧪', label: 'Cisco / Packet Tracer' },
 ];
@@ -44,6 +45,7 @@ const PROCEDURES: Proc[] = [
   { slug: 'procedure-iis-hyperv', icon: '🌍', title: 'Installer un serveur IIS sur une VM Hyper-V', desc: 'De la création de la VM à la publication du site : VM → Windows Server → IP → IIS → site → test.', tags: ['Hébergement', 'Hyper-V', 'Web'], cat: 'services' },
   { slug: 'procedure-glpi', icon: '🎫', title: 'GLPI : gestion de parc & tickets', desc: 'Installer GLPI sur une pile LAMP, gérer l’inventaire du parc et le helpdesk (tickets), brancher AD/LDAP.', tags: ['Exploitation', 'GLPI', 'Linux'], cat: 'services' },
   { slug: 'procedure-sauvegarde', icon: '💾', title: 'Sauvegarde & restauration des données', desc: 'Stratégie 3-2-1, types (complète/incrémentale/différentielle), Windows Server Backup et test de restauration.', tags: ['Exploitation', 'Sauvegarde'], cat: 'windows' },
+  { slug: 'tp-debian-reseau-recherche', icon: '🐧', title: 'TP — Recherche : machine Debian et réseau', desc: 'Le TP de recherche qui suit l’installation : définir les commandes de base, les termes de /etc/network/interfaces, les fichiers de configuration, puis cinq questions sur le réseau, les services et les dépôts. Repères de vérification en fin de page.', tags: ['Linux', 'Debian', 'Réseau', 'TP'], cat: 'linux' },
   { slug: 'procedure-securite-poste', icon: '🛡️', title: 'Sécuriser un poste / serveur Windows', desc: 'Mots de passe (GPO), BitLocker, Windows Defender, pare-feu et mises à jour — durcissement de base.', tags: ['Sécurité', 'Windows'], cat: 'windows' },
   { slug: 'procedure-atelier-reseau-az', icon: '🗺️', title: 'Réseau multi-routeurs de A à Z', desc: 'La démarche complète (contexte, VLSM, interfaces, routes, DHCP, DNS, SSH, tests) — justifie l’Atelier Réseau.', tags: ['Cisco', 'Packet Tracer', 'Réseau'], cat: 'cisco' },
   { slug: 'procedure-cisco-routeur-cli', icon: '📟', title: 'Configurer un routeur Cisco en CLI', desc: 'Modes Cisco, hostname, interfaces (IP, no shutdown, clock rate DCE), vérification et sauvegarde.', tags: ['Cisco', 'Packet Tracer'], cat: 'cisco' },
