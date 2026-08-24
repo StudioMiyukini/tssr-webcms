@@ -208,13 +208,83 @@ cat /etc/resolv.conf         # serveurs DNS
   block('heading', { level: 2, text: '13) Les dépôts (repositories)' }),
   block('html', { html: '<p>Un <strong>dépôt</strong> est un serveur qui héberge les paquets de la distribution, signés cryptographiquement. <code>apt install</code> ne télécharge rien au hasard sur le web : il va chercher dans les dépôts déclarés, vérifie la signature, puis installe — avec les dépendances.</p>' }),
   block('html', { html: '<div class="lx-cmd">cat /etc/apt/sources.list          # les depots declares\nls /etc/apt/sources.list.d/        # ceux ajoutes par des logiciels tiers\n\nsudo apt update                    # rafraichir la LISTE (pas les logiciels)\napt policy nginx                   # d\'ou viendrait ce paquet, et en quelle version</div>' }),
-  tbl(['Section Debian', 'Ce qu’elle contient'], [
-    ['<code>main</code>', 'Libre, supporté officiellement. <strong>C’est là qu’on reste.</strong>'],
-    ['<code>contrib</code>', 'Libre, mais dépend de composants non libres.'],
-    ['<code>non-free</code>', 'Non libre : surtout des pilotes et des micrologiciels.'],
-    ['<code>security</code>', '<strong>Les correctifs de sécurité.</strong> Ne jamais le retirer.'],
+  block('heading', { level: 3, text: 'La syntaxe d’une ligne' }),
+  cmd(`<type> [options] <URI> <suite> <composant1> <composant2> ...`),
+  cmd(`deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware
+ │    │                          │        └──────────── composants ────────────┘
+ │    │                          └─ suite (distribution)
+ │    └─ URI du miroir
+ └─ type d'archive`),
+
+  block('heading', { level: 3, text: '1. Le type d’archive' }),
+  tbl(['Valeur', 'Signification'], [
+    ['<code>deb</code>', 'Paquets binaires précompilés — c’est ce qu’on installe normalement.'],
+    ['<code>deb-src</code>', 'Codes sources des paquets, pour recompiler soi-même (<code>apt source</code>). Rarement utile : on peut le laisser commenté.'],
   ]),
-  note('yellow', '⚠️ Ajouter un dépôt tiers n’est pas anodin', '<p>Un dépôt extérieur peut remplacer des paquets du système par ses propres versions, et vous devenez dépendant de celui qui le maintient — y compris pour la sécurité. On n’en ajoute que si le logiciel n’existe pas dans la distribution, on épingle sa priorité, et on note pourquoi il est là.</p>'),
+
+  block('heading', { level: 3, text: '2. Les options, entre crochets' }),
+  tbl(['Option', 'Rôle'], [
+    ['<code>arch=amd64</code>', 'Limite le dépôt à une architecture — utile sur un système multi-arch.'],
+    ['<code>signed-by=/usr/share/keyrings/xxx.gpg</code>', 'La clé GPG autorisée à signer ce dépôt. <strong>La méthode recommandée pour tout dépôt tiers.</strong>'],
+    ['<code>trusted=yes</code>', '⚠️ Désactive la vérification de signature. À éviter — c’est une faille de sécurité.'],
+  ]),
+  note('red', '🚫 <code>trusted=yes</code> annule ce qui protege apt', '<p>La signature est ce qui garantit que le paquet vient bien du dépôt annoncé et n’a pas été modifié en chemin. La désactiver revient à installer ce que veut celui qui contrôle le réseau ou le miroir. On la rencontre dans des tutoriels pressés : la bonne réponse est <code>signed-by=</code> avec la clé du dépôt.</p>'),
+
+  block('heading', { level: 3, text: '3. L’URI du miroir' }),
+  block('html', { html: '<p>L’emplacement du serveur, avec son protocole : <code>http://</code>, <code>https://</code>, <code>ftp://</code> — mais aussi <code>file:/</code> pour un dépôt local, ou <code>cdrom:</code> pour un support d’installation.</p><p>Exemples : <code>http://deb.debian.org/debian</code> (miroir officiel, qui redirige vers le serveur le plus proche), <code>http://ftp.fr.debian.org/debian</code>.</p>' }),
+
+  block('heading', { level: 3, text: '4. La suite (distribution)' }),
+  tbl(['Forme', 'Exemple', 'Comportement'], [
+    ['<strong>Nom de code</strong>', '<code>bookworm</code>', 'Reste sur cette version, même après la sortie de la suivante.'],
+    ['<strong>Alias glissant</strong>', '<code>stable</code>', '⚠️ <strong>Bascule automatiquement</strong> à la sortie de la nouvelle stable.'],
+  ]),
+  note('yellow', '⚠️ L’alias glissant fait changer de version majeure sans prévenir', '<p>Écrire <code>stable</code> semble pratique. Le jour de la sortie de la version suivante, la machine bascule d’elle-même — une montée de version majeure, non planifiée, un dimanche. <strong>Sur un serveur, on écrit le nom de code</strong>, et l’on monte de version quand on l’a décidé.</p>'),
+  block('html', { html: '<p>Versions récentes : <code>bullseye</code> (11), <code>bookworm</code> (12), <code>trixie</code> (13).</p>' }),
+  tbl(['Variante de suite', 'Contenu'], [
+    ['<code>bookworm</code>', 'Le dépôt principal.'],
+    ['<code>bookworm-security</code>', '<strong>Les correctifs de sécurité. Jamais à omettre.</strong>'],
+    ['<code>bookworm-updates</code>', 'Mises à jour mineures entre deux versions de point.'],
+    ['<code>bookworm-backports</code>', 'Versions plus récentes rétroportées. À activer au cas par cas, pas globalement.'],
+  ]),
+
+  block('heading', { level: 3, text: '5. Les composants (sections)' }),
+  block('html', { html: '<p>Ils classent les paquets selon leur <strong>licence</strong>, pas selon leur usage.</p>' }),
+  tbl(['Composant', 'Contenu'], [
+    ['<code>main</code>', '100 % libre, conforme aux DFSG. <strong>Seul composant activé par défaut.</strong>'],
+    ['<code>contrib</code>', 'Logiciels libres, mais qui dépendent de composants non libres.'],
+    ['<code>non-free</code>', 'Logiciels non libres : pilotes propriétaires, codecs.'],
+    ['<code>non-free-firmware</code>', 'Micrologiciels non libres. <strong>Section séparée depuis Debian 12</strong> — souvent nécessaire pour une carte Wi-Fi ou un contrôleur RAID.'],
+  ]),
+
+  block('heading', { level: 3, text: 'Un sources.list complet' }),
+  cmd(`deb http://deb.debian.org/debian bookworm main contrib non-free non-free-firmware
+deb http://security.debian.org/debian-security bookworm-security main contrib non-free non-free-firmware
+deb http://deb.debian.org/debian bookworm-updates main contrib non-free non-free-firmware`),
+  cmd(`sudo apt update      # obligatoire apres toute modification : recharge les index`),
+
+  block('heading', { level: 3, text: 'Le format DEB822' }),
+  block('html', { html: '<p>Depuis Debian 12, un format plus lisible est accepté, dans des fichiers <code>.sources</code> :</p>' }),
+  cmd(`# /etc/apt/sources.list.d/debian.sources
+Types: deb
+URIs: http://deb.debian.org/debian
+Suites: bookworm bookworm-updates
+Components: main contrib non-free non-free-firmware
+Signed-By: /usr/share/keyrings/debian-archive-keyring.gpg`),
+  note('blue', '💡 Sur Debian 13, c’est déjà le format par défaut', '<p>Une installation récente peut n’avoir <strong>aucun</strong> <code>/etc/apt/sources.list</code> : tout est dans <code>/etc/apt/sources.list.d/debian.sources</code>, au format DEB822. Si le fichier historique est introuvable, ce n’est donc pas une anomalie — il faut regarder le dossier.</p>'),
+
+  block('heading', { level: 3, text: 'Bonnes pratiques' }),
+  tbl(['Règle', 'Pourquoi'], [
+    ['Les dépôts tiers dans <code>/etc/apt/sources.list.d/</code>, <strong>un fichier par dépôt</strong>', 'On ne touche pas au fichier principal : le diagnostic et la suppression deviennent évidents — il suffit de retirer un fichier.'],
+    ['Toujours <code>signed-by=</code>, jamais <code>trusted=yes</code>', 'La vérification de signature est ce qui distingue une installation d’un téléchargement au hasard.'],
+    ['<strong>Ne pas mélanger les suites</strong> (bookworm + trixie)', 'C’est la recette du <em>FrankenDebian</em> : des bibliothèques de deux versions cohabitent, et le système devient cassé et non réparable.'],
+  ]),
+  note('red', '🚫 Le FrankenDebian', '<p>Ajouter un dépôt <code>trixie</code> sur une <code>bookworm</code> pour obtenir une version plus récente d’un logiciel entraîne la mise à jour de ses dépendances — dont la bibliothèque C. De proche en proche, la moitié du système passe en trixie sans que rien ne l’ait décidé, et il n’existe pas de chemin de retour. Quand il faut vraiment une version plus récente, c’est <code>backports</code>, paquet par paquet.</p>'),
+
+  cmd(`cat /etc/apt/sources.list          # le fichier historique
+ls /etc/apt/sources.list.d/        # les depots tiers, et le format DEB822
+apt policy                          # tous les depots et leur priorite
+apt policy nginx                    # d'ou viendrait CE paquet, et en quelle version`),
+  note('yellow', '⚠️ Ajouter un dépôt tiers n’est pas anodin', '<p>Un dépôt extérieur peut remplacer des paquets du système par ses propres versions, et l’on devient dépendant de celui qui le maintient — y compris pour les correctifs de sécurité. On n’en ajoute que si le logiciel n’existe pas dans la distribution, on épingle sa priorité, et on écrit pourquoi il est là.</p>'),
   note('gray', '💡 <code>apt update</code> ne met rien à jour', '<p>Il rafraîchit la <strong>liste</strong> de ce qui est disponible. C’est <code>apt upgrade</code> qui installe. D’où l’enchaînement habituel : <code>apt update &amp;&amp; apt upgrade</code>. Un <code>apt install</code> lancé sur une machine restée éteinte échoue souvent pour cette raison — sa liste pointe vers des versions qui n’existent plus dans le dépôt.</p>'),
 
   block('heading', { level: 2, text: '14) Installer un serveur Debian' }),
