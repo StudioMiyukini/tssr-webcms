@@ -401,7 +401,7 @@ export const LINUX_ENTRIES: LinuxEntry[] = [
 
   // ── Disques & espace ───────────────────────────────────────────────────
   {
-    tache: 'Voir l’espace libre',
+    tache: 'Voir l’espace libre — combien de place reste-t-il',
     commande: 'df -h',
     categorie: 'disques',
     quoi: 'Par système de fichiers monté, en unités lisibles.',

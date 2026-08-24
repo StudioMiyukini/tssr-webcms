@@ -90,9 +90,9 @@ const SCRIPTS: Script[] = [
     tags: ['Interactif', 'Cisco', 'Packet Tracer', 'Routage', 'NAT'], cat: 'cisco',
   },
   {
-    slug: 'outils-linux', icon: '🐧',
-    title: 'Aide-mémoire Linux — cherche avec tes mots',
-    desc: 'On ne cherche pas un nom de commande, on cherche ce qu’on veut faire : « gros fichiers », « qui écoute sur un port », « permission denied ». Les anciens noms (ifconfig, netstat) et les équivalents Windows (ipconfig, findstr) mènent au bon endroit. Chaque fiche donne les options utiles, le piège classique, et le pendant Windows.',
+    slug: 'repertoire-commandes', icon: '🐧',
+    title: 'Répertoire des commandes Linux — recherche en français',
+    desc: 'Pose ta question en français — « comment voir la place qui reste sur le disque ? ». La phrase est découpée, les mots inutiles jetés, les synonymes reconnus (place = espace = disque). Les anciens noms (ifconfig, netstat) et les équivalents Windows (ipconfig, findstr) mènent au bon endroit.',
     tags: ['Interactif', 'Linux', 'Ligne de commande', 'Recherche'], cat: 'linux',
   },
   {
