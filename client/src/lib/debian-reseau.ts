@@ -310,3 +310,121 @@ export function commandes(c: Config): string {
   l.push('getent hosts debian.org         # les noms se resolvent ?');
   return l.join('\n');
 }
+
+/* ── Le script d'application ─────────────────────────────────────────────── */
+
+/**
+ * Un script qui applique la configuration, et se rétracte tout seul.
+ *
+ * Debian n'a pas d'équivalent à `netplan try` : une erreur d'adressage appliquée
+ * par SSH coupe la session, et il faut la console de l'hyperviseur pour rentrer.
+ * Ce script fabrique ce filet — une tâche de fond restaure l'ancienne
+ * configuration après quelques minutes, **sauf** si la vérification a réussi et
+ * l'a désamorcée.
+ *
+ * Le mécanisme n'utilise que coreutils : ni `at` ni `systemd-run`, qui ne sont
+ * pas toujours installés sur une Debian minimale.
+ */
+export function script(c: Config, delai = 120): string {
+  const nom = c.iface.trim() || 'ens18';
+  const serveurs = c.dns.trim().split(/[\s,;]+/).filter(Boolean).slice(0, 3);
+  const l: string[] = [];
+
+  l.push('#!/usr/bin/env bash');
+  l.push('#');
+  l.push(`# configurer-reseau.sh — applique l'adressage de ${nom}, avec retour arriere automatique.`);
+  l.push('#');
+  l.push('# Le filet : si la verification echoue, ou si le script est interrompu,');
+  l.push(`# l'ancienne configuration est restauree au bout de ${delai} secondes.`);
+  l.push('#');
+  l.push('set -euo pipefail');
+  l.push('');
+  l.push(`IFACE="${nom}"`);
+  l.push(`DELAI=${delai}`);
+  l.push('HORODATAGE="$(date +%Y%m%d-%H%M%S)"');
+  l.push('SAUVE="/etc/network/interfaces.avant-$HORODATAGE"');
+  l.push('TEMOIN="/run/reseau-confirme-$HORODATAGE"');
+  l.push('');
+  l.push("log()    { printf '%s  %s\n' \"$(date '+%F %T')\" \"$*\" >&2; }");
+  l.push('mourir() { log "ERREUR: $*"; exit 1; }');
+  l.push('');
+  l.push('# --- Verifications AVANT d\'agir -------------------------------------');
+  l.push('[ "$(id -u)" -eq 0 ] || mourir "a lancer en root : sudo $0"');
+  l.push('ip link show "$IFACE" >/dev/null 2>&1 || mourir "interface introuvable : $IFACE (voir : ip -br a)"');
+  l.push('command -v ifup >/dev/null || mourir "ifupdown n\'est pas installe"');
+  l.push('');
+  l.push('# --- Sauvegarde -----------------------------------------------------');
+  l.push('cp -a /etc/network/interfaces "$SAUVE"');
+  l.push('log "configuration sauvegardee : $SAUVE"');
+  if (!c.resolvconf && serveurs.length) l.push('[ -f /etc/resolv.conf ] && cp -a /etc/resolv.conf "/etc/resolv.conf.avant-$HORODATAGE" || true');
+  if (c.hostname.trim()) l.push('cp -a /etc/hosts "/etc/hosts.avant-$HORODATAGE"');
+  l.push('');
+  l.push('# --- Le filet, arme AVANT toute modification -------------------------');
+  l.push('# Une tache de fond restaure l\'ancienne conf, sauf si le temoin apparait.');
+  l.push('# C\'est ce qui rend l\'erreur survivable quand on travaille par SSH.');
+  l.push('(');
+  l.push('  sleep "$DELAI"');
+  l.push('  if [ -f "$TEMOIN" ]; then exit 0; fi');
+  l.push('  logger -t configurer-reseau "verification non confirmee : retour arriere"');
+  l.push('  cp -a "$SAUVE" /etc/network/interfaces');
+  l.push('  ifdown "$IFACE" >/dev/null 2>&1 || true');
+  l.push('  ifup "$IFACE"   >/dev/null 2>&1 || true');
+  l.push(') &');
+  l.push('CHIEN=$!');
+  l.push('log "filet arme : retour arriere dans $DELAI s sans confirmation"');
+  l.push('');
+  l.push('# --- Ecriture --------------------------------------------------------');
+  l.push("cat > /etc/network/interfaces <<'FIN'");
+  l.push(fichierInterfaces(c));
+  l.push('FIN');
+  if (!c.resolvconf && serveurs.length) {
+    l.push('');
+    l.push('# resolvconf n\'est pas installe : dns-nameservers ne serait lu par personne.');
+    l.push("cat > /etc/resolv.conf <<'FIN'");
+    l.push(fichierResolv(c));
+    l.push('FIN');
+  }
+  if (c.hostname.trim()) {
+    l.push('');
+    l.push(`echo '${c.hostname.trim()}' > /etc/hostname`);
+    l.push('hostnamectl set-hostname ' + `'${c.hostname.trim()}'` + ' 2>/dev/null || true');
+    l.push("cat > /etc/hosts <<'FIN'");
+    l.push(fichierHosts(c));
+    l.push('FIN');
+  }
+  l.push('log "fichiers ecrits"');
+  l.push('');
+  l.push('# --- Validation AVANT application ------------------------------------');
+  l.push('ifquery "$IFACE" >/dev/null || { cp -a "$SAUVE" /etc/network/interfaces; mourir "syntaxe refusee — configuration restauree"; }');
+  l.push('');
+  l.push('# --- Application, sur CETTE interface seulement -----------------------');
+  l.push('log "application"');
+  l.push('ifdown "$IFACE" >/dev/null 2>&1 || true');
+  l.push('ifup "$IFACE"');
+  l.push('sleep 2');
+  l.push('');
+  l.push('# --- Verification ----------------------------------------------------');
+  l.push('ok=1');
+  if (c.methode === 'static') {
+    l.push(`ip -4 addr show "$IFACE" | grep -q '${c.adresse.trim()}/' || { log "l'adresse n'est pas posee"; ok=0; }`);
+    if (c.passerelle.trim()) {
+      l.push(`ping -c2 -W2 ${c.passerelle.trim()} >/dev/null 2>&1 || { log "la passerelle ne repond pas"; ok=0; }`);
+    }
+  } else {
+    l.push('ip -4 addr show "$IFACE" | grep -q "inet " || { log "aucune adresse obtenue en DHCP"; ok=0; }');
+  }
+  l.push('');
+  l.push('if [ "$ok" -eq 1 ]; then');
+  l.push('  touch "$TEMOIN"          # desamorce le filet');
+  l.push('  kill "$CHIEN" 2>/dev/null || true');
+  l.push('  log "verification reussie — configuration conservee"');
+  l.push('  ip -br a show "$IFACE"');
+  l.push('  ip r | head -3');
+  l.push('  log "retour arriere manuel : cp $SAUVE /etc/network/interfaces && ifdown $IFACE && ifup $IFACE"');
+  l.push('else');
+  l.push('  log "verification ECHOUEE — le filet restaurera dans quelques secondes"');
+  l.push('  log "ne ferme pas la console : attends le retour arriere"');
+  l.push('  exit 1');
+  l.push('fi');
+  return l.join('\n');
+}

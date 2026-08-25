@@ -13,7 +13,7 @@
 import { useMemo, useState } from 'react';
 import {
   CONFIG_VIDE, commandes, fichierHosts, fichierInterfaces, fichierResolv,
-  plan, verifier, type Config, type Gravite,
+  plan, script, verifier, type Config, type Gravite,
 } from '@/lib/debian-reseau';
 
 const champ: React.CSSProperties = { padding: '7px 9px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface)', color: 'var(--text)', fontSize: 13.5, boxSizing: 'border-box', width: '100%' };
@@ -29,6 +29,9 @@ const SIGNE: Record<Gravite, string> = { erreur: '🚫', alerte: '⚠', conseil:
 export function DebianReseau() {
   const [c, setC] = useState<Config>(CONFIG_VIDE);
   const [copie, setCopie] = useState('');
+  // Le delai du filet : assez pour verifier a la main, assez court pour ne pas
+  // rester bloque devant une console si la bascule a coupe la session.
+  const [delai, setDelai] = useState(120);
 
   const maj = (p: Partial<Config>) => setC({ ...c, ...p });
   const soucis = useMemo(() => verifier(c), [c]);
@@ -40,6 +43,13 @@ export function DebianReseau() {
       setCopie(id);
       setTimeout(() => setCopie(''), 1400);
     }).catch(() => { /* presse-papiers refusé : le texte reste sélectionnable */ });
+  };
+
+  const telecharger = (texte: string, nom: string) => {
+    const url = URL.createObjectURL(new Blob([texte], { type: 'text/x-shellscript' }));
+    const a = document.createElement('a');
+    a.href = url; a.download = nom; a.click();
+    URL.revokeObjectURL(url);
   };
 
   const sortie = (titre: string, id: string, texte: string, sous?: string) => (
@@ -182,7 +192,35 @@ export function DebianReseau() {
       {sortie('📄 /etc/network/interfaces', 'iface', fichierInterfaces(c))}
       {!c.resolvconf && c.dns.trim() && sortie('📄 /etc/resolv.conf', 'resolv', fichierResolv(c), 'puisque resolvconf n’est pas là pour l’écrire')}
       {c.hostname.trim() && sortie('📄 /etc/hosts', 'hosts', fichierHosts(c), 'la ligne 127.0.1.1 évite « sudo: unable to resolve host »')}
-      {sortie('⌨️ Appliquer, et vérifier', 'cmd', commandes(c), 'sauvegarder · vérifier · appliquer · contrôler')}
+      <div style={groupe}>
+        <div style={legende}>
+          🧱 Le script d’application
+          <span className="meta" style={{ fontSize: 11.5, fontWeight: 400 }}>
+            avec retour arrière automatique — le « netplan try » que Debian n’a pas
+          </span>
+          <label style={{ fontSize: 11.5, marginLeft: 'auto', display: 'flex', gap: 6, alignItems: 'center' }}>
+            filet
+            <input type="number" min={30} max={600} step={30} value={delai} style={{ ...champ, ...mono, width: 76 }}
+              onChange={e => setDelai(Math.max(30, Number(e.target.value) || 120))} />
+            s
+          </label>
+          <button type="button" style={petit} onClick={() => telecharger(script(c, delai), 'configurer-reseau.sh')}>💾 .sh</button>
+          <button type="button" style={{ ...petit, borderColor: copie === 'script' ? 'var(--accent)' : 'var(--border)', color: copie === 'script' ? 'var(--accent)' : 'var(--text-soft)' }}
+            onClick={() => copier(script(c, delai), 'script')}>{copie === 'script' ? '✓ Copié' : 'Copier'}</button>
+        </div>
+        <div className="meta" style={{ fontSize: 11.5, marginBottom: 8 }}>
+          Il arme le filet <strong>avant</strong> d’écrire quoi que ce soit : si la vérification échoue — ou si le
+          script est interrompu — l’ancienne configuration revient toute seule au bout de {delai} secondes.
+          C’est ce qui rend l’erreur survivable quand on travaille par SSH.
+        </div>
+        <pre style={pre}><code>{script(c, delai)}</code></pre>
+        <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>
+          <code>chmod +x configurer-reseau.sh</code> puis <code>sudo ./configurer-reseau.sh</code>.
+          À relire avant de lancer : il réécrit trois fichiers système.
+        </div>
+      </div>
+
+      {sortie('⌨️ Ou à la main, étape par étape', 'cmd', commandes(c), 'sauvegarder · vérifier · appliquer · contrôler')}
 
       <div className="meta" style={{ fontSize: 11.5 }}>
         En SSH, garde <strong>la console de l’hyperviseur ouverte</strong> pendant l’application : une erreur

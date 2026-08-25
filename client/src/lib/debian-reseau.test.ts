@@ -1,8 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import {
   CONFIG_VIDE, commandes, fichierHosts, fichierInterfaces, fichierResolv,
-  masqueDe, plan, verifier, versEntier, versTexte, type Config,
+  masqueDe, plan, script, verifier, versEntier, versTexte, type Config,
 } from './debian-reseau.ts';
 
 const conf = (p: Partial<Config> = {}): Config => ({ ...CONFIG_VIDE, ...p });
@@ -159,4 +163,90 @@ test('les commandes sauvegardent, vérifient, puis appliquent — dans cet ordre
   const iAppli = c.indexOf('ifup');
   assert.ok(iSauve >= 0 && iVerif > iSauve && iAppli > iVerif, c);
   assert.ok(c.includes('ip a show'), 'et l’on vérifie après');
+});
+
+/* ── Le script d'application ─────────────────────────────────────────────── */
+
+test('LE FILET EST ARMÉ AVANT TOUTE MODIFICATION', () => {
+  // C'est tout l'interet : si le script meurt entre l'ecriture et la
+  // verification, la tache de fond restaure quand meme.
+  const s = script(conf({ resolvconf: true }));
+  const iFilet = s.indexOf('CHIEN=$!');
+  const iEcrit = s.indexOf('cat > /etc/network/interfaces');
+  assert.ok(iFilet >= 0 && iEcrit > iFilet, 'le filet doit precede l’ecriture');
+});
+
+test('le filet ne dépend que de coreutils', () => {
+  // `at` et `systemd-run` ne sont pas installes sur une Debian minimale.
+  const s = script(conf());
+  assert.ok(s.includes('sleep "$DELAI"'));
+  assert.ok(!/\bat now\b/.test(s));
+  assert.ok(!s.includes('systemd-run'));
+});
+
+test('la vérification réussie désamorce le filet, l’échec le laisse agir', () => {
+  const s = script(conf({ resolvconf: true }));
+  assert.ok(s.includes('touch "$TEMOIN"'), 'le temoin desamorce');
+  assert.ok(s.includes('kill "$CHIEN"'));
+  assert.ok(s.includes('le filet restaurera'), 'et l’echec le dit');
+});
+
+test('le script sauvegarde, valide, applique, puis vérifie — dans cet ordre', () => {
+  const s = script(conf({ resolvconf: true }));
+  // On raisonne par LIGNES : le filet contient lui aussi un `ifup`, indente,
+  // et il precede legitimement tout le reste.
+  const lignes = s.split(String.fromCharCode(10));
+  const ligne = (t: string) => lignes.findIndex(l => l.trimEnd() === t);
+  const contient = (t: string) => lignes.findIndex(l => l.includes(t));
+  assert.ok(contient('cp -a /etc/network/interfaces "$SAUVE"') > 0);
+  assert.ok(contient('ifquery') > contient('cat > /etc/network/interfaces'), 'valider apres ecriture');
+  assert.ok(ligne('ifup "$IFACE"') > contient('ifquery'), 'appliquer apres validation');
+  assert.ok(contient('ip -4 addr show') > ligne('ifup "$IFACE"'), 'verifier apres application');
+});
+
+test('une syntaxe refusée restaure sans même appliquer', () => {
+  const s = script(conf());
+  assert.ok(/ifquery[^\n]*cp -a "\$SAUVE"/.test(s), s.split('\n').find(l => l.includes('ifquery')));
+});
+
+test('la vérification porte sur ce qui a été demandé', () => {
+  const stat = script(conf({ adresse: '10.1.2.3', cidr: 24, passerelle: '10.1.2.254' }));
+  assert.ok(stat.includes("grep -q '10.1.2.3/'"), 'l’adresse posée');
+  assert.ok(stat.includes('ping -c2 -W2 10.1.2.254'), 'la passerelle répond');
+  // En DHCP, on ne connait pas l'adresse a l'avance : on verifie qu'il y en a une.
+  const dhcp = script(conf({ methode: 'dhcp' }));
+  assert.ok(dhcp.includes('aucune adresse obtenue en DHCP'));
+  assert.ok(!dhcp.includes('ping -c2 -W2'));
+});
+
+test('resolv.conf et hosts ne sont écrits que s’ils ont lieu d’être', () => {
+  const avec = script(conf({ resolvconf: false, hostname: 'srv' }));
+  assert.ok(avec.includes('cat > /etc/resolv.conf'), 'sans resolvconf, on l’écrit');
+  assert.ok(avec.includes('cat > /etc/hosts'));
+  const sans = script(conf({ resolvconf: true, hostname: '' }));
+  assert.ok(!sans.includes('cat > /etc/resolv.conf'), 'avec resolvconf, on le laisse faire');
+  assert.ok(!sans.includes('cat > /etc/hosts'));
+});
+
+test('BASH ACCEPTE LE SCRIPT, dans toutes les variantes', () => {
+  const variantes: Config[] = [
+    conf({ resolvconf: true }),
+    conf({ resolvconf: false }),
+    conf({ methode: 'dhcp' }),
+    conf({ montage: 'allow-hotplug', hostname: '' }),
+    conf({ adressesSup: '192.168.10.21/24', routes: '10.0.0.0/8 via 192.168.10.253' }),
+    conf({ dns: '', passerelle: '', hostname: '' }),
+  ];
+  const echecs: string[] = [];
+  for (const [i, v] of variantes.entries()) {
+    const dir = mkdtempSync(join(tmpdir(), 'debnet-'));
+    const f = join(dir, 'configurer-reseau.sh');
+    writeFileSync(f, script(v), 'utf8');
+    try {
+      execFileSync('bash', ['-n', f], { stdio: 'pipe' });
+    } catch (e) {
+      echecs.push(`variante ${i} :: ${String((e as { stderr?: Buffer }).stderr ?? e).trim().split('\n')[0]}`);
+    }
+  }
+  assert.deepEqual(echecs, [], echecs.join('\n'));
 });
