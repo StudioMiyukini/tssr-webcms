@@ -21,26 +21,81 @@ const blocks: PageBlock[] = [
 
   block('html', { html: '<p>Sous Windows, une autorisation se pose sur autant de groupes qu’on veut, avec une douzaine de droits élémentaires. Sous Linux, le modèle historique tient en <strong>trois catégories</strong> et <strong>trois droits</strong>. C’est beaucoup plus simple — et c’est précisément pour cela qu’il faut connaître ses limites, et les ACL qui les repoussent.</p>' }),
 
-  block('heading', { level: 2, text: '1) Lire une ligne de ls -l' }),
-  flow(`-rw-r-----  1 jean  compta  4096  12 mai  10:32  budget.ods
-│└┬┘└┬┘└┬┘     │     │
-│ │  │  └── autres  : ---  (aucun droit)
-│ │  └───── groupe  : r--  (lecture)
-│ └──────── proprietaire : rw-  (lecture + ecriture)
-└────────── type : -  fichier   d  dossier   l  lien   b/c  peripherique`),
-  block('html', { html: '<p>Les trois catégories sont évaluées <strong>dans l’ordre et exclusivement</strong> : si tu es le propriétaire, seuls les droits du propriétaire s’appliquent — même si le groupe en a davantage. C’est la différence majeure avec Windows, où les autorisations se <em>cumulent</em>.</p>' }),
-  note('yellow', '⚠️ Le piège du propriétaire moins bien servi', '<p><code>r-- rwx ---</code> sur un fichier dont tu es propriétaire : tu es <strong>en lecture seule</strong>, alors que les membres du groupe peuvent écrire. Beaucoup s’attendent au contraire. Linux s’arrête à la première catégorie qui te concerne.</p>'),
+  block('heading', { level: 2, text: '1) Le problème que ça résout' }),
+  block('html', { html: '<p>Plusieurs personnes travaillent sur la même machine. Le comptable ne doit pas lire les salaires de la direction, le stagiaire ne doit pas effacer la production, et le serveur web ne doit pas fouiller dans les dossiers personnels. Il faut donc que le système sache, pour <em>chaque</em> fichier, <strong>qui a le droit d’en faire quoi</strong>.</p>' }),
+  block('html', { html: '<p>Windows répond en attachant à chaque fichier une <strong>liste</strong> : autant de personnes et de groupes qu’on veut, chacun avec ses droits. Linux répond autrement, et beaucoup plus simplement.</p>' }),
 
-  block('heading', { level: 2, text: '2) rwx : la même lettre ne veut pas dire la même chose' }),
-  table(['Droit', 'Sur un <strong>fichier</strong>', 'Sur un <strong>dossier</strong>'], [
-    ['<code>r</code> (4)', 'Lire le contenu.', '<strong>Lister</strong> les noms qu’il contient.'],
-    ['<code>w</code> (2)', 'Modifier le contenu.', '<strong>Créer, renommer, supprimer</strong> des entrées — quel que soit leur propriétaire.'],
-    ['<code>x</code> (1)', 'Exécuter le fichier.', '<strong>Traverser</strong> : entrer dedans, atteindre ce qu’il contient.'],
+  block('heading', { level: 3, text: 'Chaque fichier porte deux étiquettes, et rien de plus' }),
+  flow(`   budget.ods
+      ├─ PROPRIETAIRE : jean      <- une personne
+      └─ GROUPE       : compta    <- un groupe
+
+   C'est tout. Pas de liste, pas d'exceptions.
+   Deux etiquettes, et trois jeux de droits qui vont avec.`),
+  block('html', { html: '<p>Et devant ce fichier, <strong>tout le monde tombe dans l’une de trois catégories</strong>, jamais deux :</p>' }),
+  table(['Catégorie', 'Qui c’est', 'Exemple'], [
+    ['<strong>Le propriétaire</strong> <code>u</code>', 'La personne nommée sur l’étiquette.', 'jean'],
+    ['<strong>Le groupe</strong> <code>g</code>', 'Ceux qui sont membres du groupe étiqueté — sans être le propriétaire.', 'marie, si elle est dans <code>compta</code>'],
+    ['<strong>Les autres</strong> <code>o</code>', 'Tout le reste du monde.', 'paul, du service commercial'],
   ]),
-  note('red', '🚫 <code>w</code> sur un dossier permet de supprimer un fichier qu’on ne peut pas lire', '<p>Supprimer n’est pas une opération sur le fichier : c’est une modification du <em>dossier</em>. Un utilisateur avec <code>w</code> sur <code>/data</code> peut effacer <code>/data/secret.txt</code> même s’il est en <code>---</code> dessus. C’est exactement ce que corrige le <strong>sticky bit</strong>, section 5.</p>'),
-  note('blue', '💡 <code>x</code> sans <code>r</code> sur un dossier', '<p>On peut traverser sans pouvoir lister : <code>--x</code> autorise <code>cd /data/projets/rapport.pdf</code> si on connaît le nom exact, mais interdit de voir ce qu’il y a. C’est l’équivalent du droit « Traverser le dossier » de Windows, et c’est ce qui permet de publier <code>/home/jean/public</code> sans exposer le reste de <code>/home/jean</code>.</p>'),
+  note('blue', '💡 Pourquoi c’est si simple, et ce que ça coûte', '<p>Trois catégories suffisent à l’immense majorité des cas, et tiennent en neuf caractères — c’est pour ça que le modèle a traversé cinquante ans. La contrepartie arrive vite : « le groupe compta en écriture, <em>et</em> l’auditeur en lecture seule » n’a pas de solution avec un seul groupe. C’est ce que réparent les ACL, section 8.</p>'),
 
-  block('heading', { level: 2, text: '3) chmod : octal et symbolique' }),
+  block('heading', { level: 2, text: '2) Les trois cas, et pourquoi Linux s’arrête au premier' }),
+  block('html', { html: '<p>Voilà le point qui surprend tout le monde, et il vaut mieux le rencontrer ici que devant une panne. Linux détermine <strong>dans quelle catégorie tu tombes</strong>, applique ses droits, et <strong>s’arrête là</strong>. Il ne regarde pas les autres, même si elles sont plus généreuses.</p>' }),
+  flow(`   Es-tu le proprietaire ?
+        OUI -> on applique SES droits. On s'arrete. Fin.
+        non
+         v
+   Es-tu membre du groupe ?
+        OUI -> on applique les droits du GROUPE. On s'arrete. Fin.
+        non
+         v
+   Alors tu es « les autres » -> on applique ces droits-la.`),
+  block('heading', { level: 3, text: 'Ce que ça donne concrètement' }),
+  block('html', { html: '<p>Un fichier appartenant à <strong>jean</strong>, groupe <strong>compta</strong>, avec les droits <code>r-- rw- ---</code> :</p>' }),
+  table(['Qui essaie', 'Catégorie', 'Ce qu’il peut faire'], [
+    ['<strong>jean</strong> (le propriétaire)', 'propriétaire → <code>r--</code>', '<strong>Lecture seule.</strong> Il ne peut pas modifier son propre fichier.'],
+    ['<strong>marie</strong> (membre de compta)', 'groupe → <code>rw-</code>', 'Lecture <em>et</em> écriture. Elle en fait plus que le propriétaire.'],
+    ['<strong>paul</strong> (ni l’un ni l’autre)', 'autres → <code>---</code>', 'Rien du tout.'],
+  ]),
+  note('yellow', '⚠️ Le propriétaire peut avoir moins de droits que le groupe', '<p>C’est contre-intuitif, et c’est pourtant la règle : jean est bloqué en lecture alors que marie écrit. Sous Windows, les autorisations se <strong>cumulent</strong> — jean serait dans les deux catégories et obtiendrait le total. Sous Linux, on s’arrête à la première qui correspond.</p><p>Consolation : le propriétaire peut toujours <strong>changer les droits</strong>. Il se débloque lui-même avec <code>chmod u+w</code>.</p>'),
+
+  block('heading', { level: 2, text: '3) Les trois droits' }),
+  block('html', { html: '<p>Trois actions possibles, et c’est tout : <strong>lire</strong>, <strong>écrire</strong>, <strong>exécuter</strong>. Chaque catégorie les a, ou ne les a pas.</p>' }),
+  block('html', { html: '<p>Mais la même lettre ne veut pas dire la même chose sur un fichier et sur un dossier — et c’est là que se logent la moitié des surprises.</p>' }),
+  table(['Droit', 'Sur un <strong>fichier</strong>', 'Sur un <strong>dossier</strong>'], [
+    ['<code>r</code> — lire', 'Voir le contenu du fichier.', '<strong>Lister</strong> ce qu’il contient : connaître les noms.'],
+    ['<code>w</code> — écrire', 'Modifier le contenu.', '<strong>Créer, renommer, supprimer</strong> des entrées — quel que soit leur propriétaire.'],
+    ['<code>x</code> — exécuter', 'Lancer le fichier comme un programme.', '<strong>Traverser</strong> : entrer dedans, atteindre ce qu’il contient.'],
+  ]),
+  block('heading', { level: 3, text: 'Un dossier n’est qu’une liste' }),
+  block('html', { html: '<p>Pour comprendre le tableau ci-dessus, il faut savoir ce qu’est vraiment un dossier : <strong>une liste de noms</strong>, avec l’emplacement du contenu en face. Rien d’autre. Le contenu des fichiers est ailleurs.</p>' }),
+  flow(`   /data  (un dossier = une liste)
+      ├─ « rapport.txt »  -> emplacement 1234
+      ├─ « secret.txt »   -> emplacement 5678
+      └─ « photo.jpg »    -> emplacement 9012
+
+   LIRE le dossier   = voir cette liste (les noms)
+   ECRIRE le dossier = ajouter ou retirer une ligne de la liste
+   TRAVERSER         = avoir le droit d'aller a l'emplacement indique`),
+  note('red', '🚫 On peut supprimer un fichier qu’on ne peut pas lire', '<p>Supprimer, ce n’est pas toucher au fichier : c’est <strong>retirer une ligne de la liste</strong> — donc modifier le <em>dossier</em>. Quelqu’un qui a <code>w</code> sur <code>/data</code> peut effacer <code>/data/secret.txt</code> même s’il est en <code>---</code> dessus, et même s’il ne peut pas l’ouvrir.</p><p>C’est exactement ce que corrige le <strong>sticky bit</strong> — section 7 —, et c’est pour ça que <code>/tmp</code> en porte un.</p>'),
+  note('blue', '💡 Traverser sans voir : <code>--x</code>', '<p>Un dossier en <code>--x</code> se traverse mais ne se liste pas. <code>ls /data</code> est refusé ; <code>cat /data/rapport.txt</code> fonctionne, <strong>si l’on connaît le nom exact</strong>. C’est ce qui permet de publier <code>/home/jean/public</code> sans exposer le reste de <code>/home/jean</code> — et c’est l’équivalent du droit « Traverser le dossier » de Windows.</p>'),
+  note('yellow', '⚠️ Un dossier sans <code>x</code> bloque tout ce qu’il contient', '<p>Peu importe les droits du fichier visé : si l’un des dossiers du chemin n’est pas traversable, on n’y arrive pas. C’est la première cause de « Permission denied », et la raison d’être de <code>namei -l</code> — section 11.</p>'),
+
+  block('heading', { level: 2, text: '4) Lire une ligne de ls -l' }),
+  block('html', { html: '<p>Maintenant que le modèle est en place, la notation se lit toute seule. Neuf caractères, groupés par trois, dans l’ordre des trois catégories.</p>' }),
+  flow(`-rw-r-----  1 jean  compta  4096  12 mai 10:32  budget.ods
+│└┬┘└┬┘└┬┘     │     │
+│ │  │  │      │     └─ le GROUPE etiquette
+│ │  │  │      └─ le PROPRIETAIRE
+│ │  │  └─ les AUTRES        : ---  rien
+│ │  └──── le GROUPE        : r--  lecture
+│ └─────── le PROPRIETAIRE  : rw-  lecture + ecriture
+└───────── le TYPE : - fichier  d dossier  l lien  b/c peripherique`),
+  block('html', { html: '<p>Un tiret à la place d’une lettre veut dire « ce droit-là, non ». Les positions ne bougent jamais : c’est toujours <code>rwx</code> dans cet ordre, pour le propriétaire, puis le groupe, puis les autres.</p>' }),
+  note('gray', '💡 Le tout premier caractère n’est pas un droit', '<p>C’est le <strong>type</strong> de l’objet. Un <code>d</code> annonce un dossier, un <code>l</code> un lien symbolique. On le confond souvent avec un droit manquant du propriétaire — il n’en fait pas partie, les droits commencent au deuxième caractère.</p>'),
+
+  block('heading', { level: 2, text: '5) chmod : poser les droits' }),
   sh(`# Octal : r=4  w=2  x=1, additionnes par categorie
 chmod 640 budget.ods      # rw- r-- ---   proprietaire ecrit, groupe lit
 chmod 750 scripts/        # rwx r-x ---   un dossier a besoin de x pour etre traverse
@@ -52,22 +107,27 @@ chmod o-rwx /srv/appli    # retire tout aux autres
 chmod -R u+rwX,go-w /srv/site   # X majuscule : x seulement sur les dossiers`),
   note('gray', '💡 Le <code>X</code> majuscule vaut la peine d’être connu', '<p><code>chmod -R +x</code> rend <strong>tous</strong> les fichiers exécutables, y compris les images et les textes. <code>+X</code> ne pose <code>x</code> que sur les dossiers et sur les fichiers qui l’avaient déjà. C’est ce qu’on veut dans 99 % des récursions.</p>'),
 
-  block('heading', { level: 2, text: '4) chown, et umask' }),
+  block('heading', { level: 2, text: '6) chown, et umask' }),
   sh(`chown jean fichier.txt          # changer le proprietaire
 chown jean:compta fichier.txt   # proprietaire ET groupe
 chgrp compta fichier.txt        # le groupe seul
 chown -R www-data: /var/www/site   # ':' seul = le groupe primaire de l'utilisateur`),
   block('html', { html: '<p>Le <strong>umask</strong> ne donne pas de droits : il en <em>retire</em>. Il décrit ce qu’on refuse par défaut aux fichiers nouvellement créés.</p>' }),
-  flow(`umask 022  (valeur courante)
-  fichier : 666 - 022 = 644   rw- r-- r--
-  dossier : 777 - 022 = 755   rwx r-x r-x
+  flow(`Le masque dit ce qu'on RETIRE. On part du maximum, on enleve.
 
-umask 007  (travail en equipe : rien pour les autres)
-  fichier : 666 - 007 = 660   rw- rw- ---
-  dossier : 777 - 007 = 770   rwx rwx ---`),
+umask 022   (la valeur courante)
+  le masque retire :  ---  -w-  -w-     (0 = rien, 2 = w)
+  fichier  rw- rw- rw-  ->  rw- r-- r--   soit 644
+  dossier  rwx rwx rwx  ->  rwx r-x r-x   soit 755
+
+umask 027   (plus prudent : rien pour les autres)
+  le masque retire :  ---  -w-  rwx     (0, 2, 7)
+  fichier  rw- rw- rw-  ->  rw- r-- ---   soit 640
+  dossier  rwx rwx rwx  ->  rwx r-x ---   soit 750`),
+  note('red', '\U0001f6ab « 666 moins le masque » : le raccourci qui trompe', '<p>Avec <code>umask 022</code>, la soustraction tombe juste par hasard : 666 − 022 = 644, la bonne réponse. Elle échoue dès qu’on change de masque — avec <code>umask 027</code>, très courant, elle donnerait 639, qui n’est même pas un nombre octal valide.</p><p>Un masque ne se soustrait pas : il <strong>retire des droits</strong>, chiffre par chiffre, comme on barrerait des cases.</p>'),
   note('blue', '💡 Pourquoi 666 et pas 777 pour un fichier', '<p>Linux ne rend jamais un fichier exécutable à la création : ce serait une porte ouverte. Le <code>x</code> se pose toujours à la main, ce qui est une bonne chose.</p>'),
 
-  block('heading', { level: 2, text: '5) Les trois bits spéciaux' }),
+  block('heading', { level: 2, text: '7) Les trois bits spéciaux' }),
   table(['Bit', 'Se pose sur', 'Effet', 'Exemple réel'], [
     ['<strong>SUID</strong> <code>4</code>', 'Un exécutable', 'Il s’exécute avec l’identité de <strong>son propriétaire</strong>, pas de celui qui le lance.', '<code>/usr/bin/passwd</code> : modifier son mot de passe suppose d’écrire dans <code>/etc/shadow</code>, qui appartient à root.'],
     ['<strong>SGID</strong> <code>2</code>', 'Un <strong>dossier</strong>', 'Tout ce qui y est créé <strong>hérite du groupe du dossier</strong>.', 'Le dossier d’équipe : les fichiers appartiennent à <code>compta</code> quel que soit leur auteur.'],
@@ -83,7 +143,7 @@ ls -ld /srv/compta            # drwxrws--- : le 's' a la place du x du groupe
 ls -ld /tmp                   # drwxrwxrwt : le 't' final`),
   note('green', '🎯 Le motif à retenir : SGID + umask 007', '<p>Un dossier d’équipe sans SGID produit des fichiers appartenant au groupe primaire de chacun — donc illisibles par les collègues. SGID corrige le groupe, <code>umask 007</code> corrige les droits. Les deux ensemble, et le partage fonctionne sans intervention.</p>'),
 
-  block('heading', { level: 2, text: '6) Les ACL : quand trois catégories ne suffisent plus' }),
+  block('heading', { level: 2, text: '8) Les ACL : quand trois catégories ne suffisent plus' }),
   block('html', { html: '<p>« Le groupe compta en écriture, <em>et</em> l’auditeur en lecture seule » n’a pas de solution avec un seul groupe. Les <strong>ACL POSIX</strong> ajoutent des entrées supplémentaires, comme les ACE de Windows.</p>' }),
   sh(`# Voir : un '+' apparait en fin de ligne de ls -l quand un fichier porte des ACL
 getfacl /srv/compta
@@ -101,7 +161,7 @@ setfacl -b /srv/compta`),
   note('yellow', '⚠️ Le masque, et le droit qui disparaît sans prévenir', '<p>Une ACL affiche une ligne <code>mask::</code>. Elle <strong>plafonne</strong> tous les droits accordés par ACL : si le masque est <code>r-x</code>, une entrée <code>rwx</code> ne donnera que <code>r-x</code>. Un <code>chmod g+w</code> recalcule le masque et peut donc <em>modifier silencieusement</em> les ACL. Devant un droit accordé qui ne prend pas, c’est la première chose à regarder dans <code>getfacl</code>.</p>'),
   note('gray', '💡 Sauvegarder les ACL', '<p><code>cp</code> et <code>tar</code> les perdent par défaut : <code>cp -a</code>, <code>tar --acls</code>, <code>rsync -A</code>. Une restauration qui « a tout remis » mais où plus personne n’a accès vient presque toujours de là.</p>'),
 
-  block('heading', { level: 2, text: '7) sudo, en entier' }),
+  block('heading', { level: 2, text: '9) sudo, en entier' }),
   block('html', { html: '<p>Se connecter en root est une mauvaise habitude pour trois raisons : aucune trace de qui a fait quoi, la moindre faute de frappe est définitive, et le mot de passe de root doit circuler entre les administrateurs. <strong>sudo</strong> règle les trois — on exécute une commande précise avec les droits de root, en s’authentifiant avec <em>son propre</em> mot de passe, et l’appel est journalisé.</p>' }),
 
   block('heading', { level: 3, text: 'sudo, su, su - : trois choses différentes' }),
@@ -227,7 +287,7 @@ sudo grep 'NOT in sudoers\|incorrect password' /var/log/auth.log`),
 
   note('blue', '🪟 En regard de Windows', '<p><code>sudo</code> ↔ l’élévation UAC, mais nominative et journalisée · <code>sudo -u</code> ↔ <code>runas /user:</code> · <code>/etc/sudoers.d/</code> ↔ la délégation de contrôle d’Active Directory · <code>/var/log/auth.log</code> ↔ l’Observateur d’événements. Le principe est le même des deux côtés : <strong>on ne se connecte pas avec un compte privilégié, on élève ponctuellement</strong> — voir le <a href="/pages/permissions-partage-ntfs">cours NTFS</a>.</p>'),
 
-  block('heading', { level: 2, text: '8) Comptes et groupes' }),
+  block('heading', { level: 2, text: '10) Comptes et groupes' }),
   sh(`adduser jean               # Debian : interactif, cree /home, le groupe, demande le mot de passe
 useradd -m -s /bin/bash jean   # bas niveau : rien n'est fait tout seul
 
@@ -247,7 +307,7 @@ usermod -s /usr/sbin/nologin sauvegarde   # un compte de service ne se connecte 
     ['<code>/etc/sudoers.d/</code>', 'Les délégations, un fichier par usage.'],
   ]),
 
-  block('heading', { level: 2, text: '9) Diagnostic' }),
+  block('heading', { level: 2, text: '11) Diagnostic' }),
   sh(`namei -l /srv/compta/budgets/2026.ods   # OU exactement le chemin se bloque
 sudo -u jean -s                          # essayer en tant que lui, plutot que deviner
 getfacl /srv/compta                      # ACL et masque
