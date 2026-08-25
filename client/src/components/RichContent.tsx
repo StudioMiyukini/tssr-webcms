@@ -26,6 +26,7 @@ const BLOCKS: Record<string, BlockDef> = {
   'subnet-trainer': { load: () => named(import('./SubnetTrainer'), 'SubnetTrainer') },
   'agdlp-builder': { load: () => named(import('./AgdlpBuilder'), 'AgdlpBuilder') },
   'linux-commandes': { load: () => named(import('./LinuxCommandes'), 'LinuxCommandes') },
+  'debian-reseau': { load: () => named(import('./DebianReseau'), 'DebianReseau') },
   'bash-builder': { load: () => named(import('./BashBuilder'), 'BashBuilder') },
   'router-configurator': { load: () => named(import('./RouterConfigurator'), 'RouterConfigurator') },
   'subnet-planner': { load: () => named(import('./SubnetPlanner'), 'SubnetPlanner') },

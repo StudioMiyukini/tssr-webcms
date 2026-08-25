@@ -90,6 +90,12 @@ const SCRIPTS: Script[] = [
     tags: ['Interactif', 'Cisco', 'Packet Tracer', 'Routage', 'NAT'], cat: 'cisco',
   },
   {
+    slug: 'configurateur-debian-reseau', icon: '🌐',
+    title: 'Configurateur d’adressage IP — Debian',
+    desc: 'Saisis ton adressage, obtiens /etc/network/interfaces, /etc/resolv.conf et /etc/hosts prets a coller. Et surtout les verifications que la syntaxe ne fait pas : passerelle hors du sous-reseau, adresse de reseau ou de diffusion, auto oublie, dns-nameservers sans resolvconf.',
+    tags: ['Interactif', 'Linux', 'Debian', 'Réseau'], cat: 'linux',
+  },
+  {
     slug: 'repertoire-commandes', icon: '🐧',
     title: 'Répertoire des commandes Linux — recherche en français',
     desc: 'Pose ta question en français — « comment voir la place qui reste sur le disque ? ». La phrase est découpée, les mots inutiles jetés, les synonymes reconnus (place = espace = disque). Les anciens noms (ifconfig, netstat) et les équivalents Windows (ipconfig, findstr) mènent au bon endroit.',
