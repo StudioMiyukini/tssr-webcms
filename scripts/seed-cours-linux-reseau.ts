@@ -63,6 +63,86 @@ ip a show ens18       # verifier avant de fermer la session !`),
   note('red', '🚫 Redémarrer le réseau par SSH', '<p>Si la configuration est fausse, la session tombe et la machine est injoignable — il faut la console de l’hyperviseur. Sur un serveur distant, on prend l’habitude de lancer un filet : <code>echo "ip a add 192.168.10.20/24 dev ens18" | at now + 5 minutes</code>, ou une session <code>tmux</code> qui survit à la coupure. C’est la première leçon d’administration distante, et elle s’apprend en général une fois.</p>'),
   note('blue', '💡 <code>ens18</code>, <code>enp0s3</code>, <code>eth0</code> ?', '<p>Les noms « prévisibles » décrivent l’emplacement matériel : <code>en</code> (ethernet) + <code>p0s3</code> (bus PCI 0, slot 3). C’est stable au rebranchement, contrairement à <code>eth0</code> qui pouvait changer d’une carte à l’autre au redémarrage. <strong>Vérifie toujours le nom avec <code>ip -br a</code></strong> avant d’écrire le fichier : configurer <code>eth0</code> sur une machine qui a <code>ens18</code> est la faute la plus fréquente du TP.</p>'),
 
+  block('heading', { level: 3, text: 'La grammaire du fichier' }),
+  block('html', { html: '<p>Le fichier est fait de <strong>strophes</strong>. Chacune commence par un mot-clé et s’applique jusqu’à la suivante ; les lignes indentées en dessous sont ses options.</p>' }),
+  flow(`auto ens18
+│    └─ l'interface concernee
+└─ QUAND la monter
+
+iface ens18 inet static
+│     │     │    └─ la METHODE : comment obtenir l'adresse
+│     │     └─ la FAMILLE : inet = IPv4, inet6 = IPv6
+│     └─ l'interface
+└─ declaration
+
+    address 192.168.10.20/24
+    └─ les OPTIONS, indentees, propres a la methode choisie`),
+
+  block('heading', { level: 3, text: 'Quand monter l’interface' }),
+  table(['Mot-clé', 'Ce qu’il déclenche', 'Où on le veut'], [
+    ['<code>auto</code>', 'Montée <strong>au démarrage</strong>, systématiquement, même câble débranché.', '<strong>Sur un serveur.</strong> L’interface doit exister au boot, quoi qu’il arrive.'],
+    ['<code>allow-hotplug</code>', 'Montée <strong>quand le noyau détecte</strong> la carte : branchement à chaud, USB, câble reconnecté.', 'Sur un portable, ou une carte amovible.'],
+    ['<em>ni l’un ni l’autre</em>', 'L’interface est déclarée mais jamais montée seule.', 'Quand on la monte à la main : <code>ifup ens18</code>.'],
+  ]),
+  note('yellow', '⚠️ Le symptôme d’un <code>auto</code> oublié', '<p>La configuration est juste, <code>ifup ens18</code> fonctionne parfaitement — et après redémarrage la machine n’a plus d’adresse. C’est exactement le pendant réseau de <code>start</code> sans <code>enable</code> : ça marche maintenant, ça ne survit pas au boot.</p>'),
+
+  block('heading', { level: 3, text: 'Les méthodes' }),
+  table(['Méthode', 'Ce qu’elle fait'], [
+    ['<code>static</code>', 'Adresse fixe, écrite ici. Le cas d’un serveur.'],
+    ['<code>dhcp</code>', 'Adresse obtenue d’un serveur DHCP.'],
+    ['<code>loopback</code>', 'Réservée à <code>lo</code>. Ne jamais la retirer — beaucoup de services en dépendent.'],
+    ['<code>manual</code>', 'L’interface est montée <strong>sans adresse</strong>. Sert aux ponts, aux VLAN et aux interfaces d’agrégation.'],
+  ]),
+
+  block('heading', { level: 3, text: 'Les options utiles' }),
+  table(['Option', 'Rôle'], [
+    ['<code>address 192.168.10.20/24</code>', 'L’adresse et son masque. Forme moderne, tout-en-un.'],
+    ['<code>netmask 255.255.255.0</code>', 'L’ancienne écriture du masque, séparée. Encore très répandue dans les documentations.'],
+    ['<code>gateway 192.168.10.254</code>', 'La passerelle. <strong>Une seule pour toute la machine</strong>, pas une par interface.'],
+    ['<code>dns-nameservers</code> / <code>dns-search</code>', 'Les serveurs DNS et le domaine de recherche — mais voir le piège ci-dessous.'],
+    ['<code>mtu 1500</code>', 'Taille maximale des trames. À baisser derrière certains VPN.'],
+    ['<code>hwaddress ether 00:11:22:33:44:55</code>', 'Force une adresse MAC.'],
+  ]),
+  note('red', '🚫 <code>dns-nameservers</code> ne fait rien tout seul', '<p>Cette ligne n’est pas lue par le noyau : elle est traitée par le paquet <strong><code>resolvconf</code></strong>, qui écrit ensuite <code>/etc/resolv.conf</code>. Sur une Debian minimale — celle du TP, où l’on a tout décoché — ce paquet <strong>n’est pas installé</strong>, et la ligne est ignorée en silence. On croit avoir configuré le DNS, et la résolution ne marche pas.</p><p>Deux issues : installer <code>resolvconf</code>, ou renseigner directement <code>/etc/resolv.conf</code> — voir la section 4.</p>'),
+
+  block('heading', { level: 3, text: 'Les crochets : agir au montage' }),
+  block('html', { html: '<p>Quatre mots-clés permettent d’exécuter une commande autour du montage. C’est ainsi qu’on ajoute une route ou une seconde adresse sans outil supplémentaire.</p>' }),
+  flow(`pre-up    avant de monter l'interface
+up        juste apres l'avoir montee
+down      juste avant de la descendre
+post-down apres l'avoir descendue`),
+  sh(`auto ens18
+iface ens18 inet static
+    address 192.168.10.20/24
+    gateway 192.168.10.254
+    # Une seconde adresse sur la meme carte
+    up   ip addr add 192.168.10.21/24 dev ens18
+    down ip addr del 192.168.10.21/24 dev ens18
+    # Une route vers un reseau joignable par un AUTRE routeur
+    up   ip route add 10.0.0.0/8 via 192.168.10.253`),
+  note('gray', '💡 Chaque <code>up</code> doit avoir son <code>down</code>', '<p>Sinon l’adresse ou la route survit à un <code>ifdown</code>, et la configuration réelle diverge de ce que décrit le fichier. C’est le genre d’écart qu’on découvre six mois plus tard, en cherchant pourquoi une route existe alors que personne ne l’a déclarée.</p>'),
+
+  block('heading', { level: 3, text: 'Découper le fichier' }),
+  sh(`# En tete de /etc/network/interfaces, presente par defaut :
+source /etc/network/interfaces.d/*
+
+ls /etc/network/interfaces.d/`),
+  block('html', { html: '<p>Même logique que pour les dépôts : un fichier par interface ou par usage dans <code>interfaces.d/</code>, plutôt qu’un fichier principal qui grossit. On retire une configuration en supprimant un fichier.</p>' }),
+
+  block('heading', { level: 3, text: 'Appliquer, et vérifier' }),
+  sh(`sudo ifup ens18                # monter UNE interface
+sudo ifdown ens18              # la descendre
+sudo ifdown ens18 && sudo ifup ens18   # la recharger, sans toucher aux autres
+
+sudo systemctl restart networking      # tout recharger (plus brutal)
+
+ifquery ens18                  # ce que le FICHIER declare
+ifquery --state                # ce qui est cense etre monte
+ip a show ens18                # ce qui est REELLEMENT applique`),
+  note('green', '🎯 <code>ifquery</code> contre <code>ip a</code> : le seul test qui tranche', '<p>Le premier montre ce que le fichier <strong>dit</strong>, le second ce que la machine <strong>fait</strong>. Quand les deux divergent, la configuration n’a pas été appliquée — ou quelque chose d’autre la pilote, voir juste en dessous. C’est en dix secondes la réponse à « pourtant j’ai bien écrit l’adresse ».</p>'),
+  note('red', '🚫 Deux gestionnaires pour une même interface', '<p>Si <strong>NetworkManager</strong> est installé, il pilote par défaut les interfaces qu’<code>ifupdown</code> ne déclare pas — et sur certaines installations, les deux se disputent la même carte : l’adresse change toute seule, ou revient en DHCP après quelques minutes. Sur un serveur, on garde <strong>un seul</strong> gestionnaire. <code>systemctl status NetworkManager</code> dit s’il tourne ; <code>nmcli device status</code> montre ce qu’il gère.</p>'),
+  note('yellow', '⚠️ Une erreur de syntaxe ne se voit pas toujours', '<p><code>ifup</code> s’arrête à la première strophe fautive et laisse les suivantes non appliquées — parfois sans message clair. Après toute modification : <code>ifquery --state</code> et <code>ip a</code>, <strong>avant</strong> de fermer la session SSH.</p>'),
+
   block('heading', { level: 2, text: '3) Adresse fixe — Ubuntu, Netplan' }),
   block('html', { html: '<p>Ubuntu serveur décrit le réseau en YAML dans <code>/etc/netplan/</code>. Le YAML est <strong>sensible à l’indentation</strong>, et refuse les tabulations.</p>' }),
   flow(`# /etc/netplan/01-serveur.yaml
@@ -86,22 +166,29 @@ sudo netplan get      # la configuration effective, fusionnee`),
   note('green', '🎯 <code>netplan try</code> est la réponse au piège précédent', '<p>Il applique la configuration, attend une confirmation au clavier, et restaure l’ancienne si elle ne vient pas. Une erreur ne coupe donc l’accès que deux minutes. C’est exactement le filet que Debian n’offre pas.</p>'),
   note('yellow', '⚠️ <code>gateway4</code> est obsolète', '<p>On le rencontre encore dans beaucoup de tutoriels. Netplan récent affiche un avertissement et l’ignorera à terme : la forme <code>routes: - to: default</code> est celle qu’il faut écrire.</p>'),
 
-  block('heading', { level: 2, text: '4) La résolution DNS' }),
-  block('html', { html: '<p>Historiquement, les serveurs DNS se déclarent dans <code>/etc/resolv.conf</code>. Sur les systèmes modernes, ce fichier est souvent un <strong>lien symbolique généré</strong> : l’éditer ne sert à rien, il est réécrit au redémarrage.</p>' }),
-  sh(`ls -l /etc/resolv.conf          # un '->' revele un fichier genere
-resolvectl status              # ce que systemd-resolved utilise VRAIMENT
-resolvectl query srv.miyukini.lan
-
-# Tester la resolution, sans dependre du cache local
-dig srv.miyukini.lan
-dig @192.168.10.11 srv.miyukini.lan    # interroger un serveur precis
-dig -x 192.168.10.11                   # resolution inverse (PTR)
-host srv.miyukini.lan`),
-  table(['Fichier', 'Rôle', 'Attention'], [
-    ['<code>/etc/hosts</code>', 'Correspondances locales, consultées <strong>avant</strong> le DNS.', 'Une entrée oubliée ici masque le DNS et produit une panne incompréhensible.'],
-    ['<code>/etc/resolv.conf</code>', 'Les serveurs DNS à interroger.', 'Souvent généré. Vérifier <code>ls -l</code> avant d’éditer.'],
-    ['<code>/etc/nsswitch.conf</code>', 'L’<strong>ordre</strong> des sources : <code>files dns</code>.', 'C’est lui qui décide que <code>/etc/hosts</code> passe en premier.'],
+  block('heading', { level: 2, text: '4) La résolution des noms' }),
+  block('html', { html: '<p>Traduire <code>srv.miyukini.lan</code> en adresse n’est pas une seule opération : c’est une <strong>chaîne</strong>, et elle se parcourt toujours dans le même ordre. La connaître, c’est savoir où regarder — et dans quel ordre — quand un nom ne résout pas.</p>' }),
+  flow(`  Une application demande « srv.miyukini.lan »
+              │
+              v
+  1. /etc/nsswitch.conf      QUI decide de l'ordre
+              │              ligne « hosts: files dns »
+              v
+  2. /etc/hosts              CONSULTE EN PREMIER
+              │              une correspondance ici ? -> on s'arrete la,
+              │              le DNS ne sera jamais interroge
+              v (rien trouve)
+  3. /etc/resolv.conf        A QUI demander
+              │              les serveurs DNS, dans l'ordre
+              v
+  4. Le serveur DNS repond   ou dit que le nom n'existe pas`),
+  table(['Fichier', 'Sa question', 'Le piège'], [
+    ['<code>/etc/nsswitch.conf</code>', '<strong>Dans quel ordre</strong> chercher ?', 'On ne pense jamais à le regarder — c’est pourtant lui qui donne la priorité au fichier local.'],
+    ['<code>/etc/hosts</code>', '<strong>La réponse est-elle déjà ici ?</strong>', 'Une entrée périmée masque le DNS <em>en silence</em>, et l’on cherche du mauvais côté.'],
+    ['<code>/etc/resolv.conf</code>', '<strong>À qui</strong> demander ensuite ?', 'Souvent généré : l’éditer à la main ne tient pas au redémarrage.'],
   ]),
+  note('green', '🎯 L’ordre est aussi celui du dépannage', '<p>Devant un nom qui ne résout pas, on remonte la chaîne dans le sens où elle est parcourue : <strong>d’abord <code>hosts</code></strong> — y a-t-il une entrée qui interfère ? — <strong>puis <code>resolv.conf</code></strong> — interroge-t-on le bon serveur ? La cause est presque toujours dans l’un des deux, et rarement dans le serveur DNS lui-même.</p>'),
+
   block('heading', { level: 3, text: '/etc/hosts — le fichier consulté en premier' }),
   block('html', { html: '<p>C’est l’ancêtre du DNS : avant qu’il n’existe, chaque machine portait la liste complète des noms du réseau dans ce fichier. Il a survécu, et il garde une propriété décisive — <strong>il est consulté avant d’interroger le moindre serveur DNS</strong>.</p>' }),
   sh(`cat /etc/hosts
