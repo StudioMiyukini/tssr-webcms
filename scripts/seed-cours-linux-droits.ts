@@ -101,26 +101,131 @@ setfacl -b /srv/compta`),
   note('yellow', '⚠️ Le masque, et le droit qui disparaît sans prévenir', '<p>Une ACL affiche une ligne <code>mask::</code>. Elle <strong>plafonne</strong> tous les droits accordés par ACL : si le masque est <code>r-x</code>, une entrée <code>rwx</code> ne donnera que <code>r-x</code>. Un <code>chmod g+w</code> recalcule le masque et peut donc <em>modifier silencieusement</em> les ACL. Devant un droit accordé qui ne prend pas, c’est la première chose à regarder dans <code>getfacl</code>.</p>'),
   note('gray', '💡 Sauvegarder les ACL', '<p><code>cp</code> et <code>tar</code> les perdent par défaut : <code>cp -a</code>, <code>tar --acls</code>, <code>rsync -A</code>. Une restauration qui « a tout remis » mais où plus personne n’a accès vient presque toujours de là.</p>'),
 
-  block('heading', { level: 2, text: '7) sudo : déléguer sans donner root' }),
-  block('html', { html: '<p>Se connecter en root est une mauvaise habitude : aucune trace de qui a fait quoi, et la moindre faute de frappe est définitive. <strong>sudo</strong> permet d’exécuter une commande précise avec les droits de root, en s’authentifiant avec <em>son propre</em> mot de passe, et en laissant une trace dans <code>/var/log/auth.log</code>.</p>' }),
-  sh(`# Debian : donner les pleins pouvoirs a un administrateur
-usermod -aG sudo jean          # -aG : AJOUTER au groupe. Sans le -a, on REMPLACE
-                               # tous ses groupes secondaires par celui-ci.
+  block('heading', { level: 2, text: '7) sudo, en entier' }),
+  block('html', { html: '<p>Se connecter en root est une mauvaise habitude pour trois raisons : aucune trace de qui a fait quoi, la moindre faute de frappe est définitive, et le mot de passe de root doit circuler entre les administrateurs. <strong>sudo</strong> règle les trois — on exécute une commande précise avec les droits de root, en s’authentifiant avec <em>son propre</em> mot de passe, et l’appel est journalisé.</p>' }),
 
-# On n'edite JAMAIS /etc/sudoers directement
-visudo                         # il verifie la syntaxe avant d'enregistrer
-visudo -f /etc/sudoers.d/exploitation   # mieux : un fichier par delegation`),
-  block('html', { html: '<p>Un fichier de délégation ciblée, dans <code>/etc/sudoers.d/</code> :</p>' }),
-  flow(`# /etc/sudoers.d/exploitation
-# Les operateurs redemarrent le service web, et rien d'autre.
-%operateurs ALL=(root) /usr/bin/systemctl restart apache2, /usr/bin/systemctl status apache2
+  block('heading', { level: 3, text: 'sudo, su, su - : trois choses différentes' }),
+  table(['Commande', 'Ce qu’elle fait', 'Le mot de passe demandé'], [
+    ['<code>sudo commande</code>', 'Exécute <strong>une</strong> commande en root, puis rend la main.', '<strong>Le vôtre.</strong>'],
+    ['<code>su</code>', 'Ouvre un shell root, mais garde l’environnement courant (PATH compris).', 'Celui de root.'],
+    ['<code>su -</code>', 'Ouvre un shell root <strong>avec son environnement complet</strong>.', 'Celui de root.'],
+    ['<code>sudo -i</code>', 'Un shell root complet, sans connaître le mot de passe de root.', 'Le vôtre.'],
+  ]),
+  note('yellow', '⚠️ Le tiret de <code>su -</code> n’est pas décoratif', '<p>Sans lui, on est root avec le <code>PATH</code> de l’utilisateur précédent — et <code>usermod</code>, <code>systemctl</code> ou <code>fdisk</code> répondent « commande introuvable » alors qu’ils sont bien installés, simplement dans <code>/usr/sbin</code>, absent du PATH d’un utilisateur ordinaire.</p>'),
 
-# Le superviseur lit les journaux, sans mot de passe (pour un script)
+  block('heading', { level: 3, text: 'Comment ça marche' }),
+  flow(`  1. sudo est un binaire SUID root : il s'execute avec l'identite de
+     son proprietaire (root), quel que soit celui qui le lance.
+     -rwsr-xr-x  1 root root  /usr/bin/sudo
+        └─ le « s » : c'est ce bit qui rend tout possible
+
+  2. Il lit /etc/sudoers (et /etc/sudoers.d/*) : ai-je le droit de
+     lancer CETTE commande, sur CETTE machine, en tant que QUI ?
+
+  3. Il demande MON mot de passe, pas celui de root.
+     Puis il le retient quelques minutes (15 par defaut).
+
+  4. Il journalise : qui, quand, depuis quel terminal, quelle commande.
+     -> /var/log/auth.log`),
+  note('blue', '💡 C’est la journalisation qui fait la valeur de sudo', '<p>Un compte root partagé rend toute enquête impossible : personne ne sait qui a supprimé le fichier. Avec sudo, chaque élévation porte un nom. C’est ce que réclame un audit, et ce que demande un client après un incident.</p>'),
+
+  block('heading', { level: 3, text: 'Sur Debian : qui a le droit, et pourquoi parfois personne' }),
+  sh(`# Le groupe qui donne les pleins pouvoirs sur Debian
+usermod -aG sudo jean          # -a : AJOUTER. Sans lui, on REMPLACE
+                               # tous les groupes secondaires de jean.
+# Puis jean doit se DECONNECTER et se reconnecter :
+# l'appartenance aux groupes est fixee a l'ouverture de session.
+
+id jean                        # verifier : « sudo » doit apparaitre
+sudo -l                        # ce que J'AI le droit de faire ici`),
+  note('red', '🚫 « sudo : commande introuvable » sur une Debian fraîche', '<p>Ce n’est pas une panne. Quand on <strong>donne un mot de passe à root</strong> pendant l’installation, Debian considère que l’administration passera par ce compte : il n’installe pas <code>sudo</code> et ne met personne dans le groupe. Si l’on avait laissé le mot de passe root vide, l’inverse se produirait — pas de root utilisable, et l’utilisateur placé d’office dans <code>sudo</code>.</p><p>La sortie : <code>su -</code>, puis <code>apt install sudo</code>, puis <code>usermod -aG sudo</code>, puis rouvrir la session.</p>'),
+
+  block('heading', { level: 3, text: 'La syntaxe d’une règle' }),
+  flow(`jean    ALL = (root)    NOPASSWD: /usr/bin/systemctl restart apache2
+ │       │      │           │         └─ les COMMANDES autorisees
+ │       │      │           └─ options (facultatif)
+ │       │      └─ EN TANT QUE qui il peut les lancer
+ │       └─ sur QUELLES machines (ALL : partout ; utile si le fichier
+ │          est distribue sur un parc)
+ └─ QUI : un utilisateur, ou %groupe`),
+  table(['Champ', 'Ce qu’on y met'], [
+    ['<strong>Qui</strong>', '<code>jean</code>, ou <code>%operateurs</code> pour un groupe (le <code>%</code> est obligatoire).'],
+    ['<strong>Machines</strong>', '<code>ALL</code> presque toujours. Le champ existe parce qu’un même <code>sudoers</code> peut être déployé sur tout un parc.'],
+    ['<strong>En tant que</strong>', '<code>(root)</code>, ou <code>(www-data)</code> pour agir en tant qu’un compte de service.'],
+    ['<strong>Options</strong>', '<code>NOPASSWD:</code> n’exige pas de mot de passe — nécessaire pour un script automatisé, à restreindre à des commandes précises.'],
+    ['<strong>Commandes</strong>', 'Des <strong>chemins absolus</strong>, séparés par des virgules. <code>ALL</code> = tout.'],
+  ]),
+  sh(`# Les pleins pouvoirs, tels qu'ils sont ecrits sur Debian
+%sudo   ALL=(ALL:ALL) ALL
+
+# Une delegation ciblee
+%operateurs ALL=(root) /usr/bin/systemctl restart apache2, \\
+                       /usr/bin/systemctl status apache2
+
+# Agir en tant qu'un compte de service, sans etre root
+jean ALL=(www-data) /usr/bin/php /var/www/site/console
+
+# Sans mot de passe, pour un script de supervision
 %supervision ALL=(root) NOPASSWD: /usr/bin/journalctl`),
-  note('red', '🚫 Deux délégations qui rendent sudo inutile', '<ul><li><code>%operateurs ALL=(root) /usr/bin/vi</code> — depuis <code>vi</code>, on ouvre un shell (<code>:!bash</code>) en root. Même chose avec <code>less</code>, <code>find</code>, <code>tar</code>, <code>awk</code>.</li><li>Un chemin non absolu, ou avec un joker : <code>/usr/bin/systemctl restart *</code> laisse redémarrer n’importe quel service — y compris en manipulant les arguments.</li></ul><p>Une délégation ne vaut que si la commande autorisée ne permet pas d’en lancer une autre.</p>'),
-  sh(`sudo -l                    # ce que J'AI le droit de faire ici
-sudo -u www-data ls /srv   # agir en tant qu'un autre utilisateur que root
-sudo -i                    # un shell root complet (a eviter au quotidien)`),
+  note('gray', '💡 Les alias, quand la liste s’allonge', '<p><code>User_Alias ADMINS = jean, marie</code>, <code>Cmnd_Alias SERVICES = /usr/bin/systemctl start *, /usr/bin/systemctl stop *</code>, puis <code>ADMINS ALL=(root) SERVICES</code>. Plus lisible qu’une ligne de trois cents caractères — mais attention aux jokers, voir plus bas.</p>'),
+
+  block('heading', { level: 3, text: 'Où écrire, et avec quoi' }),
+  sh(`visudo                                    # JAMAIS nano /etc/sudoers
+visudo -f /etc/sudoers.d/exploitation      # mieux : un fichier par delegation
+visudo -c                                  # verifier la syntaxe de l'ensemble`),
+  note('red', '🚫 Pourquoi <code>visudo</code> et pas un éditeur ordinaire', '<p>Il <strong>vérifie la syntaxe avant d’enregistrer</strong>. Une erreur dans <code>sudoers</code> rend <code>sudo</code> inutilisable pour tout le monde — et s’il n’y a pas de mot de passe root, la machine devient inadministrable sans passer par un démarrage en mode secours. <code>visudo</code> pose aussi un verrou : deux administrateurs ne peuvent pas l’éditer en même temps.</p>'),
+  note('yellow', '⚠️ Les fichiers de <code>/etc/sudoers.d/</code> ont des règles de nom', '<p>Ils sont <strong>ignorés en silence</strong> s’ils contiennent un point ou se terminent par un tilde. <code>exploitation.conf</code> ne sera jamais lu ; <code>exploitation</code> le sera. C’est une source de « ma règle ne s’applique pas » difficile à trouver, parce qu’aucun message n’apparaît.</p>'),
+
+  block('heading', { level: 3, text: 'Les options globales' }),
+  sh(`Defaults        env_reset                 # repart d'un environnement propre
+Defaults        secure_path="/usr/sbin:/usr/bin:/sbin:/bin"
+Defaults        timestamp_timeout=15      # minutes avant de redemander le mdp
+Defaults        passwd_tries=3
+Defaults        logfile="/var/log/sudo.log"   # un journal dedie
+Defaults:jean   !authenticate             # dangereux : jean n'est jamais invite`),
+  note('blue', '💡 <code>env_reset</code> et <code>secure_path</code> protegent de vous-même', '<p>Sans eux, une variable comme <code>PATH</code> ou <code>LD_PRELOAD</code> héritée de l’utilisateur permettrait de faire exécuter <em>son</em> binaire à la place de celui attendu. C’est pour cela que <code>sudo</code> ne trouve pas toujours une commande que vous voyez : son <code>PATH</code> est le sien, pas le vôtre.</p>'),
+
+  block('heading', { level: 3, text: 'Les délégations qui n’en sont pas' }),
+  block('html', { html: '<p>Une délégation ne vaut que si la commande autorisée <strong>ne permet pas d’en lancer une autre</strong>. Beaucoup d’outils courants ouvrent un shell, et donnent alors les pleins pouvoirs.</p>' }),
+  table(['Règle apparemment inoffensive', 'Ce qu’elle donne vraiment'], [
+    ['<code>… /usr/bin/vi</code>', 'Depuis vi : <code>:!bash</code> → un shell root. Idem <code>vim</code>, <code>nano</code> (via <code>^R^X</code>), <code>less</code>, <code>more</code>, <code>man</code>.'],
+    ['<code>… /usr/bin/find</code>', '<code>find . -exec /bin/sh \\;</code> → shell root.'],
+    ['<code>… /usr/bin/awk</code>', '<code>awk \'BEGIN {system("/bin/sh")}\'</code> → shell root. Même chose avec <code>python</code>, <code>perl</code>, <code>tar --checkpoint-action</code>.'],
+    ['<code>… /usr/bin/systemctl restart *</code>', 'Le joker laisse passer des arguments inattendus — et <code>systemctl</code> sait exécuter des unités.'],
+    ['<code>… /home/jean/script.sh</code>', 'Si jean peut <strong>écrire</strong> le script, il choisit ce que root exécutera.'],
+  ]),
+  note('red', '🚫 La règle à retenir', '<p><strong>Autoriser un éditeur, un lecteur de fichiers ou un interpréteur revient à autoriser <code>ALL</code>.</strong> Si un utilisateur doit éditer un fichier précis en root, on lui donne <code>sudoedit</code> (qui copie, fait éditer sans privilège, puis recopie) — pas <code>sudo vi</code>.</p><p>Et le script délégué appartient à root, en <code>755</code>, dans un dossier où l’utilisateur ne peut pas écrire.</p>'),
+
+  block('heading', { level: 3, text: 'Au quotidien' }),
+  sh(`sudo -l                    # ce que j'ai le droit de faire, ici
+sudo -u www-data ls /srv   # agir en tant qu'un AUTRE que root
+sudo -i                    # shell root complet (a eviter au quotidien)
+sudo -s                    # shell root, mais avec mon environnement
+sudo -k                    # oublier le mot de passe retenu, tout de suite
+sudo !!                    # rejouer la commande precedente en sudo
+sudo -E commande           # conserver mes variables d'environnement (prudence)
+
+# La commande qui rate parce que la redirection n'est PAS en root :
+sudo echo "texte" > /etc/fichier      # ECHOUE : le > est execute par le shell
+echo "texte" | sudo tee /etc/fichier  # marche
+sudo sh -c 'echo "texte" > /etc/fichier'   # marche aussi`),
+  note('green', '🎯 Le piege de la redirection', '<p><code>sudo echo x &gt; /etc/fichier</code> échoue avec « Permission denied » alors qu’on est en sudo. La raison : <code>sudo</code> élève <code>echo</code>, mais la redirection <code>&gt;</code> est exécutée par <strong>votre</strong> shell, qui n’a pas les droits. C’est une des questions les plus posées, et la réponse est <code>tee</code>.</p>'),
+
+  block('heading', { level: 3, text: 'Lire les traces' }),
+  sh(`sudo grep sudo /var/log/auth.log | tail -20
+sudo journalctl _COMM=sudo -n 30
+
+# Une ligne typique :
+# jean : TTY=pts/0 ; PWD=/home/jean ; USER=root ; COMMAND=/usr/bin/systemctl restart ssh
+#  │          │            │              └─ en tant que qui
+#  │          │            └─ depuis quel dossier
+#  │          └─ depuis quel terminal
+#  └─ QUI
+
+# Les tentatives refusees, celles qui interessent un audit :
+sudo grep 'NOT in sudoers\|incorrect password' /var/log/auth.log`),
+
+  note('blue', '🪟 En regard de Windows', '<p><code>sudo</code> ↔ l’élévation UAC, mais nominative et journalisée · <code>sudo -u</code> ↔ <code>runas /user:</code> · <code>/etc/sudoers.d/</code> ↔ la délégation de contrôle d’Active Directory · <code>/var/log/auth.log</code> ↔ l’Observateur d’événements. Le principe est le même des deux côtés : <strong>on ne se connecte pas avec un compte privilégié, on élève ponctuellement</strong> — voir le <a href="/pages/permissions-partage-ntfs">cours NTFS</a>.</p>'),
 
   block('heading', { level: 2, text: '8) Comptes et groupes' }),
   sh(`adduser jean               # Debian : interactif, cree /home, le groupe, demande le mot de passe
