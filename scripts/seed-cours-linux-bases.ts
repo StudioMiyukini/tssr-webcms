@@ -87,7 +87,18 @@ const blocks: PageBlock[] = [
   block('html', { html: '<div class="lx-cmd">echo $SHELL                # quel shell j\'utilise\ncat /etc/shells            # ceux qui sont installes\nchsh -s /bin/bash          # en changer pour son compte</div>' }),
 
   block('heading', { level: 2, text: '5) L’arborescence des fichiers — « tout est fichier »' }),
-  block('html', { html: '<p>Un seul arbre partant de la racine <code>/</code> (pas de <code>C:</code>). Les répertoires clés :</p>' }),
+  block('html', { html: '<p>Windows traite chaque support séparément : le disque a sa racine <code>C:\\</code>, la clé USB la sienne en <code>D:\\</code>. Linux fait l’inverse — <strong>une seule racine, <code>/</code></strong>, et tout le reste s’y accroche, y compris les disques et les périphériques. C’est ce qu’on résume par « tout est fichier ».</p>' }),
+  tbl(['', 'Windows', 'Linux'], [
+    ['Racine', '<code>C:\\</code>, <code>D:\\</code>… une par support', '<strong><code>/</code></strong>, une seule, et rien après'],
+    ['Séparateur', '<code>\\</code> (antislash)', '<code>/</code> (slash)'],
+    ['Casse', 'Ignorée : <code>Fichier</code> = <code>fichier</code>', '<strong>Distinguée</strong> : deux fichiers différents'],
+    ['Espaces et majuscules', 'Courants', 'Déconseillés — minuscules, chiffres, <code>-</code> et <code>_</code>'],
+    ['Le point', 'Introduit l’extension : <code>.exe</code>, <code>.txt</code>', 'Un caractère comme un autre — <strong>sauf en première position</strong>, où il cache le fichier'],
+  ]),
+  note('yellow', '⚠️ Pourquoi l’espace pose problème', '<p>Le shell s’en sert pour <strong>séparer les éléments d’une commande</strong> : <code>rm mon rapport.txt</code> tente de supprimer <em>deux</em> fichiers. On peut s’en sortir avec des guillemets — <code>rm "mon rapport.txt"</code> — mais il vaut mieux ne pas en mettre : <code>mon-rapport.txt</code> ou <code>mon_rapport.txt</code>.</p>'),
+  note('gray', '💡 L’extension n’existe pas vraiment', '<p><code>test.txt</code> n’est pas « un fichier texte » pour Linux : c’est un fichier qui s’appelle <code>test.txt</code>. L’extension est une convention <em>pour nous</em>, pas une information système. Pour savoir ce qu’un fichier contient vraiment : <code>file mon-fichier</code>, qui regarde son début plutôt que son nom.</p>'),
+
+  block('html', { html: '<p>Chaque dossier de la racine a une utilité précise :</p>' }),
   tbl(['Chemin', 'Contenu'], [
     ['/etc', 'fichiers de <strong>configuration</strong> (le cœur de l’admin)'],
     ['/home', 'dossiers personnels des utilisateurs'],
@@ -122,6 +133,34 @@ const blocks: PageBlock[] = [
   note('yellow', '⚠️ Écrire dans /proc et /sys agit immédiatement', '<p>Certains fichiers sont modifiables et changent le comportement du noyau à la seconde — activer le routage, par exemple : <code>echo 1 &gt; /proc/sys/net/ipv4/ip_forward</code>. Mais <strong>rien n’est conservé au redémarrage</strong> : pour que le réglage tienne, il faut l’écrire dans <code>/etc/sysctl.conf</code> ou <code>/etc/sysctl.d/</code>. C’est la cause classique du « ça marchait hier » après un redémarrage.</p>'),
   note('gray', '📦 /opt, /usr/local et les paquets', '<p><code>apt</code> installe dans <code>/usr</code> : on n’y touche pas à la main, le gestionnaire de paquets en est propriétaire. Ce qu’on ajoute soi-même va dans <code>/opt</code> (un logiciel livré en bloc, chacun dans son dossier) ou <code>/usr/local</code> (ce qu’on a compilé soi-même). La séparation a un but précis : une mise à jour du système n’écrase jamais ce qui est dans <code>/opt</code>.</p>'),
   note('yellow', '⚠️ /mnt : monter n’efface pas, ça masque', '<p>Monter un support sur un dossier <strong>non vide</strong> ne supprime rien : le contenu d’origine disparaît de la vue tant que le montage tient, et réapparaît au démontage. C’est la façon classique de croire qu’on a perdu des données. → <a href="/pages/linux-disques">Disques, partitions et LVM</a>.</p>'),
+
+  block('heading', { level: 3, text: '/usr et /var, les deux plus gros' }),
+  block('html', { html: '<p>Ce sont ceux où l’on cherche le plus souvent, et ils méritent leur découpage. <strong><code>/usr</code></strong> (<em>Unix System Resources</em>) contient ce qui est <em>installé</em> ; <strong><code>/var</code></strong> ce qui <em>varie</em> pendant que la machine tourne.</p>' }),
+  tbl(['<code>/usr/…</code>', 'Contenu'], [
+    ['<code>bin</code>', 'Les commandes des utilisateurs.'],
+    ['<code>sbin</code>', 'Les commandes réservées à l’administration — c’est pourquoi <code>usermod</code> est introuvable sans <code>su -</code>.'],
+    ['<code>lib</code>, <code>lib64</code>', 'Les bibliothèques partagées (<code>.so</code>) — l’équivalent des <code>.dll</code>.'],
+    ['<code>local</code>', 'Ce qu’<strong>on</strong> a installé soi-même, hors gestionnaire de paquets.'],
+    ['<code>share</code>', 'Données partagées : documentation, langues, images, polices.'],
+    ['<code>src</code>', 'Codes sources, quand ils sont installés.'],
+  ]),
+  tbl(['<code>/var/…</code>', 'Contenu'], [
+    ['<code>log</code>', '<strong>Les journaux</strong>, un sous-dossier par service. Le premier endroit où regarder quand quelque chose ne va pas.'],
+    ['<code>cache</code>', 'Ce qui est mis en cache — dont les paquets téléchargés par <code>apt</code>.'],
+    ['<code>lib</code>', 'Données des services : bases de données, état des paquets.'],
+    ['<code>spool</code>', 'Ce qui attend d’être traité : impressions, courriels, tâches cron.'],
+    ['<code>tmp</code>', 'Temporaire, mais <strong>conservé au redémarrage</strong> — contrairement à <code>/tmp</code>.'],
+  ]),
+  note('green', '🎯 C’est <code>/var</code> qui remplit un disque', '<p>Neuf fois sur dix, un serveur saturé l’est à cause de <code>/var/log</code> (un service qui écrit en boucle) ou de <code>/var/cache/apt</code> (des paquets jamais nettoyés). Les deux premiers réflexes : <code>du -sh /var/*</code>, puis <code>sudo apt clean</code>. → <a href="/pages/linux-disques">Disques et espace</a>.</p>'),
+
+  block('heading', { level: 3, text: 'Le système de fichiers' }),
+  block('html', { html: '<p>L’arborescence est une organisation ; le <strong>système de fichiers</strong> est la façon dont les données sont réellement rangées sur le disque. Sous Linux, c’est presque toujours <strong>ext4</strong>.</p>' }),
+  tbl(['Format', 'Ce qu’il apporte'], [
+    ['<code>ext2</code>', 'L’ancêtre, conçu par le Français Rémy Card. Se fragmente très peu — c’est pourquoi <strong>on ne défragmente pas sous Linux</strong>.'],
+    ['<code>ext3</code>', 'Ajoute la <strong>journalisation</strong> : après une coupure, le système sait ce qui était en cours et se répare.'],
+    ['<code>ext4</code>', 'Le défaut aujourd’hui : gros disques, gros fichiers, moins de fragmentation encore.'],
+  ]),
+  note('blue', '🪟 Pourquoi Windows défragmente et pas Linux', '<p>Ce n’est pas une question de qualité mais de stratégie d’écriture : FAT et NTFS remplissent les trous au plus près, ext répartit les fichiers en laissant de la place autour d’eux pour qu’ils puissent grandir sans se couper. La question « où est le défragmenteur » revient à chaque promotion — il n’y en a pas, et il n’en faut pas.</p>'),
 
   block('heading', { level: 2, text: '6) Se déplacer et manipuler les fichiers' }),
   tbl(['Commande', 'Rôle'], [

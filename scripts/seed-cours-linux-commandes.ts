@@ -64,7 +64,48 @@ ls -lt               # les plus recents en premier
 ls -lS               # les plus gros en premier
 
 tree -L 2            # l'arborescence sur 2 niveaux (apt install tree)`),
-  note('gray', '📁 Chemin absolu et chemin relatif', '<p><code>/var/log/syslog</code> part de la racine : il est vrai partout. <code>log/syslog</code> part d’où l’on se trouve : il dépend du contexte. <strong>Dans un script, on écrit toujours des chemins absolus</strong> — c’est ce qui explique la moitié des scripts qui marchent à la main et échouent en cron.</p>'),
+  block('heading', { level: 3, text: 'Absolu ou relatif : le slash de début' }),
+  flow(`/var/log/syslog     ABSOLU   : part de la racine.
+└─ le slash de debut            Vrai partout, quel que soit l'endroit
+                                ou l'on se trouve.
+
+log/syslog          RELATIF  : part d'OU L'ON EST.
+└─ pas de slash                 Le meme texte designe un fichier
+                                different selon le dossier courant.
+
+.     le dossier courant        ..    le dossier parent
+~     ma maison (/home/jean)    ~bob  la maison de bob`),
+  note('red', '🚫 L’erreur classique : un slash de trop', '<p>On est dans <code>/home/toto</code>, le fichier est dans <code>doc/test</code>, et l’on écrit <code>/doc/test</code> en croyant faire du relatif. Le slash de début envoie chercher à la <strong>racine</strong> : le système répond que <code>/doc</code> n’existe pas, ce qui est vrai, et l’on ne comprend pas pourquoi puisqu’on <em>voit</em> le dossier.</p><p>Un chemin relatif ne commence jamais par un slash.</p>'),
+  table(['Commande', 'Où l’on arrive'], [
+    ['<code>cd .</code>', 'Nulle part : on ne bouge pas.'],
+    ['<code>cd ..</code>', 'Le dossier parent.'],
+    ['<code>cd ../..</code>', 'Deux crans plus haut. Depuis <code>/home/jean</code> : la racine.'],
+    ['<code>cd ../marie</code>', 'Le dossier voisin. Depuis <code>/home/jean</code> : <code>/home/marie</code>.'],
+    ['<code>cd /</code>', 'La racine.'],
+    ['<code>cd ~</code> ou <code>cd</code>', 'Ma maison. <code>/home/jean</code> pour jean, <strong><code>/root</code></strong> pour root.'],
+    ['<code>cd -</code>', 'Là où j’étais avant.'],
+  ]),
+  note('blue', '💡 L’invite dit toujours où l’on est', '<p><code>jean@srv:/var/log$</code> — entre les deux-points et le <code>$</code>, c’est le dossier courant. Un <code>~</code> à cet endroit signifie « ma maison ». Avant tout chemin relatif, un coup d’œil à l’invite évite la moitié des erreurs — et <code>pwd</code> le confirme.</p>'),
+  note('gray', '📁 Dans un script, toujours de l’absolu', '<p>Un chemin relatif dépend du dossier depuis lequel le script est lancé. C’est ce qui explique la moitié des scripts qui marchent à la main et échouent en cron — voir <a href="/pages/linux-bash">Scripts Bash</a>.</p>'),
+
+  block('heading', { level: 3, text: 'Les métacaractères : agir sur plusieurs fichiers' }),
+  table(['Symbole', 'Ce qu’il remplace'], [
+    ['<code>*</code>', '<strong>N’importe quoi</strong> — rien, un caractère, ou cinquante.'],
+    ['<code>?</code>', '<strong>Exactement un</strong> caractère. <code>??</code> en remplace exactement deux.'],
+    ['<code>[abc]</code>', 'Un caractère parmi ceux-là. <code>[0-9]</code> pour un chiffre.'],
+    ['<code>{a,b}</code>', 'Plusieurs mots au choix : <code>fichier.{txt,md}</code>.'],
+  ]),
+  flow(`Avec des fichiers  tp.c  tp1.c  tpab.c  tp200.c  tp.txt
+
+tp*.c      -> tp.c  tp1.c  tpab.c  tp200.c    (* remplace 0 a n caracteres)
+tp?.c      -> tp1.c                            (? en remplace UN, exactement)
+tp??.c     -> tpab.c                           (?? en remplacent DEUX)
+tp[0-9].c  -> tp1.c                            (un chiffre)
+tp*        -> tout, y compris tp.txt`),
+  note('red', '🚫 C’est le shell qui remplace, avant la commande', '<p><code>rm *</code> ne transmet pas une étoile à <code>rm</code> : le shell la remplace d’abord par <strong>la liste des fichiers</strong>, puis lance <code>rm</code> avec cette liste. C’est pour cela que <code>find /etc -name *.conf</code> échoue sans guillemets — le shell a déjà remplacé le motif par les fichiers du dossier courant avant que <code>find</code> ne le voie.</p>'),
+  note('yellow', '⚠️ Avant un <code>rm</code> avec joker, faire un <code>ls</code>', '<p>La même commande, avec <code>ls</code> à la place de <code>rm</code>, montre <strong>exactement</strong> ce qui va disparaître. Deux secondes, et l’on évite le <code>rm *</code> lancé depuis le mauvais dossier. Il n’y a pas de corbeille.</p>'),
+
+
 
   block('heading', { level: 2, text: '4) Fichiers et dossiers' }),
   sh(`mkdir dossier                 # creer un dossier
