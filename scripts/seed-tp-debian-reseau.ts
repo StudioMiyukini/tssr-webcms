@@ -88,9 +88,9 @@ const blocks: PageBlock[] = [
   table(['Fichier', 'Son rôle'], [
     ['<code>.bashrc</code>', 'Dans <strong>ta maison</strong> : lu à chaque ouverture de shell interactif. Alias, invite, variables. Personnel — chaque utilisateur a le sien.'],
     ['<code>/etc/hostname</code>', 'Le nom de la machine, seul, sur une ligne.'],
-    ['<code>/etc/hosts</code>', 'Correspondances nom ↔ adresse <strong>locales</strong>, consultées <strong>avant</strong> le DNS. Une entrée oubliée ici masque le DNS et produit une panne incompréhensible.'],
+    ['<code>/etc/hosts</code>', 'Correspondances nom ↔ adresse <strong>locales</strong>, consultées <strong>avant</strong> le DNS. Une entrée oubliée ici masque le DNS et produit une panne incompréhensible. → <a href="/pages/linux-reseau">le détail dans le cours réseau</a>.'],
     ['<code>/etc/network/interfaces</code>', 'La configuration réseau persistante sous Debian : statique ou DHCP, par interface.'],
-    ['<code>/etc/resolv.conf</code>', 'Les serveurs DNS à interroger, et le domaine de recherche. <strong>Souvent généré</strong> : vérifier avec <code>ls -l</code> avant d’éditer.'],
+    ['<code>/etc/resolv.conf</code>', 'Les serveurs DNS à interroger, et le domaine de recherche. <strong>Souvent généré</strong> : vérifier avec <code>ls -l</code> avant d’éditer — <a href="/pages/linux-reseau">pourquoi, et comment le poser durablement</a>.'],
     ['<code>/etc/apt/sources.list</code>', 'Les dépôts où <code>apt</code> va chercher les paquets.'],
   ]),
 

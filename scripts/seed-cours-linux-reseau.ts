@@ -102,6 +102,116 @@ host srv.miyukini.lan`),
     ['<code>/etc/resolv.conf</code>', 'Les serveurs DNS à interroger.', 'Souvent généré. Vérifier <code>ls -l</code> avant d’éditer.'],
     ['<code>/etc/nsswitch.conf</code>', 'L’<strong>ordre</strong> des sources : <code>files dns</code>.', 'C’est lui qui décide que <code>/etc/hosts</code> passe en premier.'],
   ]),
+  block('heading', { level: 3, text: '/etc/hosts — le fichier consulté en premier' }),
+  block('html', { html: '<p>C’est l’ancêtre du DNS : avant qu’il n’existe, chaque machine portait la liste complète des noms du réseau dans ce fichier. Il a survécu, et il garde une propriété décisive — <strong>il est consulté avant d’interroger le moindre serveur DNS</strong>.</p>' }),
+  sh(`cat /etc/hosts
+
+127.0.0.1       localhost
+127.0.1.1       srv-debian.miyukini.lan   srv-debian
+ │              │                          └─ alias (nom court)
+ │              └─ nom canonique (FQDN)
+ └─ l'adresse
+
+# Les lignes IPv6, presentes par defaut
+::1     localhost ip6-localhost ip6-loopback
+ff02::1 ip6-allnodes
+ff02::2 ip6-allrouters`),
+  block('html', { html: '<p>Le format tient en une phrase : <strong>une adresse, puis un ou plusieurs noms</strong>, séparés par des espaces ou des tabulations. Le premier nom est le nom canonique, les suivants sont des alias. Une ligne par adresse, et <code>#</code> commence un commentaire.</p>' }),
+  note('gray', '💡 Le mystérieux <code>127.0.1.1</code>', '<p>Ce n’est pas une faute de frappe pour <code>127.0.0.1</code>. C’est une particularité Debian : elle permet à la machine de résoudre <strong>son propre nom</strong> même sans réseau, sans pour autant l’associer à <code>localhost</code>. La distinction compte pour les logiciels qui résolvent leur propre nom au démarrage.</p>'),
+
+  block('heading', { level: 3, text: 'Qui décide de l’ordre : nsswitch.conf' }),
+  sh(`grep '^hosts' /etc/nsswitch.conf
+hosts:  files dns
+        │     └─ ensuite seulement, le DNS
+        └─ D'ABORD /etc/hosts`),
+  block('html', { html: '<p>C’est cette ligne, et elle seule, qui donne la priorité au fichier. Inverser l’ordre serait possible — personne ne le fait, mais savoir <em>où</em> l’ordre est décidé permet de répondre à « pourquoi ma machine ignore le DNS ? ».</p>' }),
+
+  block('heading', { level: 3, text: 'À quoi il sert vraiment' }),
+  table(['Usage', 'Pourquoi ici plutôt que dans le DNS'], [
+    ['<strong>Maquette sans DNS</strong>', 'En TP ou sur un réseau isolé, quelques lignes remplacent un serveur à monter.'],
+    ['<strong>Forcer une adresse</strong>', 'Tester un serveur de recette avant de basculer l’enregistrement DNS public.'],
+    ['<strong>Dépanner</strong>', 'Vérifier qu’un problème vient bien du DNS : si ça marche avec une entrée <code>hosts</code>, c’est la résolution qui échoue, pas le réseau.'],
+    ['<strong>Bloquer un domaine</strong>', 'Le renvoyer vers <code>0.0.0.0</code>. Efficace sur une machine, ingérable sur un parc.'],
+  ]),
+  sh(`sudo nano /etc/hosts
+
+# Ajouter une correspondance
+192.168.10.11   srv-fichiers.miyukini.lan   srv-fichiers
+
+# Bloquer un domaine
+0.0.0.0         pub.exemple.com
+
+# Aucun service a redemarrer : le fichier est relu a chaque resolution.`),
+  note('green', '🎯 Le test qui isole le DNS en dix secondes', '<p>Un service est injoignable par son nom. On ajoute son adresse dans <code>/etc/hosts</code> et on réessaie : si ça marche, le réseau et le service vont bien, <strong>c’est la résolution de noms qui est en cause</strong>. Si ça ne marche toujours pas, le problème est ailleurs. Une ligne, et le champ des causes est divisé en deux — puis on retire la ligne.</p>'),
+
+  block('heading', { level: 3, text: 'Les trois pièges' }),
+  note('red', '🚫 <code>ping</code> et <code>dig</code> se contredisent', '<p><code>ping srv</code> utilise <code>/etc/hosts</code> ; <code>dig srv</code> interroge <strong>directement le DNS</strong> et ignore le fichier. Une entrée périmée dans <code>hosts</code> fait donc répondre <code>ping</code> avec une adresse que <code>dig</code> ne connaît pas — et l’on cherche pendant une heure du côté du serveur DNS. Pour trancher : <code>getent hosts srv</code>, qui suit exactement le même chemin que les applications.</p>'),
+  note('red', '🚫 « sudo: unable to resolve host »', '<p>Après avoir renommé la machine dans <code>/etc/hostname</code> <strong>sans mettre à jour <code>/etc/hosts</code></strong>, chaque <code>sudo</code> attend plusieurs secondes puis affiche cet avertissement. La commande finit par s’exécuter, ce qui fait croire à un détail — mais c’est un délai à chaque appel. Le nom doit figurer sur la ligne <code>127.0.1.1</code>, et les deux fichiers doivent dire la même chose.</p>'),
+  note('yellow', '⚠️ Il ne connaît ni les jokers ni les sous-domaines', '<p><code>*.exemple.com</code> ne fonctionne pas : une correspondance est exacte, nom par nom. Et le fichier ne vaut que pour <strong>cette machine</strong> — ce n’est pas un serveur DNS, rien n’est publié aux autres. Pour un parc, il faut un vrai DNS.</p>'),
+
+  sh(`getent hosts srv-fichiers      # LE test : le meme chemin que les applications
+ping -c1 srv-fichiers          # utilise /etc/hosts
+dig +short srv-fichiers        # IGNORE /etc/hosts : interroge le DNS
+resolvectl query srv-fichiers  # ce que systemd-resolved en fait
+
+hostnamectl                    # le nom de la machine, et sa coherence
+grep '^hosts' /etc/nsswitch.conf`),
+  note('blue', '🪟 Côté Windows, le même fichier', '<p><code>C:\\Windows\\System32\\drivers\\etc\\hosts</code> — même format, même priorité sur le DNS, et les mêmes pièges. Il faut l’ouvrir en administrateur, et <code>ipconfig /displaydns</code> montre le cache que Windows ajoute par-dessus — cache que Linux n’a pas par défaut, sauf si <code>systemd-resolved</code> est actif.</p>'),
+
+  block('heading', { level: 3, text: '/etc/resolv.conf — à QUI on demande' }),
+  block('html', { html: '<p>Quand <code>/etc/hosts</code> ne répond pas, il faut interroger un serveur. Ce fichier dit lesquels.</p>' }),
+  sh(`cat /etc/resolv.conf
+
+nameserver 192.168.10.11      # le serveur DNS a interroger
+nameserver 1.1.1.1            # le suivant, SI le premier ne repond pas
+search miyukini.lan           # domaine ajoute aux noms courts
+options timeout:2 attempts:2  # facultatif : patience et nombre d'essais`),
+  table(['Directive', 'Ce qu’elle fait'], [
+    ['<code>nameserver</code>', 'Un serveur DNS. <strong>Trois au maximum</strong> — la bibliothèque C ignore les suivants, silencieusement.'],
+    ['<code>search</code>', 'Domaines essayés pour un nom court : <code>ping srv</code> devient <code>srv.miyukini.lan</code>.'],
+    ['<code>domain</code>', 'Ancienne forme, un seul domaine. <code>search</code> la remplace.'],
+    ['<code>options</code>', '<code>timeout:2</code> secondes d’attente, <code>attempts:2</code> essais par serveur, <code>rotate</code> pour alterner.'],
+  ]),
+  note('red', '🚫 Le second nameserver n’est pas un équilibrage', '<p>Il n’est interrogé que si le premier <strong>ne répond pas du tout</strong>. Un serveur qui répond « ce nom n’existe pas » a répondu : on ne passe pas au suivant. C’est pourquoi mettre <code>1.1.1.1</code> en secours derrière le DNS du domaine ne rattrape rien quand l’annuaire interne est incomplet — et fait perdre des heures à chercher pourquoi « le secours ne prend pas le relais ».</p>'),
+
+  note('yellow', '⚠️ L’éditer ne sert souvent à rien', '<p>Sur un système moderne, ce fichier est <strong>généré</strong> : NetworkManager, <code>systemd-resolved</code> ou <code>ifupdown</code> le réécrivent au redémarrage, et la modification faite à la main disparaît. On regarde donc toujours à quoi on a affaire avant d’ouvrir l’éditeur.</p>'),
+  sh(`ls -l /etc/resolv.conf
+
+# Trois cas possibles :
+# -rw-r--r--  1 root root  ...  /etc/resolv.conf
+#     -> un vrai fichier : l'editer fonctionne
+#
+# lrwxrwxrwx  ... /etc/resolv.conf -> ../run/systemd/resolve/stub-resolv.conf
+#     -> systemd-resolved : passer par lui (voir plus bas)
+#
+# lrwxrwxrwx  ... /etc/resolv.conf -> /run/resolvconf/resolv.conf
+#     -> genere par resolvconf a partir de la conf reseau`),
+  note('gray', '💡 Pourquoi <code>nameserver 127.0.0.53</code>', '<p>Cette adresse de bouclage n’est pas une erreur : c’est le <em>stub</em> de <code>systemd-resolved</code>, qui écoute localement, met en cache et transmet aux vrais serveurs. Les serveurs réellement utilisés ne sont donc <strong>pas</strong> dans ce fichier — il faut <code>resolvectl status</code> pour les voir.</p>'),
+
+  block('heading', { level: 3, text: 'Le poser durablement' }),
+  sh(`# Debian, dans /etc/network/interfaces : la ligne est reprise au demarrage
+iface ens18 inet static
+    address 192.168.10.20/24
+    gateway 192.168.10.254
+    dns-nameservers 192.168.10.11 1.1.1.1
+    dns-search miyukini.lan
+
+# Ubuntu / Netplan
+#   nameservers:
+#     addresses: [192.168.10.11, 1.1.1.1]
+#     search: [miyukini.lan]
+
+# systemd-resolved : /etc/systemd/resolved.conf
+#   [Resolve]
+#   DNS=192.168.10.11
+#   Domains=miyukini.lan
+sudo systemctl restart systemd-resolved`),
+  sh(`resolvectl status              # les serveurs REELLEMENT utilises, par interface
+resolvectl query srv           # resoudre en passant par la meme chaine que les applis
+resolvectl flush-caches        # vider le cache apres un changement DNS
+resolvectl statistics          # taux de reussite du cache`),
+  note('green', '🎯 L’ordre de lecture, en une ligne', '<p><strong><code>nsswitch.conf</code> dit dans quel ordre, <code>hosts</code> répond en premier, <code>resolv.conf</code> dit à qui demander ensuite.</strong> Les trois fichiers forment une chaîne : devant une résolution qui se comporte mal, on les regarde dans cet ordre, et la cause apparaît presque toujours au premier ou au deuxième.</p>'),
+
   note('blue', '💡 Le domaine de recherche', '<p><code>search miyukini.lan</code> permet de taper <code>ping srv</code> au lieu de <code>ping srv.miyukini.lan</code>. Pratique — et source de confusion quand un nom court résout « tout seul » sur une machine et pas sur une autre.</p>'),
 
   block('heading', { level: 2, text: '5) Le pare-feu : UFW' }),
