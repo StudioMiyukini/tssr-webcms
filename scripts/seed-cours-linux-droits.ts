@@ -288,24 +288,133 @@ sudo grep 'NOT in sudoers\|incorrect password' /var/log/auth.log`),
   note('blue', '🪟 En regard de Windows', '<p><code>sudo</code> ↔ l’élévation UAC, mais nominative et journalisée · <code>sudo -u</code> ↔ <code>runas /user:</code> · <code>/etc/sudoers.d/</code> ↔ la délégation de contrôle d’Active Directory · <code>/var/log/auth.log</code> ↔ l’Observateur d’événements. Le principe est le même des deux côtés : <strong>on ne se connecte pas avec un compte privilégié, on élève ponctuellement</strong> — voir le <a href="/pages/permissions-partage-ntfs">cours NTFS</a>.</p>'),
 
   block('heading', { level: 2, text: '10) Comptes et groupes' }),
-  sh(`adduser jean               # Debian : interactif, cree /home, le groupe, demande le mot de passe
-useradd -m -s /bin/bash jean   # bas niveau : rien n'est fait tout seul
 
-groupadd compta
-usermod -aG compta jean    # ajouter au groupe secondaire
-id jean                    # uid, gid, et TOUS les groupes
-groups jean
-
-passwd jean                # changer un mot de passe
-usermod -L jean            # verrouiller le compte (mot de passe)
-usermod -s /usr/sbin/nologin sauvegarde   # un compte de service ne se connecte pas`),
-  note('yellow', '⚠️ Les groupes ne prennent effet qu’à la prochaine session', '<p>Comme le jeton d’accès Windows, l’appartenance aux groupes est fixée à l’ouverture de session. Après un <code>usermod -aG</code>, l’utilisateur doit se déconnecter — <code>id</code> montrera le nouveau groupe avant que <code>groups</code> dans son shell courant ne le voie.</p>'),
-  table(['Fichier', 'Contient'], [
-    ['<code>/etc/passwd</code>', 'Comptes : nom, uid, gid, shell, home. Lisible par tous — il n’y a plus de mot de passe dedans depuis longtemps.'],
-    ['<code>/etc/shadow</code>', 'Les empreintes de mots de passe et leur expiration. Lisible par root seul.'],
-    ['<code>/etc/group</code>', 'Groupes et leurs membres secondaires.'],
-    ['<code>/etc/sudoers.d/</code>', 'Les délégations, un fichier par usage.'],
+  block('heading', { level: 3, text: 'Pourquoi deux commandes pour chaque opération' }),
+  block('html', { html: '<p>C’est la première surprise, et elle déroute : il existe <strong>deux commandes pour chaque geste</strong>. Elles ne font pas la même chose.</p>' }),
+  table(['Bas niveau', 'Debian', 'Ce qui les sépare'], [
+    ['<code>useradd</code>', '<code>adduser</code>', 'Créer un compte'],
+    ['<code>userdel</code>', '<code>deluser</code>', 'Supprimer un compte'],
+    ['<code>groupadd</code>', '<code>addgroup</code>', 'Créer un groupe'],
+    ['<code>groupdel</code>', '<code>delgroup</code>', 'Supprimer un groupe'],
   ]),
+  flow(`useradd  userdel  groupadd  groupdel     <- les OUTILS (shadow-utils)
+   |                                          presents sur TOUTES les distributions
+   |                                          font STRICTEMENT ce qu'on demande
+   |                                          ne posent aucune question
+   |
+   +-- adduser  deluser  addgroup  delgroup   <- les SCRIPTS Debian
+                                                 des enveloppes AUTOUR des outils
+                                                 appliquent la politique maison
+                                                 posent des questions`),
+  table(['', '<code>useradd</code> et compagnie', '<code>adduser</code> et compagnie'],[
+    ['Origine', 'Les utilitaires <em>shadow-utils</em>, communs à toutes les distributions.', 'Des scripts <strong>propres à Debian</strong> (et Ubuntu), écrits en Perl, qui appellent les précédents.'],
+    ['Comportement', 'Fait le minimum demandé, <strong>rien de plus</strong>. Silencieux.', 'Applique la politique de <code>/etc/adduser.conf</code> : plage d’UID, dossier personnel, groupe personnel.'],
+    ['Dossier personnel', '<strong>Non</strong> — sauf si l’on ajoute <code>-m</code>.', 'Oui, automatiquement, et il y recopie <code>/etc/skel</code>.'],
+    ['Shell', 'Celui de <code>/etc/default/useradd</code> — sur Debian <code>/bin/sh</code>.', 'Demandé ou pris dans la configuration.'],
+    ['Mot de passe', 'Non. Le compte reste <strong>verrouillé</strong>.', 'Demandé tout de suite, de façon interactive.'],
+    ['Interactif', 'Jamais.', 'Oui — nom complet, téléphone, mot de passe.'],
+    ['Où l’utiliser', '<strong>Dans un script</strong>, ou sur une distribution non Debian.', '<strong>Au clavier, sur Debian.</strong>'],
+  ]),
+  note('green', '🎯 La règle en une phrase', '<p><strong>Au clavier sur Debian : <code>adduser</code>. Dans un script, ou ailleurs que sur Debian : <code>useradd</code></strong> — avec <code>-m</code> et <code>-s</code> écrits explicitement, puisque rien n’est fait tout seul.</p><p>Un script qui utilise <code>adduser</code> se bloque sur la première question et n’est pas portable ; un <code>useradd</code> tapé à la main produit un compte sans maison, sans mot de passe et avec un shell inconfortable. Chacune est mauvaise à la place de l’autre.</p>'),
+  sh(`# Debian, au clavier — tout est fait, tout est demande
+sudo adduser florence
+
+# Bas niveau — il faut TOUT dire, et le mot de passe est une etape a part
+sudo useradd -m -s /bin/bash florence
+sudo passwd florence`),
+  note('yellow', '⚠️ <code>adduser</code> a une deuxième syntaxe, qui n’a rien à voir', '<p>Avec <strong>deux</strong> arguments, il n’ajoute pas un utilisateur : il ajoute un utilisateur <strong>à un groupe</strong>.</p><div class="lx-cmd">sudo adduser florence formateurs     # ajoute florence AU GROUPE formateurs\nsudo usermod -aG formateurs florence  # exactement le meme effet</div><p>La même commande fait donc deux choses selon le nombre d’arguments. C’est déroutant la première fois, et c’est ce qui explique qu’on trouve les deux formes dans les documentations.</p>'),
+
+  block('heading', { level: 3, text: 'Les commandes du quotidien' }),
+  sh(`groupadd compta                # creer un groupe
+usermod -aG compta jean        # ajouter jean au groupe compta (SECONDAIRE)
+gpasswd -a jean compta         # la meme chose, autre commande
+gpasswd -d jean compta         # l'en RETIRER
+id jean                        # uid, gid principal, et TOUS les groupes
+groups jean                    # seulement la liste des groupes
+
+passwd jean                    # changer un mot de passe
+usermod -L jean                # verrouiller le compte
+usermod -s /bin/bash jean      # changer le shell
+usermod -s /usr/sbin/nologin sauvegarde   # un compte de service ne se connecte pas`),
+  note('red', '🚫 <code>usermod -G</code> sans le <code>-a</code> efface tout', '<p><code>-G</code> seul <strong>remplace</strong> la liste des groupes secondaires par celle qu’on donne. <code>usermod -G compta jean</code> retire jean de <em>tous</em> ses autres groupes — <code>sudo</code> compris. C’est ainsi qu’on se retire soi-même le droit d’administrer.</p><p><strong>Toujours <code>-aG</code></strong>, où <code>a</code> veut dire <em>append</em>, ajouter.</p>'),
+  note('yellow', '⚠️ Les groupes ne prennent effet qu’à la prochaine session', '<p>Comme le jeton d’accès Windows, l’appartenance aux groupes est fixée à l’ouverture de session. Après un <code>usermod -aG</code>, l’utilisateur doit se déconnecter — <code>id</code> montrera le nouveau groupe avant que <code>groups</code> dans son shell courant ne le voie.</p>'),
+
+  block('heading', { level: 3, text: 'Les trois fichiers, ligne par ligne' }),
+  block('html', { html: '<p>Aucune de ces commandes ne fait de magie : elles écrivent dans trois fichiers texte. Savoir les lire, c’est pouvoir vérifier — et réparer.</p>' }),
+
+  block('html', { html: '<p><strong><code>/etc/passwd</code></strong> — les comptes. Sept champs séparés par des deux-points :</p>' }),
+  flow(`florence:x:1001:1001:Florence Martin,,,:/home/florence:/bin/bash
+    |    |   |    |            |                  |             |
+    |    |   |    |            |                  |             +-- 7. SHELL de connexion
+    |    |   |    |            |                  +-- 6. dossier personnel
+    |    |   |    |            +-- 5. GECOS : nom complet, bureau, telephones
+    |    |   |    +-- 4. GID du groupe PRINCIPAL
+    |    |   +-- 3. UID — l'identite reelle du compte
+    |    +-- 2. « x » : le mot de passe est ailleurs, dans /etc/shadow
+    +-- 1. nom du compte`),
+  note('gray', '💡 Le « x » du deuxième champ', '<p>Historiquement, l’empreinte du mot de passe se trouvait <em>là</em> — dans un fichier que <strong>tout le monde peut lire</strong>. On l’a déplacée dans <code>/etc/shadow</code>, réservé à root, et laissé un <code>x</code> à la place pour dire « va voir là-bas ». Un fichier <code>passwd</code> qui n’est plus lisible par tous casse la moitié du système : il sert à traduire les UID en noms, partout.</p>'),
+  table(['Plage d’UID', 'À qui', 'Sur Debian'], [
+    ['<strong>0</strong>', '<strong>root</strong>', 'C’est l’UID qui donne les pouvoirs, pas le nom. Un compte nommé autrement avec l’UID 0 <em>est</em> root.'],
+    ['1 – 999', 'Comptes système', 'Services : <code>www-data</code>, <code>sshd</code>, <code>systemd-*</code>. Shell <code>nologin</code>.'],
+    ['<strong>≥ 1000</strong>', '<strong>Humains</strong>', 'Le premier compte créé à l’installation porte 1000.'],
+  ]),
+
+  block('html', { html: '<p><strong><code>/etc/group</code></strong> — les groupes. Quatre champs :</p>' }),
+  flow(`formateurs:x:1002:florence,amelie
+     |     |   |         |
+     |     |   |         +-- 4. les membres SECONDAIRES, separes par des virgules
+     |     |   +-- 3. GID — c'est LUI qui relie a /etc/passwd
+     |     +-- 2. mot de passe de groupe (quasi jamais utilise)
+     +-- 1. nom du groupe`),
+  note('red', '🚫 Le piège : le groupe principal n’apparaît PAS dans cette liste', '<p>Le quatrième champ ne contient que les membres <strong>secondaires</strong>. Le groupe <em>principal</em> d’un utilisateur est inscrit ailleurs — dans le <strong>quatrième champ de sa ligne de <code>/etc/passwd</code></strong>.</p><p>Conséquence directe : chercher <code>florence</code> dans la ligne <code>florence:x:1001:</code> de <code>/etc/group</code> ne donne rien, et l’on conclut à tort qu’elle n’est pas dans son propre groupe. La commande qui dit la vérité, c’est <code>id florence</code> — elle regarde les deux fichiers.</p>'),
+  note('blue', '💡 Le groupe personnel', '<p>Sur Debian, créer l’utilisateur <code>florence</code> crée aussi un <strong>groupe <code>florence</code></strong>, dont elle est le seul membre, et qui devient son groupe principal. Ce n’est pas un doublon inutile : c’est ce qui permet à un <code>umask</code> de <code>002</code> d’être sûr — un fichier créé en groupe-écriture n’est partagé qu’avec elle-même, tant qu’on ne change pas son groupe propriétaire.</p>'),
+
+  block('html', { html: '<p><strong><code>/etc/shadow</code></strong> — les mots de passe. Lisible par root seul. Ce qui compte est le deuxième champ :</p>' }),
+  flow(`florence:$6$xR2f...9Kd:20321:0:99999:7:::
+     |        |
+     |        +-- l'empreinte. $6$ = SHA-512. $y$ = yescrypt (Debian 12+)
+     +-- le compte
+
+Valeurs particulieres du 2e champ :
+   !   ou  !!   compte VERROUILLE — aucune connexion par mot de passe
+   *              pas de mot de passe possible (comptes de service)
+   (vide)         AUCUN mot de passe demande — dangereux`),
+  note('yellow', '⚠️ « Un compte sans mot de passe n’est pas actif »', '<p>Après un <code>useradd</code>, le champ vaut <code>!</code> : le compte <strong>existe</strong>, il a un UID, un dossier peut-être — mais <strong>aucune connexion par mot de passe n’est possible</strong>. C’est pour cela qu’un <code>su - toto</code> échoue juste après la création. Il manque une étape :</p><div class="lx-cmd">sudo passwd toto</div><p>C’est aussi la différence de fond avec <code>adduser</code>, qui demande le mot de passe dans la foulée.</p>'),
+
+  block('heading', { level: 3, text: 'Le champ shell, et le prompt qui ne ressemble à rien' }),
+  block('html', { html: '<p>Un compte créé par <code>useradd</code> sans <code>-s</code> reçoit le shell par défaut de <code>/etc/default/useradd</code> : sur Debian, <strong><code>/bin/sh</code></strong>. À la connexion, on obtient ceci :</p>' }),
+  flow(`$                            <- /bin/sh : un dollar, et c'est tout
+                                 pas d'historique avec les fleches
+                                 pas de completion avec la tabulation
+                                 pas de couleurs
+
+jean@debian:~$               <- /bin/bash : nom, machine, dossier courant
+                                 tout le confort`),
+  block('html', { html: '<p>Ce n’est pas une panne : c’est le septième champ de <code>/etc/passwd</code>. Deux façons de le corriger :</p>' }),
+  sh(`sudo usermod -s /bin/bash toto     # la bonne : elle valide ce qu'on ecrit
+sudo chsh -s /bin/bash toto        # equivalent
+
+sudo nano /etc/passwd              # a la main : on voit ce qu'on change,
+                                   # mais une faute de frappe rend le compte
+                                   # inutilisable — vipw verifie avant d'ecrire`),
+  note('gray', '💡 Éditer <code>/etc/passwd</code> à la main : avec <code>vipw</code>', '<p>Modifier le fichier directement est formateur — on voit exactement quel champ change. Mais une erreur de syntaxe empêche la connexion. <code>sudo vipw</code> ouvre le même fichier, <strong>pose un verrou</strong> pour qu’une commande concurrente ne l’écrase pas, et <strong>vérifie la syntaxe avant d’enregistrer</strong>. Le pendant pour les groupes est <code>vigr</code>.</p><p>Dans les deux cas, le changement de shell ne prend effet qu’à la <strong>prochaine connexion</strong>.</p>'),
+
+  block('heading', { level: 3, text: 'Après la suppression : les fichiers restent' }),
+  sh(`sudo deluser toto                    # supprime le compte, GARDE /home/toto
+sudo deluser --remove-home toto      # supprime le compte ET son dossier
+sudo userdel -r toto                 # equivalent bas niveau
+
+sudo delgroup formateurs             # supprimer un groupe`),
+  block('html', { html: '<p>Supprimer un compte ne supprime <strong>pas</strong> ses fichiers — c’est volontaire : les données d’un salarié qui part ne doivent pas disparaître avec son badge. Mais un <code>ls -al</code> donne alors ceci :</p>' }),
+  flow(`AVANT la suppression :
+drwxr-xr-x  2 toto  toto   4096  ... documents
+
+APRES la suppression du compte :
+drwxr-xr-x  2 1001  1001   4096  ... documents
+              |     |
+              +-----+-- l'UID et le GID NUS, sans nom en face`),
+  note('blue', '💡 Pourquoi un nombre s’affiche à la place du nom', '<p>Le système n’a <strong>jamais</strong> stocké le nom du propriétaire sur le fichier : il n’y a qu’un <strong>numéro</strong>. Le nom vient de <code>/etc/passwd</code>, consulté au moment de l’affichage. Le compte supprimé, plus personne ne répond à « qui est 1001 ? », et <code>ls</code> affiche le nombre.</p><p>C’est la même mécanique qu’un SID orphelin sous Windows, affiché en <code>S-1-5-21-…</code> dans l’onglet Sécurité.</p>'),
+  note('red', '🚫 Le danger réel des fichiers orphelins', '<p>Le prochain compte créé reçoit le <strong>premier UID libre</strong> — c’est-à-dire, très souvent, <strong>celui qui vient d’être libéré</strong>. Le nouvel arrivant hérite alors, sans rien demander, de la propriété de tous les fichiers de son prédécesseur.</p><p>D’où la règle en production : au départ d’un utilisateur, on <strong>décide</strong> — on archive, on réattribue à un responsable (<code>chown -R</code>), ou on supprime. On ne laisse pas traîner.</p><div class="lx-cmd">sudo find /home -nouser -o -nogroup     # lister tous les fichiers orphelins</div>'),
 
   block('heading', { level: 2, text: '11) Diagnostic' }),
   sh(`namei -l /srv/compta/budgets/2026.ods   # OU exactement le chemin se bloque
