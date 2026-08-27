@@ -6,8 +6,9 @@ const PAGE = { slug: 'linux-ssh', title: 'SSH serveur sous Linux', excerpt: 'Ins
 const block = (t: Parameters<typeof makePageBlock>[0], p: Partial<PageBlock>) => Object.assign(makePageBlock(t), p);
 const note = (c: string, t: string, h: string) => block('html', { html: `<aside class="pb-note pb-note-${c}"><p class="pb-note-title">${t}</p>${h}</aside>` });
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-const styleBlock = block('html', { html: `<style>.lx-cmd{font-family:ui-monospace,'Space Mono',monospace;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:8px 0;white-space:pre-wrap;overflow-x:auto;font-size:12.5px;line-height:1.55}</style>` });
+const styleBlock = block('html', { html: `<style>.lx-flow{font-family:ui-monospace,'Space Mono',monospace;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin:10px 0;white-space:pre;overflow-x:auto;font-size:12px;line-height:1.6}.lx-cmd{font-family:ui-monospace,'Space Mono',monospace;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:8px 0;white-space:pre-wrap;overflow-x:auto;font-size:12.5px;line-height:1.55}</style>` });
 const cmd = (t: string) => block('html', { html: `<div class="lx-cmd">${esc(t)}</div>` });
+const flow = (t: string) => block('html', { html: `<div class="lx-flow">${esc(t)}</div>` });
 const blocks: PageBlock[] = [
   block('hero', { eyebrow: 'Cours · Linux', title: PAGE.title, subtitle: 'Administrer un serveur Linux à distance, de façon chiffrée.' }),
   styleBlock,
@@ -19,19 +20,94 @@ sudo systemctl enable ssh      # démarrage auto au boot
 sudo systemctl status ssh      # vérifier qu'il tourne`),
   block('html', { html: '<p>Depuis un client : <code>ssh utilisateur@192.168.10.20</code>.</p>' }),
   block('heading', { level: 2, text: '2) Configurer (sshd_config)' }),
+
+  block('heading', { level: 3, text: 'SSH, ssh, sshd : ne pas confondre' }),
+  block('html', { html: '<table class="pb-table"><thead><tr><th>Écrit</th><th>Ce que c’est</th></tr></thead><tbody>' +
+    '<tr><td><strong>SSH</strong></td><td>Le <strong>protocole</strong> — la convention de communication. Ni un fichier, ni un programme.</td></tr>' +
+    '<tr><td><strong><code>ssh</code></strong></td><td>Le programme <strong>client</strong> : celui qu’on lance pour se connecter <em>ailleurs</em>.</td></tr>' +
+    '<tr><td><strong><code>sshd</code></strong></td><td>Le <strong>démon serveur</strong> (le <em>d</em> final = <em>daemon</em>) : celui qui écoute, par défaut sur le port <strong>22</strong>.</td></tr>' +
+    '</tbody></table>' }),
+  note('red', '🚫 Deux fichiers de configuration, presque le même nom', '<p>C’est la confusion qui fait perdre le plus de temps :</p><table class="pb-table"><thead><tr><th>Fichier</th><th>Configure</th><th>En pratique</th></tr></thead><tbody><tr><td><code>/etc/ssh/<strong>ssh</strong>_config</code></td><td>Le <strong>client</strong></td><td>On y touche rarement.</td></tr><tr><td><code>/etc/ssh/<strong>sshd</strong>_config</code></td><td>Le <strong>serveur</strong></td><td><strong>C’est celui-ci</strong> qu’on modifie pour sécuriser la machine.</td></tr></tbody></table><p>Un <code>d</code> de différence. Éditer <code>ssh_config</code> en croyant configurer le serveur ne produit aucune erreur — simplement aucun effet.</p>'),
+
   block('html', { html: '<p>Le fichier de config est <code>/etc/ssh/sshd_config</code>. Après toute modification : <code>sudo systemctl restart ssh</code>. Réglages utiles :</p>' }),
   cmd(`Port 22                      # changer (ex. 2222) réduit le bruit des scans
 PermitRootLogin no           # interdire la connexion directe en root
 PasswordAuthentication yes   # (mettre no une fois les clés en place)
 AllowUsers jean admin        # limiter aux comptes autorisés`),
+  block('heading', { level: 3, text: 'Changer le port d’écoute' }),
+  block('html', { html: '<p>Le port 22 est celui que balayent tous les robots d’internet. En changer ne rend pas le serveur inviolable — mais il fait disparaître l’essentiel du bruit de fond dans les journaux, ce qui rend les vraies tentatives visibles.</p>' }),
+  cmd(`sudo nano /etc/ssh/sshd_config
+#   Port 22        ->   Port 22320
+
+sudo systemctl restart ssh          # relancer pour appliquer
+sudo systemctl status ssh           # verifier : « Server listening on 0.0.0.0 port 22320 »`),
+  note('gray', '💡 <code>ssh</code> ou <code>sshd</code> dans la commande <code>systemctl</code> ?', '<p>Sur Debian, l’unité s’appelle <strong><code>ssh.service</code></strong> ; <code>sshd.service</code> n’en est qu’un <em>alias</em>. Les deux fonctionnent donc, et les supports écrivent souvent <code>sshd</code>. Sur Red Hat et dérivés, c’est bien <code>sshd</code>. En cas de doute :</p><div class="lx-cmd">systemctl list-units \'*ssh*\'</div>'),
+  note('blue', '💡 Le <code>status</code> ne montre les journaux que si l’on est administrateur', '<p><code>systemctl status ssh</code> affiche l’état pour tout le monde, mais <strong>les dernières lignes de journal ne s’affichent qu’avec <code>sudo</code></strong>. Or c’est justement là qu’on lit le port réellement écouté. Autres façons de le vérifier :</p><div class="lx-cmd">sudo ss -tlnp | grep ssh     # sur quel port le service ecoute VRAIMENT\nsudo sshd -T | grep -i port  # ce que la configuration declare, une fois lue</div>'),
+  block('html', { html: '<p>Côté client, il faut désormais préciser le port — il n’est plus deviné :</p>' }),
+  cmd(`ssh morgane@192.168.15.70 -p 22320     # invite de commande
+ssh -p 22320 morgane@192.168.15.70     # equivalent`),
+  block('html', { html: '<p>Dans <strong>PuTTY</strong> et <strong>MobaXterm</strong>, le port est un champ à côté de l’adresse — il suffit d’y écrire 22320.</p>' }),
+  note('yellow', '⚠️ Trois choses qui font échouer un changement de port', '<ul><li><strong>Le pare-feu.</strong> Si <code>ufw</code> est actif, il autorise le 22, pas le 22320 : <code>sudo ufw allow 22320/tcp</code>. C’est la cause n°1.</li><li><strong>Un port déjà pris.</strong> Choisir au-dessus de 1024, et vérifier : <code>sudo ss -tlnp | grep 22320</code>.</li><li><strong>L’activation par socket.</strong> Sur les systèmes récents, <code>ssh.socket</code> peut décider du port à la place de <code>sshd_config</code> — la ligne <code>Port</code> est alors <strong>sans effet</strong>. Le symptôme est net : le service redémarre sans erreur et continue d’écouter sur 22. Vérifier avec <code>systemctl list-units \'*ssh*\'</code> ; si <code>ssh.socket</code> est actif, c’est lui qu’il faut modifier (<code>sudo systemctl edit ssh.socket</code>).</li></ul>'),
+  note('red', '🚫 Garde une session ouverte pendant le test', '<p>Change le port, relance le service, puis <strong>ouvre une seconde session</strong> sur le nouveau port <em>sans fermer la première</em>. Si la nouvelle échoue, la première est encore là pour revenir en arrière.</p><p>Sans cette précaution, une erreur de port ou un pare-feu oublié laisse la machine injoignable — et il faut la console de l’hyperviseur pour s’en sortir.</p>'),
+
   note('yellow', '⚠️ Ne te coupe pas l’accès', '<p>Avant de mettre <code>PermitRootLogin no</code> ou de désactiver le mot de passe, <strong>vérifie que ton compte normal fonctionne</strong> (et qu’il est <code>sudo</code>). Garde une session ouverte pendant les tests.</p>'),
   block('heading', { level: 2, text: '3) Authentification par clé (recommandé)' }),
-  block('html', { html: '<p>Plus sûr qu’un mot de passe : une paire de <strong>clés</strong> (privée = tu la gardes, publique = sur le serveur).</p>' }),
+
+  block('heading', { level: 3, text: 'Symétrique et asymétrique : ce qui se passe vraiment' }),
+  block('html', { html: '<p>Avant les manipulations, une mise au point qui évite un contresens durable. <strong>SSH utilise les deux à la fois, et depuis toujours</strong> — y compris lors d’une connexion « simple » par mot de passe.</p>' }),
+  block('html', { html: '<table class="pb-table"><thead><tr><th></th><th>Symétrique</th><th>Asymétrique</th></tr></thead><tbody>' +
+    '<tr><td>Les clés</td><td><strong>Une seule</strong>, la même pour chiffrer et déchiffrer.</td><td><strong>Deux</strong> : ce que l’une ferme, seule l’autre l’ouvre.</td></tr>' +
+    '<tr><td>Vitesse</td><td><strong>Très rapide.</strong></td><td>Lente — de l’ordre de mille fois plus.</td></tr>' +
+    '<tr><td>Le problème</td><td>Comment se mettre d’accord sur la clé sans que personne ne l’intercepte ?</td><td>Aucun secret à transmettre : la clé publique peut être criée sur les toits.</td></tr>' +
+    '<tr><td>Dans SSH</td><td>Chiffre <strong>toutes les données</strong> échangées.</td><td>Sert à <strong>authentifier</strong> et à <strong>se mettre d’accord</strong> sur la clé symétrique.</td></tr>' +
+    '</tbody></table>' }),
+  flow(`Ce qui se passe a CHAQUE connexion, meme la plus simple :
+
+1. Negociation        client et serveur se mettent d'accord sur une
+                      CLE DE SESSION symetrique — sans jamais l'envoyer.
+                      Chacun la CALCULE de son cote (Diffie-Hellman).
+
+2. Authentification   le serveur prouve son identite avec sa cle d'hote
+   DU SERVEUR         (asymetrique). C'est SA CLE PUBLIQUE dont on accepte
+                      l'empreinte, et qui est rangee dans known_hosts.
+
+3. Authentification   a ce stade seulement, le tunnel est chiffre.
+   DE L'UTILISATEUR   C'est ici — et ICI SEULEMENT — que se joue le choix :
+                          par MOT DE PASSE       (TP 1.4)
+                          par CLE PUBLIQUE       (ce TP)
+
+4. Les donnees        chiffrees avec la cle de session symetrique de l'etape 1.`),
+  note('red', '🚫 « Connexion simple = clés symétriques » : le raccourci à corriger', '<p>On lit souvent que la connexion par mot de passe serait « symétrique » et que celle par clés serait « asymétrique ». <strong>C’est faux, et cela conduit à une erreur de raisonnement.</strong></p><p>Si l’empreinte acceptée à la première connexion était celle d’une clé <em>symétrique</em>, alors <code>known_hosts</code> contiendrait un <strong>secret partagé</strong> — et quiconque lirait ce fichier pourrait déchiffrer les communications. Ce serait une faille béante. Ce n’en est pas une : <code>known_hosts</code> ne contient que des clés <strong>publiques</strong>, qui ne déchiffrent rien. Le fichier est d’ailleurs lisible par tous, en toute tranquillité.</p><p><strong>Ce qui change entre le TP 1.4 et celui-ci, c’est uniquement l’étape 3</strong> — la façon dont <em>l’utilisateur</em> prouve qui il est. Le chiffrement des données, lui, ne change pas d’un iota.</p>'),
+  note('blue', '💡 La clé de session n’est jamais transmise', '<p>C’est l’élégance du procédé, et cela vaut d’être compris : client et serveur n’<em>échangent</em> pas la clé symétrique — ils échangent des éléments publics à partir desquels <strong>chacun calcule la même clé de son côté</strong>. Un observateur qui capte tout le trafic ne peut pas la reconstituer.</p><p>C’est l’échange <strong>Diffie-Hellman</strong>. Il répond exactement à la question « comment se mettre d’accord sur un secret en public ? ».</p>'),
+  note('green', '🎯 Alors pourquoi passer aux clés, si tout est déjà chiffré ?', '<p>Parce que le chiffrement protège le <em>transport</em>, pas le <em>mot de passe</em>. Un mot de passe peut être deviné, réutilisé ailleurs, écrit sur un papier, ou arraché par force brute — et les robots qui balayent le port 22 ne font que cela.</p><p>Une clé privée de 3 000 bits ne se devine pas. Et comme elle ne quitte jamais le poste client, il n’y a rien à intercepter.</p>'),
+
+  block('html', { html: '<p>Deux chemins mènent au même résultat : celui d’OpenSSH, en deux commandes, et celui de PuTTY, en fenêtres. Le fichier obtenu sur le serveur est identique.</p>' }),
+
+  block('heading', { level: 3, text: 'La voie OpenSSH — Linux, macOS, Windows récent' }),
   cmd(`# sur le CLIENT
 ssh-keygen -t ed25519            # génère la paire (~/.ssh/)
 ssh-copy-id jean@192.168.10.20   # copie la clé publique sur le serveur
 ssh jean@192.168.10.20           # connexion sans mot de passe`),
+  note('gray', '💡 <code>ed25519</code> plutôt que <code>rsa</code>', '<p>C’est le format recommandé aujourd’hui : clés courtes, rapides, au moins aussi sûres qu’un RSA de 3072 bits. <code>ssh-keygen</code> sans option produit encore du RSA sur les systèmes anciens — d’où le <code>-t ed25519</code> explicite.</p>'),
+
+  block('heading', { level: 3, text: 'La voie PuTTY — depuis Windows' }),
+  block('html', { html: '<p><strong>PuTTYgen</strong> est installé en même temps que PuTTY. Il remplace <code>ssh-keygen</code>.</p><ol><li>Lancer PuTTYgen, cliquer sur <strong>Generate</strong>.</li><li><strong>Bouger la souris</strong> dans la fenêtre : le programme a besoin de hasard, et il le prend dans tes mouvements. La barre avance à mesure.</li><li>Saisir une <strong>passphrase</strong> — deux fois. Elle chiffre la clé privée sur le disque.</li><li><strong>Save public key</strong> et <strong>Save private key</strong> (extension <code>.ppk</code>). Donner des noms parlants.</li></ol>' }),
+  note('red', '🚫 Le piège du format : ne PAS envoyer le fichier « Save public key »', '<p>C’est l’erreur qui fait perdre une soirée. Le fichier produit par <strong>Save public key</strong> est au format <em>RFC 4716</em> : plusieurs lignes, encadrées par <code>---- BEGIN SSH2 PUBLIC KEY ----</code>. <strong>OpenSSH ne le comprend pas</strong>, et il refusera la clé sans expliquer pourquoi.</p><p>Ce qu’il faut, c’est le contenu du <strong>cadre du haut de PuTTYgen</strong>, celui intitulé « <em>Public key for pasting into OpenSSH authorized_keys file</em> » : <strong>une seule ligne</strong>, qui commence par <code>ssh-rsa</code> ou <code>ssh-ed25519</code> et se termine par un commentaire.</p><p>C’est pour cela que le support demande de <strong>copier depuis la fenêtre</strong>, et non depuis le fichier enregistré.</p>'),
+  block('html', { html: '<p>Ensuite, sur le serveur — connecté en SSH classique, par mot de passe :</p>' }),
+  cmd(`cd ~                          # SON dossier personnel, pas /root
+mkdir .ssh                    # SANS sudo — sinon le dossier appartient a root
+chmod 700 .ssh
+nano .ssh/authorized_keys     # coller la cle : clic droit dans PuTTY
+chmod 600 .ssh/authorized_keys`),
+  note('red', '🚫 Les permissions : la première cause d’échec, et elle est silencieuse', '<p>Si <code>~/.ssh</code> ou <code>authorized_keys</code> sont accessibles à d’autres que leur propriétaire, <strong><code>sshd</code> ignore la clé purement et simplement</strong> et redemande le mot de passe. Aucun message côté client. Rien qui ressemble à une erreur.</p><table class="pb-table"><thead><tr><th>Élément</th><th>Droits exigés</th></tr></thead><tbody><tr><td>Le dossier personnel <code>~</code></td><td>Pas d’écriture pour le groupe ni les autres (<code>755</code> convient)</td></tr><tr><td><code>~/.ssh</code></td><td><strong>700</strong></td></tr><tr><td><code>~/.ssh/authorized_keys</code></td><td><strong>600</strong></td></tr></tbody></table><p>Et le propriétaire doit être <strong>l’utilisateur</strong>, pas root — d’où l’avertissement du support : <em>ne crée pas le dossier avec <code>sudo</code></em>. Si c’est déjà fait :</p><div class="lx-cmd">sudo chown -R morgane:morgane /home/morgane/.ssh\nchmod 700 /home/morgane/.ssh\nchmod 600 /home/morgane/.ssh/authorized_keys</div><p>La commande qui donne la réponse en trois secondes, côté serveur :</p><div class="lx-cmd">sudo journalctl -u ssh -f      # « Authentication refused: bad ownership or modes »</div>'),
+  block('html', { html: '<p>Enfin, dans PuTTY, désigner la clé privée avant de se connecter :</p><ol><li><strong>Connection → SSH → Auth → Credentials</strong>, puis <strong>Browse</strong> vers le fichier <code>.ppk</code>.</li><li>Revenir sur <strong>Session</strong>, saisir l’adresse et <strong>le port</strong>.</li><li>Donner un nom dans <strong>Saved Sessions</strong> et cliquer <strong>Save</strong> — sans quoi tout est à ressaisir la prochaine fois.</li><li><strong>Open</strong>.</li></ol>' }),
+  note('green', '🎯 Comment savoir que ça a marché', '<p>PuTTY demande le nom d’utilisateur, puis <strong>la passphrase</strong> — et non plus le mot de passe du compte.</p><p>La nuance est importante : la passphrase <strong>déverrouille la clé privée sur ton poste</strong>. Elle ne voyage pas, le serveur ne la connaît pas et ne la vérifie pas. C’est la clé qui prouve ton identité, pas elle.</p>'),
+  note('blue', '💡 Ne plus la retaper : Pageant', '<p>Pageant, livré avec PuTTY, garde les clés déverrouillées en mémoire : on saisit la passphrase une fois par session Windows. Son équivalent OpenSSH est <code>ssh-agent</code> (<code>ssh-add ~/.ssh/id_ed25519</code>).</p><p>C’est ce qui rend l’authentification par clé <strong>plus commode</strong> que le mot de passe, en plus d’être plus sûre — sinon personne ne l’adopterait.</p>'),
+  note('yellow', '⚠️ Le <code>.ppk</code> n’est pas un format OpenSSH', '<p>Il est propre à PuTTY. Pour utiliser la même clé avec la commande <code>ssh</code>, il faut la convertir : dans PuTTYgen, <strong>Load</strong> le <code>.ppk</code>, puis <em>Conversions → Export OpenSSH key</em>.</p>'),
+
+  block('heading', { level: 3, text: 'Une fois que ça marche : fermer la porte' }),
   block('html', { html: '<p>Une fois les clés en place, on durcit : <code>PasswordAuthentication no</code> dans <code>sshd_config</code> → seules les clés sont acceptées.</p>' }),
+  note('red', '🚫 Vérifier AVANT de désactiver le mot de passe', '<p>Ouvre une seconde session par clé, et garde la première ouverte. Tant que la connexion par clé n’a pas fonctionné <strong>au moins une fois</strong>, ne touche pas à <code>PasswordAuthentication</code> : c’est le moyen le plus rapide de se retrouver enfermé dehors.</p>'),
   block('heading', { level: 2, text: '4) Se connecter depuis Windows' }),
   block('html', { html: '<p>Trois clients, tous corrects — c’est le même protocole derrière, le choix se fait sur le confort. Un client graphique est souvent plus pratique que l’invite de commande quand on gère plusieurs serveurs.</p>' }),
   block('html', { html: '<table class="pb-table"><thead><tr><th>Client</th><th>Ce qu’il apporte</th><th>Quand le choisir</th></tr></thead><tbody>' +

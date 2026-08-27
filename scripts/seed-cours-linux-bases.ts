@@ -11,6 +11,7 @@ const note = (cls: string, title: string, html: string) => block('html', { html:
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const styleBlock = block('html', { html: `<style>.lx-cmd{font-family:ui-monospace,'Space Mono',monospace;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:8px 0;white-space:pre-wrap;overflow-x:auto;font-size:12.5px;line-height:1.55}.lx-t{border-collapse:collapse;width:100%;font-size:13px;margin:6px 0}.lx-t th,.lx-t td{border:1px solid var(--border);padding:6px 10px;text-align:left}.lx-t th{background:var(--surface-2)}.lx-t td:first-child{font-family:ui-monospace,monospace;white-space:nowrap;font-weight:600}</style>` });
 const cmd = (t: string) => block('html', { html: `<div class="lx-cmd">${esc(t)}</div>` });
+const flow = (t: string) => block('html', { html: `<div class="lx-flow">${esc(t)}</div>` });
 const tbl = (head: string[], rows: string[][]) => block('html', { html: `<table class="lx-t"><thead><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>` });
 
 const blocks: PageBlock[] = [
@@ -199,12 +200,99 @@ chmod -R 755 /var/www        # récursif sur un dossier`),
   note('yellow', '💡 Lire un rwx', '<p><code>-rwxr-x---</code> : fichier (<code>-</code>), propriétaire = <strong>rwx</strong>, groupe = <strong>r-x</strong>, autres = <strong>---</strong>. Soit <strong>750</strong>. Pour un dossier, <code>x</code> = droit d’y <em>entrer</em>.</p>'),
 
   block('heading', { level: 2, text: '9) Installer des paquets (apt)' }),
-  cmd(`sudo apt update              # met à jour la liste des paquets
-sudo apt upgrade             # met à jour les paquets installés
-sudo apt install apache2     # installer un paquet
-sudo apt remove apache2      # désinstaller
-apt search samba             # rechercher`),
-  block('html', { html: '<p>Debian/Ubuntu utilisent <strong>apt</strong> (paquets <code>.deb</code>). D’autres familles utilisent <code>yum</code>/<code>dnf</code> (Red Hat/CentOS).</p>' }),
+
+  block('heading', { level: 3, text: 'Un paquet, c’est le .exe de Windows — en mieux rangé' }),
+  tbl(['', 'Windows', 'Debian'], [
+    ['Qui cherche ?', '<strong>Toi</strong> : moteur de recherche, site de l’éditeur.', '<strong>La machine</strong> : elle interroge son dépôt.'],
+    ['Ce qu’on récupère', 'Un <code>.exe</code> ou <code>.msi</code>.', 'Un <strong><code>.deb</code></strong> — une archive compressée (<em>DEB</em>ian).'],
+    ['D’où', 'N’importe quel site — c’est toi qui juges.', 'Un <strong>dépôt</strong> signé et vérifié.'],
+    ['Les dépendances', 'Souvent embarquées, ou à installer à la main.', '<strong>Résolues automatiquement.</strong>'],
+    ['Mettre à jour', 'Chaque logiciel a son propre mécanisme.', '<strong>Une seule commande pour tout.</strong>'],
+  ]),
+  note('blue', '💡 C’est la vraie différence entre les distributions', '<p>Debian et Ubuntu utilisent des paquets <code>.deb</code> et <code>apt</code>. Red Hat, Fedora et Rocky utilisent des <code>.rpm</code> et <code>dnf</code>. Arch utilise <code>pacman</code>. Le reste du système se ressemble beaucoup — <strong>c’est le mode d’installation des logiciels qui sépare le plus les familles</strong>.</p><p>Un <code>.deb</code> ne s’installe pas sur une Red Hat, et inversement.</p>'),
+
+  block('heading', { level: 3, text: 'Les dépendances : pourquoi il propose toujours d’autres paquets' }),
+  block('html', { html: '<p>Un paquet dit rarement tout ce qu’il lui faut pour fonctionner : il <strong>dépend</strong> d’autres paquets et de bibliothèques. Demander <code>openssh-server</code>, c’est demander aussi ce dont il a besoin.</p>' }),
+  flow(`$ sudo apt install openssh-server
+
+Les paquets supplementaires suivants seront installes :
+  ncurses-term  openssh-sftp-server  ssh-import-id
+                    ^
+                    ce ne sont pas des suggestions :
+                    sans eux, le paquet demande ne fonctionne pas
+
+Souhaitez-vous continuer ? [O/n]`),
+  note('gray', '💡 Le seul moment où l’on voit les dépendances', '<p>C’est à cette question, et nulle part ailleurs. Une fois installées, elles se font oublier — ce qui est précisément le but. Pour les revoir plus tard :</p><div class="lx-cmd">apt depends openssh-server      # de quoi il a besoin\napt rdepends openssh-server     # qui a besoin de LUI</div>'),
+
+  block('heading', { level: 3, text: 'Le dépôt, et le cache' }),
+  block('html', { html: '<p>Un <strong>dépôt</strong> (ou <em>miroir</em>) est un serveur où tous les paquets sont rassemblés. Il en existe des centaines — universités, hébergeurs, entreprises — et la plupart sont des <strong>copies les uns des autres</strong>, d’où le mot « miroir ». C’est celui choisi à l’installation.</p>' }),
+  flow(`apt update                    apt install tree
+     |                                |
+     v                                v
+  telecharge la LISTE            telecharge le PAQUET
+  des paquets disponibles        depuis le depot
+     |                                |
+     v                                v
+  /var/lib/apt/lists/            /var/cache/apt/archives/
+  ("le cache")
+
+  apt ne cherche JAMAIS sur internet au moment du « install » :
+  il consulte d'abord SA LISTE. Si elle date, il ne verra pas
+  la derniere version — d'ou le « update » d'abord.`),
+  note('yellow', '⚠️ <code>update</code> ne met à jour aucun logiciel', '<p>Le nom trompe tout le monde. <code>apt update</code> rafraîchit uniquement <strong>la liste</strong> de ce qui est disponible — le catalogue. C’est <code>apt upgrade</code> qui installe réellement les nouvelles versions.</p><p>D’où l’ordre, toujours : <strong><code>update</code> puis <code>upgrade</code></strong>. Un <code>upgrade</code> seul travaille sur un catalogue périmé.</p>'),
+  note('gray', '💡 <code>deb.debian.org</code> plutôt qu’un miroir nommé', '<p>Choisir « le miroir de telle université » fige la machine sur un serveur qui peut tomber ou prendre du retard. <code>deb.debian.org</code> est un répartiteur : il redirige vers le miroir le plus proche et le plus rapide, automatiquement.</p><p>C’est le successeur de <code>httpredir.debian.org</code>, qu’on trouve encore dans les documentations anciennes — <strong>celui-ci est arrêté</strong>, une ligne qui le mentionne fera échouer <code>apt update</code>.</p>'),
+
+  block('heading', { level: 3, text: 'Ce que fait <code>apt install</code>, étape par étape' }),
+  flow(`1.  Tu demandes un paquet                 apt install tree
+2.  apt le cherche DANS SON CACHE         le nom est-il bon ?
+3.  Il verifie la version                 deja installe ? a jour ?
+4.  Il resout les dependances             de quoi d'autre a-t-il besoin ?
+5.  Il te demande confirmation            [O/n]
+6.  Il TELECHARGE le paquet + ses dependances depuis le depot
+7.  Il DECOMPRESSE les .deb
+8.  Il INSTALLE et applique la configuration par defaut
+9.  Termine — le logiciel est utilisable`),
+  note('green', '🎯 Tout ce qu’il t’a demandé, c’est « O »', '<p>Comparé à un installeur Windows — suivant, suivant, décocher la barre d’outils, suivant — c’est le point où Linux gagne franchement. La contrepartie est qu’il faut <strong>connaître le nom exact du paquet</strong>.</p>'),
+
+  block('heading', { level: 3, text: 'Trouver le nom d’un paquet' }),
+  cmd(`apt search serveur web           # cherche dans les noms ET les descriptions
+apt-cache search apache          # la forme classique, meme resultat
+apt show apache2                 # la fiche complete : version, taille, dependances
+apt list --installed | grep ssh  # ce qui est deja installe`),
+  note('blue', '💡 Les noms de paquets sont parfois surprenants', '<p>Le serveur web Apache s’appelle <code>apache2</code>, le client MySQL <code>mariadb-client</code>, la commande <code>ifconfig</code> vit dans <code>net-tools</code>, et <code>dig</code> dans <code>dnsutils</code>. <strong>Le nom du paquet n’est pas le nom de la commande.</strong></p><div class="lx-cmd">sudo apt install command-not-found     # puis, a la prochaine commande inconnue,\n                                       # le systeme dit quel paquet l\'installe</div>'),
+
+  block('heading', { level: 3, text: 'Les commandes du quotidien' }),
+  cmd(`sudo apt update                  # rafraichir la LISTE (le catalogue)
+sudo apt upgrade                 # installer les nouvelles versions
+sudo apt full-upgrade            # idem, en acceptant de retirer un paquet si besoin
+
+sudo apt install tree            # installer
+sudo apt install tree htop curl  # plusieurs d'un coup
+sudo apt remove tree             # desinstaller, en GARDANT la configuration
+sudo apt purge tree              # desinstaller ET supprimer la configuration
+sudo apt autoremove              # retirer les dependances devenues ORPHELINES
+sudo apt clean                   # vider les .deb telecharges (/var/cache/apt)`),
+  note('red', '🚫 <code>purge</code> et <code>autoremove</code> sont souvent confondus — y compris dans les supports', '<p>Ce sont deux choses <strong>sans rapport</strong>, et l’erreur est fréquente :</p><table class="lx-t"><thead><tr><th>Commande</th><th>Ce qu’elle fait vraiment</th></tr></thead><tbody><tr><td><code>apt remove <em>paquet</em></code></td><td>Retire le programme, <strong>garde ses fichiers de configuration</strong> dans <code>/etc</code>. Une réinstallation retrouve tous les réglages.</td></tr><tr><td><code>apt purge <em>paquet</em></code></td><td>Retire le programme <strong>et ses fichiers de configuration</strong>. Repartir de zéro. <em>Exige un nom de paquet.</em></td></tr><tr><td><strong><code>apt autoremove</code></strong></td><td><strong>C’est lui</strong> qui supprime les dépendances devenues inutiles. <em>S’emploie seul, sans nom de paquet.</em></td></tr></tbody></table><p><strong><code>apt purge</code> tapé seul ne nettoie rien</strong> : il répond « 0 à enlever » et l’on croit la machine propre alors que les orphelins sont toujours là. Le nettoyage, c’est <code>autoremove</code>.</p>'),
+  note('green', '🎯 La séquence d’entretien, dans l’ordre', '<div class="lx-cmd">sudo apt update       # rafraichir le catalogue\nsudo apt upgrade      # mettre a jour ce qui est installe\nsudo apt autoremove   # retirer les dependances orphelines\nsudo apt clean        # vider les .deb telecharges</div><p>Les deux dernières sont les premières à lancer sur un serveur dont <code>/var</code> se remplit — voir <a href="/pages/linux-disques">Disques et espace</a>.</p>'),
+
+  block('heading', { level: 3, text: '<code>apt</code> ou <code>apt-get</code> ?' }),
+  tbl(['', '<code>apt</code>', '<code>apt-get</code> et <code>apt-cache</code>'], [
+    ['Pour qui', '<strong>L’humain</strong>, au clavier.', '<strong>Les scripts.</strong>'],
+    ['Affichage', 'Barre de progression, couleurs, résumé lisible.', 'Sobre, sans fioriture.'],
+    ['Stabilité de la sortie', '<strong>Non garantie</strong> — elle peut changer d’une version à l’autre.', '<strong>Garantie.</strong> C’est tout l’intérêt pour un script.'],
+    ['Recherche', '<code>apt search</code>', '<code>apt-cache search</code>'],
+  ]),
+  note('gray', '💡 Pourquoi les deux existent', '<p><code>apt-get</code> est l’outil historique. <code>apt</code> est arrivé en 2014 comme <strong>façade</strong> plus agréable par-dessus les mêmes mécanismes — il ne fait rien de plus, il le montre mieux. Les documentations anciennes et les diaporamas de cours utilisent souvent <code>apt-get</code> : <strong>c’est équivalent</strong>, il n’y a pas à s’en inquiéter.</p><p>Dans un script, <code>apt</code> affiche d’ailleurs un avertissement — « <em>apt n’a pas d’interface en ligne de commande stable</em> » — qui dit exactement cela.</p>'),
+
+  block('heading', { level: 3, text: 'Quand le paquet n’existe pas dans le dépôt' }),
+  block('html', { html: '<p>C’est rare, mais cela arrive — un logiciel très récent, ou propre à un éditeur. On télécharge alors le <code>.deb</code> et on l’installe à la main :</p>' }),
+  cmd(`sudo apt install ./mon-logiciel.deb    # apt gere les dependances : la bonne facon
+sudo dpkg -i mon-logiciel.deb         # bas niveau : NE resout PAS les dependances
+sudo apt install -f                   # ... et repare ce que le dpkg precedent a casse`),
+  note('yellow', '⚠️ Préférer <code>apt install ./fichier.deb</code> à <code>dpkg -i</code>', '<p><code>dpkg</code> est l’outil de bas niveau : il pose le paquet et s’arrête là. S’il manque une dépendance, il laisse le système <strong>dans un état incohérent</strong>, et la commande suivante s’en plaint. <code>apt install ./fichier.deb</code> fait le même travail <em>en allant chercher les dépendances</em>.</p><p>Le <code>./</code> n’est pas décoratif : sans lui, apt cherche un <em>paquet nommé</em> « mon-logiciel.deb » dans le dépôt, et ne le trouve pas.</p>'),
+  note('red', '🚫 Un <code>.deb</code> pris n’importe où s’installe en root', '<p>L’intérêt du dépôt n’est pas la commodité, c’est la <strong>signature</strong> : Debian garantit l’origine et l’intégrité de ce qu’il sert. Un <code>.deb</code> téléchargé sur un site quelconque n’a aucune garantie, et son installation exécute des scripts <strong>avec les droits de root</strong>.</p><p>C’est l’équivalent exact d’un <code>.exe</code> pris sur un site douteux — sauf qu’ici on l’a lancé en administrateur sans y penser.</p>'),
+
+  note('blue', '🔗 Les dépôts en détail', '<p>D’où viennent les paquets, comment lire une ligne de <code>/etc/apt/sources.list</code>, ce que veulent dire <code>main</code>, <code>contrib</code>, <code>non-free</code> et <code>non-free-firmware</code>, et le rôle de <code>bookworm-security</code> : <strong>section 13 de cette page</strong>.</p>'),
 
   block('heading', { level: 2, text: '10) Gérer les services (systemd)' }),
   cmd(`systemctl status ssh         # état d'un service
