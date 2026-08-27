@@ -38,6 +38,128 @@ systemctl --failed                                   # ce qui a echoue : a regar
 systemctl is-active apache2 ; systemctl is-enabled apache2`),
   note('blue', '💡 <code>reload</code> quand il existe', '<p>Sur un serveur web en production, <code>restart</code> coupe les connexions en cours ; <code>reload</code> fait relire la configuration sans interruption. Tous les services ne le proposent pas — <code>systemctl reload apache2</code> échoue proprement si ce n’est pas prévu, ce qui est une bonne façon de le savoir.</p>'),
 
+  block('heading', { level: 2, text: '2) Lire un <code>systemctl status</code>, ligne par ligne' }),
+  block('html', { html: '<p>C’est la commande la plus tapée de toute l’administration Linux, et la plus survolée. Elle répond à quatre questions différentes, empilées — et savoir laquelle est en défaut fait gagner le plus clair du temps de dépannage.</p>' }),
+  flow(`$ systemctl status ssh
+* ssh.service - OpenBSD Secure Shell server
+     Loaded: loaded (/lib/systemd/system/ssh.service; enabled; preset: enabled)
+     |         |              |                        |
+     |         |              |                        +-- 2. MODE DE DEMARRAGE
+     |         |              +-- ou vit le fichier d'unite
+     |         +-- 1. CHARGEMENT
+     |
+     Active: active (running) since Wed 2026-08-27 09:14:02 CEST; 2h 3min ago
+     |         |
+     |         +-- 3. ETAT
+     |
+       Docs: man:sshd(8)                      <- ou lire la documentation
+   Main PID: 683 (sshd)                       <- l'identifiant du processus
+      Tasks: 1 (limit: 4653)
+     Memory: 5.6M
+        CPU: 84ms
+     CGroup: /system.slice/ssh.service
+             \`-683 "sshd: /usr/sbin/sshd -D [listener]"
+
+aout 27 09:14:02 debian sshd[683]: Server listening on 0.0.0.0 port 22.
+                                    ^
+                          4. LES DERNIERES LIGNES DE JOURNAL
+                             c'est ici qu'une erreur s'explique`),
+
+  block('heading', { level: 3, text: '1. Le chargement — le fichier a-t-il été lu ?' }),
+  table(['Valeur', 'Ce que ça veut dire'], [
+    ['<code>loaded</code>', 'Le fichier d’unité a été lu correctement. <strong>Le cas normal.</strong>'],
+    ['<code>not-found</code>', '<strong>Aucun fichier d’unité pour ce nom.</strong> Neuf fois sur dix : une faute de frappe, ou le paquet n’est pas installé.'],
+    ['<code>error</code>', 'Le fichier existe mais n’a pas pu être lu — droits, ou fichier illisible.'],
+    ['<code>bad-setting</code>', 'Un réglage essentiel du fichier est incompréhensible. Une erreur de syntaxe dans l’unité.'],
+    ['<code>masked</code>', 'L’unité a été <strong>masquée</strong> volontairement — voir plus bas.'],
+  ]),
+
+  block('heading', { level: 3, text: '2. Le mode de démarrage — repartira-t-il au boot ?' }),
+  table(['Valeur', 'Ce que ça veut dire'], [
+    ['<code>enabled</code>', '<strong>Démarrera au prochain boot.</strong>'],
+    ['<code>disabled</code>', 'Ne démarrera pas tout seul. Il peut tourner malgré tout — voir la nuance ci-dessous.'],
+    ['<code>static</code>', 'L’unité <strong>n’a pas de section <code>[Install]</code></strong> : on ne peut ni l’activer ni la désactiver. Elle est tirée <em>par une autre unité</em> qui en dépend.'],
+    ['<code>masked</code>', 'Verrouillée : <strong>aucun démarrage possible</strong>, ni automatique ni manuel.'],
+    ['<code>alias</code>', 'Un autre nom pour la même unité. C’est ainsi que <code>sshd.service</code> désigne <code>ssh.service</code> sur Debian, ou <code>mysql</code> désigne <code>mariadb</code>.'],
+    ['<code>linked</code>', 'Le fichier d’unité est un lien symbolique vers un fichier situé ailleurs.'],
+  ]),
+  note('red', '🚫 <code>static</code> ne veut pas dire « systemd ne sait pas le gérer »', '<p>C’est une confusion qu’on lit souvent. <strong><code>start</code>, <code>stop</code> et <code>status</code> fonctionnent parfaitement sur une unité <code>static</code>.</strong> La seule chose impossible est <code>enable</code> / <code>disable</code> — parce que le fichier ne contient pas de section <code>[Install]</code>, donc systemd ne sait pas <em>où</em> l’accrocher au démarrage.</p><p>Ce n’est pas un défaut : ces unités sont des briques, tirées automatiquement par celles qui en ont besoin. Vouloir les activer à la main n’aurait pas de sens.</p>'),
+  note('yellow', '⚠️ <code>enabled</code> et <code>active</code> sont deux questions distinctes', '<p>Un service peut être <code>disabled</code> et pourtant <code>active (running)</code> — quelqu’un l’a démarré à la main, et il disparaîtra au prochain redémarrage. L’inverse existe aussi : <code>enabled</code> mais <code>failed</code>.</p><p>La ligne <strong>Loaded</strong> répond à « <em>et demain ?</em> », la ligne <strong>Active</strong> à « <em>et maintenant ?</em> ».</p>'),
+
+  block('heading', { level: 3, text: '3. L’état — que fait-il en ce moment ?' }),
+  table(['Valeur', 'Ce que ça veut dire'], [
+    ['<code>active (running)</code>', 'Il tourne en arrière-plan. <strong>Le cas d’un vrai démon</strong> : ssh, apache, mariadb.'],
+    ['<code>active (exited)</code>', 'Il a fait son travail <strong>et s’est arrêté — c’est normal</strong>. Typique d’une tâche ponctuelle : monter un disque, appliquer une règle de pare-feu. <strong>Ce n’est pas une panne.</strong>'],
+    ['<code>active (waiting)</code>', 'Il tourne, mais attend un déclencheur : une connexion, un minuteur.'],
+    ['<code>inactive</code>', 'Arrêté. Ni erreur, ni activité.'],
+    ['<strong><code>failed</code></strong>', '<strong>Il a échoué.</strong> Les dernières lignes du journal, en bas du <code>status</code>, disent pourquoi.'],
+  ]),
+  note('blue', '💡 <code>active (exited)</code> inquiète pour rien', '<p>Voir « exited » alors qu’on attend un service qui tourne fait croire à un plantage. C’est au contraire le signe que tout s’est bien passé : l’unité avait une seule chose à faire, elle l’a faite. Le vert du <code>active</code> est là pour ça.</p>'),
+
+  block('heading', { level: 3, text: '4. Le PID, et le journal' }),
+  block('html', { html: '<p><strong>Main PID</strong> est l’identifiant du processus principal — c’est <em>lui</em> qu’on utilisera pour un <code>kill</code>. Des lignes <strong>Process</strong> peuvent s’y ajouter quand l’unité lance aussi des commandes avant ou après (<code>ExecStartPre</code>, <code>ExecStartPost</code>) ; il peut donc y en avoir plusieurs.</p><p>Et en dessous, <strong>les dernières lignes de journal</strong>. C’est la partie qu’il faut lire, toujours : sur un service qui va bien, elle indique par exemple le port écouté ; sur un service en échec, elle donne la raison exacte.</p>' }),
+  sh(`systemctl status ssh          # les ~10 dernieres lignes
+journalctl -u ssh -n 50       # les 50 dernieres
+journalctl -u ssh -f          # en direct — a laisser tourner pendant qu'on teste
+journalctl -u ssh -b          # depuis le dernier demarrage de la machine`),
+
+  block('heading', { level: 2, text: '2 bis) Les questions courtes, et le masquage' }),
+  sh(`systemctl is-active ssh        # active / inactive — repond en un mot
+systemctl is-enabled ssh       # enabled / disabled / static / masked
+systemctl is-failed ssh        # a-t-il echoue ?
+systemctl --failed --type=service      # TOUT ce qui est en erreur : a taper en premier
+systemctl list-unit-files --type=service --all   # tout, avec le mode de demarrage`),
+  note('green', '🎯 Les commandes <code>is-*</code> sont faites pour les scripts', '<p>Elles répondent en un mot <strong>et par leur code de retour</strong> — 0 si oui, non nul sinon. D’où leur usage naturel dans un test, sans avoir à analyser du texte :</p><div class="lx-cmd">if systemctl is-active --quiet ssh; then\n  echo "SSH tourne"\nfi</div>'),
+
+  block('heading', { level: 3, text: 'Masquer un service' }),
+  block('html', { html: '<p><code>disable</code> empêche le démarrage automatique, mais n’empêche pas quelqu’un — ou un paquet — de le démarrer. <strong><code>mask</code> le verrouille pour de bon.</strong></p>' }),
+  sh(`sudo systemctl mask apache2     # verrouille : plus AUCUN demarrage possible
+sudo systemctl unmask apache2   # rend l'unite a son etat precedent`),
+  flow(`$ sudo systemctl start apache2
+Failed to start apache2.service: Unit apache2.service is masked.`),
+  note('blue', '💡 Le cas d’usage réel', '<p>On installe nginx sur une machine où apache2 est présent : les deux veulent le port 80. Masquer apache2 garantit qu’aucune mise à jour de paquet, aucun collègue et aucune dépendance ne le relancera par inadvertance.</p><p>Techniquement, <code>mask</code> crée un lien symbolique de l’unité vers <code>/dev/null</code> — il n’y a plus rien à démarrer. C’est brutal, et c’est le but.</p>'),
+
+  block('heading', { level: 2, text: '2 ter) Sous les services : les processus' }),
+  block('html', { html: '<p><code>systemctl</code> raisonne en <em>services</em>. En dessous, il n’y a que des <strong>processus</strong>, et les commandes Unix classiques restent indispensables — notamment quand un programme n’a pas été lancé par systemd.</p>' }),
+  sh(`ps                 # les commandes de MON terminal, rien de plus
+ps x               # tous MES processus, meme hors terminal
+ps aux             # TOUS les processus de la machine, avec les ressources
+ps aux | grep ssh  # filtrer
+pgrep sshd         # juste le PID
+pgrep -a sshd      # le PID et la ligne de commande`),
+  table(['Colonne de <code>ps aux</code>', 'Ce qu’elle donne'], [
+    ['<code>USER</code>', 'Le compte au nom duquel le processus tourne.'],
+    ['<strong><code>PID</code></strong>', '<strong>L’identifiant unique</strong> — c’est lui qu’on utilise pour agir.'],
+    ['<code>%CPU</code>', 'Part du processeur utilisée.'],
+    ['<code>%MEM</code>', 'Part de la <strong>mémoire vive</strong> utilisée.'],
+    ['<code>VSZ</code>', 'Mémoire <em>virtuelle</em> réservée — souvent énorme et peu parlante.'],
+    ['<code>RSS</code>', '<strong>Mémoire physique réellement occupée</strong>, en Ko. C’est celle qui compte.'],
+    ['<code>TTY</code>', 'Le terminal associé. <strong><code>?</code> = aucun</strong>, donc un démon.'],
+    ['<code>STAT</code>', 'L’état : <code>R</code> en cours, <code>S</code> endormi (le cas le plus fréquent), <code>D</code> attente disque, <code>T</code> <strong>suspendu</strong>, <code>Z</code> zombie.'],
+    ['<code>START</code>', 'L’heure de démarrage.'],
+    ['<code>TIME</code>', 'Temps processeur consommé au total.'],
+    ['<code>COMMAND</code>', 'La ligne de commande.'],
+  ]),
+  note('gray', '💡 <code>S</code> partout, et c’est normal', '<p>La quasi-totalité des processus d’une machine sont en <code>S</code> — endormis, en attente d’un événement. Un système où tout serait en <code>R</code> serait un système saturé. <code>T</code> signifie <strong>suspendu</strong> (un <kbd>Ctrl-Z</kbd>, par exemple), pas « terminé » ; un processus terminé mais que son parent n’a pas récupéré est un <strong>zombie</strong>, <code>Z</code>.</p>'),
+  note('yellow', '⚠️ <code>ps aux</code> ou <code>ps -aux</code> ?', '<p><code>ps</code> accepte deux grammaires : celle de BSD, <strong>sans tiret</strong> (<code>ps aux</code>, <code>ps x</code>), et celle d’UNIX, <strong>avec</strong> (<code>ps -ef</code>). <code>ps aux</code> est la forme correcte et universellement utilisée ; <code>ps -aux</code> fonctionne par tolérance, mais mélange les deux.</p>'),
+
+  block('heading', { level: 3, text: 'Arrêter un processus' }),
+  sh(`systemctl stop ssh        # LA bonne facon, quand c'est un service
+systemctl kill ssh        # signal d'arret a tous les processus du service
+
+kill 1234                 # demande poliment au PID 1234 de se terminer (SIGTERM)
+kill -KILL 1234           # ou kill -9 : le noyau le termine, sans discussion
+pkill -f mon-script.sh    # par nom, plutot que par PID`),
+  note('red', '🚫 <code>kill -9</code> en dernier recours seulement', '<p><strong><code>kill</code></strong> seul envoie <strong>SIGTERM</strong> : « termine-toi ». Le programme le reçoit, ferme ses fichiers, écrit ce qu’il avait en attente, et sort proprement.</p><p><strong><code>kill -9</code></strong> envoie <strong>SIGKILL</strong>, que le programme <strong>ne peut ni intercepter ni ignorer</strong> : c’est le noyau qui le supprime. Rien n’est enregistré, rien n’est fermé. Sur une base de données, c’est le meilleur moyen de corrompre des données.</p><p><strong>Toujours <code>kill</code> d’abord</strong> ; attendre quelques secondes ; <code>-9</code> seulement s’il ne répond pas.</p>'),
+  note('green', '🎯 Sur un service, préférer <code>systemctl</code> à <code>kill</code>', '<p>Tuer le PID d’un service géré par systemd, c’est court-circuiter le gestionnaire : selon la configuration <code>Restart=</code>, il peut le relancer aussitôt — on croit avoir arrêté quelque chose qui repart seul.</p><p><code>systemctl stop</code> arrête <strong>le service</strong>, avec tous ses processus enfants, et systemd sait qu’il ne doit pas le relancer.</p>'),
+
+  block('heading', { level: 2, text: '2 quater) Avant systemd, et à côté' }),
+  block('html', { html: '<p>systemd est le gestionnaire d’initialisation par défaut de la plupart des distributions — <strong>mais pas de toutes</strong>. Certaines utilisent encore <em>SysVinit</em> (System V), avec la commande <code>service</code>, ou l’intermédiaire <em>Upstart</em>, peu répandu.</p>' }),
+  sh(`service ssh status        # ancienne syntaxe : REDIRIGEE vers systemctl
+systemctl status ssh      # ce qui est reellement execute`),
+  note('yellow', '⚠️ Les alias disparaissent peu à peu', '<p>Les distributions passées à systemd ont conservé une redirection : <code>service ssh status</code> est traduit à la volée en <code>systemctl status ssh</code>. C’est confortable, et c’est provisoire — ces passerelles s’effacent avec le temps.</p><p><strong>Prends l’habitude de <code>systemctl</code></strong>, y compris quand une documentation ancienne montre <code>service</code>.</p>'),
+  note('gray', '💡 Ce que fait vraiment un gestionnaire d’initialisation', '<p>Une fois le noyau chargé, il reste à démarrer tout le reste — les services, les sessions, le réseau : ce qu’on appelle l’<em>espace utilisateur</em>. C’est son premier rôle. Le second, celui qu’on utilise tous les jours, est de <strong>gérer ces services pendant que la machine tourne</strong>.</p><p>systemd travaille sur des <strong>unités</strong>, reconnaissables à leur suffixe : <code>.service</code>, <code>.timer</code>, <code>.socket</code>, <code>.mount</code>, <code>.target</code>. Le suffixe <code>.service</code> peut être omis — <code>systemctl status ssh</code> suffit, systemd devine.</p>'),
+
   block('heading', { level: 2, text: '2) Une unité, et où elle vit' }),
   table(['Emplacement', 'Contenu', 'Règle'], [
     ['<code>/lib/systemd/system/</code>', 'Les unités livrées par les paquets.', '<strong>On n’y touche pas</strong> : une mise à jour du paquet écrase tout.'],

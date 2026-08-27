@@ -45,12 +45,14 @@ export const liens = (sauf: string) => {
     ['/pages/linux-paquets-essentiels', 'Les paquets essentiels'],
     ['/pages/linux-droits', 'Utilisateurs, droits et sudo'],
     ['/pages/linux-reseau', 'Le réseau sous Linux'],
-    ['/pages/linux-stockage', 'Stockage : partitions, LVM et montage'],
+    ['/pages/linux-disques', 'Disques, partitions et espace'],
+    ['/pages/linux-archivage', 'Archivage et compression'],
     ['/pages/linux-systemd', 'systemd : services et journaux'],
-    ['/pages/linux-sauvegarde', 'Sauvegarde et tâches planifiées'],
+    ['/pages/linux-bash', 'Scripts Bash'],
     ['/pages/linux-ssh', 'SSH serveur'],
     ['/pages/linux-apache', 'Apache'],
     ['/pages/linux-samba', 'Samba'],
+    ['/pages/repertoire-commandes', 'Répertoire des commandes'],
   ];
   const l = tous.filter(([h]) => h !== sauf).map(([h, t]) => `<a href="${h}">${t}</a>`).join(' · ');
   return note('green', '🔗 Les autres cours Linux', `<p>${l}</p>`);
