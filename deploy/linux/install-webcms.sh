@@ -251,8 +251,10 @@ if [ "$MODE_VERIF" = 1 ]; then
   etape "Verification d'une installation existante"
   systemctl is-active --quiet webcms && ok "service webcms actif" || avert "service webcms inactif"
   systemctl is-enabled --quiet webcms && ok "demarrage automatique actif" || avert "demarrage automatique inactif"
-  PORT_TROUVE=$(ss -tlnp 2>/dev/null | grep -c "127.0.0.1:${PORT}" || true)
-  [ "${PORT_TROUVE:-0}" -ge 1 ] && ok "ecoute sur 127.0.0.1:$PORT" || avert "rien n'ecoute sur 127.0.0.1:$PORT"
+  # app.listen(PORT) sans hote ecoute sur TOUTES les interfaces :
+  # ss affiche « *:PORT » ou « [::]:PORT », jamais « 127.0.0.1:PORT ».
+  PORT_TROUVE=$(ss -tln 2>/dev/null | grep -cE "[:.]${PORT}[[:space:]]" || true)
+  [ "${PORT_TROUVE:-0}" -ge 1 ] && ok "ecoute sur le port $PORT" || avert "rien n'ecoute sur le port $PORT"
   CODE=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}/" || echo 000)
   [ "$CODE" = "200" ] && ok "HTTP 200 en local" || avert "HTTP $CODE en local"
   [ -f /etc/webcms/webcms.env ] && ok "fichier d'environnement present" || avert "/etc/webcms/webcms.env absent"
@@ -767,8 +769,12 @@ if [ "$AVEC_NGINX" = "o" ]; then
   if [ "$DRY_RUN" = 0 ]; then
     cat > "$CONF_NGINX" <<EOF
 server {
-    listen 80;
-    listen [::]:80;
+    # « default_server » : sans lui, une requete portant une ADRESSE IP en
+    # en-tete Host ne correspond a aucun nom et tombe sur le bloc par defaut
+    # d'nginx — sa page d'accueil, pas le site. C'est ce qui rend l'acces
+    # par « http://192.168.x.x/ » possible.
+    listen 80 default_server;
+    listen [::]:80 default_server;
     server_name $SERVER_NAME;
 
     # Le CMS gere lui-meme ses en-tetes de securite (CSP, HSTS...) :
@@ -792,6 +798,16 @@ EOF
     if [ "$FAMILLE" = "debian" ]; then
       ln -sf "$CONF_NGINX" /etc/nginx/sites-enabled/webcms.conf
       rm -f /etc/nginx/sites-enabled/default
+    else
+      # Red Hat livre son propre serveur par defaut dans nginx.conf. Deux
+      # « default_server » sur le meme port empechent nginx de demarrer, et
+      # c'est le sien qui repondrait aux acces par adresse IP. On le desarme,
+      # en gardant une copie.
+      if grep -q 'default_server' /etc/nginx/nginx.conf; then
+        cp -a /etc/nginx/nginx.conf /etc/nginx/nginx.conf.avant-webcms
+        sed -i '/listen/ s/ default_server//g' /etc/nginx/nginx.conf
+        info "Serveur par defaut d'nginx desarme (copie : nginx.conf.avant-webcms)."
+      fi
     fi
   fi
   gate "Configuration nginx valide" "nginx -t" nginx -t
@@ -868,6 +884,23 @@ if [ "$AVEC_NGINX" = "o" ] && [ "$DRY_RUN" = 0 ]; then
     200|301|302) ok "nginx relaie correctement (HTTP $CODE_PROXY)" ;;
     *) avert "nginx repond HTTP $CODE_PROXY — a verifier : journalctl -u nginx -n 30" ;;
   esac
+  # Acces par ADRESSE IP : c'est le cas du reseau local. Il emprunte un chemin
+  # different — aucun nom ne correspond, c'est le serveur par defaut qui repond.
+  IP_LOCALE=$(ip -4 -o addr show scope global 2>/dev/null | awk '{print $4}' | cut -d/ -f1 | head -1)
+  if [ -n "${IP_LOCALE:-}" ]; then
+    CODE_IP=$(curl -s -o /dev/null -w '%{http_code}' -H "Host: $IP_LOCALE" http://127.0.0.1/ || echo 000)
+    case "$CODE_IP" in
+      200|301|302) ok "Acces par adresse IP fonctionnel (HTTP $CODE_IP)" ;;
+      *) avert "Acces par adresse IP : HTTP $CODE_IP — le reseau local ne verrait pas le site." ;;
+    esac
+  fi
+fi
+
+if [ "$AVEC_TLS" = "o" ]; then
+  avert "COOKIE_SECURE=1 : le cookie de session exige HTTPS."
+  avert "Un acces en HTTP simple — par adresse IP sur le reseau local, par"
+  avert "exemple — laissera la connexion a /admin echouer SANS message clair."
+  avert "Dans ce cas : COOKIE_SECURE=0 dans $ENV_FICHIER, puis redemarrer."
 fi
 
 if [ -z "$BASE_URL" ]; then
@@ -886,6 +919,11 @@ ${C_OK}===============================================================${C_0}
 
   Site local ......... http://127.0.0.1:$PORT
 $( [ -n "$DOMAINE" ] && printf '  Site public ........ %s\n' "${BASE_URL:-http://$DOMAINE}" )
+  Reseau local ....... $(
+      ip -4 -o addr show scope global 2>/dev/null | awk '{print $4}' | cut -d/ -f1 \
+      | while read -r a; do
+          [ "$AVEC_NGINX" = "o" ] && printf 'http://%s/  ' "$a" || printf 'http://%s:%s/  ' "$a" "$PORT"
+        done )
   Administration ..... ${BASE_URL:-http://127.0.0.1:$PORT}/admin
   Identifiant ........ $ADMIN_USER
   Mot de passe ....... $ADMIN_PASSWORD

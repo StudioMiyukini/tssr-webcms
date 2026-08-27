@@ -118,6 +118,79 @@ revoir depuis `/admin`.
 | Pare-feu | `ufw` | `firewall-cmd` |
 | SELinux | — | `httpd_can_network_connect` |
 
+## Accès depuis le réseau local
+
+Le serveur écoute déjà sur **toutes les interfaces** (`app.listen(PORT)` sans
+hôte). Trois choses conditionnent l'accès depuis un autre poste du réseau.
+
+### 1. Le pare-feu
+
+```bash
+# Rocky / RHEL
+sudo firewall-cmd --add-service=http --permanent && sudo firewall-cmd --reload
+# ou, sans nginx :
+sudo firewall-cmd --add-port=3470/tcp --permanent && sudo firewall-cmd --reload
+
+# Debian / Ubuntu
+sudo ufw allow 80/tcp        # ou 3470/tcp sans nginx
+```
+
+### 2. nginx doit répondre à un accès par adresse IP
+
+Une requête portant une **adresse IP** en en-tête `Host` ne correspond à aucun
+`server_name` et tombe sur le **serveur par défaut** d'nginx. Le script déclare
+donc son bloc en `default_server`, et désarme celui livré avec nginx sur
+Rocky/RHEL (copie conservée en `/etc/nginx/nginx.conf.avant-webcms`).
+
+Sur une installation antérieure au 27 août, à corriger à la main :
+
+```bash
+sudo sed -i 's/^    listen 80;/    listen 80 default_server;/' /etc/nginx/conf.d/webcms.conf
+sudo sed -i 's/^    listen \[::\]:80;/    listen [::]:80 default_server;/' /etc/nginx/conf.d/webcms.conf
+sudo cp -a /etc/nginx/nginx.conf /etc/nginx/nginx.conf.avant-webcms
+sudo sed -i '/listen/ s/ default_server//g' /etc/nginx/nginx.conf
+sudo nginx -t && sudo systemctl reload nginx
+```
+
+### 3. `COOKIE_SECURE` — le piège
+
+Si HTTPS a été choisi, `COOKIE_SECURE=1` : le cookie de session **exige
+HTTPS**. Un accès en HTTP simple — par adresse IP sur le réseau local —
+laissera la connexion à `/admin` échouer **sans message clair** : le
+formulaire accepte, puis on revient à la page de connexion.
+
+```bash
+sudo nano /etc/webcms/webcms.env    # COOKIE_SECURE=0
+sudo systemctl restart webcms
+```
+
+C'est un choix : `0` autorise l'accès en HTTP, au prix de la protection du
+cookie sur un réseau non chiffré. Sur un intranet maîtrisé, c'est acceptable.
+
+### 4. Un nom plutôt qu'une adresse
+
+```bash
+sudo hostnamectl set-hostname tssr-serveur
+
+# Sur chaque poste client, ou dans le DNS de l'intranet :
+#   192.168.1.50  tssr-serveur tssr-serveur.local
+```
+
+Et pour que les liens de partage soient justes :
+
+```bash
+sudo nano /etc/webcms/webcms.env    # PUBLIC_BASE_URL=http://tssr-serveur
+sudo systemctl restart webcms
+```
+
+### Vérifier
+
+```bash
+ip -4 -o addr show scope global | awk '{print $4}'   # l'adresse du serveur
+curl -I http://<adresse-ip>/                         # depuis un autre poste
+sudo firewall-cmd --list-all                         # ou : sudo ufw status
+```
+
 ## Les verrous
 
 Chaque étape se termine par une vérification. En cas d'échec, le script
