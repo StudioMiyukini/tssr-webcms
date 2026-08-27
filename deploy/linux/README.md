@@ -11,6 +11,31 @@ nécessaires et en vérifiant chaque étape avant de passer à la suivante.
 - Un accès réseau sortant (dépôts de paquets et npm)
 - ~2 Go libres sur `/opt`
 
+## En une commande
+
+```bash
+sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/StudioMiyukini/tssr-webcms/main/deploy/linux/install-webcms.sh)"
+```
+
+**Ne pas ecrire `curl … | sudo bash`** : sous cette forme, l entree standard de
+bash porte le texte du script, et le premier `read` y consomme le reste — le
+script s arrete en plein milieu, sans message. Avec `-c`, le script arrive par
+un argument et l entree standard reste le clavier.
+
+Le script se rattrape neanmoins : s il detecte une entree non interactive, il
+reprend le clavier sur `/dev/tty`, et bascule en mode non interactif si meme
+cela est impossible.
+
+Sur une machine de production, preferer les deux commandes — telecharger, lire,
+puis executer :
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/StudioMiyukini/tssr-webcms/main/deploy/linux/install-webcms.sh -o install-webcms.sh
+less install-webcms.sh
+sudo bash install-webcms.sh --dry-run
+sudo bash install-webcms.sh
+```
+
 ## Utilisation
 
 ```bash

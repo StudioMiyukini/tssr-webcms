@@ -155,6 +155,24 @@ printf '  Installation du CMS — version %s\n' "$VERSION"
 [ "$DRY_RUN" = 1 ] && printf '  %sMODE SIMULATION : aucune modification ne sera faite.%s\n' "$C_W" "$C_0"
 printf '%s\n' "==============================================================="
 
+# ── Entree standard ─────────────────────────────────────────────────────────
+# Si le script est canalise (« curl ... | bash »), stdin porte LE TEXTE DU
+# SCRIPT et non le clavier : le premier « read » y consommerait le reste, et
+# le script s'arreterait en plein milieu, sans message. On reprend donc le
+# clavier sur /dev/tty ; a defaut, on bascule en non-interactif plutot que de
+# poser des questions auxquelles personne ne peut repondre.
+if [ "$INTERACTIF" = 1 ] && [ ! -t 0 ]; then
+  if [ -c /dev/tty ] && { : </dev/tty; } 2>/dev/null; then
+    exec </dev/tty
+    avert "Entree standard canalisee — clavier repris sur /dev/tty."
+  else
+    INTERACTIF=0
+    avert "Entree standard non interactive et /dev/tty indisponible."
+    avert "Bascule en mode --non-interactif : les valeurs par defaut et les"
+    avert "variables WEBCMS_* seront utilisees, et le mot de passe genere."
+  fi
+fi
+
 # ─────────────────────────────────────────────────────────────────────────────
 #  1. Controles prealables
 # ─────────────────────────────────────────────────────────────────────────────

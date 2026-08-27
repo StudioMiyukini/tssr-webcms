@@ -26,20 +26,33 @@ const blocks: PageBlock[] = [
 
   note('blue', '🎯 Ce que fait ce script', '<p>Il prend une machine <strong>Debian/Ubuntu</strong> ou <strong>RHEL/Rocky/AlmaLinux</strong> fraîchement installée et en fait un serveur qui héberge le site : dépendances système, Node.js, compte de service, application, service systemd, proxy inverse, HTTPS, pare-feu — et les réglages SELinux quand il y en a besoin.</p><p>Il pose une dizaine de questions, puis <strong>vérifie chaque étape avant de passer à la suivante</strong>.</p>'),
 
-  block('heading', { level: 2, text: '1) Récupérer et lancer' }),
-  sh(`# Recuperer le script
-curl -fsSL ${BRUT} -o install-webcms.sh
-chmod +x install-webcms.sh
+  block('heading', { level: 2, text: '1) L’installer en une commande' }),
+  block('html', { html: '<p>La forme qui fonctionne, et qui reste interactive :</p>' }),
+  sh(`sudo bash -c "$(curl -fsSL ${BRUT})"`),
+  note('green', '🎯 Pourquoi <code>bash -c "$(curl …)"</code> et non <code>curl … | bash</code>', '<p>Ce n’est pas une question de style : <strong>la forme canalisée casse le script</strong>, et de la pire des façons.</p><p>Quand on écrit <code>curl … | bash</code>, l’entrée standard de bash porte <strong>le texte du script</strong>. Au premier <code>read</code>, celui-ci consomme donc <em>le reste du script lui-même</em> — l’exécution s’arrête en plein milieu, <strong>sans le moindre message d’erreur</strong>. Mesuré :</p><div class="lx-cmd">A) cat script.sh | bash\n   -- stdin est un terminal ? NON\n   (et c\'est tout : le script s\'arrete la, en silence)\n\nB) bash -c "$(cat script.sh)"\n   -- stdin est un terminal ? NON\n   -- reponse recue : [ma-reponse]      <- les questions fonctionnent</div><p>Avec <code>-c</code>, le script arrive par un <strong>argument</strong> et non par l’entrée standard : celle-ci reste le clavier, et les questions se posent normalement.</p>'),
+  note('blue', '💡 Le script se rattrape quand même', '<p>Si malgré tout il est lancé sous forme canalisée, il détecte que l’entrée standard n’est pas un terminal et <strong>reprend le clavier sur <code>/dev/tty</code></strong>. Si même cela est impossible, il bascule en mode non interactif et le dit — plutôt que de poser des questions auxquelles personne ne peut répondre.</p><div class="lx-cmd">[!]  Entree standard canalisee — clavier repris sur /dev/tty.</div>'),
 
-# LE LIRE avant de l'executer en root — c'est la moindre des choses
-less install-webcms.sh
+  block('heading', { level: 3, text: 'La forme prudente — deux commandes' }),
+  block('html', { html: '<p>C’est celle à préférer sur une machine qui compte : elle permet de <strong>lire</strong> ce qu’on s’apprête à exécuter en root.</p>' }),
+  sh(`curl -fsSL ${BRUT} -o install-webcms.sh
+less install-webcms.sh              # le lire — 5 minutes bien employees
+sudo bash install-webcms.sh --dry-run   # voir ce qu'il ferait
+sudo bash install-webcms.sh             # y aller`),
+  note('yellow', '⚠️ Exécuter en root du code qu’on n’a pas lu', '<p>La commande unique est commode, et c’est le prix : elle donne les droits d’administration à un contenu servi par un tiers, qui peut d’ailleurs très bien renvoyer autre chose à un client <code>curl</code> qu’à un navigateur.</p><p>Sur ta machine de TP, aucune importance. Sur un serveur de production, télécharge, lis, puis exécute — deux commandes de plus.</p><p>Le script s’applique la même règle : quand il doit ajouter le dépôt NodeSource, il <strong>télécharge le script, affiche sa taille et son empreinte SHA-256, et demande confirmation</strong> avant de l’exécuter.</p>'),
 
-# Voir ce qu'il ferait, sans rien modifier
-sudo ./install-webcms.sh --dry-run
+  block('heading', { level: 3, text: 'La forme automatisée — sans aucune question' }),
+  block('html', { html: '<p>Pour un déploiement scripté, toutes les réponses passent par l’environnement :</p>' }),
+  sh(`curl -fsSL ${BRUT} -o /tmp/install-webcms.sh
+sudo WEBCMS_DOMAINE=tssr.exemple.fr \\
+     WEBCMS_ADMIN_PASSWORD='un-mot-de-passe-solide' \\
+     WEBCMS_SOURCE_GIT=${DEPOT}.git \\
+     WEBCMS_AVEC_NGINX=o WEBCMS_AVEC_TLS=o \\
+     WEBCMS_COURRIEL_TLS=admin@exemple.fr \\
+     WEBCMS_OUVRIR_PAREFEU=o \\
+     bash /tmp/install-webcms.sh --non-interactif`),
+  note('gray', '💡 <code>sudo VAR=valeur commande</code>', '<p><code>sudo</code> nettoie l’environnement par défaut (<code>env_reset</code>). Les variables doivent donc être posées <strong>après</strong> <code>sudo</code>, comme ci-dessus, et non avant — <code>VAR=x sudo …</code> ne transmettrait rien.</p>'),
 
-# Installer
-sudo ./install-webcms.sh`),
-  note('red', '🚫 Ne canalise jamais un script d’installation dans un shell', '<p>La forme <code>curl … | sudo bash</code> se voit partout. Elle exécute <strong>en root</strong> un contenu que personne n’a lu, servi par un site dont on ne contrôle rien — et qui peut très bien renvoyer autre chose à un client <code>curl</code> qu’à un navigateur.</p><p>Deux commandes de plus — télécharger, puis lire — et le risque disparaît. Ce script applique d’ailleurs la même règle à lui-même : quand il doit ajouter le dépôt NodeSource, il <strong>télécharge le script, affiche sa taille et son empreinte SHA-256, et demande confirmation</strong> avant de l’exécuter.</p>'),
+  block('heading', { level: 3, text: 'Les options' }),
   table(['Option', 'Effet'], [
     ['<em>(aucune)</em>', 'Installation interactive. Le cas normal.'],
     ['<code>--dry-run</code>', 'Affiche chaque commande sans rien exécuter. À faire en premier.'],
