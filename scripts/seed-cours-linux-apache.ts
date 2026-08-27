@@ -13,6 +13,7 @@ const blocks: PageBlock[] = [
   styleBlock,
   block('html', { html: '<p><strong>Apache</strong> (paquet <code>apache2</code>) est le serveur web le plus répandu. Il sert des pages depuis une <strong>racine web</strong> et gère plusieurs sites sur une même machine grâce aux <strong>hôtes virtuels</strong>.</p>' }),
   block('heading', { level: 2, text: '1) Installer' }),
+  note('blue', '🔗 Sur Rocky / RHEL, Apache ne s’appelle pas pareil', '<p>Le paquet est <strong><code>httpd</code></strong>, la configuration vit dans <code>/etc/httpd/</code>, l’utilisateur du service est <strong><code>apache</code></strong> et non <code>www-data</code>.</p><p>Surtout, <strong><code>a2ensite</code> et <code>a2enmod</code> n’existent pas</strong> : il n’y a pas de <code>sites-available</code> / <code>sites-enabled</code>. Tout fichier <code>.conf</code> déposé dans <code>/etc/httpd/conf.d/</code> est actif au démarrage. Et il faut penser à <code>firewall-cmd --add-service=http --permanent</code>, sans quoi le site ne répond à personne.</p><p>→ <a href="/pages/linux-redhat">le cours Rocky</a>, §7.</p>'),
   cmd(`sudo apt update
 sudo apt install apache2
 sudo systemctl enable apache2

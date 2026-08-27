@@ -23,6 +23,7 @@ const blocks: PageBlock[] = [
   block('html', { html: '<p>Un serveur Linux se configure en trois couches, et les confondre fait perdre l’essentiel du temps de dépannage : <strong>l’adresse</strong> (la machine sait-elle qui elle est ?), <strong>la route</strong> (sait-elle par où sortir ?), <strong>la résolution</strong> (sait-elle traduire un nom ?). Une panne appartient toujours à l’une des trois, et on peut les tester séparément.</p>' }),
 
   block('heading', { level: 2, text: '1) Voir ce qui est configuré' }),
+  note('blue', '🔗 Sur Rocky / RHEL, <code>/etc/network/interfaces</code> n’existe pas', '<p><code>ip a</code>, <code>ip r</code>, <code>/etc/hosts</code> et <code>/etc/resolv.conf</code> se comportent à l’identique. Mais la <strong>configuration permanente</strong> passe par <strong>NetworkManager</strong> — <code>nmtui</code> en menus, ou <code>nmcli</code> en ligne de commande — et non par un fichier <code>interfaces</code>.</p><p>→ <a href="/pages/linux-redhat">le cours Rocky</a>, §4c.</p>'),
   sh(`ip a                    # adresses par interface (remplace ifconfig)
 ip r                    # table de routage : par ou on sort
 ip -br a                # une ligne par interface : lisible d'un coup d'oeil

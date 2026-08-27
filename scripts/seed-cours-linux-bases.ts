@@ -68,6 +68,7 @@ const blocks: PageBlock[] = [
   note('gray', '🧸 Les noms de code viennent de Toy Story', '<p>Buzz, Rex, Bo, Woody, Bullseye, Bookworm… En 1996, Bruce Perens succède à Ian Murdock à la tête du projet ; il travaillait chez <strong>Pixar</strong>, alors en train de produire le film. Debian 1.1 est devenue « Buzz », et la tradition n’a plus cessé. Un nom se retient mieux qu’un numéro — et sur un serveur, on parle souvent de « bookworm » plutôt que de « Debian 12 ».</p>'),
 
   note('yellow', '⚠️ Les paquets ne se mélangent pas entre familles', '<p>Un <code>.deb</code> ne s’installe pas sur une Red Hat, et un dépôt prévu pour Ubuntu 24.04 installé sur une Debian 12 casse les dépendances — parfois des mois plus tard, à la première mise à jour. On reste dans les dépôts de sa distribution et de sa version.</p>'),
+  note('blue', '🔗 Et si la machine est une Rocky Linux ?', '<p>Tout ce cours est écrit pour <strong>Debian</strong>. Sur la famille Red Hat — RHEL, <strong>Rocky</strong>, AlmaLinux — <code>apt</code> devient <code>dnf</code>, le pare-feu est <strong>allumé par défaut</strong>, et <strong>SELinux</strong> bloque des choses qui passeraient sous Debian.</p><p>La table de traduction complète : <a href="/pages/linux-redhat">Rocky Linux et la famille Red Hat</a>.</p>'),
 
   block('heading', { level: 2, text: '4) Interfaces et outils' }),
   tbl(['', 'CLI — ligne de commande', 'GUI — interface graphique'], [

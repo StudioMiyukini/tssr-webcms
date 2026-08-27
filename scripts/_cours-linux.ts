@@ -41,6 +41,7 @@ export const styleLinux = block('html', {
 export const liens = (sauf: string) => {
   const tous: [string, string][] = [
     ['/pages/linux-bases', 'Linux : les bases'],
+    ['/pages/linux-redhat', 'Rocky Linux et la famille Red Hat'],
     ['/pages/linux-commandes-base', 'Commandes de base'],
     ['/pages/linux-paquets-essentiels', 'Les paquets essentiels'],
     ['/pages/linux-droits', 'Utilisateurs, droits et sudo'],

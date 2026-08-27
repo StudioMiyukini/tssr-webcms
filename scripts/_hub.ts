@@ -119,6 +119,7 @@ export const DOMAINS: Domain[] = [
     subcats: [
       { name: 'Fondamentaux', courses: [
         { href: '/pages/linux-bases', title: 'Linux : les bases (Debian)', desc: 'Arborescence, commandes essentielles, utilisateurs & droits (rwx / chmod / chown), paquets (apt), services (systemctl) et réseau.' },
+        { href: '/pages/linux-redhat', title: 'Rocky Linux et la famille Red Hat', desc: 'La table de traduction Debian → RHEL / Rocky / AlmaLinux : dnf et rpm au lieu d’apt, firewalld allumé d’office, SELinux en mode bloquant, nmcli au lieu d’interfaces, le groupe wheel. Avec les TP refaits côté Rocky.' },
         { href: '/pages/linux-commandes-base', title: 'Commandes de base Linux / Bash', desc: 'La fiche à garder ouverte : structure d’une commande, navigation, fichiers, lecture, recherche, tubes et redirections, droits, paquets, services, réseau — et les raccourcis du terminal.' },
         { href: '/pages/linux-paquets-essentiels', title: 'Les paquets essentiels', desc: 'Ce qu’on installe sur une Debian fraîche après avoir tout décoché : tree, bash-completion, dnsutils, htop, ncdu, rsync, shellcheck… et pourquoi chacun. Avec la ligne unique, et ce qu’on n’installe pas sur un serveur.' },
         { href: '/pages/linux-droits', title: 'Utilisateurs, droits et sudo', desc: 'rwx et les trois catégories, chmod en octal, umask, SUID/SGID/sticky, les ACL POSIX et leur masque, et la délégation par sudo — le pendant Linux du cours NTFS.' },
@@ -126,6 +127,7 @@ export const DOMAINS: Domain[] = [
       ] },
       { name: 'Système & stockage', courses: [
         { href: '/pages/linux-disques', title: 'Disques, partitions & LVM', desc: 'Lister l’espace, partitionner, formater, monter, /etc/fstab et les UUID, puis LVM : PV, VG, LV et l’agrandissement à chaud.' },
+        { href: '/pages/linux-archivage', title: 'Archivage et compression', desc: 'Réunir avec tar, réduire avec gzip — et pourquoi ce sont deux gestes distincts. Options de tar, pièges du suffixe .gz, lecture d’un fichier compressé sans le décompresser, et échange avec Windows via zip.' },
         { href: '/pages/linux-systemd', title: 'systemd : services, démarrage et unités', desc: 'systemctl au quotidien, écrire une unité de service, les dépendances et les cibles, les timers — et lire un démarrage qui traîne.' },
         { href: '/pages/linux-cron-logs', title: 'Planification (cron) & journaux', desc: 'crontab et ses pièges (PATH, %, l’environnement), les timers systemd, journalctl, /var/log et la rotation.' },
       ] },

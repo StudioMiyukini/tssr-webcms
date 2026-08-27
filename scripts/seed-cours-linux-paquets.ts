@@ -24,6 +24,7 @@ const blocks: PageBlock[] = [
   note('yellow', '⚠️ Vérifier avant de conclure qu’il manque', '<div class="lx-cmd">dpkg -l | grep tree        # est-il deja installe ?\ndpkg -s tree              # son etat en detail\napt list --installed      # tout ce qui est en place</div>'),
 
   block('heading', { level: 2, text: '1) Le strict nécessaire, tout de suite' }),
+  note('yellow', '⚠️ Sur Rocky / RHEL, la moitié de ces paquets demande EPEL', '<p><code>htop</code>, <code>tree</code>, <code>ncdu</code>, <code>fail2ban</code> et beaucoup d’autres <strong>ne sont pas dans le dépôt de base</strong> : la priorité de RHEL est la stabilité sur dix ans, pas l’exhaustivité.</p><div class="lx-cmd">sudo dnf install epel-release\nsudo dnf install htop tree</div><p>→ <a href="/pages/linux-redhat">le cours Rocky</a>, §3.</p>'),
   block('html', { html: '<p>Trois paquets, dans cet ordre, depuis la console de l’hyperviseur.</p>' }),
   sh(`su -                              # mot de passe de ROOT
 apt update
