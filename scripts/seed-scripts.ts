@@ -90,6 +90,12 @@ const SCRIPTS: Script[] = [
     tags: ['Interactif', 'Cisco', 'Packet Tracer', 'Routage', 'NAT'], cat: 'cisco',
   },
   {
+    slug: 'installateur-linux', icon: '📦',
+    title: 'Installateur du site — serveur Linux Debian ou Rocky',
+    desc: 'Un script interactif qui deploie le CMS et toutes ses dependances sur Debian/Ubuntu ou RHEL/Rocky/AlmaLinux : Node.js, compte de service, unite systemd confinee, nginx en proxy inverse, HTTPS, pare-feu — et les booleens SELinux qui manquent toujours. Chaque etape se termine par un verrou qui verifie le resultat avant de continuer.',
+    tags: ['Bash', 'Linux', 'Debian', 'Rocky', 'Déploiement'], cat: 'linux', featured: 'De la machine nue au site en ligne',
+  },
+  {
     slug: 'configurateur-debian-reseau', icon: '🌐',
     title: 'Configurateur d’adressage IP — Debian',
     desc: 'Saisis ton adressage, obtiens /etc/network/interfaces, /etc/resolv.conf et /etc/hosts prets a coller. Et surtout les verifications que la syntaxe ne fait pas : passerelle hors du sous-reseau, adresse de reseau ou de diffusion, auto oublie, dns-nameservers sans resolvconf.',
