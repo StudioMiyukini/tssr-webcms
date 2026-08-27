@@ -155,6 +155,21 @@ sudo rm -rf /opt/webcms /etc/webcms
 sudo userdel webcms
 ```
 
+## Tests
+
+```bash
+bash deploy/linux/test-questions.sh
+```
+
+Vérifie le mécanisme des questions sur le **script réel** — les fonctions sont
+extraites du fichier, pas recopiées : un test qui teste une copie ne teste rien.
+
+Couvre : la saisie prise en compte, la valeur par défaut sur Entrée, la priorité
+des variables `WEBCMS_*`, le mode non interactif, les questions oui/non, le
+dépôt proposé par défaut — et une **non-régression** sur le défaut du 27 août,
+où les variables pré-remplies en tête du script empêchaient les questions
+d'être posées.
+
 ## Limite connue
 
 Le script a été **vérifié syntaxiquement** (`bash -n`) et ses garde-fous

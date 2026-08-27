@@ -24,19 +24,23 @@ VERSION="1.0.0"
 NODE_MIN_MAJEUR=20          # better-sqlite3 12.x exige Node 20 ou plus
 NODE_CIBLE="22"             # version installee si celle de la distribution est trop ancienne
 
-# ── Reponses (surchargeables par l'environnement) ────────────────────────────
-DOMAINE="${WEBCMS_DOMAINE:-}"
-PORT="${WEBCMS_PORT:-3470}"
-DOSSIER="${WEBCMS_DOSSIER:-/opt/webcms}"
-UTILISATEUR="${WEBCMS_UTILISATEUR:-webcms}"
-ADMIN_USER="${WEBCMS_ADMIN_USER:-admin}"
-ADMIN_PASSWORD="${WEBCMS_ADMIN_PASSWORD:-}"
-SOURCE_GIT="${WEBCMS_SOURCE_GIT:-}"
-SOURCE_ARCHIVE="${WEBCMS_SOURCE_ARCHIVE:-}"
-AVEC_NGINX="${WEBCMS_AVEC_NGINX:-}"
-AVEC_TLS="${WEBCMS_AVEC_TLS:-}"
-COURRIEL_TLS="${WEBCMS_COURRIEL_TLS:-}"
-OUVRIR_PAREFEU="${WEBCMS_OUVRIR_PAREFEU:-}"
+# ── Reponses ────────────────────────────────────────────────────────────────
+# Elles partent VIDES. Chaque fonction de question consulte elle-meme la
+# variable d'environnement WEBCMS_<NOM> ; les valeurs par defaut ci-dessous ne
+# servent qu'a la saisie interactive.
+#
+# Pre-remplir ici serait un piege : « demander() » verrait une variable non
+# vide, croirait qu'elle vient de l'utilisateur, et ne poserait pas la question.
+DOMAINE=""; PORT=""; DOSSIER=""; UTILISATEUR=""; ADMIN_USER=""
+ADMIN_PASSWORD=""; SOURCE_GIT=""; SOURCE_ARCHIVE=""
+AVEC_NGINX=""; AVEC_TLS=""; COURRIEL_TLS=""; OUVRIR_PAREFEU=""
+
+# Valeurs par defaut proposees a la saisie.
+DEF_PORT="3470"
+DEF_DOSSIER="/opt/webcms"
+DEF_UTILISATEUR="webcms"
+DEF_ADMIN_USER="admin"
+DEF_SOURCE_GIT="https://github.com/StudioMiyukini/tssr-webcms.git"
 
 DRY_RUN=0
 INTERACTIF=1
@@ -77,9 +81,16 @@ lancer() {
 # ── Questions ───────────────────────────────────────────────────────────────
 demander() {                      # demander VARIABLE "question" "defaut"
   local var="$1" question="$2" defaut="${3:-}" reponse
-  local actuelle="${!var:-}"
-  if [ -n "$actuelle" ] || [ "$INTERACTIF" = 0 ]; then
-    [ -z "$actuelle" ] && printf -v "$var" '%s' "$defaut"
+  local env_var="WEBCMS_${var}" fournie
+  fournie="${!env_var:-}"
+  # Fournie par l'environnement : on la prend sans rien demander.
+  if [ -n "$fournie" ]; then
+    printf -v "$var" '%s' "$fournie"
+    detail "$question -> ${!var} (environnement)"
+    return 0
+  fi
+  if [ "$INTERACTIF" = 0 ]; then
+    printf -v "$var" '%s' "$defaut"
     detail "$question -> ${!var:-(vide)}"
     return 0
   fi
@@ -94,9 +105,15 @@ demander() {                      # demander VARIABLE "question" "defaut"
 
 demander_oui_non() {              # demander_oui_non VARIABLE "question" "o|n"
   local var="$1" question="$2" defaut="${3:-o}" reponse
-  local actuelle="${!var:-}"
-  if [ -n "$actuelle" ] || [ "$INTERACTIF" = 0 ]; then
-    [ -z "$actuelle" ] && printf -v "$var" '%s' "$defaut"
+  local env_var="WEBCMS_${var}" fournie
+  fournie="${!env_var:-}"
+  if [ -n "$fournie" ]; then
+    printf -v "$var" '%s' "$fournie"
+    detail "$question -> ${!var} (environnement)"
+    return 0
+  fi
+  if [ "$INTERACTIF" = 0 ]; then
+    printf -v "$var" '%s' "$defaut"
     detail "$question -> ${!var}"
     return 0
   fi
@@ -113,14 +130,16 @@ demander_oui_non() {              # demander_oui_non VARIABLE "question" "o|n"
 
 demander_secret() {               # demander_secret VARIABLE "question"
   local var="$1" question="$2" a b
-  [ -n "${!var:-}" ] && { detail "$question -> (fourni par l'environnement)"; return 0; }
+  local env_var="WEBCMS_${var}" fournie
+  fournie="${!env_var:-}"
+  [ -n "$fournie" ] && { printf -v "$var" '%s' "$fournie"; detail "$question -> (environnement)"; return 0; }
   if [ "$INTERACTIF" = 0 ]; then
     printf -v "$var" '%s' "$(openssl rand -base64 18 | tr -d '/+=' | cut -c1-20)"
     avert "Mot de passe genere automatiquement — il sera affiche a la fin."
     return 0
   fi
   while true; do
-    read -r -s -p "   $question (vide = genere) : " a; echo
+    read -r -s -p "   $question (12 caracteres min., vide = genere) : " a; echo
     if [ -z "$a" ]; then
       printf -v "$var" '%s' "$(openssl rand -base64 18 | tr -d '/+=' | cut -c1-20)"
       info "Mot de passe genere — il sera affiche a la fin."
@@ -250,17 +269,22 @@ etape "2. Configuration"
 [ "$INTERACTIF" = 1 ] && info "Entree pour accepter la valeur entre crochets."
 
 demander DOMAINE       "Nom de domaine public (ex. tssr.exemple.fr)" ""
-demander PORT          "Port interne d'ecoute" "3470"
-demander DOSSIER       "Dossier d'installation" "/opt/webcms"
-demander UTILISATEUR   "Compte systeme du service" "webcms"
-demander ADMIN_USER    "Identifiant administrateur du CMS" "admin"
+demander PORT          "Port interne d'ecoute" "$DEF_PORT"
+demander DOSSIER       "Dossier d'installation" "$DEF_DOSSIER"
+demander UTILISATEUR   "Compte systeme du service" "$DEF_UTILISATEUR"
+demander ADMIN_USER    "Identifiant administrateur du CMS" "$DEF_ADMIN_USER"
 demander_secret ADMIN_PASSWORD "Mot de passe administrateur"
 
-if [ -z "$SOURCE_GIT" ] && [ -z "$SOURCE_ARCHIVE" ]; then
-  demander SOURCE_GIT "Depot Git du site (vide si archive locale)" ""
-  [ -z "$SOURCE_GIT" ] && demander SOURCE_ARCHIVE "Chemin de l'archive .tar.gz" ""
+# La source : le depot du projet est propose par defaut — c'est ce site que
+# l'on installe. Repondre « archive » bascule sur un fichier .tar.gz local.
+if [ -z "$SOURCE_ARCHIVE" ]; then
+  demander SOURCE_GIT "Depot Git du site (ou « archive » pour un .tar.gz local)" "$DEF_SOURCE_GIT"
+  if [ "${SOURCE_GIT,,}" = "archive" ]; then
+    SOURCE_GIT=""
+    demander SOURCE_ARCHIVE "Chemin de l'archive .tar.gz" ""
+  fi
 fi
-[ -n "$SOURCE_GIT" ] || [ -n "$SOURCE_ARCHIVE" ] || echoue "Aucune source indiquee : ni depot Git, ni archive."
+[ -n "$SOURCE_GIT" ] || [ -n "$SOURCE_ARCHIVE" ] || echoue "Aucune source indiquee : ni depot Git, ni archive." "Relance et accepte le depot propose par defaut, ou indique un chemin d'archive."
 [ -n "$SOURCE_ARCHIVE" ] && [ ! -f "$SOURCE_ARCHIVE" ] && echoue "Archive introuvable : $SOURCE_ARCHIVE"
 
 demander_oui_non AVEC_NGINX "Installer nginx en proxy inverse (port 80/443)" "o"
@@ -343,25 +367,40 @@ else
   info "Node absent ou trop ancien (majeure : ${NODE_ACTUEL:-aucune})."
   INSTALL_OK=0
 
+  # Quelle version majeure le depot de la distribution propose-t-il ?
+  # On evite « apt-cache policy » et « dnf module », dont la sortie depend de
+  # la langue — et la modularite n'existe plus sur RHEL 10.
+  version_disponible() {
+    local v=""
+    if [ "$FAMILLE" = "debian" ]; then
+      v=$(apt-cache show nodejs 2>/dev/null | awk '/^Version:/ {print $2; exit}')
+    else
+      v=$(dnf -q repoquery --latest-limit=1 --qf '%{version}' nodejs 2>/dev/null | tail -1)
+    fi
+    v="${v#*:}"                      # retirer une eventuelle epoque « 1: »
+    printf '%s' "${v%%.*}" | tr -cd '0-9'
+  }
+
   # 1er choix : le paquet de la distribution, s'il est assez recent.
-  if [ "$FAMILLE" = "redhat" ]; then
-    if dnf -q module list "nodejs:$NODE_CIBLE" >/dev/null 2>&1; then
-      info "Activation du module nodejs:$NODE_CIBLE de la distribution."
-      lancer dnf module reset -y -q nodejs || true
-      lancer dnf module enable -y -q "nodejs:$NODE_CIBLE"
-      lancer dnf install -y -q nodejs npm
-      [ "$DRY_RUN" = 1 ] && INSTALL_OK=1 || { [ "$(version_node_majeure)" -ge "$NODE_MIN_MAJEUR" ] && INSTALL_OK=1; }
-    fi
-  else
-    CANDIDAT=$(apt-cache policy nodejs 2>/dev/null | awk '/Candidat|Candidate/ {print $2}' | cut -d. -f1 | tr -d 'a-zA-Z:' || echo 0)
-    if [ -n "${CANDIDAT:-}" ] && [ "${CANDIDAT:-0}" -ge "$NODE_MIN_MAJEUR" ] 2>/dev/null; then
-      info "Le depot de la distribution propose Node $CANDIDAT."
-      lancer apt-get install -y -qq nodejs npm
-      [ "$DRY_RUN" = 1 ] && INSTALL_OK=1 || { [ "$(version_node_majeure)" -ge "$NODE_MIN_MAJEUR" ] && INSTALL_OK=1; }
-    fi
+  CANDIDAT="$(version_disponible)"
+  if [ -n "${CANDIDAT:-}" ] && [ "${CANDIDAT:-0}" -ge "$NODE_MIN_MAJEUR" ] 2>/dev/null; then
+    info "Le depot de la distribution propose Node $CANDIDAT."
+    if [ "$FAMILLE" = "debian" ]; then lancer apt-get install -y -qq nodejs npm
+    else lancer dnf install -y -q nodejs npm; fi
+    [ "$DRY_RUN" = 1 ] && INSTALL_OK=1 || { [ "$(version_node_majeure)" -ge "$NODE_MIN_MAJEUR" ] && INSTALL_OK=1; }
   fi
 
-  # 2e choix : NodeSource. Le script est TELECHARGE, montre, puis execute —
+  # 2e choix, Red Hat seulement : un module, quand la distribution en a encore.
+  if [ "$INSTALL_OK" = 0 ] && [ "$FAMILLE" = "redhat" ] \
+     && dnf -q module list "nodejs:$NODE_CIBLE" >/dev/null 2>&1; then
+    info "Activation du module nodejs:$NODE_CIBLE."
+    lancer dnf module reset -y -q nodejs || true
+    lancer dnf module enable -y -q "nodejs:$NODE_CIBLE"
+    lancer dnf install -y -q nodejs npm
+    [ "$DRY_RUN" = 1 ] && INSTALL_OK=1 || { [ "$(version_node_majeure)" -ge "$NODE_MIN_MAJEUR" ] && INSTALL_OK=1; }
+  fi
+
+  # 3e choix : NodeSource. Le script est TELECHARGE, montre, puis execute —
   # on ne canalise pas un curl dans un bash sans regarder ce qu'il contient.
   if [ "$INSTALL_OK" = 0 ]; then
     if [ "$FAMILLE" = "debian" ]; then
