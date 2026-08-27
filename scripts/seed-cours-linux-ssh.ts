@@ -9,6 +9,7 @@ const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 const styleBlock = block('html', { html: `<style>.lx-flow{font-family:ui-monospace,'Space Mono',monospace;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;margin:10px 0;white-space:pre;overflow-x:auto;font-size:12px;line-height:1.6}.lx-cmd{font-family:ui-monospace,'Space Mono',monospace;background:var(--surface-2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;margin:8px 0;white-space:pre-wrap;overflow-x:auto;font-size:12.5px;line-height:1.55}</style>` });
 const cmd = (t: string) => block('html', { html: `<div class="lx-cmd">${esc(t)}</div>` });
 const flow = (t: string) => block('html', { html: `<div class="lx-flow">${esc(t)}</div>` });
+const table = (head: string[], rows: string[][]) => block('html', { html: `<table class="pb-table"><thead><tr>${head.map(h => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map(r => `<tr>${r.map(c => `<td>${c}</td>`).join('')}</tr>`).join('')}</tbody></table>` });
 const blocks: PageBlock[] = [
   block('hero', { eyebrow: 'Cours · Linux', title: PAGE.title, subtitle: 'Administrer un serveur Linux à distance, de façon chiffrée.' }),
   styleBlock,
@@ -84,12 +85,101 @@ ssh -p 22320 morgane@192.168.15.70     # equivalent`),
 
   block('html', { html: '<p>Deux chemins mènent au même résultat : celui d’OpenSSH, en deux commandes, et celui de PuTTY, en fenêtres. Le fichier obtenu sur le serveur est identique.</p>' }),
 
-  block('heading', { level: 3, text: 'La voie OpenSSH — Linux, macOS, Windows récent' }),
-  cmd(`# sur le CLIENT
-ssh-keygen -t ed25519            # génère la paire (~/.ssh/)
-ssh-copy-id jean@192.168.10.20   # copie la clé publique sur le serveur
-ssh jean@192.168.10.20           # connexion sans mot de passe`),
-  note('gray', '💡 <code>ed25519</code> plutôt que <code>rsa</code>', '<p>C’est le format recommandé aujourd’hui : clés courtes, rapides, au moins aussi sûres qu’un RSA de 3072 bits. <code>ssh-keygen</code> sans option produit encore du RSA sur les systèmes anciens — d’où le <code>-t ed25519</code> explicite.</p>'),
+  block('heading', { level: 3, text: 'Ce qu’on génère : deux fichiers, un seul voyage' }),
+  block('html', { html: '<p>Une génération produit <strong>toujours deux fichiers</strong>, et tout le reste en découle.</p>' }),
+  table(['Fichier', 'C’est', 'Où il va'], [
+    ['<code>id_ed25519</code>', 'La clé <strong>privée</strong>. Elle prouve ton identité.', '<strong>Elle ne quitte jamais ton poste.</strong> Jamais de copie sur un serveur, jamais par mail, jamais dans un dépôt Git.'],
+    ['<code>id_ed25519.pub</code>', 'La clé <strong>publique</strong>. Une seule ligne de texte.', '<strong>Sur chaque serveur</strong> où l’on veut se connecter, dans <code>~/.ssh/authorized_keys</code>. On peut la publier sans risque.'],
+  ]),
+  note('green', '🎯 Le sens de la manœuvre', '<p>Le serveur ne connaît que la clé <em>publique</em>. À la connexion, il envoie un défi que <strong>seule la clé privée correspondante</strong> peut résoudre. La privée ne traverse pas le réseau — il n’y a donc rien à intercepter.</p><p>C’est pourquoi <strong>une seule paire suffit pour tous les serveurs</strong> : on recopie la même clé publique partout.</p>'),
+
+  block('heading', { level: 3, text: 'Sur Linux et macOS : <code>ssh-keygen</code>' }),
+  cmd(`ssh-keygen -t ed25519 -C "jean@portable-2026"`),
+  flow(`Generating public/private ed25519 key pair.
+Enter file in which to save the key (/home/jean/.ssh/id_ed25519):
+      ^ 1. OU L'ENREGISTRER — Entree pour accepter le defaut
+
+Enter passphrase (empty for no passphrase):
+Enter same passphrase again:
+      ^ 2. LA PASSPHRASE — elle chiffre la cle privee sur le disque
+
+Your identification has been saved in /home/jean/.ssh/id_ed25519
+Your public key has been saved in /home/jean/.ssh/id_ed25519.pub
+The key fingerprint is:
+SHA256:4Zt9xK...LqR8 jean@portable-2026
+      ^ 3. L'EMPREINTE — la carte d'identite de la cle`),
+  block('html', { html: '<p>Trois questions, et l’on peut répondre par <kbd>Entrée</kbd> aux deux premières. Résultat :</p>' }),
+  cmd(`ls -al ~/.ssh/
+-rw-------  1 jean jean  399  id_ed25519       <- 600 : LUI SEUL
+-rw-r--r--  1 jean jean   96  id_ed25519.pub   <- 644 : lisible par tous, c'est normal`),
+  note('blue', '💡 Les droits sont posés automatiquement — ne les change pas', '<p><code>ssh-keygen</code> met la clé privée en <code>600</code> tout seul. Si elle se retrouve plus permissive — après une copie, une extraction d’archive, un passage par une clé USB — <code>ssh</code> <strong>refuse de s’en servir</strong> :</p><div class="lx-cmd">Permissions 0644 for \'id_ed25519\' are too open.\nIt is required that your private key files are NOT accessible by others.</div><p>La correction : <code>chmod 600 ~/.ssh/id_ed25519</code>.</p>'),
+
+  table(['Option', 'À quoi elle sert'], [
+    ['<code>-t ed25519</code>', 'Le <strong>type</strong> de clé. Voir le tableau ci-dessous.'],
+    ['<code>-C "texte"</code>', 'Un <strong>commentaire</strong>, écrit en fin de clé publique. Sert à savoir <em>de quel poste</em> vient une clé quand un serveur en a douze.'],
+    ['<code>-f ~/.ssh/id_travail</code>', 'Un <strong>nom de fichier</strong> différent, pour avoir plusieurs paires.'],
+    ['<code>-b 4096</code>', 'La <strong>taille</strong>, uniquement pour RSA. Sans effet sur ed25519, dont la taille est fixe.'],
+    ['<code>-N ""</code>', 'La passphrase, donnée sur la ligne de commande. <code>""</code> = aucune — pour un script, jamais pour un humain.'],
+  ]),
+  table(['Type', 'Commande', 'À en penser'], [
+    ['<strong><code>ed25519</code></strong>', '<code>ssh-keygen -t ed25519</code>', '<strong>Le choix par défaut aujourd’hui.</strong> Courte, rapide, très sûre. Reconnue partout depuis 2014.'],
+    ['<code>rsa</code>', '<code>ssh-keygen -t rsa -b 4096</code>', 'L’historique. À réserver aux <strong>équipements anciens</strong> qui ne connaissent pas ed25519 — certains commutateurs, certains NAS. <strong>Jamais moins de 3072 bits.</strong>'],
+    ['<code>ecdsa</code>', '<code>ssh-keygen -t ecdsa</code>', 'Fonctionne, mais rien ne le recommande face à ed25519.'],
+    ['<code>dsa</code>', '—', '<strong>Obsolète et retiré</strong> d’OpenSSH. Si une documentation le propose, elle est périmée.'],
+  ]),
+  note('yellow', '⚠️ La passphrase : vide ou pas ?', '<p>Une clé <strong>sans</strong> passphrase se connecte sans rien taper — pratique, et c’est ce qu’il faut pour un script ou une sauvegarde automatique. Mais quiconque met la main sur le fichier <strong>devient toi</strong> sur tous les serveurs concernés.</p><p>Une clé <strong>avec</strong> passphrase reste inutilisable si elle est volée. L’inconvénient — la retaper à chaque fois — disparaît avec l’agent (plus bas).</p><p><strong>Sur un poste de travail : passphrase. Pour un automate : pas de passphrase, mais une clé dédiée, limitée à ce qu’elle doit faire.</strong></p>'),
+  note('gray', '🎨 Le dessin bizarre à la fin', '<p><code>ssh-keygen</code> affiche un <em>randomart</em> — un petit dessin ASCII dérivé de l’empreinte. Il n’a aucune fonction technique : il existe parce qu’un œil humain repère plus vite un dessin qui change qu’une chaîne de 43 caractères qui change. On peut l’ignorer.</p>'),
+
+  block('heading', { level: 3, text: 'Sur Windows : trois chemins' }),
+  block('html', { html: '<p>Les trois produisent une clé utilisable. Le premier est le plus simple et donne exactement les mêmes fichiers que sous Linux.</p>' }),
+
+  block('html', { html: '<p><strong>a. OpenSSH natif — la même commande</strong></p><p>Windows 10 et 11 embarquent OpenSSH. Dans <strong>PowerShell</strong> ou le Terminal :</p>' }),
+  cmd(`ssh-keygen -t ed25519 -C "jean@poste-windows"`),
+  block('html', { html: '<p>Rigoureusement identique à Linux. Les fichiers atterrissent dans :</p>' }),
+  cmd(`C:\\Users\\<nom>\\.ssh\\id_ed25519       (la privee)
+C:\\Users\\<nom>\\.ssh\\id_ed25519.pub   (la publique)`),
+  note('gray', '💡 Si <code>ssh-keygen</code> est introuvable', '<p>Le client OpenSSH s’ajoute dans <em>Paramètres → Applications → Fonctionnalités facultatives → Ajouter une fonctionnalité → <strong>Client OpenSSH</strong></em>. Ou en une commande, dans un PowerShell <strong>administrateur</strong> :</p><div class="lx-cmd">Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0</div>'),
+  note('yellow', '⚠️ Sur Windows, <code>ssh-agent</code> est un <strong>service</strong>, désactivé par défaut', '<p>C’est la différence qui surprend. Sous Linux, l’agent démarre avec la session. Sous Windows, c’est un service Windows qu’il faut activer une fois pour toutes, dans un PowerShell <strong>administrateur</strong> :</p><div class="lx-cmd">Set-Service ssh-agent -StartupType Automatic\nStart-Service ssh-agent</div><p>Ensuite, dans un PowerShell ordinaire :</p><div class="lx-cmd">ssh-add $env:USERPROFILE\\.ssh\\id_ed25519</div><p>La passphrase est demandée une fois, puis plus jamais. Sans cette étape, <code>ssh-add</code> répond « <em>impossible de se connecter à l’agent d’authentification</em> ».</p>'),
+
+  block('html', { html: '<p><strong>b. PuTTYgen</strong> — si l’on utilise PuTTY. C’est le chemin détaillé juste après.</p><p><strong>c. WSL</strong> — dans une distribution WSL, on est sous Linux : <code>ssh-keygen</code> se comporte comme au-dessus, et les clés vivent dans le <code>~/.ssh</code> de la distribution, séparé de celui de Windows.</p>' }),
+  note('blue', '💡 Lequel choisir ?', '<p><strong>OpenSSH natif</strong>, sauf si l’on tient à PuTTY. Même commande que sous Linux, même format de fichiers, aucune conversion — et les clés fonctionnent telles quelles avec Git, VS Code et Ansible.</p><p>PuTTYgen produit un <code>.ppk</code> qui n’est lu <em>que</em> par PuTTY et qu’il faut convertir pour tout le reste.</p>'),
+
+  block('heading', { level: 3, text: 'Envoyer la clé publique au serveur' }),
+  block('html', { html: '<p>Générer ne suffit pas : il faut déposer la clé <strong>publique</strong> dans <code>~/.ssh/authorized_keys</code> du compte visé, sur le serveur.</p><p><strong>Depuis Linux, macOS ou WSL</strong>, une commande fait tout :</p>' }),
+  cmd(`ssh-copy-id jean@192.168.15.70
+ssh-copy-id -p 22320 jean@192.168.15.70      # si le port a ete change
+ssh-copy-id -i ~/.ssh/id_travail.pub jean@192.168.15.70   # une cle precise`),
+  note('green', '🎯 <code>ssh-copy-id</code> évite les deux pièges d’un seul coup', '<p>Il crée <code>~/.ssh</code> s’il manque, ajoute la clé <strong>au bon format et à la suite</strong> des existantes, et <strong>pose les bons droits</strong> — <code>700</code> sur le dossier, <code>600</code> sur le fichier.</p><p>Ce sont exactement les deux causes d’échec silencieux du <a href="/pages/tp-ssh-securisation">TP</a>. Il demande le mot de passe une dernière fois : c’est normal, c’est la dernière.</p>'),
+  block('html', { html: '<p><strong>Depuis Windows, <code>ssh-copy-id</code> n’existe pas.</strong> On fait la même chose en une ligne, dans PowerShell :</p>' }),
+  cmd(`type $env:USERPROFILE\\.ssh\\id_ed25519.pub | ssh jean@192.168.15.70 "mkdir -p ~/.ssh && chmod 700 ~/.ssh && cat >> ~/.ssh/authorized_keys && chmod 600 ~/.ssh/authorized_keys"`),
+  note('gray', '💡 Ce que fait cette ligne, morceau par morceau', '<ul><li><code>type …pub</code> — affiche la clé publique (l’équivalent Windows de <code>cat</code>) ;</li><li><code>| ssh …</code> — l’envoie dans une commande exécutée <strong>sur le serveur</strong> ;</li><li><code>mkdir -p ~/.ssh &amp;&amp; chmod 700</code> — crée le dossier avec les bons droits ;</li><li><code>cat &gt;&gt; authorized_keys</code> — <strong>ajoute à la suite</strong> ; avec un seul <code>&gt;</code> on écraserait les clés déjà présentes ;</li><li><code>chmod 600</code> — les droits du fichier.</li></ul><p>C’est <code>ssh-copy-id</code> écrit à la main. À garder sous le coude.</p>'),
+  block('html', { html: '<p><strong>Ou entièrement à la main</strong>, ce qui reste le meilleur moyen de comprendre — et de réparer :</p>' }),
+  cmd(`# 1. sur le CLIENT : afficher la cle publique, et la copier
+cat ~/.ssh/id_ed25519.pub
+
+# 2. sur le SERVEUR, connecte par mot de passe
+mkdir -p ~/.ssh && chmod 700 ~/.ssh
+nano ~/.ssh/authorized_keys      # coller la ligne, TELLE QUELLE
+chmod 600 ~/.ssh/authorized_keys`),
+  note('red', '🚫 La clé publique tient sur UNE ligne', '<p>Un retour à la ligne inséré par le copier-coller, et la clé est ignorée sans le moindre message. Elle doit ressembler exactement à ceci, d’un seul tenant :</p><div class="lx-cmd">ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIL8f...9Kd jean@portable-2026\n     ^                    ^                        ^\n   type              la cle                  commentaire (-C)</div><p>Et l’on <strong>ajoute</strong> une ligne, on ne remplace pas le fichier : plusieurs clés peuvent coexister, une par poste.</p>'),
+
+  block('heading', { level: 3, text: 'Ne plus taper la passphrase : l’agent' }),
+  cmd(`# Linux / macOS
+eval "$(ssh-agent -s)"        # demarrer l'agent, si besoin
+ssh-add ~/.ssh/id_ed25519     # y charger la cle — passphrase demandee UNE fois
+ssh-add -l                    # les cles chargees
+ssh-add -D                    # tout retirer`),
+  block('html', { html: '<p>Sur Windows, une fois le service activé (voir plus haut), c’est la même commande : <code>ssh-add</code>. Avec PuTTY, l’équivalent s’appelle <strong>Pageant</strong> — on l’ouvre, on y charge le <code>.ppk</code>, il reste dans la zone de notification.</p>' }),
+  note('green', '🎯 C’est l’agent qui rend les clés plus commodes que le mot de passe', '<p>Sans lui, une clé avec passphrase demande une saisie à chaque connexion — donc plus pénible qu’un mot de passe. Avec lui : <strong>une saisie par session</strong>, et toutes les connexions de la journée passent sans rien taper.</p><p>C’est ce qui permet d’exiger une passphrase forte <em>et</em> de gagner du temps.</p>'),
+
+  block('heading', { level: 3, text: 'Vérifier, et comprendre un refus' }),
+  cmd(`ssh -v jean@192.168.15.70          # mode bavard : ce qui est tente, dans l'ordre
+ssh -vvv jean@192.168.15.70        # encore plus bavard
+
+ssh-keygen -lf ~/.ssh/id_ed25519.pub   # l'empreinte d'une cle
+ssh-keygen -y -f ~/.ssh/id_ed25519     # RETROUVER la publique depuis la privee`),
+  note('blue', '💡 Ce que <code>ssh -v</code> montre, et qu’on ne devine pas', '<p>Les lignes qui comptent :</p><div class="lx-cmd">debug1: Offering public key: /home/jean/.ssh/id_ed25519\ndebug1: Server accepts key: ...          <- la cle est acceptee\ndebug1: Authentications that can continue: publickey,password\n                                            ^ ce que le serveur accepte encore</div><p>Si la clé est <em>offerte</em> mais pas acceptée, le problème est <strong>sur le serveur</strong> : contenu d’<code>authorized_keys</code>, ou droits. Si elle n’est même pas offerte, c’est <strong>côté client</strong> : mauvais fichier, ou droits trop ouverts sur la clé privée.</p><p>Et côté serveur, la réponse définitive est toujours dans <code>sudo journalctl -u ssh -f</code>.</p>'),
+  note('gray', '💡 <code>ssh-keygen -y</code> sauve une situation courante', '<p>La clé publique perdue et la privée conservée, on la <strong>reconstitue</strong> : <code>ssh-keygen -y -f ~/.ssh/id_ed25519 &gt; ~/.ssh/id_ed25519.pub</code>. L’inverse est impossible — et c’est précisément le principe.</p>'),
 
   block('heading', { level: 3, text: 'La voie PuTTY — depuis Windows' }),
   block('html', { html: '<p><strong>PuTTYgen</strong> est installé en même temps que PuTTY. Il remplace <code>ssh-keygen</code>.</p><ol><li>Lancer PuTTYgen, cliquer sur <strong>Generate</strong>.</li><li><strong>Bouger la souris</strong> dans la fenêtre : le programme a besoin de hasard, et il le prend dans tes mouvements. La barre avance à mesure.</li><li>Saisir une <strong>passphrase</strong> — deux fois. Elle chiffre la clé privée sur le disque.</li><li><strong>Save public key</strong> et <strong>Save private key</strong> (extension <code>.ppk</code>). Donner des noms parlants.</li></ol>' }),
