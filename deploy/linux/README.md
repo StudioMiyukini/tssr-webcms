@@ -73,6 +73,38 @@ sudo WEBCMS_DOMAINE=tssr.exemple.fr \
 | `WEBCMS_COURRIEL_TLS` | *(vide)* | Contact Let's Encrypt |
 | `WEBCMS_OUVRIR_PAREFEU` | `o` | Ouvrir ufw ou firewalld |
 
+## Le contenu du site
+
+Le dépôt Git porte l'**application**, pas le **contenu** : `cms.sqlite` est
+exclu du versionnement. Sans cette étape, on obtient un CMS vide.
+
+Trois sources possibles, demandées pendant l'installation :
+
+| Réponse | Ce qui se passe |
+| --- | --- |
+| `site` *(défaut)* | Se connecte à un site existant, récupère son export (base + médias) via `/api/admin/export` et l'installe. |
+| `archive` | Prend un export `.zip` déjà produit — chemin local ou URL. |
+| `vide` | Installe un site vierge. |
+
+```bash
+sudo WEBCMS_CONTENU=site      WEBCMS_CONTENU_URL=https://tssr.miyukini.com      WEBCMS_CONTENU_USER=admin      WEBCMS_CONTENU_PASSWORD='…'      bash install-webcms.sh
+```
+
+Pour produire une archive depuis une instance existante : `npm run export`
+(fichier dans `export/`), ou le bouton d'export de l'administration.
+
+### Le compte administrateur, après import
+
+`server/db/client.ts` ne crée un administrateur **que si la table est vide**.
+Après import d'une base, ce sont donc les identifiants du **site source** qui
+s'appliqueraient — et le mot de passe annoncé par l'installeur ne
+fonctionnerait pas.
+
+Le script le repose donc explicitement sur le compte demandé. **Les autres
+comptes de la base importée gardent le mot de passe du site source** : copier
+une base, c'est copier tous ses comptes. Le script les liste à la fin ; à
+revoir depuis `/admin`.
+
 ## Ce que le script installe
 
 | Étape | Debian / Ubuntu | RHEL / Rocky / Alma |

@@ -34,6 +34,7 @@ NODE_CIBLE="22"             # version installee si celle de la distribution est 
 DOMAINE=""; PORT=""; DOSSIER=""; UTILISATEUR=""; ADMIN_USER=""
 ADMIN_PASSWORD=""; SOURCE_GIT=""; SOURCE_ARCHIVE=""
 AVEC_NGINX=""; AVEC_TLS=""; COURRIEL_TLS=""; OUVRIR_PAREFEU=""
+CONTENU=""; CONTENU_URL=""; CONTENU_USER=""; CONTENU_PASSWORD=""
 
 # Valeurs par defaut proposees a la saisie.
 DEF_PORT="3470"
@@ -41,6 +42,8 @@ DEF_DOSSIER="/opt/webcms"
 DEF_UTILISATEUR="webcms"
 DEF_ADMIN_USER="admin"
 DEF_SOURCE_GIT="https://github.com/StudioMiyukini/tssr-webcms.git"
+DEF_CONTENU_URL="https://tssr.miyukini.com"
+DEF_CONTENU_USER="admin"
 
 DRY_RUN=0
 INTERACTIF=1
@@ -287,6 +290,28 @@ fi
 [ -n "$SOURCE_GIT" ] || [ -n "$SOURCE_ARCHIVE" ] || echoue "Aucune source indiquee : ni depot Git, ni archive." "Relance et accepte le depot propose par defaut, ou indique un chemin d'archive."
 [ -n "$SOURCE_ARCHIVE" ] && [ ! -f "$SOURCE_ARCHIVE" ] && echoue "Archive introuvable : $SOURCE_ARCHIVE"
 
+# Le depot Git porte l'application, PAS le contenu : cms.sqlite est exclu du
+# versionnement. Sans cette etape, on obtient un CMS vide.
+echo
+info "Contenu du site :"
+detail "  site     recuperer depuis un site existant (base + medias)"
+detail "  archive  depuis un export .zip (chemin local ou URL)"
+detail "  vide     installer un site vierge"
+demander CONTENU "  Source du contenu [site|archive|vide]" "site"
+case "${CONTENU,,}" in
+  site)
+    CONTENU="site"
+    demander CONTENU_URL "Adresse du site a copier" "$DEF_CONTENU_URL"
+    demander CONTENU_USER "Identifiant admin de CE site" "$DEF_CONTENU_USER"
+    demander_secret CONTENU_PASSWORD "Mot de passe admin de CE site" ;;
+  archive)
+    CONTENU="archive"
+    demander CONTENU_URL "Chemin ou URL de l'archive d'export (.zip)" "" ;;
+  vide|"") CONTENU="vide" ;;
+  *) echoue "Source de contenu inconnue : $CONTENU" "Valeurs acceptees : site, archive, vide" ;;
+esac
+[ "$CONTENU" = "archive" ] && [ -z "$CONTENU_URL" ] && echoue "Aucune archive indiquee."
+
 demander_oui_non AVEC_NGINX "Installer nginx en proxy inverse (port 80/443)" "o"
 if [ "$AVEC_NGINX" = "o" ] && [ -n "$DOMAINE" ]; then
   demander_oui_non AVEC_TLS "Obtenir un certificat HTTPS avec Let's Encrypt" "o"
@@ -329,6 +354,7 @@ detail "  port interne ... $PORT"
 detail "  dossier ........ $DOSSIER"
 detail "  compte ......... $UTILISATEUR"
 detail "  source ......... ${SOURCE_GIT:-$SOURCE_ARCHIVE}"
+detail "  contenu ........ $CONTENU${CONTENU_URL:+ <- $CONTENU_URL}"
 detail "  nginx .......... $AVEC_NGINX     HTTPS : ${AVEC_TLS:-n}"
 detail "  pare-feu ....... $OUVRIR_PAREFEU"
 if [ "$INTERACTIF" = 1 ] && [ "$DRY_RUN" = 0 ]; then
@@ -534,6 +560,126 @@ gate "Module natif better-sqlite3 compile" "cd $DOSSIER && node -e \"require('be
 
 lancer runuser -u "$UTILISATEUR" -- bash -c "cd '$DOSSIER' && npm run build"
 gate "Front construit" "ls $DOSSIER/dist" test -d "$DOSSIER/dist"
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  7 bis. Contenu du site
+# ─────────────────────────────────────────────────────────────────────────────
+if [ "$CONTENU" != "vide" ]; then
+  etape "7 bis. Contenu du site"
+
+  ARCHIVE_TMP=""
+  if [ "$CONTENU" = "site" ]; then
+    BASE_SRC="${CONTENU_URL%/}"
+    info "Recuperation depuis $BASE_SRC"
+    if [ "$DRY_RUN" = 0 ]; then
+      COOKIES="$(mktemp)"; ARCHIVE_TMP="$(mktemp -u).zip"
+      CODE=$(curl -s -o /dev/null -w '%{http_code}' -c "$COOKIES" \
+             -H 'Content-Type: application/json' \
+             -d "{\"username\":\"$CONTENU_USER\",\"password\":\"$CONTENU_PASSWORD\"}" \
+             "$BASE_SRC/api/auth/login" || echo 000)
+      case "$CODE" in
+        200) ok "Authentifie sur le site source" ;;
+        401) rm -f "$COOKIES"; echoue "Identifiants refuses par $BASE_SRC." "Verifie l'identifiant et le mot de passe du site SOURCE." ;;
+        429) rm -f "$COOKIES"; echoue "Trop de tentatives sur $BASE_SRC (limiteur de debit)." "Attends une quinzaine de minutes." ;;
+        000) rm -f "$COOKIES"; echoue "Site source injoignable : $BASE_SRC" "curl -v $BASE_SRC/api/auth/login" ;;
+        *)   rm -f "$COOKIES"; echoue "Reponse inattendue du site source : HTTP $CODE" ;;
+      esac
+      info "Telechargement de l'export (base + medias)..."
+      curl -fsSL -b "$COOKIES" "$BASE_SRC/api/admin/export" -o "$ARCHIVE_TMP" \
+        || { rm -f "$COOKIES"; echoue "Export refuse par le site source." "Ouvre $BASE_SRC/admin et verifie que l'export fonctionne."; }
+      rm -f "$COOKIES"
+    fi
+  else
+    case "$CONTENU_URL" in
+      http://*|https://*)
+        info "Telechargement de $CONTENU_URL"
+        if [ "$DRY_RUN" = 0 ]; then
+          ARCHIVE_TMP="$(mktemp -u).zip"
+          curl -fsSL "$CONTENU_URL" -o "$ARCHIVE_TMP" || echoue "Archive introuvable : $CONTENU_URL"
+        fi ;;
+      *)
+        [ -f "$CONTENU_URL" ] || echoue "Archive introuvable : $CONTENU_URL"
+        ARCHIVE_TMP="$CONTENU_URL" ;;
+    esac
+  fi
+
+  if [ "$DRY_RUN" = 0 ]; then
+    gate "Archive de contenu recuperee" "ls -l $ARCHIVE_TMP" test -s "$ARCHIVE_TMP"
+
+    # Extraction : python3 est deja une dependance, inutile d'exiger unzip.
+    EXTRAIT="$(mktemp -d)"
+    if command -v unzip >/dev/null 2>&1; then
+      unzip -q -o "$ARCHIVE_TMP" -d "$EXTRAIT"
+    else
+      python3 -m zipfile -e "$ARCHIVE_TMP" "$EXTRAIT"
+    fi
+
+    # La base peut etre a la racine de l'archive ou dans un sous-dossier.
+    BASE_TROUVEE="$(find "$EXTRAIT" -maxdepth 3 -name cms.sqlite -type f | head -1)"
+    [ -n "$BASE_TROUVEE" ] || echoue "Aucun cms.sqlite dans l'archive." "unzip -l $ARCHIVE_TMP"
+    SRC_DIR="$(dirname "$BASE_TROUVEE")"
+
+    # Sauvegarder ce qui existe deja avant d'ecraser.
+    if [ -f "$DOSSIER/cms.sqlite" ]; then
+      cp -a "$DOSSIER/cms.sqlite" "$DOSSIER/cms.sqlite.$(date +%Y%m%d-%H%M%S).old"
+      avert "Base existante sauvegardee a cote."
+    fi
+    # Les fichiers -wal et -shm d'une base precedente rendraient l'ensemble
+    # incoherent : la nouvelle base arrive avec son WAL deja replie.
+    rm -f "$DOSSIER/cms.sqlite-wal" "$DOSSIER/cms.sqlite-shm"
+    cp -f "$BASE_TROUVEE" "$DOSSIER/cms.sqlite"
+    [ -d "$SRC_DIR/uploads" ] && cp -a "$SRC_DIR/uploads/." "$DOSSIER/uploads/" || true
+    chown -R "$UTILISATEUR:$UTILISATEUR" "$DOSSIER/cms.sqlite" "$DOSSIER/uploads"
+    rm -rf "$EXTRAIT"
+    [ "$CONTENU" = "site" ] && rm -f "$ARCHIVE_TMP"
+  fi
+
+  # Le compte administrateur vient de la base importee : celui du site SOURCE.
+  # server/db/client.ts ne cree un admin que si la table est VIDE — le mot de
+  # passe demande plus haut serait donc sans effet. On le pose explicitement.
+  if [ "$DRY_RUN" = 0 ]; then
+    cat > "$DOSSIER/.reprise-admin.cjs" <<'REPRISE'
+const Database = require('better-sqlite3');
+const bcrypt = require('bcryptjs');
+const [chemin, utilisateur] = process.argv.slice(2);
+const motdepasse = process.env.WEBCMS_NOUVEAU_MDP;
+const d = new Database(chemin);
+d.exec(`CREATE TABLE IF NOT EXISTS admins (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  username TEXT NOT NULL UNIQUE,
+  password_hash TEXT NOT NULL,
+  created_at TEXT DEFAULT CURRENT_TIMESTAMP)`);
+const empreinte = bcrypt.hashSync(motdepasse, 10);
+const r = d.prepare('UPDATE admins SET password_hash=? WHERE username=?').run(empreinte, utilisateur);
+if (r.changes === 0) d.prepare('INSERT INTO admins (username,password_hash) VALUES (?,?)').run(utilisateur, empreinte);
+let pages = 0;
+try { pages = d.prepare('SELECT COUNT(*) c FROM pages').get().c; } catch { /* base sans pages */ }
+d.close();
+console.log(pages);
+REPRISE
+    chown "$UTILISATEUR:$UTILISATEUR" "$DOSSIER/.reprise-admin.cjs"
+    NB_PAGES=$(cd "$DOSSIER" && WEBCMS_NOUVEAU_MDP="$ADMIN_PASSWORD" \
+      runuser -u "$UTILISATEUR" --preserve-environment -- \
+      node .reprise-admin.cjs "$DOSSIER/cms.sqlite" "$ADMIN_USER" 2>/dev/null || echo "")
+    rm -f "$DOSSIER/.reprise-admin.cjs"
+    [ -n "${NB_PAGES:-}" ] || echoue "Reprise du compte administrateur impossible." "Verifie que node et better-sqlite3 fonctionnent dans $DOSSIER"
+    ok "Compte administrateur repris sur le mot de passe choisi"
+    # Copier une base, c'est copier TOUS ses comptes. Ceux qui ne sont pas
+    # celui repris ci-dessus gardent le mot de passe du site source.
+    AUTRES=$(cd "$DOSSIER" && runuser -u "$UTILISATEUR" -- node -e "
+      const D=require('better-sqlite3');
+      const d=new D(process.argv[1],{readonly:true});
+      console.log(d.prepare('SELECT username FROM admins WHERE username<>?').all(process.argv[2]).map(x=>x.username).join(', '));
+    " "$DOSSIER/cms.sqlite" "$ADMIN_USER" 2>/dev/null || echo "")
+    if [ -n "${AUTRES:-}" ]; then
+      avert "La base importee contient d'autres comptes administrateurs :"
+      avert "  $AUTRES"
+      avert "Ils gardent le mot de passe du site source. A revoir depuis /admin."
+    fi
+    gate "Contenu en place ($NB_PAGES pages)" "sqlite3 $DOSSIER/cms.sqlite 'select count(*) from pages'" \
+      bash -c "[ \"${NB_PAGES:-0}\" -gt 0 ]"
+  fi
+fi
 
 # ─────────────────────────────────────────────────────────────────────────────
 #  8. Service systemd
@@ -753,6 +899,7 @@ $( [ -n "$DOMAINE" ] && printf '  Site public ........ %s\n' "${BASE_URL:-http:/
     systemctl restart webcms         apres modification de l'environnement
     $0 --verifier                    controler l'installation
 
+$( [ "$CONTENU" = "vide" ] && printf "  %s Site VIDE : aucun contenu importe.%s\n" "$C_W" "$C_0" )
   Sauvegarde — la totalite du contenu tient dans un fichier :
     $DOSSIER/cms.sqlite   (et $DOSSIER/uploads pour les medias)
 
