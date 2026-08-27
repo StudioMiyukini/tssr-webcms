@@ -17,17 +17,17 @@ nécessaires et en vérifiant chaque étape avant de passer à la suivante.
 sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/StudioMiyukini/tssr-webcms/main/deploy/linux/install-webcms.sh)"
 ```
 
-**Ne pas ecrire `curl … | sudo bash`** : sous cette forme, l entree standard de
-bash porte le texte du script, et le premier `read` y consomme le reste — le
-script s arrete en plein milieu, sans message. Avec `-c`, le script arrive par
-un argument et l entree standard reste le clavier.
+**N'écris pas `curl … | sudo bash`** : sous cette forme, l'entrée standard de
+bash porte le *texte du script*, et le premier `read` y consomme le reste — le
+script s'arrête en plein milieu, sans message. Avec `-c`, le script arrive par
+un **argument** et l'entrée standard reste le clavier.
 
-Le script se rattrape neanmoins : s il detecte une entree non interactive, il
-reprend le clavier sur `/dev/tty`, et bascule en mode non interactif si meme
+Le script se rattrape néanmoins : s'il détecte une entrée non interactive, il
+reprend le clavier sur `/dev/tty`, et bascule en mode non interactif si même
 cela est impossible.
 
-Sur une machine de production, preferer les deux commandes — telecharger, lire,
-puis executer :
+Sur une machine de production, préférer les deux commandes — télécharger, lire,
+puis exécuter :
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/StudioMiyukini/tssr-webcms/main/deploy/linux/install-webcms.sh -o install-webcms.sh
