@@ -1,2 +1,8 @@
 * text=auto eol=lf
 *.woff2 binary
+
+# Les scripts shell doivent rester en LF : un .sh en CRLF ne demarre pas sous
+# Linux (« /usr/bin/env bash^M: bad interpreter »). La regle « text=auto »
+# ci-dessus le fait deja, mais on l'ecrit pour que ce ne soit pas incident.
+*.sh text eol=lf
+*.bash text eol=lf
