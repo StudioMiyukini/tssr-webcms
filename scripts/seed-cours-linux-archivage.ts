@@ -3,7 +3,7 @@
    « dossier compressé » : réunir, et réduire. Sous Linux ce sont deux outils
    distincts — et c'est ce qui explique la forme des options de tar.
    Usage : BASE=... ADMIN_PW=... tsx scripts/seed-cours-linux-archivage.ts */
-import { block, note, sh, flow, table, styleLinux, publier } from './_cours-linux';
+import { block, note, sh, flow, table, styleLinux, liens, publier } from './_cours-linux';
 import type { PageBlock } from '../client/src/lib/page-blocks';
 
 const PAGE = {
@@ -149,6 +149,7 @@ ZIP              zip -r archive.zip dossier/
   note('green', '🎯 Le moyen mnémotechnique', '<p><strong>Créer</strong> : <code>-zcvf</code> — « <em>ze compresse, vois le fichier</em> ». <strong>Extraire</strong> : <code>-zxvf</code> — le <code>c</code> devient <code>x</code>. C’est la seule lettre qui change entre les deux commandes qu’on tape le plus souvent.</p>'),
 
   note('blue', '🔗 Les pages liées', '<p><a href="/pages/tp-archivage">TP — Archivage et compression</a> · <a href="/pages/linux-commandes-base">Commandes de base</a> — métacaractères et redirections · <a href="/pages/linux-droits">Droits</a> — ce que <code>tar</code> conserve · <a href="/pages/linux-disques">Disques et espace</a> · <a href="/pages/repertoire-commandes">Répertoire des commandes</a></p>'),
+  liens('/pages/linux-archivage'),
 ];
 
 publier(PAGE, blocks).catch(e => { console.error(e); process.exit(1); });

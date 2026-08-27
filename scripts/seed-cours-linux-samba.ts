@@ -13,6 +13,7 @@ const blocks: PageBlock[] = [
   styleBlock,
   block('html', { html: '<p><strong>Samba</strong> implémente le protocole <strong>SMB/CIFS</strong> de Windows sur Linux : un dossier Linux devient un <strong>partage réseau</strong> accessible en <code>\\\\serveur\\partage</code> depuis l’Explorateur Windows, exactement comme un partage Windows.</p>' }),
   block('heading', { level: 2, text: '1) Installer' }),
+  note('blue', '🔗 Sur Rocky / RHEL, trois choses changent', '<p>Le paquet et <code>/etc/samba/smb.conf</code> sont identiques. Mais :</p><ul><li>l’unité s’appelle <strong><code>smb.service</code></strong> (et <code>nmb.service</code>), pas <code>smbd</code> ;</li><li><strong>firewalld</strong> bloque le partage : <code>sudo firewall-cmd --add-service=samba --permanent &amp;&amp; sudo firewall-cmd --reload</code> ;</li><li><strong>SELinux</strong> refuse de partager un dossier qui ne porte pas la bonne étiquette — c’est <em>la</em> cause des partages visibles mais vides.<br><code>sudo semanage fcontext -a -t samba_share_t &#39;/srv/partage(/.*)?&#39;</code><br><code>sudo restorecon -Rv /srv/partage</code><br>Et pour partager les dossiers personnels : <code>sudo setsebool -P samba_enable_home_dirs on</code>.</li></ul><p>→ <a href="/pages/linux-redhat">le cours Rocky</a>, §4.</p>'),
   cmd(`sudo apt update
 sudo apt install samba
 sudo systemctl enable smbd`),
