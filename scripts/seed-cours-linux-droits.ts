@@ -144,106 +144,15 @@ ls -ld /tmp                   # drwxrwxrwt : le 't' final`),
   note('green', '🎯 Le motif à retenir : SGID + umask 007', '<p>Un dossier d’équipe sans SGID produit des fichiers appartenant au groupe primaire de chacun — donc illisibles par les collègues. SGID corrige le groupe, <code>umask 007</code> corrige les droits. Les deux ensemble, et le partage fonctionne sans intervention.</p>'),
 
   block('heading', { level: 2, text: '8) Les ACL : quand trois catégories ne suffisent plus' }),
-  block('html', { html: '<p>« Le groupe compta en écriture, <em>et</em> l’auditeur en lecture seule » n’a pas de solution avec un seul groupe : le modèle POSIX n’expose que <strong>trois</strong> jeux de droits — propriétaire, groupe, autres. Les <strong>ACL</strong> lèvent la limite en attachant au fichier une <strong>liste d’entrées nominatives</strong>, une par utilisateur ou par groupe.</p>' }),
+  block('html', { html: '<p>« Le groupe compta en écriture, <em>et</em> l’auditeur en lecture seule » n’a pas de solution avec les trois catégories vues jusqu’ici. Les <strong>ACL</strong> attachent au fichier une <strong>liste d’entrées nominatives</strong>, une par utilisateur ou par groupe, indépendantes du propriétaire et du groupe principal.</p>' }),
+  sh(`sudo apt install acl                    # getfacl et setfacl
 
-  table(['La situation', 'La bonne réponse'], [
-    ['Un propriétaire, un groupe, un accès uniforme', '<strong>Droits classiques.</strong> Pas d’ACL.'],
-    ['Deux utilisateurs de groupes différents sur le même fichier', 'ACL — plus simple que créer un groupe pour l’occasion.'],
-    ['Chaque personne a un niveau d’accès <em>différent</em> sur le même dossier', '<strong>ACL : la seule solution.</strong>'],
-    ['Un prestataire doit lire un dossier sans rejoindre un groupe', 'ACL sur l’utilisateur — plutôt qu’élargir <code>other</code>.'],
-    ['Les nouveaux fichiers doivent hériter des droits', '<strong>ACL par défaut.</strong>'],
-  ]),
-  note('green', '🎯 La règle avant de commencer', '<p><strong>Si un <code>chmod</code> et un groupe bien choisi résolvent le problème, ne pose pas d’ACL.</strong> Elles ajoutent une couche que le prochain administrateur devra comprendre — et qu’un <code>ls -l</code> ne montre pas. On les réserve aux cas où les droits classiques butent vraiment.</p>'),
-  sh(`sudo apt install acl        # getfacl et setfacl ne sont pas toujours installes`),
-
-  block('heading', { level: 3, text: 'Lire une ACL : les six sortes d’entrées' }),
-  sh(`getfacl /srv/compta`),
-  flow(`# file: srv/compta
-# owner: alice
-# group: compta
-user::rwx                 <- le PROPRIETAIRE (comme le 1er triplet de ls -l)
-user:bob:r-x              <- une entree NOMMEE : bob, quel que soit son groupe
-group::r-x                <- le GROUPE proprietaire
-group:direction:rwx       <- une entree nommee de groupe
-mask::rwx                 <- LE PLAFOND de toutes les entrees nommees
-other::---                <- tous les autres
-default:user:bob:rw-      <- ce dont HERITERONT les fichiers crees ici`),
-  table(['Entrée', 'Ce qu’elle vaut'], [
-    ['<code>user::rwx</code>', 'Le propriétaire. C’est le premier triplet de <code>ls -l</code>.'],
-    ['<code>user:bob:r-x</code>', '<strong>Une entrée nommée</strong> — bob, indépendamment de son groupe.'],
-    ['<code>group::r-x</code>', 'Le groupe propriétaire.'],
-    ['<code>group:dev:rw-</code>', 'Une entrée nommée de groupe.'],
-    ['<strong><code>mask::rwx</code></strong>', '<strong>Le plafond</strong> de toutes les entrées nommées. Voir plus bas.'],
-    ['<code>other::---</code>', 'Tous les autres.'],
-    ['<code>default:…</code>', 'L’héritage. <strong>Sur les répertoires seulement.</strong>'],
-  ]),
-
-  block('heading', { level: 3, text: 'Poser, retirer' }),
-  sh(`setfacl -m u:bob:r      rapport.txt       # -m : ajoute ou MODIFIE une entree
-setfacl -m g:direction:rwx /srv/compta
-
-setfacl -d -m u:bob:rw  /srv/compta        # -d : ACL par DEFAUT, l'heritage
-setfacl -R -m u:bob:rw  /srv/compta        # -R : sur tout le contenu EXISTANT
-setfacl -R -d -m u:bob:rw /srv/compta      # les deux : existant + a venir
-
-setfacl -x u:bob        rapport.txt        # -x : retirer UNE entree
-setfacl -b              rapport.txt        # -b : tout retirer, retour au POSIX`),
-  note('blue', '💡 <code>-d</code> et <code>-R</code> ne font pas la même chose', '<p><code>-R</code> agit sur ce qui <strong>existe déjà</strong>. <code>-d</code> agit sur ce qui <strong>sera créé</strong>. Poser l’un sans l’autre laisse la moitié du dossier de côté — c’est l’erreur la plus fréquente sur un partage repris en cours de route.</p>'),
-  note('gray', '💡 Une entrée par défaut en fait apparaître cinq', '<p><code>setfacl -d -m u:bob:rw</code> et <code>getfacl</code> en affiche cinq : <code>default:user::</code>, <code>default:user:bob:</code>, <code>default:group::</code>, <code>default:mask::</code>, <code>default:other::</code>.</p><p>Ce n’est pas un bogue : une ACL par défaut doit être <strong>complète</strong> pour être applicable — le noyau complète le jeu.</p>'),
-
-  block('heading', { level: 3, text: 'Le masque : le plafond qu’on oublie' }),
-  block('html', { html: '<p>C’est le point le plus mal compris des ACL, et celui qui fait perdre le plus de temps.</p>' }),
-  flow(`user:bob:rw-      #effective:r--       <- ce que bob a REELLEMENT
-mask::r--                                 <- ... parce que le masque plafonne
-
-  L'entree accorde rw-. Le masque n'autorise que r--.
-  bob n'a donc que r--. getfacl le dit lui-meme, colonne « effective ».`),
-  note('red', '🚫 <code>chmod</code> ne touche pas les entrées : il change LE MASQUE', '<p>Sur un fichier porteur d’ACL, un <code>chmod g=r</code> ne modifie pas les droits du groupe propriétaire — il abaisse <strong>le masque</strong>, et <strong>plafonne d’un coup toutes les entrées nommées</strong> à la lecture seule, quelles que soient les valeurs posées par <code>setfacl</code>.</p><p>C’est ainsi qu’un droit accordé la veille disparaît sans que personne n’ait touché aux ACL. Après chaque <code>setfacl</code>, et après chaque <code>chmod</code> :</p><div class="lx-cmd">getfacl fichier | grep -E \'mask|effective\'</div>'),
-  note('red', '🚫 <code>ls -l</code> affiche le masque, pas le groupe', '<p>Dès qu’un <strong><code>+</code></strong> apparaît en fin de champ de permissions, la position du groupe dans <code>ls -l</code> ne montre plus les droits du <em>groupe propriétaire</em> — elle montre <strong>le masque</strong>.</p><div class="lx-cmd">-rw-rw-r--+ 1 alice compta  2048  rapport.txt\n     ^^^\n     ce n\'est PAS le groupe compta : c\'est le masque</div><p><strong>Sur un fichier porteur du <code>+</code>, seul <code>getfacl</code> dit la vérité.</strong> Diagnostiquer un partage à ACL en lisant des <code>ls -l</code> mène droit dans le mur.</p>'),
-
-  block('heading', { level: 3, text: 'Le piège de la traversée' }),
-  block('html', { html: '<p>Une ACL dit ce qu’on a le droit de <strong>faire</strong> sur un fichier. Elle ne dit rien du droit d’<strong>arriver</strong> jusqu’à lui. Le noyau vérifie d’abord le droit de traversée — le <code>x</code> — sur <strong>chaque répertoire du chemin</strong>. Un seul maillon manquant, et la lecture échoue.</p>' }),
-  sh(`sudo chmod 750 /srv/projet
-sudo -u bob cat /srv/projet/rapport.txt
-#   Permission denied
-
-getfacl /srv/projet/rapport.txt
-#   user:bob:r--          <- le droit EST bien la, sur le fichier
-
-sudo setfacl -m u:bob:x /srv/projet        # il manquait le droit d'ENTRER
-sudo -u bob cat /srv/projet/rapport.txt    # ... et ca passe`),
-  note('red', '🚫 Sur un répertoire, <code>r</code> sans <code>x</code> ne sert à rien', '<p>Sur un répertoire, <code>r</code> autorise à <strong>lister les noms</strong> et <code>x</code> à <strong>entrer et ouvrir</strong> ce qu’il contient. Un <code>r</code> seul donne donc un dossier dont on voit le contenu sans pouvoir rien lire — la pire des situations, parce qu’elle <em>ressemble</em> à un droit accordé.</p><p><strong>En lecture, la bonne ACL sur un répertoire est <code>rx</code>, jamais <code>r</code>. En écriture, <code>rwx</code>, jamais <code>rw</code>.</strong></p>'),
-  note('green', '🎯 <code>namei -l</code> désigne le maillon fautif', '<p>Plutôt que de deviner quel niveau du chemin bloque :</p><div class="lx-cmd">namei -l /srv/projet/rapport.txt</div><p>Il affiche les droits de <strong>chaque étage</strong>, de la racine au fichier. Le maillon manquant saute aux yeux.</p>'),
-
-  block('heading', { level: 3, text: 'Un espace projet, en entier' }),
-  block('html', { html: '<p>Trois rôles sur <code>/srv/webapp</code> : <strong>alice</strong> développe (tous droits), <strong>bob</strong> intègre (lecture-écriture), <strong>carol</strong> audite (lecture seule).</p>' }),
-  sh(`sudo mkdir -p /srv/webapp
-sudo chown alice:alice /srv/webapp
-sudo chmod 750 /srv/webapp                 # « other » n'a rien, et c'est voulu
-
-# Sur le repertoire lui-meme — noter les x, indispensables pour ENTRER
-sudo setfacl -m u:bob:rwx  /srv/webapp
-sudo setfacl -m u:carol:rx /srv/webapp
-
-# Sur ce qui sera cree dedans — la, ce sont des FICHIERS : pas de x inutile
-sudo setfacl -d -m u:alice:rwx /srv/webapp
-sudo setfacl -d -m u:bob:rw    /srv/webapp
-sudo setfacl -d -m u:carol:r   /srv/webapp
-
-getfacl /srv/webapp                        # l'etat complet
-sudo -u alice touch /srv/webapp/app.py
-getfacl /srv/webapp/app.py                 # l'heritage a-t-il joue ?`),
-  note('blue', '💡 <code>rx</code> sur le dossier, <code>r</code> sur les fichiers', '<p>Ce n’est pas une inattention : le <code>x</code> d’un répertoire sert à le traverser, celui d’un fichier à l’exécuter. Carol a besoin d’entrer dans le dossier (<code>rx</code>) et de lire les fichiers (<code>r</code>) — lui donner <code>x</code> sur les fichiers ne servirait à rien et brouillerait la lecture.</p>'),
-
-  block('heading', { level: 3, text: 'Sauvegarder les ACL' }),
-  sh(`getfacl -pR /srv/webapp > /root/acl-webapp.bak    # sauvegarder
-setfacl --restore=/root/acl-webapp.bak            # restaurer
-
-cp -a source destination        # -a preserve les ACL
-tar --acls -czf x.tgz dossier   # tar les perd SANS cette option
-rsync -avA source/ dest/        # -A preserve les ACL`),
-  note('red', '🚫 Le <code>-p</code> de <code>getfacl</code> n’est pas facultatif', '<p>Sans lui, la sauvegarde enregistre des chemins <strong>relatifs</strong> — <code># file: srv/webapp</code> au lieu de <code># file: /srv/webapp</code>. La restauration ne fonctionne alors que si on la lance <em>depuis la racine</em>, et échoue silencieusement partout ailleurs.</p><p><strong>Vérifie toujours que la première ligne du fichier commence par <code># file: /</code>.</strong></p>'),
-  note('yellow', '⚠️ Les outils courants perdent les ACL par défaut', '<p><code>cp</code> sans <code>-a</code>, <code>tar</code> sans <code>--acls</code>, <code>rsync</code> sans <code>-A</code> : dans les trois cas, la copie arrive avec des droits POSIX seuls, et les ACL ont disparu. C’est une cause classique de « les droits ont sauté après la migration ».</p>'),
+getfacl /srv/compta                     # lire — un « + » dans ls -l les signale
+setfacl -m u:auditeur:rx /srv/compta    # accorder a une personne
+setfacl -d -m g:compta:rwx /srv/compta  # l'heritage, pour ce qui sera cree
+setfacl -b /srv/compta                  # tout retirer, retour au POSIX`),
+  note('green', '🎯 La règle avant d’en poser', '<p><strong>Si un <code>chmod</code> et un groupe bien choisi résolvent le problème, ne pose pas d’ACL.</strong> Elles ajoutent une couche que le prochain administrateur devra comprendre — et qu’un <code>ls -l</code> ne montre pas.</p>'),
+  note('blue', '🔗 Les ACL ont leur propre cours', '<p>Le sujet a sa logique et ses pièges — le masque qui plafonne tout, la traversée du chemin, et <code>ls -l</code> qui affiche le masque au lieu du groupe. Tout est là : <strong><a href="/pages/linux-acl">Les ACL : des droits au-delà de rwx</a></strong>.</p>'),
 
   block('heading', { level: 2, text: '9) sudo, en entier' }),
   block('html', { html: '<p>Se connecter en root est une mauvaise habitude pour trois raisons : aucune trace de qui a fait quoi, la moindre faute de frappe est définitive, et le mot de passe de root doit circuler entre les administrateurs. <strong>sudo</strong> règle les trois — on exécute une commande précise avec les droits de root, en s’authentifiant avec <em>son propre</em> mot de passe, et l’appel est journalisé.</p>' }),

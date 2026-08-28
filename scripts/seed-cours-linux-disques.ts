@@ -146,6 +146,45 @@ df -h /srv/donnees                   # verifier`),
 du -sh /var/*               # equivalent, autre ecriture
 du -h --max-depth=1 / | sort -h | tail   # les plus gros, tries`),
 
+  block('heading', { level: 2, text: '5 bis) Le parcours complet, d’un bout à l’autre' }),
+  block('html', { html: '<p>Tout ce qui précède, en une séquence — d’un disque neuf ajouté à la machine virtuelle jusqu’à un volume monté qui survit au redémarrage. C’est <strong>le geste à savoir refaire sans hésiter</strong>.</p>' }),
+  sh(`# 1. IDENTIFIER — et surtout ne pas se tromper de disque
+lsblk                          # sdb : pas de partition, pas de montage
+lsblk -f                       # ni systeme de fichiers : il est bien vierge
+sudo fdisk -l /dev/sdb
+
+# 2. PARTITIONNER
+sudo fdisk /dev/sdb
+#   g   table GPT
+#   n   nouvelle partition — accepter les valeurs proposees
+#   p   verifier avant d'ecrire
+#   w   ECRIRE et quitter  (jusqu'ici, rien n'a ete modifie)
+lsblk /dev/sdb                 # sdb1 doit apparaitre sous sdb
+
+# 3. FORMATER
+sudo mkfs.ext4 -L donnees /dev/sdb1
+lsblk -f                       # le type ext4 apparait, et un UUID
+
+# 4. MONTER, pour essayer
+sudo mkdir -p /data
+sudo mount /dev/sdb1 /data
+findmnt /data                  # d'ou vient /data, avec quelles options
+df -h /data                    # l'espace disponible
+sudo touch /data/test.txt      # ecrire pour de vrai
+sudo umount /data              # /data redevient un dossier vide
+
+# 5. RENDRE PERMANENT
+sudo blkid /dev/sdb1           # relever l'UUID
+sudo nano /etc/fstab
+#   UUID=3f2a...-91c4  /data  ext4  defaults,nofail  0  2
+sudo mount -a                  # TESTER — ne jamais redemarrer sans
+findmnt /data ; df -h /data`),
+  note('red', '🚫 Les deux commandes qui ne pardonnent pas', '<p><code>fdisk</code> et <code>mkfs</code> sur le mauvais disque détruisent son contenu <strong>sans confirmation utile</strong>. Et les noms <code>sdX</code> changent d’un démarrage à l’autre selon l’ordre de détection.</p><p><strong>Un <code>lsblk</code> juste avant, à chaque fois.</strong> Le disque neuf est celui qui n’a ni partition, ni système de fichiers, ni point de montage — trois indices, pas un seul.</p><p>Dans <code>fdisk</code>, tant qu’on n’a pas tapé <code>w</code>, rien n’est écrit : <code>q</code> quitte sans rien changer. C’est le filet.</p>'),
+  note('green', '🎯 <code>mount -a</code> est le point de non-retour', '<p>C’est la commande qui sépare une ligne de <code>fstab</code> juste d’un serveur qui ne redémarre plus. Elle monte tout ce qui est déclaré et pas encore monté — donc elle rejoue exactement ce que fera le démarrage.</p><p><strong>Ne redémarre jamais après avoir modifié <code>fstab</code> sans l’avoir passée.</strong> Et garde <code>nofail</code> : sans lui, un volume absent bloque le démarrage.</p>'),
+
+  block('heading', { level: 2, text: '5 ter) Se tester' }),
+  block('html', { html: '<ol><li>Quelle est la différence entre <code>/dev/sdb</code> et <code>/dev/sdb1</code> ?</li><li>Entre une partition et un système de fichiers ?</li><li>À quoi sert un point de montage — et pourquoi Linux n’a-t-il pas de lettres de lecteur ?</li><li>Pourquoi l’UUID plutôt que <code>/dev/sdb1</code> dans <code>fstab</code> ?</li><li>À quoi sert <code>mount -a</code>, et pourquoi avant de redémarrer ?</li><li>Quelle différence entre <code>df</code> et <code>du</code> ? Dans quel cas chacun ?</li><li>Que signifient PV, VG et LV, et dans quel ordre les crée-t-on ?</li><li>Pourquoi est-il dangereux de lancer <code>mkfs</code> sans avoir vérifié le nom du disque ?</li></ol>' }),
+
   block('heading', { level: 2, text: '6) Diagnostic' }),
   sh(`sudo dmesg | tail -30        # ce que le noyau dit du materiel : erreurs disque
 lsblk -f                     # qui est monte ou, avec quel systeme de fichiers

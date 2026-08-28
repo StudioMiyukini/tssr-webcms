@@ -123,6 +123,7 @@ export const DOMAINS: Domain[] = [
         { href: '/pages/linux-commandes-base', title: 'Commandes de base Linux / Bash', desc: 'La fiche à garder ouverte : structure d’une commande, navigation, fichiers, lecture, recherche, tubes et redirections, droits, paquets, services, réseau — et les raccourcis du terminal.' },
         { href: '/pages/linux-paquets-essentiels', title: 'Les paquets essentiels', desc: 'Ce qu’on installe sur une Debian fraîche après avoir tout décoché : tree, bash-completion, dnsutils, htop, ncdu, rsync, shellcheck… et pourquoi chacun. Avec la ligne unique, et ce qu’on n’installe pas sur un serveur.' },
         { href: '/pages/linux-droits', title: 'Utilisateurs, droits et sudo', desc: 'rwx et les trois catégories, chmod en octal, umask, SUID/SGID/sticky, les ACL POSIX et leur masque, et la délégation par sudo — le pendant Linux du cours NTFS.' },
+        { href: '/pages/linux-acl', title: 'Les ACL : des droits au-delà de rwx', desc: 'Accorder un droit à une personne précise sans créer de groupe, faire hériter les nouveaux fichiers, et les trois pièges qui font échouer une ACL pourtant correcte : la traversée du chemin, le masque qui plafonne tout, et ls -l qui affiche le masque au lieu du groupe.' },
         { href: '/pages/linux-bash', title: 'Scripts Bash', desc: 'Le squelette d’un script, variables et arguments, conditions, boucles, codes de retour — et un exemple de sauvegarde complet.' },
       ] },
       { name: 'Système & stockage', courses: [
