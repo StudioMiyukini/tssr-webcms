@@ -21,6 +21,23 @@ const blocks: PageBlock[] = [
 
   block('html', { html: '<p>Sous Windows, un disque devient <code>D:</code>. Sous Linux, il devient un <strong>dossier</strong> : on le <em>monte</em> quelque part dans l’arborescence, et son contenu apparaît à cet endroit. Toute la gestion du stockage découle de cette différence.</p>' }),
 
+  block('heading', { level: 2, text: '0) Les quatre étages' }),
+  block('html', { html: '<p>Sous Linux, un disque n’est pas un dossier. Entre le matériel et le premier fichier qu’on y écrit, il y a <strong>quatre étages</strong>, et chacun se fabrique avec une commande différente. Sauter l’un d’eux est la cause de la moitié des blocages.</p>' }),
+  flow(`DISQUE              /dev/sdb        le peripherique, physique ou virtuel
+   |                                 -> fdisk / parted
+PARTITION           /dev/sdb1       une PART du disque
+   |                                 -> mkfs.ext4
+SYSTEME DE FICHIERS ext4            la structure qui range les fichiers
+   |                                 -> mount
+POINT DE MONTAGE    /data           l'endroit de l'arborescence ou il apparait`),
+  table(['Question qui revient', 'La réponse'], [
+    ['<code>/dev/sdb</code> ou <code>/dev/sdb1</code> ?', '<code>sdb</code> est <strong>le disque entier</strong>, <code>sdb1</code> sa <strong>première partition</strong>. On partitionne <code>sdb</code>, on formate et on monte <code>sdb1</code>.'],
+    ['Partition ou système de fichiers ?', 'La partition est une <strong>portion d’espace réservée</strong> ; le système de fichiers est <strong>l’organisation écrite dedans</strong>. Une partition sans système de fichiers est un espace inutilisable.'],
+    ['À quoi sert le point de montage ?', 'Linux n’a <strong>pas de lettres de lecteur</strong> : un volume n’existe que greffé quelque part dans l’arbre unique.'],
+    ['<code>df</code> ou <code>du</code> ?', '<code>df</code> répond « <em>combien reste-t-il ?</em> » — par système de fichiers. <code>du</code> répond « <em>qui occupe la place ?</em> » — par dossier.'],
+  ]),
+  note('red', '🚫 Vérifier le nom du disque AVANT chaque commande', '<p><code>fdisk</code> et <code>mkfs</code> sur le mauvais disque détruisent son contenu <strong>sans confirmation utile</strong>. Les noms <code>sdX</code> dépendent de l’ordre de détection : ils changent quand on ajoute ou retire un disque.</p><p><strong>Un <code>lsblk</code> juste avant, à chaque fois.</strong> Repérer la taille et l’absence de point de montage — le disque neuf est celui qui n’a ni partition ni montage.</p>'),
+
   block('heading', { level: 2, text: '1) Voir ce qu’on a' }),
   sh(`lsblk                    # l'arborescence disques -> partitions -> montages
 lsblk -f                 # avec le systeme de fichiers et l'UUID
@@ -123,6 +140,11 @@ df -h /srv/donnees                   # verifier`),
   note('yellow', '⚠️ Le volume grandit, le système de fichiers non', '<p><code>lvextend</code> agrandit le contenant ; le système de fichiers, lui, ignore l’espace supplémentaire. <code>lvs</code> affiche 70 Go, <code>df</code> en affiche toujours 20, et l’on croit à un bug. Il manque simplement <code>resize2fs</code>. Le raccourci <code>lvextend -r</code> fait les deux d’un coup — c’est celui à retenir.</p>'),
   note('red', '🚫 Réduire est une autre affaire', '<p>Agrandir se fait à chaud, sans risque. <strong>Réduire</strong> impose de démonter, de réduire le système de fichiers <em>d’abord</em>, puis le volume — et se tromper d’ordre détruit les données. <code>xfs</code> ne se réduit pas du tout. On sauvegarde avant, ou on ne réduit pas.</p>'),
   note('green', '🎯 L’instantané, pour une mise à jour risquée', '<p><code>sudo lvcreate -L 5G -s -n avant-maj /dev/vg0/donnees</code> fige un état à un instant donné. Si la mise à jour tourne mal, on revient dessus. Un instantané n’est <strong>pas une sauvegarde</strong> — il vit sur les mêmes disques — mais c’est le filet de dix secondes avant une opération délicate.</p>'),
+
+  note('green', '🎯 L’exercice qui vaut le cours : casser <code>fstab</code> exprès', '<p>Sur une machine de test, mettre volontairement un mauvais UUID dans <code>/etc/fstab</code>, puis :</p><div class="lx-cmd">sudo mount -a\n#   mount: /data: can\'t find UUID=3f2a...-91c4\n\nsudo blkid /dev/sdb1      # le VRAI UUID\nlsblk -f                  # ou celui-ci\n# corriger, puis :\nsudo mount -a\nfindmnt /data ; df -h /data</div><p>Rencontrer ce message une fois, dans des conditions choisies, évite de le découvrir sur un serveur qui ne redémarre plus. <strong>Ne redémarre jamais après avoir modifié <code>fstab</code> sans avoir passé <code>mount -a</code>.</strong></p>'),
+  sh(`du -h --max-depth=1 /var    # la place, dossier par dossier, sur UN niveau
+du -sh /var/*               # equivalent, autre ecriture
+du -h --max-depth=1 / | sort -h | tail   # les plus gros, tries`),
 
   block('heading', { level: 2, text: '6) Diagnostic' }),
   sh(`sudo dmesg | tail -30        # ce que le noyau dit du materiel : erreurs disque
