@@ -327,6 +327,19 @@ demander_oui_non OUVRIR_PAREFEU "Ouvrir le pare-feu" "o"
 case "$PORT" in ''|*[!0-9]*) echoue "Port invalide : $PORT" ;; esac
 [ "$PORT" -ge 1024 ] && [ "$PORT" -le 65535 ] || echoue "Port hors plage : $PORT (attendu 1024-65535)"
 case "$DOSSIER" in /*) : ;; *) echoue "Le dossier d'installation doit etre un chemin absolu : $DOSSIER" ;; esac
+# Un dossier sous /home se heurte a « ProtectHome=true » de l'unite systemd,
+# qui rend /home inaccessible au service. L'unite s'adapte plus bas, mais
+# /opt ou /srv restent les bons emplacements pour une application de service.
+case "$DOSSIER" in
+  /home/*)
+    avert "Dossier situe sous /home."
+    avert "Le service est confine avec ProtectHome ; l'unite sera adaptee, mais"
+    avert "/opt/webcms ou /srv/webcms restent preferables pour un service."
+    if [ "$INTERACTIF" = 1 ]; then
+      read -r -p "   Continuer quand meme ? [o/N] : " rep_home || true
+      case "${rep_home,,}" in o|oui|y|yes) : ;; *) echoue "Installation abandonnee." "Relance et accepte /opt/webcms." ;; esac
+    fi ;;
+esac
 if [ -n "$DOMAINE" ]; then
   case "$DOMAINE" in
     http*|*/*) echoue "Indiquer le domaine seul, sans http:// ni chemin : $DOMAINE" ;;
@@ -464,6 +477,15 @@ etape "5. Compte systeme et depot des fichiers"
 
 if id "$UTILISATEUR" >/dev/null 2>&1; then
   ok "Compte $UTILISATEUR deja present"
+  # Une installation precedente a pu le creer avec une autre maison. npm et le
+  # service ecrivent dans HOME : si elle pointe ailleurs, ils echouent avec des
+  # messages qui ne designent pas la cause.
+  MAISON_ACTUELLE="$(getent passwd "$UTILISATEUR" | cut -d: -f6)"
+  if [ "$MAISON_ACTUELLE" != "$DOSSIER" ]; then
+    avert "Sa maison est $MAISON_ACTUELLE, l'installation va dans $DOSSIER."
+    lancer usermod -d "$DOSSIER" "$UTILISATEUR"
+    ok "Maison du compte realignee sur $DOSSIER"
+  fi
 else
   lancer useradd --system --home-dir "$DOSSIER" --shell /usr/sbin/nologin "$UTILISATEUR" 2>/dev/null \
     || lancer useradd --system --home-dir "$DOSSIER" --shell /sbin/nologin "$UTILISATEUR"
@@ -550,17 +572,28 @@ info "Cette etape est la plus longue (plusieurs minutes)."
 # npm ci complet : « tsx » et « vite » sont des dependances de developpement,
 # et pourtant necessaires — l'un pour executer le serveur, l'autre pour batir
 # le front. Un « --omit=dev » casserait le demarrage.
+# « --prefix » ne convient pas ici : npm cherche le fichier de verrouillage
+# dans le repertoire COURANT, pas dans le prefixe. On entre donc dans le
+# dossier — comme le fait deja la construction, juste en dessous.
+#
+# HOME et le cache sont poses explicitement : la maison du compte de service
+# peut pointer ailleurs (installation precedente), et npm y ecrirait ses
+# journaux sans y avoir droit.
+lancer mkdir -p "$DOSSIER/.npm"
+lancer chown "$UTILISATEUR:$UTILISATEUR" "$DOSSIER/.npm"
+NPM_ENV="HOME=$DOSSIER npm_config_cache=$DOSSIER/.npm"
+
 if [ -f "$DOSSIER/package-lock.json" ]; then
-  lancer runuser -u "$UTILISATEUR" -- npm ci --prefix "$DOSSIER" --no-audit --no-fund
+  lancer runuser -u "$UTILISATEUR" -- bash -c "cd '$DOSSIER' && $NPM_ENV npm ci --no-audit --no-fund"
 else
   avert "package-lock.json absent — npm install (versions non figees)."
-  lancer runuser -u "$UTILISATEUR" -- npm install --prefix "$DOSSIER" --no-audit --no-fund
+  lancer runuser -u "$UTILISATEUR" -- bash -c "cd '$DOSSIER' && $NPM_ENV npm install --no-audit --no-fund"
 fi
 gate "Dependances installees" "ls $DOSSIER/node_modules | head" test -d "$DOSSIER/node_modules/tsx"
 gate "Module natif better-sqlite3 compile" "cd $DOSSIER && node -e \"require('better-sqlite3')\"" \
   bash -c "[ -d '$DOSSIER/node_modules/better-sqlite3' ]"
 
-lancer runuser -u "$UTILISATEUR" -- bash -c "cd '$DOSSIER' && npm run build"
+lancer runuser -u "$UTILISATEUR" -- bash -c "cd '$DOSSIER' && $NPM_ENV npm run build"
 gate "Front construit" "ls $DOSSIER/dist" test -d "$DOSSIER/dist"
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -702,6 +735,7 @@ User=$UTILISATEUR
 Group=$UTILISATEUR
 WorkingDirectory=$DOSSIER
 EnvironmentFile=$ENV_FICHIER
+Environment=HOME=$DOSSIER
 ExecStart=/usr/bin/env node node_modules/tsx/dist/cli.mjs server/index.ts
 Restart=on-failure
 RestartSec=5
@@ -713,7 +747,7 @@ SyslogIdentifier=webcms
 NoNewPrivileges=true
 PrivateTmp=true
 ProtectSystem=strict
-ProtectHome=true
+ProtectHome=$( case "$DOSSIER" in /home/*) echo "false   # desactive : l'application est installee sous /home" ;; *) echo "true" ;; esac )
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true

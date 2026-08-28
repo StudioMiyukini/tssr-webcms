@@ -235,6 +235,21 @@ sudo -u webcms sqlite3 /opt/webcms/cms.sqlite ".backup '/var/backups/cms-$(date 
 sudo tar -czf /var/backups/uploads-$(date +%F).tar.gz -C /opt/webcms uploads
 ```
 
+## Où installer
+
+**`/opt/webcms` (le défaut) ou `/srv/webcms`.** Pas `/home`.
+
+L'unité systemd générée porte `ProtectHome=true`, qui rend `/home` inaccessible
+au service. Une installation sous `/home` réussit puis le service refuse de
+démarrer. Le script prévient, demande confirmation et adapte l'unité si l'on
+insiste — mais `/opt` reste le bon emplacement pour une application de service,
+et il évite aussi les questions de contexte SELinux propres aux dossiers
+personnels.
+
+Si le compte de service existe déjà d'une installation précédente avec une
+autre maison, le script la réaligne : `npm` et le service écrivent dans `HOME`,
+et une maison périmée produit des erreurs qui ne désignent pas leur cause.
+
 ## Points d'attention
 
 - **`PUBLIC_BASE_URL`** — sans domaine renseigné, le site s'annonce comme
@@ -247,6 +262,10 @@ sudo tar -czf /var/backups/uploads-$(date +%F).tar.gz -C /opt/webcms uploads
 - **`npm ci` installe aussi les dépendances de développement**, et c'est
   voulu : `tsx` exécute le serveur et `vite` construit le front. Un
   `--omit=dev` empêcherait le démarrage.
+- **`npm ci` s'exécute depuis le dossier**, pas via `--prefix` : npm cherche le
+  fichier de verrouillage dans le répertoire *courant*, et `--prefix` produit
+  un « can only install with an existing package-lock.json » trompeur alors que
+  le fichier est bien là.
 - **Sur RHEL/Rocky**, si nginx renvoie `502` avec un `Permission denied` dans
   son journal, c'est SELinux : `sudo setsebool -P httpd_can_network_connect on`
   (le script le fait, mais pas si SELinux a été activé après coup).
