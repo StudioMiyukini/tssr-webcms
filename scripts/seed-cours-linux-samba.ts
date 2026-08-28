@@ -33,6 +33,8 @@ sudo chmod -R 0775 /srv/partage`),
   block('html', { html: '<p>Vérifie la syntaxe, puis recharge :</p>' }),
   cmd(`testparm                       # valide smb.conf
 sudo systemctl restart smbd`),
+  note('blue', '🔗 Des droits différents par personne sur le partage', '<p>Les droits Unix du dossier partagé ne distinguent que proprietaire, groupe et autres. Pour que chacun ait son propre niveau d’accès — l’un écrit, l’autre lit seulement — sans multiplier les groupes, ce sont les <strong>ACL</strong> qu’il faut, avec l’héritage pour les fichiers déposés ensuite.</p><p>→ <a href="/pages/linux-acl">Les ACL</a> · <a href="/pages/permissions-ntfs">le pendant NTFS côté Windows</a></p>'),
+
   block('heading', { level: 2, text: '4) Créer l’utilisateur Samba' }),
   block('html', { html: '<p>Samba a ses <strong>propres mots de passe</strong> (distincts de ceux de Linux) ; l’utilisateur doit d’abord exister sous Linux :</p>' }),
   cmd(`sudo useradd -M -s /usr/sbin/nologin jean   # (si pas déjà un compte Linux)

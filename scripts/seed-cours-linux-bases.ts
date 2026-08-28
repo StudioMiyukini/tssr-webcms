@@ -200,6 +200,8 @@ chown jean:admins fichier    # changer propriétaire:groupe
 chmod -R 755 /var/www        # récursif sur un dossier`),
   note('yellow', '💡 Lire un rwx', '<p><code>-rwxr-x---</code> : fichier (<code>-</code>), propriétaire = <strong>rwx</strong>, groupe = <strong>r-x</strong>, autres = <strong>---</strong>. Soit <strong>750</strong>. Pour un dossier, <code>x</code> = droit d’y <em>entrer</em>.</p>'),
 
+  note('blue', '🔗 Quand trois categories ne suffisent plus', '<p>Proprietaire, groupe, autres : trois cases, pas une de plus. Dès que deux personnes doivent avoir des droits <em>différents</em> sur le même dossier sans partager de groupe, il faut passer aux <strong>ACL</strong> — une liste d’entrées nominatives attachée au fichier.</p><p>→ <a href="/pages/linux-acl">Les ACL : des droits au-delà de rwx</a></p>'),
+
   block('heading', { level: 2, text: '9) Installer des paquets (apt)' }),
 
   block('heading', { level: 3, text: 'Un paquet, c’est le .exe de Windows — en mieux rangé' }),
