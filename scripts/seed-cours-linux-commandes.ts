@@ -134,6 +134,53 @@ ln -s /srv/appli/v2 /opt/appli   # lien symbolique : ln -s CIBLE LIEN`),
   ]),
   note('yellow', '⚠️ <code>tail -F</code> plutôt que <code>-f</code> sur un journal', '<p>Quand la rotation remplace le fichier, <code>-f</code> continue de suivre l’ancien et se fige sans rien dire. <code>-F</code> majuscule rouvre le fichier : c’est celui à prendre sur <code>/var/log</code>.</p>'),
 
+  block('heading', { level: 2, text: '5 bis) Éditer un fichier' }),
+  block('html', { html: '<p>Trois éditeurs, et l’on ne choisit pas toujours celui qu’on utilise.</p>' }),
+  table(['Éditeur', 'Ce que c’est', 'Quand tu le rencontres'], [
+    ['<strong><code>nano</code></strong>', 'Simple, les raccourcis affichés en bas de l’écran.', '<strong>Celui qu’on choisit</strong> quand on a le choix.'],
+    ['<strong><code>vi</code></strong>', 'L’historique. Présent sur <strong>absolument tous</strong> les Unix.', '<strong>Celui qu’on subit</strong> — voir ci-dessous.'],
+    ['<code>vim</code>', '<em>vi improved</em> : coloration, annulation, recherche.', 'Quand il est installé, <code>vi</code> le lance souvent.'],
+  ]),
+
+  block('heading', { level: 3, text: 'nano — les six raccourcis' }),
+  flow(`^O   enregistrer  (« write Out »)       ^W   chercher
+^X   quitter                            ^K   couper la ligne
+^G   l'aide                             ^U   coller
+
+  Le « ^ » affiche en bas de l'ecran signifie Ctrl.
+  ^O demande confirmation du nom : Entree suffit.
+  ^X sur un fichier modifie propose d'enregistrer : O puis Entree.`),
+  note('gray', '💡 Pas de souris, pas de <kbd>Ctrl-S</kbd>', '<p><kbd>Ctrl-S</kbd> ne sauvegarde pas : dans un terminal, il <strong>gèle l’affichage</strong> (contrôle de flux). Si l’écran ne répond plus après un <kbd>Ctrl-S</kbd> réflexe, <kbd>Ctrl-Q</kbd> le débloque — rien n’est perdu.</p>'),
+
+  block('heading', { level: 3, text: 'vi — celui dans lequel on tombe sans l’avoir demandé' }),
+  block('html', { html: '<p>On ne décide pas d’ouvrir <code>vi</code> : c’est lui qui s’ouvre. <code>visudo</code>, <code>crontab -e</code>, <code>vipw</code>, ou n’importe quelle commande qui appelle « l’éditeur par défaut » — et sur une installation minimale, <strong><code>nano</code> n’est pas là</strong> alors que <code>vi</code> y est toujours.</p><p>D’où le premier réflexe à connaître, avant même de savoir s’en servir :</p>' }),
+  flow(`COMMENT EN SORTIR
+
+  Echap   puis   :q!   Entree      quitter SANS enregistrer
+  Echap   puis   :wq   Entree      enregistrer ET quitter
+  Echap   puis   :q    Entree      quitter (refuse si modifie)
+
+  Le « : » ne fonctionne QUE depuis le mode commande.
+  Si le clavier ecrit des lettres au lieu d'obeir : appuie sur Echap d'abord.`),
+  note('red', '🚫 Les deux modes : la seule chose à comprendre', '<p><code>vi</code> ne se comporte pas comme un traitement de texte. À l’ouverture, il est en <strong>mode commande</strong> : les touches ne s’écrivent pas, elles <em>agissent</em>. Taper « dd » n’écrit pas « dd », cela <strong>supprime la ligne</strong>.</p><table class="lx-t"><thead><tr><th>Mode</th><th>Ce que font les touches</th><th>Y entrer</th></tr></thead><tbody><tr><td><strong>Commande</strong> <em>(au départ)</em></td><td>Elles commandent.</td><td><kbd>Echap</kbd></td></tr><tr><td><strong>Insertion</strong></td><td>Elles écrivent, comme partout ailleurs.</td><td><kbd>i</kbd></td></tr></tbody></table><p><strong>Le cycle complet : <kbd>i</kbd> pour écrire, <kbd>Echap</kbd> pour arrêter, <code>:wq</code> pour enregistrer et sortir.</strong> Avec ces trois gestes on modifie n’importe quel fichier de configuration — le reste peut attendre.</p>'),
+  sh(`vi /etc/hosts
+#   i            passer en insertion, et taper
+#   Echap        revenir en commande
+#   :wq          enregistrer et quitter
+#   :q!          renoncer a tout ce qu'on vient de faire`),
+  note('yellow', '⚠️ <code>:q!</code> est un filet, pas un aveu d’échec', '<p>Devant un fichier de configuration qu’on a modifié sans savoir comment, <strong>sortir sans enregistrer est la bonne décision</strong>. Un <code>/etc/fstab</code> abîmé empêche le démarrage ; un <code>:q!</code> ne coûte que de recommencer.</p>'),
+
+  block('heading', { level: 3, text: 'Choisir son éditeur par défaut' }),
+  sh(`sudo apt install nano          # Debian minimale : il n'est pas toujours la
+sudo dnf install nano          # Rocky / RHEL
+
+export EDITOR=nano             # pour la session en cours
+echo 'export EDITOR=nano' >> ~/.bashrc      # pour de bon
+
+sudo update-alternatives --config editor    # Debian : le choix systeme`),
+  note('blue', '💡 <code>EDITOR</code> décide de ce qu’ouvrent <code>visudo</code> et <code>crontab -e</code>', '<p>Ces commandes n’ouvrent pas <code>vi</code> par choix : elles lancent <em>l’éditeur par défaut</em>. Poser <code>EDITOR=nano</code> une fois, et la question ne se pose plus.</p><p>Attention : <code>sudo visudo</code> s’exécute en root et lit donc l’<code>EDITOR</code> de <strong>root</strong>, pas le tien. <code>sudo -E visudo</code> conserve ton environnement.</p>'),
+  note('green', '🎯 Certains fichiers ne s’éditent pas directement', '<p><code>/etc/sudoers</code>, <code>/etc/passwd</code> et <code>/etc/group</code> ont leurs propres commandes — <code>visudo</code>, <code>vipw</code>, <code>vigr</code>. Elles ouvrent le même fichier, mais <strong>posent un verrou</strong> et <strong>vérifient la syntaxe avant d’enregistrer</strong>.</p><p>Une faute de frappe dans <code>sudoers</code> édité au <code>nano</code> retire l’accès administrateur à tout le monde, définitivement. → <a href="/pages/linux-droits">le cours des droits</a>.</p>'),
+
   block('heading', { level: 2, text: '6) Chercher' }),
   sh(`# Chercher un FICHIER par son nom
 find /etc -name '*.conf'          # les guillemets sont obligatoires
