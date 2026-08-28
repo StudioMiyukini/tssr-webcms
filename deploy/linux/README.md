@@ -262,6 +262,13 @@ et une maison périmée produit des erreurs qui ne désignent pas leur cause.
 - **`npm ci` installe aussi les dépendances de développement**, et c'est
   voulu : `tsx` exécute le serveur et `vite` construit le front. Un
   `--omit=dev` empêcherait le démarrage.
+- **Les opérations git tournent sous le compte propriétaire.** Depuis git
+  2.35.2, git refuse d'opérer sur un dépôt appartenant à quelqu'un d'autre —
+  « propriétaire douteux détecté ». Cloner en root puis `chown` produisait
+  exactement ce cas à la relance. Et la commande que git propose alors,
+  `git config --global --add safe.directory …`, **n'a d'effet que pour le
+  compte qui la tape** : ici c'est root qui agit, il faudrait donc `sudo git
+  config …`. Le script n'en a plus besoin.
 - **`npm ci` s'exécute depuis le dossier**, pas via `--prefix` : npm cherche le
   fichier de verrouillage dans le répertoire *courant*, et `--prefix` produit
   un « can only install with an existing package-lock.json » trompeur alors que
@@ -269,6 +276,19 @@ et une maison périmée produit des erreurs qui ne désignent pas leur cause.
 - **Sur RHEL/Rocky**, si nginx renvoie `502` avec un `Permission denied` dans
   son journal, c'est SELinux : `sudo setsebool -P httpd_can_network_connect on`
   (le script le fait, mais pas si SELinux a été activé après coup).
+
+## Repartir de zéro
+
+Si une installation s'est interrompue et que l'on préfère recommencer proprement
+plutôt que de reprendre en place :
+
+```bash
+sudo systemctl disable --now webcms 2>/dev/null
+sudo rm -rf /opt/webcms
+sudo bash -c "$(curl -fsSL https://raw.githubusercontent.com/StudioMiyukini/tssr-webcms/main/deploy/linux/install-webcms.sh)"
+```
+
+Rien n'est perdu : le contenu vient de l'export, pas du dossier.
 
 ## Désinstallation
 

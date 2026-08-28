@@ -492,17 +492,36 @@ else
   ok "Compte systeme $UTILISATEUR cree"
 fi
 
+# Les operations git se font SOUS LE COMPTE PROPRIETAIRE, pas en root.
+# Depuis git 2.35.2, git refuse d'operer sur un depot appartenant a quelqu'un
+# d'autre — « proprietaire douteux detecte ». Cloner en root puis chown
+# produisait exactement ce cas a la relance. Et la commande que git propose
+# alors (« git config --global --add safe.directory ») n'a d'effet que pour le
+# compte qui la tape : ici c'est root qui agit, pas l'utilisateur.
+#
+# « -c safe.directory » reste en filet, par commande, sans toucher la moindre
+# configuration globale — la propriete peut etre mixte apres une installation
+# interrompue.
+git_proprio() {
+  runuser -u "$UTILISATEUR" -- git -c safe.directory="$DOSSIER" -C "$DOSSIER" "$@"
+}
+
 if [ -d "$DOSSIER/.git" ] && [ -n "$SOURCE_GIT" ]; then
   info "Depot deja present — mise a jour."
-  lancer git -C "$DOSSIER" fetch --quiet --depth 1 origin
-  lancer git -C "$DOSSIER" reset --quiet --hard origin/HEAD
+  # Remettre la propriete d'aplomb avant d'agir : une installation precedente
+  # interrompue a pu laisser des fichiers appartenant a root.
+  lancer chown -R "$UTILISATEUR:$UTILISATEUR" "$DOSSIER"
+  lancer git_proprio remote set-url origin "$SOURCE_GIT"
+  lancer git_proprio fetch --quiet --depth 1 origin
+  # FETCH_HEAD est toujours pose par le fetch ; origin/HEAD peut manquer.
+  lancer git_proprio reset --quiet --hard FETCH_HEAD
 elif [ -n "$SOURCE_GIT" ]; then
   [ -e "$DOSSIER" ] && [ -n "$(ls -A "$DOSSIER" 2>/dev/null || true)" ] \
-    && echoue "$DOSSIER existe et n'est pas vide." "Vide-le, ou choisis un autre dossier."
-  lancer mkdir -p "$DOSSIER"
-  lancer git clone --quiet --depth 1 "$SOURCE_GIT" "$DOSSIER"
+    && echoue "$DOSSIER existe et n'est pas vide." "Vide-le (rm -rf $DOSSIER), ou choisis un autre dossier."
+  lancer install -d -o "$UTILISATEUR" -g "$UTILISATEUR" "$DOSSIER"
+  lancer runuser -u "$UTILISATEUR" -- git clone --quiet --depth 1 "$SOURCE_GIT" "$DOSSIER"
 else
-  lancer mkdir -p "$DOSSIER"
+  lancer install -d -o "$UTILISATEUR" -g "$UTILISATEUR" "$DOSSIER"
   lancer tar -xzf "$SOURCE_ARCHIVE" -C "$DOSSIER" --strip-components=1
 fi
 gate "Fichiers du site en place" "ls -al $DOSSIER" test -f "$DOSSIER/package.json"
