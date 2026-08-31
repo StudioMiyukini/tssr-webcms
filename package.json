@@ -14,7 +14,7 @@
     "export": "node scripts/export-site.mjs",
     "import": "node scripts/import-site.mjs",
     "typecheck": "tsc --noEmit",
-    "test": "tsx --test client/src/lib/page-blocks.test.ts client/src/lib/notes.test.ts client/src/lib/mls.test.ts client/src/lib/physique.test.ts client/src/lib/inventaire.test.ts client/src/lib/bash-script.test.ts client/src/lib/linux-recherche.test.ts client/src/lib/debian-reseau.test.ts server/lib/cache.test.ts server/lib/security.test.ts",
+    "test": "tsx --test client/src/lib/page-blocks.test.ts client/src/lib/notes.test.ts client/src/lib/mls.test.ts client/src/lib/physique.test.ts client/src/lib/vers-plan.test.ts client/src/lib/inventaire.test.ts client/src/lib/bash-script.test.ts client/src/lib/linux-recherche.test.ts client/src/lib/debian-reseau.test.ts server/lib/cache.test.ts server/lib/security.test.ts",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",

@@ -30,6 +30,7 @@ import {
   cableAttendu, nomDuMedia, portsLibres, verifierCablage, cheminPhysique, voisinsDe, remontees,
   COUCHE_DE, PORTS_TYPIQUES, type Cable, type Materiel, type Media, type TypeMateriel,
 } from '@/lib/physique';
+import { OuvrirDansPlan } from './OuvrirDansPlan';
 
 function strToIp(s: string): number | null {
   if (typeof s !== 'string') return null;
@@ -3051,6 +3052,11 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
               Un cable en rouge ne la respecte pas. Double-clic sur un equipement pour le remettre a sa place.
             </div>
           </div>
+
+          {/* Le schema physique est complet ici : materiels, cables, et le plan
+              d'adressage deja calcule. C'est le seul endroit ou l'exporter a du
+              sens — plus tot il serait vide, plus tard il ne dirait rien de plus. */}
+          <OuvrirDansPlan ctx={ctx} plan={plan} />
 
           {/* La liste reste, pour imposer un port precis — celui du TP, ou celui
               qu'on a devant soi. Repliee : ce n'est plus le chemin normal. */}
