@@ -131,7 +131,18 @@ export type Ctx = {
   /** Positions choisies a la main dans le schema physique. Absent = par etage. */
   physPos: Record<string, { x: number; y: number }>;
   ifaceIps: Record<string, string>;         // IP forcée d'une interface routeur, clé `${routerId}|${iface}`
+  /**
+   * Interfaces routeur en client DHCP (`ip address dhcp`), clé `${routerId}|${iface}`.
+   * L'adresse vient d'un serveur DHCP **hors routeur** (le FAI, un serveur de la
+   * salle) — le port ne fixe rien lui-même.
+   */
+  ifaceDhcp: Record<string, boolean>;
   hosts: StaticHost[];                       // end-points à IP fixe (serveurs, postes)
+  /**
+   * Le mode d'adressage de chaque poste, par id de materiel : fixe (adresse
+   * choisie dans un sous-reseau) ou DHCP (adresse recue d'un serveur).
+   */
+  postesIp: Record<string, { mode: 'fixe' | 'dhcp'; ip?: string; subId?: string }>;
 };
 // Un hôte terminal à adresse fixe rattaché à un sous-réseau.
 export type StaticHost = { id: string; name: string; subId: string; ip: string };
@@ -166,7 +177,7 @@ export const DEFAULT_CTX: Ctx = {
   ],
   cables: [], physPos: {},
   optRouteurs: {}, optMls: { m1: { prefixe: 'FastEthernet0/', vlans: [] } }, optSwitches: {},
-  ifaceIps: {}, hosts: [],
+  ifaceIps: {}, ifaceDhcp: {}, hosts: [], postesIp: {},
 };
 
 /* ── Les projections : une couche haute lit l'inventaire ───────────────────
@@ -299,6 +310,14 @@ export function migrateCtx(raw: unknown): Ctx {
     ? Object.fromEntries(Object.entries(r.ifaceIps).filter(([k, v]) => typeof k === 'string' && typeof v === 'string')) as Record<string, string>
     : {};
   c.hosts = dedupeIds((Array.isArray(r.hosts) ? r.hosts : []).filter((h: any) => h && typeof h === 'object').map((h: any) => ({ id: typeof h.id === 'string' ? h.id : uid('h'), name: String(h.name ?? ''), subId: String(h.subId ?? ''), ip: String(h.ip ?? '') })), 'h');
+  c.ifaceDhcp = (r.ifaceDhcp && typeof r.ifaceDhcp === 'object' && !Array.isArray(r.ifaceDhcp))
+    ? Object.fromEntries(Object.entries(r.ifaceDhcp).filter(([k, v]) => typeof k === 'string' && v === true)) as Record<string, boolean>
+    : {};
+  c.postesIp = (r.postesIp && typeof r.postesIp === 'object' && !Array.isArray(r.postesIp))
+    ? Object.fromEntries(Object.entries(r.postesIp as Record<string, any>)
+        .filter(([k, v]) => typeof k === 'string' && v && typeof v === 'object')
+        .map(([k, v]) => [k, { mode: v.mode === 'fixe' ? 'fixe' : 'dhcp', ip: typeof v.ip === 'string' ? v.ip : undefined, subId: typeof v.subId === 'string' ? v.subId : undefined }]))
+    : {};
   // Réseaux de base : depuis bases[] si présent, sinon depuis l'ancien baseIp/baseCidr.
   c.bases = (Array.isArray(r.bases) && r.bases.length ? r.bases : [{ id: 'b1', name: 'Réseau principal', ip: (typeof r.baseIp === 'string' && r.baseIp) || DEFAULT_CTX.baseIp, cidr: String(r.baseCidr ?? DEFAULT_CTX.baseCidr) }])
     .map((b: any, i: number) => ({ id: typeof b?.id === 'string' ? b.id : 'b' + (i + 1), name: typeof b?.name === 'string' ? b.name : `Réseau ${i + 1}`, ip: typeof b?.ip === 'string' ? b.ip : '192.168.10.0', cidr: String(b?.cidr ?? '24') }));
@@ -667,7 +686,10 @@ export function buildRouterConfigs(ctx: Ctx, plan: Plan): { byRouter: RouterCfg[
       }
       lines.push(`interface ${i.iface}`, ` description ${i.target}`);
       if (i.vlan) lines.push(` encapsulation dot1Q ${i.vlan}`);
-      lines.push(` ip address ${ipToStr(i.ip)} ${ipToStr(i.mask)}`);
+      // Port en client DHCP : l'adresse vient d'un serveur hors routeur, on ne
+      // la fixe pas. `ip address dhcp` remplace l'adresse statique.
+      const enDhcp = ctx.ifaceDhcp?.[`${r.id}|${i.iface}`] === true;
+      lines.push(enDhcp ? ' ip address dhcp' : ` ip address ${ipToStr(i.ip)} ${ipToStr(i.mask)}`);
       if (isBorder && i.iface !== wanIf) lines.push(' ip nat inside');
       if (dhcpGwIps.has(i.ip)) lines.push(` ip helper-address ${relayServer || '<IP_serveur_DHCP>'}`);
       if (i.clock) lines.push(' clock rate 64000');
@@ -1158,6 +1180,45 @@ export function buildTout(ctx: Ctx, plan: Plan): MaterielCmd[] {
       else if (soar) blocs.push({ titre: 'VLAN et trunk (routeur sur un bâton)', texte: soar.text });
       const s = ssh1(m.nom);
       if (s) blocs.push({ titre: 'Accès SSH', texte: s.text });
+    } else if (m.type === 'poste') {
+      // Un poste n'est pas un équipement Cisco : sa « config » est l'adressage
+      // à saisir sur le PC — fixe ou DHCP. Les commandes données sont celles
+      // d'un vrai terminal (Windows / Linux), collables telles quelles.
+      const conf = ctx.postesIp?.[m.id];
+      if (!conf || conf.mode === 'dhcp') {
+        blocs.push({
+          titre: 'Adressage du poste — DHCP',
+          texte: [
+            `! ${m.nom} reçoit son adresse d'un serveur DHCP (hors poste).`,
+            '! Sur le PC : Configuration IP → DHCP (obtenir une adresse automatiquement).',
+            '! Vérifier / renouveler le bail :',
+            'ipconfig /renew          ! Windows',
+            'sudo dhclient -v eth0    ! Linux',
+          ].join('\n'),
+        });
+      } else {
+        const sub = plan.subs.find(x => x.id === conf.subId);
+        const masque = sub ? ipToStr(maskFromCidr(sub.cidr)) : '255.255.255.0';
+        const gw = sub && sub.gw !== null ? ipToStr(sub.gw) : '<passerelle>';
+        const dns = (ctx.dnsServer || '').trim() || '<serveur_DNS>';
+        const ip = (conf.ip || '').trim() || '<adresse>';
+        blocs.push({
+          titre: 'Adressage du poste — IP fixe',
+          texte: [
+            `! ${m.nom} — adresse fixe${sub ? ` dans « ${sub.name} »` : ''}`,
+            `! IP         : ${ip}`,
+            `! Masque     : ${masque}`,
+            `! Passerelle : ${gw}`,
+            `! DNS        : ${dns}`,
+            '! Appliquer (Windows, adapter le nom de la carte) :',
+            `netsh interface ip set address "Ethernet" static ${ip} ${masque} ${gw}`,
+            `netsh interface ip set dns "Ethernet" static ${dns}`,
+            '! Appliquer (Linux) :',
+            `sudo ip address add ${ip}/${sub ? sub.cidr : 24} dev eth0`,
+            `sudo ip route add default via ${gw}`,
+          ].join('\n'),
+        });
+      }
     }
 
     // Le bloc « d'un trait » : chaque section sous sa bannière, et les
@@ -1469,11 +1530,117 @@ export function definirPort(
     .map(g => ({ plage: ecrirePlage(g.ports), role: g.role, vlan: g.vlan }));
 }
 
+const sansCle = <T,>(rec: Record<string, T>, k: string): Record<string, T> =>
+  Object.fromEntries(Object.entries(rec).filter(([x]) => x !== k));
+
+/** Les interfaces d'un routeur : chacune en IP fixe ou en client DHCP. */
+function RouteurInterfaces({ ctx, m, plan, onCtx }: { ctx: Ctx; m: Materiel; plan: Plan; onCtx: (p: Partial<Ctx>) => void }) {
+  const ifs = plan.ifaces.filter(i => i.routerId === m.id);
+  if (!ifs.length) return (
+    <div className="meta" style={{ fontSize: 12.5 }}>
+      Ce routeur n'a pas encore d'interface active : câble-le et donne-lui un sous-réseau (Adressage), ses ports apparaîtront ici.
+    </div>
+  );
+  return (
+    <>
+      <div style={legend}>🔌 Les ports — IP fixe ou DHCP</div>
+      <div className="meta" style={{ fontSize: 11.5, marginBottom: 8 }}>
+        Un port en <strong>DHCP</strong> reçoit son adresse d'un serveur <strong>hors routeur</strong>
+        (le FAI, un serveur de la salle) : la config passe en <code>ip address dhcp</code>. En fixe, on
+        garde l'adresse calculée — ou on en impose une.
+      </div>
+      <div style={{ display: 'grid', gap: 7 }}>
+        {ifs.map(i => {
+          const cle = `${m.id}|${i.iface}`;
+          const dhcp = ctx.ifaceDhcp?.[cle] === true;
+          const forcee = ctx.ifaceIps?.[cle] ?? '';
+          return (
+            <div key={i.iface} style={{ border: '1px solid var(--border)', borderRadius: 8, padding: '8px 10px', background: 'var(--surface-2)' }}>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                <span style={{ ...mono, fontSize: 12, fontWeight: 600 }}>{i.iface}</span>
+                <span className="meta" style={{ fontSize: 11 }}>{i.target}</span>
+                <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                  <button type="button"
+                    onClick={() => onCtx({ ifaceDhcp: sansCle(ctx.ifaceDhcp || {}, cle) })}
+                    style={{ ...smallBtn, ...(!dhcp ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}) }}>IP fixe</button>
+                  <button type="button"
+                    onClick={() => onCtx({ ifaceDhcp: { ...(ctx.ifaceDhcp || {}), [cle]: true }, ifaceIps: sansCle(ctx.ifaceIps || {}, cle) })}
+                    style={{ ...smallBtn, ...(dhcp ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}) }}>DHCP</button>
+                </span>
+              </div>
+              {dhcp ? (
+                <div className="meta" style={{ ...mono, fontSize: 11, marginTop: 6 }}>ip address dhcp</div>
+              ) : (
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginTop: 6 }}>
+                  <span className="meta" style={{ fontSize: 11.5 }}>Adresse</span>
+                  <input value={forcee} placeholder={ipToStr(i.ip)} style={{ ...field, width: 160 }}
+                    onChange={e => {
+                      const v = e.target.value.trim();
+                      onCtx({ ifaceIps: v ? { ...(ctx.ifaceIps || {}), [cle]: v } : sansCle(ctx.ifaceIps || {}, cle) });
+                    }} />
+                  <span className="meta" style={{ fontSize: 11 }}>vide = adresse calculée</span>
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
+}
+
+/** L'adressage d'un poste : fixe (adresse dans un sous-réseau) ou DHCP. */
+function PosteAdressage({ ctx, m, plan, onCtx }: { ctx: Ctx; m: Materiel; plan: Plan; onCtx: (p: Partial<Ctx>) => void }) {
+  const conf = ctx.postesIp?.[m.id] ?? { mode: 'dhcp' as const };
+  const lans = plan.subs.filter(s => s.kind === 'lan');
+  const set = (next: { mode: 'fixe' | 'dhcp'; ip?: string; subId?: string }) =>
+    onCtx({ postesIp: { ...(ctx.postesIp || {}), [m.id]: next } });
+  const sub = plan.subs.find(x => x.id === conf.subId) ?? lans[0];
+  return (
+    <>
+      <div style={legend}>🖥️ Adressage du poste</div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+        <button type="button" onClick={() => set({ mode: 'dhcp' })}
+          style={{ ...smallBtn, ...(conf.mode === 'dhcp' ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}) }}>DHCP</button>
+        <button type="button" onClick={() => set({ mode: 'fixe', ip: conf.ip, subId: conf.subId ?? lans[0]?.id })}
+          style={{ ...smallBtn, ...(conf.mode === 'fixe' ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}) }}>IP fixe</button>
+      </div>
+      {conf.mode === 'dhcp' ? (
+        <div className="meta" style={{ fontSize: 12 }}>
+          Le poste obtiendra son adresse d'un serveur DHCP — rien à saisir dessus. Ses commandes le rappellent
+          (renouvellement du bail).
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gap: 8 }}>
+          <label style={{ fontSize: 12 }}>Sous-réseau
+            <select value={conf.subId ?? sub?.id ?? ''} style={{ ...field, marginTop: 3 }}
+              onChange={e => set({ mode: 'fixe', ip: conf.ip, subId: e.target.value })}>
+              {!lans.length && <option value="">aucun sous-réseau — à définir dans Adressage</option>}
+              {lans.map(s => <option key={s.id} value={s.id}>{s.name} · {ipToStr(s.net)}/{s.cidr}</option>)}
+            </select>
+          </label>
+          <label style={{ fontSize: 12 }}>Adresse IP
+            <input value={conf.ip ?? ''} placeholder={sub ? ipToStr(sub.first) : '192.168.0.10'} style={{ ...field, marginTop: 3 }}
+              onChange={e => set({ mode: 'fixe', ip: e.target.value, subId: conf.subId ?? sub?.id })} />
+          </label>
+          {sub && (
+            <div className="meta" style={{ fontSize: 11.5 }}>
+              Masque {ipToStr(maskFromCidr(sub.cidr))} · passerelle {sub.gw !== null ? ipToStr(sub.gw) : '—'} · DNS {(ctx.dnsServer || '—')}.
+              À prendre <strong>hors de la plage DHCP</strong> pour éviter un conflit.
+            </div>
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
 /** La boîte de dialogue de configuration fine d'un équipement. */
-function DialogueMateriel({ ctx, m, mlsPlan, onPatch, onPorts, onClose }: {
-  ctx: Ctx; m: Materiel; mlsPlan: MlsPlan;
+function DialogueMateriel({ ctx, m, mlsPlan, plan, onPatch, onPorts, onCtx, onClose }: {
+  ctx: Ctx; m: Materiel; mlsPlan: MlsPlan; plan: Plan;
   onPatch: (patch: Partial<Materiel>) => void;
   onPorts: (ports: AffectationPort[]) => void;
+  onCtx: (patch: Partial<Ctx>) => void;
   onClose: () => void;
 }) {
   const [selPort, setSelPort] = useState<number | null>(null);
@@ -1583,10 +1750,13 @@ function DialogueMateriel({ ctx, m, mlsPlan, onPatch, onPorts, onClose }: {
               </button>
             )}
           </>
+        ) : m.type === 'routeur' ? (
+          <RouteurInterfaces ctx={ctx} m={m} plan={plan} onCtx={onCtx} />
+        ) : m.type === 'poste' ? (
+          <PosteAdressage ctx={ctx} m={m} plan={plan} onCtx={onCtx} />
         ) : (
           <div className="meta" style={{ fontSize: 12.5 }}>
-            Un {m.type} n'a pas de VLAN ni de trunk à configurer par port : c'est un équipement d'extrémité.
-            Son rôle dans le réseau se lit dans le schéma et l'adressage.
+            Un {m.type} n'a pas de ports à configurer ici : son rôle se lit dans le schéma et l'adressage.
           </div>
         )}
       </div>
@@ -3630,9 +3800,10 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
         const m = ctx.materiels.find(x => x.id === dialMat);
         if (!m) return null;
         return (
-          <DialogueMateriel ctx={ctx} m={m} mlsPlan={mlsPlan}
+          <DialogueMateriel ctx={ctx} m={m} mlsPlan={mlsPlan} plan={plan}
             onPatch={patch => set({ materiels: ctx.materiels.map(x => x.id === m.id ? { ...x, ...patch } : x) })}
             onPorts={ports => set({ optSwitches: { ...ctx.optSwitches, [m.id]: { vlans: ctx.optSwitches[m.id]?.vlans ?? [], ports_: ports.length ? ports : undefined } } })}
+            onCtx={patch => set(patch)}
             onClose={() => setDialMat(null)} />
         );
       })()}
