@@ -377,6 +377,18 @@ const ethLabel = (m: RouterModel) => (m === '2811' ? 'FastEthernet' : 'GigabitEt
 const SER_SLOTS = ['Serial0/0/0', 'Serial0/0/1', 'Serial0/1/0', 'Serial0/1/1'];
 // Abréviation courte pour le schéma : GigabitEthernet0/1 → Gig0/1, FastEthernet0/0 → Fa0/0, Serial0/0/0 → Se0/0/0.
 const ifAbbr = (s: string) => s.replace('GigabitEthernet', 'Gig').replace('FastEthernet', 'Fa').replace('Serial', 'Se');
+// Le nom d'interface d'un port, façon Cisco — pour l'étiqueter au branchement,
+// comme Packet Tracer nomme ses interfaces au moment de relier deux équipements.
+function nomPortDe(ctx: Ctx, m: Materiel, p: number): string {
+  if (m.type === 'switch' || m.type === 'multicouche') return p > PORTS_ACCES ? `Gig0/${p - PORTS_ACCES}` : `Fa0/${p}`;
+  if (m.type === 'routeur') {
+    const model = (m.modele === '2811' ? '2811' : '2911') as RouterModel;
+    const noms = [...ethSlots(model, ctx.optRouteurs[m.id]?.mod), ...SER_SLOTS];
+    return ifAbbr(noms[p - 1] ?? `Port ${p}`);
+  }
+  if (m.type === 'poste' || m.type === 'serveur') return m.ports > 1 ? `NIC ${p}` : 'NIC';
+  return `Port ${p}`;
+}
 
 // ─────────────────────────────────────────── Moteur (fonction pure) ───────────────────────────────────────────
 export type Sub = {
@@ -1315,6 +1327,9 @@ function SchemaPhysique({ ctx, onPos, onCable, onRetirer, onOuvrir }: {
   const [presse, setPresse] = useState<{ id: string; x0: number; y0: number; bouge: boolean } | null>(null);
   const [depart, setDepart] = useState<string | null>(null);
   const [souci, setSouci] = useState('');
+  // Le branchement en attente : les deux équipements choisis, dont on va
+  // désigner les ports précis (comme Packet Tracer) avant de tirer le câble.
+  const [aBrancher, setABrancher] = useState<{ a: Materiel; b: Materiel } | null>(null);
 
   const W = 880, H_ETAGE = 100;
   const etages = [0, 1, 2, 3, 4].map(e => ctx.materiels.filter(m => ETAGE_DE[m.type] === e));
@@ -1351,7 +1366,9 @@ function SchemaPhysique({ ctx, onPos, onCable, onRetirer, onOuvrir }: {
       setSouci(`${plein.nom} n'a plus de port libre : ses ${plein.ports} ports sont tous pris. Augmente son nombre de ports dans l'inventaire.`);
       return;
     }
-    onCable({ id: uid('cab'), deId: a.id, dePort: pa, versId: b.id, versPort: pb, media: cableAttendu(a.type, b.type) });
+    // On ne tire pas le câble tout de suite : on ouvre le choix des ports, le
+    // premier port libre de chaque côté servant de proposition.
+    setABrancher({ a, b });
   };
 
   if (!ctx.materiels.length) {
@@ -1367,7 +1384,7 @@ function SchemaPhysique({ ctx, onPos, onCable, onRetirer, onOuvrir }: {
       <div className="meta" style={{ fontSize: 11.5, marginBottom: 6 }}>
         {depart
           ? <strong>Clique l'equipement d'arrivee — ou le meme pour annuler.</strong>
-          : 'Un clic sur un equipement, un clic sur un autre : le cable se tire. Les ports libres et le media sont choisis tout seuls.'}
+          : 'Un clic sur un equipement, un clic sur un autre : tu choisis alors le port de chaque cote (comme Packet Tracer) avant de tirer le cable.'}
       </div>
       {souci && <div style={{ fontSize: 11.5, color: 'var(--danger, #c4462f)', marginBottom: 6 }}>⚠ {souci}</div>}
       <svg ref={svgRef} viewBox={`0 0 ${W} ${hauteur}`}
@@ -1448,7 +1465,70 @@ function SchemaPhysique({ ctx, onPos, onCable, onRetirer, onOuvrir }: {
           );
         })}
       </svg>
+
+      {aBrancher && (
+        <DialogueBranchement
+          ctx={ctx} a={aBrancher.a} b={aBrancher.b}
+          onValider={c => { onCable(c); setABrancher(null); }}
+          onAnnuler={() => setABrancher(null)} />
+      )}
     </>
+  );
+}
+
+/**
+ * Le choix des ports au branchement — à la Packet Tracer.
+ *
+ * Deux clics ont désigné les équipements ; ici on choisit l'interface précise
+ * de chaque côté (le premier port libre est proposé) et le média, avant de
+ * tirer le câble. Rien n'est imposé : on garde la main sur où l'on branche.
+ */
+function DialogueBranchement({ ctx, a, b, onValider, onAnnuler }: {
+  ctx: Ctx; a: Materiel; b: Materiel;
+  onValider: (c: Cable) => void;
+  onAnnuler: () => void;
+}) {
+  const libA = portsLibres(a, ctx.cables);
+  const libB = portsLibres(b, ctx.cables);
+  const [pa, setPa] = useState<number>(libA[0]);
+  const [pb, setPb] = useState<number>(libB[0]);
+  const [media, setMedia] = useState<Media>(cableAttendu(a.type, b.type));
+  const attendu = cableAttendu(a.type, b.type);
+  const MEDIAS: Media[] = ['droit', 'croise', 'serie', 'fibre', 'console'];
+
+  const bloc = (m: Materiel, libres: number[], val: number, set: (n: number) => void) => (
+    <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>{ICONE_DE[m.type]} {m.nom}</div>
+      <select style={{ ...field, width: '100%' }} value={val} onChange={e => set(Number(e.target.value))}>
+        {libres.map(n => <option key={n} value={n}>{nomPortDe(ctx, m, n)} (port {n})</option>)}
+      </select>
+    </div>
+  );
+
+  return (
+    <div onClick={onAnnuler} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5vh 14px', zIndex: 60 }}>
+      <div onClick={e => e.stopPropagation()} role="dialog" aria-label={`Brancher ${a.nom} et ${b.nom}`}
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px 18px', maxWidth: 460, width: '100%', boxShadow: '0 18px 50px -20px rgba(0,0,0,.5)' }}>
+        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>🔌 Choisis les ports à relier</div>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', marginBottom: 12 }}>
+          {bloc(a, libA, pa, setPa)}
+          <div style={{ fontSize: 18, paddingBottom: 6, color: 'var(--text-muted)' }}>↔</div>
+          {bloc(b, libB, pb, setPb)}
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14 }}>
+          <span className="meta" style={{ fontSize: 12 }}>Média</span>
+          <select style={{ ...field, width: 200 }} value={media} onChange={e => setMedia(e.target.value as Media)}>
+            {MEDIAS.map(md => <option key={md} value={md}>{nomDuMedia(md)}{md === attendu ? ' — conseillé' : ''}</option>)}
+          </select>
+        </div>
+        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
+          <button type="button" onClick={onAnnuler} style={{ ...smallBtn }}>Annuler</button>
+          <button type="button"
+            onClick={() => onValider({ id: uid('cab'), deId: a.id, dePort: pa, versId: b.id, versPort: pb, media })}
+            style={{ ...smallBtn, borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 700 }}>Brancher</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
