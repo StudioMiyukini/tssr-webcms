@@ -1032,6 +1032,50 @@ export type MaterielCmd = {
   blocs: BlocCmd[]; full: string;
 };
 
+/**
+ * La config d'un switch à partir de ses ports réglés à la main.
+ *
+ * Pour un switch d'accès sous multicouche, `configAcces` lit déjà `ports_` — rien
+ * à faire. Ce générateur couvre l'autre cas : un switch cablé à un **routeur**
+ * dont on a fixé les ports depuis la boîte de dialogue. Sans lui, ces réglages
+ * ne partaient dans aucune commande.
+ */
+function configSwitchPorts(m: Materiel, ctx: Ctx, plan: Plan): string {
+  const parts = ctx.optSwitches[m.id]?.ports_ ?? [];
+  const nomVlan = (v: number) => {
+    const s = plan.subs.find(x => x.vlan === v);
+    return s ? vlanName(s.name) : 'VLAN' + v;
+  };
+  const iface = (seg: string) => seg.includes('-')
+    ? `interface range FastEthernet0/${seg.replace('-', ' - ')}`
+    : `interface FastEthernet0/${seg}`;
+
+  const vlans = [...new Set(parts.filter(p => p.role === 'access' && p.vlan).map(p => p.vlan!))].sort((a, b) => a - b);
+  const l: string[] = ['enable', 'configure terminal', `hostname ${m.nom}`];
+  if (vlans.length) {
+    l.push('! --- Les VLAN ---');
+    for (const v of vlans) l.push(`vlan ${v}`, ` name ${nomVlan(v)}`, ' exit');
+  }
+  const acces = parts.filter(p => p.role === 'access');
+  if (acces.length) {
+    l.push('! --- Ports d\'acces ---');
+    for (const p of acces) for (const seg of p.plage.split(',')) {
+      l.push(iface(seg), ' switchport mode access', ` switchport access vlan ${p.vlan ?? 1}`, ' exit');
+    }
+  }
+  const trunks = parts.filter(p => p.role === 'trunk');
+  if (trunks.length) {
+    l.push('! --- Trunk 802.1Q ---');
+    for (const p of trunks) for (const seg of p.plage.split(',')) {
+      l.push(iface(seg), ' switchport mode trunk',
+        ...(vlans.length ? [` switchport trunk allowed vlan ${vlans.join(',')}`] : []),
+        ` switchport trunk native vlan ${NATIVE_VLAN}`, ' exit');
+    }
+  }
+  l.push('end', 'write memory');
+  return l.join('\n');
+}
+
 export function buildTout(ctx: Ctx, plan: Plan): MaterielCmd[] {
   const rcfg = buildRouterConfigs(ctx, plan);
   const swcfg = buildSwitchConfigs(ctx, plan);
@@ -1071,10 +1115,21 @@ export function buildTout(ctx: Ctx, plan: Plan): MaterielCmd[] {
       const s = ssh1(m.nom);
       if (s) blocs.push({ titre: 'Accès SSH', texte: s.text });
     } else if (m.type === 'switch') {
+      // Trois sources, dans l'ordre : switch d'accès sous multicouche
+      // (configAcces lit déjà ports_) ; sinon, ports réglés à la main sur un
+      // switch cablé à un routeur ; sinon, le switch synthétique « routeur sur
+      // un bâton » que le générateur fabrique par routeur. Le uplink se trouve
+      // par le câblage — un switch relié à un routeur adopte sa config de switch.
       const acc = mlsPlan.acces.find(a => a.id === m.id || a.name === m.nom);
-      const soar = swcfg.find(sc => sc.name === m.nom);
-      if (acc || soar) blocs.push({ titre: 'Réinitialiser (si réemploi)', texte: reset });
+      const perso = ctx.optSwitches[m.id]?.ports_?.length ? configSwitchPorts(m, ctx, plan) : null;
+      const uplink = voisinsDe(ctx.cables, m.id)
+        .map(v => ctx.materiels.find(x => x.id === v.autreId))
+        .find(x => x?.type === 'routeur');
+      const soar = swcfg.find(sc => sc.name === m.nom)
+        ?? (uplink ? swcfg.find(sc => sc.routerId === uplink.id) : undefined);
+      if (acc || perso || soar) blocs.push({ titre: 'Réinitialiser (si réemploi)', texte: reset });
       if (acc) blocs.push({ titre: 'VLAN, ports d’accès et trunk', texte: configAcces(acc, mlsPlan) });
+      else if (perso) blocs.push({ titre: 'VLAN, ports d’accès et trunk (réglés à la main)', texte: perso });
       else if (soar) blocs.push({ titre: 'VLAN et trunk (routeur sur un bâton)', texte: soar.text });
       const s = ssh1(m.nom);
       if (s) blocs.push({ titre: 'Accès SSH', texte: s.text });
