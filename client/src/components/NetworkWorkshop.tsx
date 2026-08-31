@@ -256,6 +256,11 @@ export function migrateCtx(raw: unknown): Ctx {
   // On repart de ce qui est enregistre, jamais des objets de DEFAULT_CTX :
   // `{ ...DEFAULT_CTX, ...r }` en copie les references, et tout `push` ici
   // allongerait le contexte par defaut pour tous les projets suivants.
+  // Un contexte déjà migré porte un tableau `materiels` (même vide) et n'a plus
+  // ses anciennes listes `routers`/`mlsMulticouches`. Ne semer les défauts que
+  // pour un contexte hérité : sinon, un R1/R2 (ou MLS-Core) supprimé revient à
+  // chaque rechargement, l'absence de la clé étant prise pour « projet neuf ».
+  const herite = !Array.isArray(r.materiels);
   c.materiels = Array.isArray(r.materiels) ? [...r.materiels] : [];
   c.cables = Array.isArray(r.cables) ? [...r.cables] : [];
   c.optRouteurs = (r.optRouteurs && typeof r.optRouteurs === 'object') ? { ...r.optRouteurs } : {};
@@ -264,7 +269,7 @@ export function migrateCtx(raw: unknown): Ctx {
   const connus = new Set(c.materiels.map((m: Materiel) => m?.id));
   const poser = (m: Materiel) => { if (m.id && !connus.has(m.id)) { connus.add(m.id); c.materiels.push(m); } };
 
-  for (const rt of (Array.isArray(r.routers) ? r.routers : DEFAULT_CTX_ROUTEURS)) {
+  for (const rt of (Array.isArray(r.routers) ? r.routers : (herite ? DEFAULT_CTX_ROUTEURS : []))) {
     if (typeof rt?.id !== 'string') continue;
     const modele = rt?.model === '2811' ? '2811' : '2911';
     poser({ id: rt.id, nom: String(rt?.name ?? 'R'), type: 'routeur', modele, ports: 4 });
@@ -272,20 +277,23 @@ export function migrateCtx(raw: unknown): Ctx {
   }
   const anciensMls = (Array.isArray(r.mlsMulticouches) && r.mlsMulticouches.length)
     ? r.mlsMulticouches
-    : [{ id: 'm1', nom: typeof (r as { mlsNom?: string }).mlsNom === 'string' ? (r as { mlsNom?: string }).mlsNom : 'MLS-Core', prefixe: 'FastEthernet0/', vlans: [] }];
+    : (herite ? [{ id: 'm1', nom: typeof (r as { mlsNom?: string }).mlsNom === 'string' ? (r as { mlsNom?: string }).mlsNom : 'MLS-Core', prefixe: 'FastEthernet0/', vlans: [] }] : []);
   for (const m of anciensMls) {
     if (typeof m?.id !== 'string') continue;
     poser({ id: m.id, nom: String(m?.nom ?? 'MLS'), type: 'multicouche', modele: '3560', ports: 24 });
     c.optMls[m.id] = { prefixe: String(m?.prefixe ?? PREFIXE_3560), vlans: Array.isArray(m?.vlans) ? m.vlans : [] };
   }
-  // Si aucun multicouche n'a survecu, le contexte par defaut en fournit un :
-  // sans racine, tout switch se retrouverait rattache a rien.
-  if (!c.materiels.some((m: Materiel) => m.type === 'multicouche')) {
+  // Un contexte hérité qui portait des switches d'accès a besoin d'une racine :
+  // sans multicouche, ils se rattacheraient à rien. On n'en fabrique une que
+  // dans ce cas — un projet migré dont on a sciemment supprimé le multicouche
+  // doit le rester.
+  const mlsAcces = Array.isArray(r.mlsAcces) ? r.mlsAcces : [];
+  if (herite && mlsAcces.length && !c.materiels.some((m: Materiel) => m.type === 'multicouche')) {
     poser({ id: 'm1', nom: 'MLS-Core', type: 'multicouche', modele: '3560', ports: 24 });
     c.optMls.m1 = { prefixe: PREFIXE_3560, vlans: [] };
   }
-  const premierMls = c.materiels.find((m: Materiel) => m.type === 'multicouche')!.id;
-  for (const sw of (Array.isArray(r.mlsAcces) ? r.mlsAcces : [])) {
+  const premierMls = c.materiels.find((m: Materiel) => m.type === 'multicouche')?.id;
+  for (const sw of mlsAcces) {
     if (typeof sw?.id !== 'string') continue;
     // Un projet enregistre declarait 24 ports : c'etait le compte des ports
     // d'acces. Le materiel en a deux de plus, les Gigabit du haut.
@@ -295,6 +303,7 @@ export function migrateCtx(raw: unknown): Ctx {
     c.optSwitches[sw.id] = { vlans: Array.isArray(sw?.vlans) ? sw.vlans : [], ports_: Array.isArray(sw?.ports_) ? sw.ports_ : undefined };
     // La remontee devient un cable : c'est le meme lien, dit en couche 1.
     const vers = typeof sw?.mlsId === 'string' && sw.mlsId ? sw.mlsId : premierMls;
+    if (!vers) continue;
     const mien = Number(sw?.uplink) > 0 ? Number(sw.uplink) : ports;
     const sien = Number(sw?.portMls) > 0 ? Number(sw.portMls) : 1;
     if (!c.cables.some((x: Cable) => x?.deId === vers && x?.versId === sw.id)) {
