@@ -1149,6 +1149,56 @@ function configSwitchPorts(m: Materiel, ctx: Ctx, mlsPlan: MlsPlan, plan: Plan):
   return l.join('\n');
 }
 
+/**
+ * Les ports d'accès et trunk **du multicouche lui-même**.
+ *
+ * `configMls` déclare les VLAN, les SVI, le routage et les trunks vers les
+ * switches d'accès enfants — mais pas les ports que l'on règle à la main sur le
+ * 3560 : des postes branchés directement en accès, ou un trunk vers un routeur.
+ * On les rend ici depuis l'état réel des ports, sans redéclarer les VLAN (déjà
+ * faits) ni redire les trunks enfants (déjà émis par `configMls`). Règle 3560 :
+ * un trunk exige `switchport trunk encapsulation dot1q`, que le 2960 refuse.
+ */
+function configPortsMls(m: Materiel, ctx: Ctx, mlsPlan: MlsPlan, plan: Plan): string {
+  const etat = etatDesPorts(ctx, m, mlsPlan);
+  const prefixe = ctx.optMls[m.id]?.prefixe ?? PREFIXE_3560;
+  const nomVlan = (v: number) => {
+    const s = plan.subs.find(x => x.vlan === v);
+    return s ? vlanName(s.name) : 'VLAN' + v;
+  };
+  // Les ports déjà couverts par configMls (trunks vers les switches enfants).
+  const dejaTrunk = new Set(enfantsDe(mlsPlan, m.id).map(e => e.portMls));
+  const tousVlans = mlsPlan.vlans.map(v => v.id).sort((a, b) => a - b);
+  const iface = (seg: string) => seg.includes('-')
+    ? `interface range ${prefixe}${seg.replace('-', ' - ')}`
+    : `interface ${prefixe}${seg}`;
+  const emet = (l: string[], ports: number[], corps: string[]) => {
+    for (const seg of ecrirePlage([...ports].sort((a, b) => a - b)).split(',')) l.push(iface(seg), ...corps, ' exit');
+  };
+
+  const accesParVlan = new Map<number, number[]>();
+  const trunk: number[] = [];
+  for (const e of etat) {
+    if (e.role === 'access') { const v = e.vlan ?? 1; (accesParVlan.get(v) ?? accesParVlan.set(v, []).get(v)!).push(e.port); }
+    else if (e.role === 'trunk' && !dejaTrunk.has(e.port)) trunk.push(e.port);
+  }
+  const vlans = [...accesParVlan.keys()].sort((a, b) => a - b);
+
+  const corps: string[] = [];
+  if (accesParVlan.size) {
+    corps.push("! --- Ports d'acces (postes relies au multicouche) ---");
+    for (const v of vlans) emet(corps, accesParVlan.get(v)!, [` description ${nomVlan(v)}`, ' switchport mode access', ` switchport access vlan ${v}`, ' spanning-tree portfast']);
+  }
+  if (trunk.length) {
+    corps.push('! --- Trunk 802.1Q ---');
+    emet(corps, trunk, [' switchport trunk encapsulation dot1q', ' switchport mode trunk',
+      ...(tousVlans.length ? [` switchport trunk allowed vlan ${tousVlans.join(',')}`] : []),
+      ...(mlsPlan.natif ? [` switchport trunk native vlan ${mlsPlan.natif}`] : [])]);
+  }
+  if (!corps.length) return '';
+  return ['enable', 'configure terminal', `hostname ${m.nom}`, '!', ...corps, 'end', 'write memory'].join('\n');
+}
+
 export function buildTout(ctx: Ctx, plan: Plan): MaterielCmd[] {
   const rcfg = buildRouterConfigs(ctx, plan);
   const swcfg = buildSwitchConfigs(ctx, plan);
@@ -1181,6 +1231,11 @@ export function buildTout(ctx: Ctx, plan: Plan): MaterielCmd[] {
       if (mc) {
         blocs.push({ titre: 'Réinitialiser (si réemploi)', texte: reset });
         blocs.push({ titre: 'VLAN, SVI et routage inter-VLAN', texte: configMls(mlsPlan, mc) });
+        // Les ports réglés à la main sur le multicouche : postes en accès et
+        // trunk vers un routeur — que configMls, tourné vers les switches
+        // enfants, n'émettait pas.
+        const portsMls = configPortsMls(m, ctx, mlsPlan, plan);
+        if (portsMls) blocs.push({ titre: 'Ports d’accès et trunk du multicouche', texte: portsMls });
         // La sortie Internet portée en L3 : une seule, sur le multicouche de
         // bordure — le premier, comme l'écran SVI qui l'affiche une fois.
         if (sortie && mlsPlan.multicouches[0]?.id === mc.id) {
