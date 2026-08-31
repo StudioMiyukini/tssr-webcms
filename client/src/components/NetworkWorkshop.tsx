@@ -1085,8 +1085,8 @@ function promouvoirSections(texte: string): string {
  * dont on a fixé les ports depuis la boîte de dialogue. Sans lui, ces réglages
  * ne partaient dans aucune commande.
  */
-function configSwitchPorts(m: Materiel, ctx: Ctx, plan: Plan): string {
-  const parts = ctx.optSwitches[m.id]?.ports_ ?? [];
+function configSwitchPorts(m: Materiel, ctx: Ctx, mlsPlan: MlsPlan, plan: Plan): string {
+  const etat = etatDesPorts(ctx, m, mlsPlan);
   const nomVlan = (v: number) => {
     const s = plan.subs.find(x => x.vlan === v);
     return s ? vlanName(s.name) : 'VLAN' + v;
@@ -1094,28 +1094,35 @@ function configSwitchPorts(m: Materiel, ctx: Ctx, plan: Plan): string {
   const iface = (seg: string) => seg.includes('-')
     ? `interface range FastEthernet0/${seg.replace('-', ' - ')}`
     : `interface FastEthernet0/${seg}`;
+  const emet = (l: string[], ports: number[], corps: string[]) => {
+    for (const seg of ecrirePlage([...ports].sort((a, b) => a - b)).split(',')) {
+      l.push(iface(seg), ...corps, ' exit');
+    }
+  };
 
-  const vlans = [...new Set(parts.filter(p => p.role === 'access' && p.vlan).map(p => p.vlan!))].sort((a, b) => a - b);
+  // On regroupe les ports d'acces par VLAN et on rassemble les ports trunk.
+  const accesParVlan = new Map<number, number[]>();
+  const trunk: number[] = [];
+  for (const e of etat) {
+    if (e.role === 'access') { const v = e.vlan ?? 1; (accesParVlan.get(v) ?? accesParVlan.set(v, []).get(v)!).push(e.port); }
+    else if (e.role === 'trunk') trunk.push(e.port);
+  }
+  const vlans = [...accesParVlan.keys()].sort((a, b) => a - b);
+
   const l: string[] = ['enable', 'configure terminal', `hostname ${m.nom}`];
   if (vlans.length) {
     l.push('! --- Les VLAN ---');
     for (const v of vlans) l.push(`vlan ${v}`, ` name ${nomVlan(v)}`, ' exit');
   }
-  const acces = parts.filter(p => p.role === 'access');
-  if (acces.length) {
-    l.push('! --- Ports d\'acces ---');
-    for (const p of acces) for (const seg of p.plage.split(',')) {
-      l.push(iface(seg), ' switchport mode access', ` switchport access vlan ${p.vlan ?? 1}`, ' exit');
-    }
+  if (accesParVlan.size) {
+    l.push('! --- Ports d\x27acces ---');
+    for (const v of vlans) emet(l, accesParVlan.get(v)!, [` description ${nomVlan(v)}`, ' switchport mode access', ` switchport access vlan ${v}`, ' spanning-tree portfast']);
   }
-  const trunks = parts.filter(p => p.role === 'trunk');
-  if (trunks.length) {
+  if (trunk.length) {
     l.push('! --- Trunk 802.1Q ---');
-    for (const p of trunks) for (const seg of p.plage.split(',')) {
-      l.push(iface(seg), ' switchport mode trunk',
-        ...(vlans.length ? [` switchport trunk allowed vlan ${vlans.join(',')}`] : []),
-        ` switchport trunk native vlan ${NATIVE_VLAN}`, ' exit');
-    }
+    emet(l, trunk, [' switchport mode trunk',
+      ...(vlans.length ? [` switchport trunk allowed vlan ${vlans.join(',')}`] : []),
+      ` switchport trunk native vlan ${NATIVE_VLAN}`]);
   }
   l.push('end', 'write memory');
   return l.join('\n');
@@ -1168,15 +1175,25 @@ export function buildTout(ctx: Ctx, plan: Plan): MaterielCmd[] {
       // un bâton » que le générateur fabrique par routeur. Le uplink se trouve
       // par le câblage — un switch relié à un routeur adopte sa config de switch.
       const acc = mlsPlan.acces.find(a => a.id === m.id || a.name === m.nom);
-      const perso = ctx.optSwitches[m.id]?.ports_?.length ? configSwitchPorts(m, ctx, plan) : null;
       const uplink = voisinsDe(ctx.cables, m.id)
         .map(v => ctx.materiels.find(x => x.id === v.autreId))
         .find(x => x?.type === 'routeur');
       const soar = swcfg.find(sc => sc.name === m.nom)
         ?? (uplink ? swcfg.find(sc => sc.routerId === uplink.id) : undefined);
+      // Dès qu'on a réglé les ports au dialogue, ce réglage **fait foi** : la
+      // config part de l'état littéral du schéma (accès ET trunk, VLAN déclarés,
+      // trunk autorisant ces VLAN) plutôt que de la répartition automatique du
+      // multicouche, qui ignorait les trunks posés à la main. Sans réglage, on
+      // garde le comportement du TP (configAcces) ; à défaut de multicouche mais
+      // avec du câblage, on rend l'état réel des ports.
+      const aReglage = !!ctx.optSwitches[m.id]?.ports_?.length;
+      const etatSw = etatDesPorts(ctx, m, mlsPlan);
+      const perso = (aReglage || (!acc && !soar && etatSw.some(e => e.role !== 'libre')))
+        ? configSwitchPorts(m, ctx, mlsPlan, plan) : null;
       if (acc || perso || soar) blocs.push({ titre: 'Réinitialiser (si réemploi)', texte: reset });
-      if (acc) blocs.push({ titre: 'VLAN, ports d’accès et trunk', texte: configAcces(acc, mlsPlan) });
-      else if (perso) blocs.push({ titre: 'VLAN, ports d’accès et trunk (réglés à la main)', texte: perso });
+      if (aReglage && perso) blocs.push({ titre: 'VLAN, ports d’accès et trunk (réglés à la main)', texte: perso });
+      else if (acc) blocs.push({ titre: 'VLAN, ports d’accès et trunk', texte: configAcces(acc, mlsPlan) });
+      else if (perso) blocs.push({ titre: 'VLAN, ports d’accès et trunk (d’après le câblage)', texte: perso });
       else if (soar) blocs.push({ titre: 'VLAN et trunk (routeur sur un bâton)', texte: soar.text });
       const s = ssh1(m.nom);
       if (s) blocs.push({ titre: 'Accès SSH', texte: s.text });
@@ -1466,7 +1483,15 @@ const tdMls: CSSProperties = { padding: '4px 7px', borderBottom: '1px solid var(
 
 // ── Configuration fine des ports d'un switch ───────────────────────────────
 
-export type EtatPort = { port: number; role: 'access' | 'trunk' | 'libre'; vlan?: number; cableVers?: string };
+export type EtatPort = {
+  port: number; role: 'access' | 'trunk' | 'libre'; vlan?: number;
+  /** Le voisin, s'il y a un câble : nom, id, et l'id du câble pour le retirer. */
+  cableVers?: string; cableVersId?: string; cableId?: string;
+};
+
+/** Le type d'équipement d'en face oriente le rôle par défaut d'un port câblé. */
+const roleParDefaut = (typeVoisin: TypeMateriel | undefined): 'access' | 'trunk' =>
+  typeVoisin === 'switch' || typeVoisin === 'multicouche' || typeVoisin === 'routeur' ? 'trunk' : 'access';
 
 const nomDeMat = (ctx: Ctx, id: string) => ctx.materiels.find(m => m.id === id)?.nom ?? '?';
 
@@ -1480,10 +1505,12 @@ const nomDeMat = (ctx: Ctx, id: string) => ctx.materiels.find(m => m.id === id)?
  */
 export function etatDesPorts(ctx: Ctx, m: Materiel, mlsPlan: MlsPlan): EtatPort[] {
   const n = Math.max(1, m.ports);
-  const cable = new Map<number, string>();
+  // Le voisin de chaque port câblé : nom, id, id du câble, et son type — qui
+  // oriente le rôle par défaut (trunk vers une infra, accès vers un poste).
+  const cable = new Map<number, { nom: string; id: string; cableId: string; type?: TypeMateriel }>();
   for (const c of ctx.cables) {
-    if (c.deId === m.id) cable.set(c.dePort, nomDeMat(ctx, c.versId));
-    if (c.versId === m.id) cable.set(c.versPort, nomDeMat(ctx, c.deId));
+    if (c.deId === m.id) { const v = ctx.materiels.find(x => x.id === c.versId); cable.set(c.dePort, { nom: v?.nom ?? '?', id: c.versId, cableId: c.id, type: v?.type }); }
+    if (c.versId === m.id) { const v = ctx.materiels.find(x => x.id === c.deId); cable.set(c.versPort, { nom: v?.nom ?? '?', id: c.deId, cableId: c.id, type: v?.type }); }
   }
   const sw = mlsPlan.acces.find(a => a.id === m.id) ?? null;
   const parts: AffectationPort[] = ctx.optSwitches[m.id]?.ports_ ?? (sw ? affectations(mlsPlan, sw) : []);
@@ -1494,7 +1521,7 @@ export function etatDesPorts(ctx: Ctx, m: Materiel, mlsPlan: MlsPlan): EtatPort[
   for (let p = 1; p <= n; p++) {
     const c = cable.get(p);
     const r = role.get(p);
-    if (c) out.push({ port: p, role: r?.role ?? 'trunk', vlan: r?.vlan, cableVers: c });
+    if (c) out.push({ port: p, role: r?.role ?? roleParDefaut(c.type), vlan: r?.vlan, cableVers: c.nom, cableVersId: c.id, cableId: c.cableId });
     else if (r) out.push({ port: p, role: r.role, vlan: r.vlan });
     else out.push({ port: p, role: 'libre' });
   }
@@ -1512,9 +1539,12 @@ export function definirPort(
   ctx: Ctx, m: Materiel, mlsPlan: MlsPlan, port: number,
   val: { role: 'access' | 'trunk' | 'libre'; vlan?: number },
 ): AffectationPort[] {
+  // On repart de l'état courant — câbles compris désormais : un port branché à
+  // un poste est un port d'accès qu'on doit pouvoir régler. Le rôle par défaut
+  // d'un port câblé (trunk vers une infra, accès vers un poste) est ainsi
+  // matérialisé et conservé quand on touche un autre port.
   const map = new Map<number, { role: 'access' | 'trunk'; vlan?: number } | null>();
   for (const e of etatDesPorts(ctx, m, mlsPlan)) {
-    if (e.cableVers) continue;
     map.set(e.port, e.role === 'libre' ? null : { role: e.role, vlan: e.vlan });
   }
   map.set(port, val.role === 'libre' ? null : { role: val.role, vlan: val.vlan });
@@ -1636,11 +1666,12 @@ function PosteAdressage({ ctx, m, plan, onCtx }: { ctx: Ctx; m: Materiel; plan: 
 }
 
 /** La boîte de dialogue de configuration fine d'un équipement. */
-function DialogueMateriel({ ctx, m, mlsPlan, plan, onPatch, onPorts, onCtx, onClose }: {
+function DialogueMateriel({ ctx, m, mlsPlan, plan, onPatch, onPorts, onCtx, onRetirerCable, onClose }: {
   ctx: Ctx; m: Materiel; mlsPlan: MlsPlan; plan: Plan;
   onPatch: (patch: Partial<Materiel>) => void;
   onPorts: (ports: AffectationPort[]) => void;
   onCtx: (patch: Partial<Ctx>) => void;
+  onRetirerCable: (cableId: string) => void;
   onClose: () => void;
 }) {
   const [selPort, setSelPort] = useState<number | null>(null);
@@ -1694,22 +1725,27 @@ function DialogueMateriel({ ctx, m, mlsPlan, plan, onPatch, onPorts, onCtx, onCl
           <>
             <div style={legend}>🔌 Les ports — clique un port pour le configurer</div>
             <div className="meta" style={{ fontSize: 11.5, marginBottom: 8 }}>
-              Accès (une couleur par VLAN) · trunk (accent) · relié (grisé, décidé par le câblage) · libre (contour).
+              Accès (une couleur par VLAN) · trunk (accent) · <strong>●</strong> relié (un câble) · libre (contour).
+              Un port branché à un poste reste configurable — clique-le pour choisir son VLAN.
               Le résultat part directement dans les commandes du switch.
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(52px, 1fr))', gap: 6, marginBottom: 10 }}>
               {etat.map(e => (
-                <button key={e.port} type="button" disabled={!!e.cableVers}
+                <button key={e.port} type="button"
                   onClick={() => setSelPort(selPort === e.port ? null : e.port)}
-                  title={e.cableVers ? `Relié à ${e.cableVers}` : e.role === 'access' ? `Accès VLAN ${e.vlan ?? '?'}` : e.role === 'trunk' ? 'Trunk' : 'Libre'}
+                  title={`${e.cableVers ? `Relié à ${e.cableVers} · ` : ''}${e.role === 'access' ? `Accès VLAN ${e.vlan ?? '?'}` : e.role === 'trunk' ? 'Trunk' : 'Libre'}`}
                   style={{
-                    border: `2px solid ${couleur(e)}`, borderRadius: 8, padding: '6px 2px', cursor: e.cableVers ? 'not-allowed' : 'pointer',
+                    position: 'relative',
+                    border: `2px solid ${couleur(e)}`, borderRadius: 8, padding: '6px 2px', cursor: 'pointer',
                     background: selPort === e.port ? 'color-mix(in srgb, var(--accent) 14%, var(--surface-2))' : 'var(--surface-2)',
-                    fontSize: 11, fontWeight: 600, color: 'var(--text)', opacity: e.cableVers ? 0.6 : 1, lineHeight: 1.2,
+                    fontSize: 11, fontWeight: 600, color: 'var(--text)', lineHeight: 1.2,
                   }}>
+                  {/* Une pastille pleine marque un port câblé, sans le griser :
+                      il reste cliquable et configurable. */}
+                  {e.cableVers && <span style={{ position: 'absolute', top: 3, right: 4, fontSize: 8, color: 'var(--accent)' }}>●</span>}
                   <div style={{ ...mono }}>{e.port}</div>
                   <div style={{ fontSize: 8.5, color: 'var(--text-muted)' }}>
-                    {e.cableVers ? '↔' : e.role === 'access' ? (e.vlan ?? '—') : e.role === 'trunk' ? 'trunk' : '·'}
+                    {e.role === 'access' ? (e.vlan ?? '—') : e.role === 'trunk' ? 'trunk' : '·'}
                   </div>
                 </button>
               ))}
@@ -1739,7 +1775,13 @@ function DialogueMateriel({ ctx, m, mlsPlan, plan, onPatch, onPorts, onCtx, onCl
                       </>
                     )}
                   </div>
-                  {e.cableVers && <div className="meta" style={{ fontSize: 11.5, marginTop: 6 }}>Ce port est relié à {e.cableVers} — son rôle se décide au câblage.</div>}
+                  {e.cableVers && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
+                      <span className="meta" style={{ fontSize: 11.5 }}>🔗 Relié à <strong>{e.cableVers}</strong></span>
+                      <button type="button" onClick={() => { if (e.cableId) onRetirerCable(e.cableId); }}
+                        style={{ ...smallBtn, borderColor: 'var(--danger)', color: 'var(--danger)' }}>Retirer le lien</button>
+                    </div>
+                  )}
                 </div>
               );
             })()}
@@ -1778,6 +1820,13 @@ export interface NetworkWorkshopProps {
   section4?: 'schema' | 'routeurs' | 'nat';
 }
 
+/*
+ * @id     tssr.atelier.networkWorkshop
+ * @do     composer_reseau
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : atelier de composition et configuration d'un réseau.
+ */
 export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showStepper = true, section4 }: NetworkWorkshopProps = {}) {
   const ctxControlled = value !== undefined && onChange !== undefined;
   const [internalCtx, setInternalCtx] = useState<Ctx>(() => {
@@ -3804,6 +3853,7 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
             onPatch={patch => set({ materiels: ctx.materiels.map(x => x.id === m.id ? { ...x, ...patch } : x) })}
             onPorts={ports => set({ optSwitches: { ...ctx.optSwitches, [m.id]: { vlans: ctx.optSwitches[m.id]?.vlans ?? [], ports_: ports.length ? ports : undefined } } })}
             onCtx={patch => set(patch)}
+            onRetirerCable={id => set({ cables: ctx.cables.filter(c => c.id !== id) })}
             onClose={() => setDialMat(null)} />
         );
       })()}
