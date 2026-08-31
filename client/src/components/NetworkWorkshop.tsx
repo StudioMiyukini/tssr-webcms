@@ -974,7 +974,11 @@ export function buildSsh(ctx: Ctx, plan: Plan): { routers: SshCfg[]; switches: S
     const extra = [`interface vlan ${s.vlan ?? 1}`, ` ip address ${ipToStr(s.switchIp!)} ${ipToStr(s.mask)}`, ' no shutdown', ' exit', `ip default-gateway ${ipToStr(gw)}`];
     return { name: host, ip: ipToStr(s.switchIp!), text: base(host, extra) };
   });
-  return { routers, switches };
+  // Le multicouche route lui-même : pas d'`ip default-gateway`, et sa
+  // joignabilité vient de ses SVI. Il lui faut tout de même son SSH — sans quoi
+  // l'équipement de cœur resterait le seul sans accès distant.
+  const multicouches: SshCfg[] = multicouchesDe(ctx).map(mc => ({ name: mc.nom, ip: '', text: base(mc.nom, []) }));
+  return { routers, switches: [...switches, ...multicouches] };
 }
 
 // Étape 0 : réinitialiser un équipement réutilisé (config parasite qui bloque tout).
