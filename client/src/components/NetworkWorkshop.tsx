@@ -1033,6 +1033,29 @@ export type MaterielCmd = {
 };
 
 /**
+ * Une bannière de section, en commentaire Cisco.
+ *
+ * Le but : qu'un bloc collé « d'un trait » reste lisible dans le terminal. Les
+ * lignes commençant par `!` sont des commentaires — l'IOS les ignore, donc on
+ * peut baliser sans rien casser. Une bannière large se repère d'un coup d'œil
+ * là où un `! ---` discret se noie dans la configuration.
+ */
+function banniere(titre: string): string {
+  const t = titre.toUpperCase();
+  const barre = '!' + '═'.repeat(Math.max(t.length + 4, 30));
+  return `${barre}\n!  ${t}\n${barre}`;
+}
+
+/**
+ * Promeut les sous-sections `! --- X ---` que les générateurs posent déjà en
+ * bannières lisibles. Robuste : on ne suppose aucun libellé précis, on relève
+ * le format que tout le code de génération utilise.
+ */
+function promouvoirSections(texte: string): string {
+  return texte.replace(/^! --- (.+?) ---\s*$/gm, (_, t: string) => `!\n! ══ ${t.trim().toUpperCase()} ══`);
+}
+
+/**
  * La config d'un switch à partir de ses ports réglés à la main.
  *
  * Pour un switch d'accès sous multicouche, `configAcces` lit déjà `ports_` — rien
@@ -1093,14 +1116,16 @@ export function buildTout(ctx: Ctx, plan: Plan): MaterielCmd[] {
       [...ssh.routers, ...ssh.switches].find(s => s.name === nom);
 
     if (m.type === 'routeur') {
+      // Ordre demandé : config (interfaces, VLAN, branchement, route), puis les
+      // services — DHCP, SSH — et enfin le NAT de sortie.
       const rc = rcfg.byRouter.find(b => b.routerId === m.id);
       if (rc) blocs.push({ titre: 'Réinitialiser (si réemploi)', texte: reset });
-      if (rc) blocs.push({ titre: 'Interfaces, VLAN et routage', texte: rc.text });
-      if (nat && ctx.internetRouterId === m.id) blocs.push({ titre: 'NAT — sortie Internet', texte: nat.text });
+      if (rc) blocs.push({ titre: 'Configuration — interfaces, VLAN, routage', texte: rc.text });
       const relay = dhcp.relays.find(r => r.routerId === m.id);
       if (relay) blocs.push({ titre: 'Relais DHCP', texte: relay.text });
       const s = ssh1(m.nom);
       if (s) blocs.push({ titre: 'Accès SSH', texte: s.text });
+      if (nat && ctx.internetRouterId === m.id) blocs.push({ titre: 'NAT — sortie Internet', texte: nat.text });
     } else if (m.type === 'multicouche') {
       const mc = mlsPlan.multicouches.find(x => x.id === m.id || x.nom === m.nom);
       if (mc) {
@@ -1135,7 +1160,12 @@ export function buildTout(ctx: Ctx, plan: Plan): MaterielCmd[] {
       if (s) blocs.push({ titre: 'Accès SSH', texte: s.text });
     }
 
-    const full = blocs.map(b => `! ── ${b.titre} ──\n${b.texte}`).join('\n\n');
+    // Le bloc « d'un trait » : chaque section sous sa bannière, et les
+    // sous-sections des générateurs (interfaces, VLAN, routage, accès, trunk…)
+    // promues en repères visibles. Tout se colle en une fois dans le terminal.
+    const full = blocs
+      .map(b => `${banniere(b.titre)}\n${promouvoirSections(b.texte)}`)
+      .join('\n!\n!\n');
     return { id: m.id, nom: m.nom, type: m.type, modele: m.modele, ports: m.ports, blocs, full };
   });
 }
@@ -1825,17 +1855,17 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                   </span>
                 </div>
                 {t.blocs.length ? (
-                  <div style={{ display: 'grid', gap: 8 }}>
-                    {t.blocs.map((b, bi) => (
-                      <div key={bi}>
-                        <div className="meta" style={{ fontSize: 11.5, fontWeight: 600, marginBottom: 3 }}>
-                          {b.titre}
-                          <button type="button" onClick={() => copy('bloc:' + t.id + bi, b.texte)} style={{ ...smallBtn, marginLeft: 8, padding: '1px 7px' }}>{copied === 'bloc:' + t.id + bi ? '✓' : 'Copier'}</button>
-                        </div>
-                        <pre style={preStyle}><code>{b.texte}</code></pre>
-                      </div>
-                    ))}
-                  </div>
+                  <>
+                    {/* Un seul bloc, à coller d'un trait. Les bannières en
+                        commentaire découpent les sections ; le sommaire les
+                        annonce sans qu'on ait à lire tout le terminal. */}
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 6 }}>
+                      {t.blocs.map((b, bi) => (
+                        <span key={bi} className="meta" style={{ fontSize: 11, padding: '1px 8px', borderRadius: 999, border: '1px solid var(--border)' }}>{b.titre}</span>
+                      ))}
+                    </div>
+                    <pre style={preStyle}><code>{t.full}</code></pre>
+                  </>
                 ) : (
                   <div className="meta" style={{ fontSize: 12 }}>
                     Équipement d'extrémité — aucune commande Cisco à générer. Son adressage se lit dans le plan.
