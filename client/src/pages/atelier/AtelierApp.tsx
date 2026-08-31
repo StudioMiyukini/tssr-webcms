@@ -17,10 +17,14 @@ interface NavItem { key: string; icon: string; label: string; step: number; s4?:
 // Sidebar réorganisée selon l'audit : Réseau (conception + schéma) · Configurations (tous les
 // configs générés) · Validation. L'étape 4 surchargée est éclatée en Schéma / Routeurs / NAT.
 const NAV: { title: string; items: NavItem[] }[] = [
+  // La vue « Par matériel » est la porte d'entrée : le schéma unique, puis toutes
+  // les commandes de chaque équipement, prêtes à coller. Le reste du menu reste
+  // là pour régler l'amont (adressage, DHCP, DNS…) et vérifier.
+  { title: 'Atelier', items: [
+    { key: 'materiel-cmd', icon: '🧰', label: 'Par matériel', step: 12 },
+  ] },
   // Regroupement par couches OSI : c'est l'ordre du montage reel — on pose le
-  // materiel, on cable, on decoupe en VLAN, on adresse, puis on sert. L'ancien
-  // classement (« Reseau / Configurations / Validation ») rangeait une couche 2
-  // et une couche 7 sous le meme titre.
+  // materiel, on cable, on decoupe en VLAN, on adresse, puis on sert.
   { title: 'Couche 1 — Physique', items: [
     { key: 'contexte', icon: '🧾', label: 'Contexte', step: 1 },
     { key: 'materiel', icon: '🔌', label: 'Matériel & câblage', step: 11 },
@@ -31,7 +35,6 @@ const NAV: { title: string; items: NavItem[] }[] = [
   { title: 'Couche 3 — Réseau', items: [
     { key: 'preferences', icon: '⚙️', label: 'Préférences', step: 2 },
     { key: 'segmentation', icon: '🧮', label: 'Adressage', step: 3 },
-    { key: 'schema', icon: '🗺️', label: 'Schéma', step: 4, s4: 'schema' },
     { key: 'routeurs', icon: '📟', label: 'Routeurs & reset', step: 4, s4: 'routeurs' },
     { key: 'mls', icon: '🗼', label: 'Switch multicouche (SVI)', step: 10 },
     { key: 'nat', icon: '🌍', label: 'Internet / NAT', step: 4, s4: 'nat' },
@@ -61,6 +64,7 @@ function loadDraft(): Ctx {
 function statusesOf(ctx: Ctx, plan: Plan): Record<string, Status> {
   const dhcpAny = plan.subs.some(s => s.kind === 'lan' && s.dhcp);
   return {
+    'materiel-cmd': ctx.materiels.length ? 'ok' : 'empty',
     contexte: (plan.bases.length && ctx.services.length) ? 'ok' : 'empty',
     preferences: 'ok',
     segmentation: plan.error ? 'error' : plan.warnings.length ? 'warn' : plan.subs.length ? 'ok' : 'empty',
@@ -84,7 +88,7 @@ export function AtelierApp() {
   const project = useAtelierProject(canSave ? currentId : null);
 
   const [ctx, setCtx] = useState<Ctx>(loadDraft);
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(12);
   const [section4, setSection4] = useState<Section4>('schema');
   const [navOpen, setNavOpen] = useState(false);
   const loadedRef = useRef<number | null>(null);

@@ -23,6 +23,7 @@ import {
   PREFIXE_3560, PREFIXE_EMPILE, chevauchements, configRouteurExterne, ficheSite,
   vlansDe, accesDe, enfantsDe, verifierMulticouches, type Multicouche,
   affectations, verifierPorts, PORTS_ACCES, PORTS_PAR_DEFAUT as PORTS_DEF, type AffectationPort,
+  analyserPlage, ecrirePlage,
   type AccessSwitch, type MlsPlan, type SortieInternet, type ReseauExterne,
   sortieEffective, verifierSortie, type SegmentSortie,
 } from '@/lib/mls';
@@ -1012,6 +1013,78 @@ export function buildTests(ctx: Ctx, plan: Plan, nat: NatCfg | null): { sections
   return { sections, full };
 }
 
+/**
+ * Toutes les commandes, rangées par matériel.
+ *
+ * Le parcours dispersait la configuration d'un même équipement sur six écrans :
+ * le routeur ici, son NAT là, son relais DHCP ailleurs, son SSH plus loin. Pour
+ * poser une maquette, on veut l'inverse — tout ce qui va dans UN terminal, au
+ * même endroit, prêt à coller.
+ *
+ * **Rien n'est recalculé.** Cette fonction n'invente aucune ligne : elle appelle
+ * exactement les générateurs que chaque étape utilisait déjà, et les regroupe
+ * par équipement. Une commande juste dans l'ancien parcours l'est ici aussi ;
+ * une correction sur un générateur profite aux deux d'un coup.
+ */
+export type BlocCmd = { titre: string; texte: string };
+export type MaterielCmd = {
+  id: string; nom: string; type: TypeMateriel; modele: string; ports: number;
+  blocs: BlocCmd[]; full: string;
+};
+
+export function buildTout(ctx: Ctx, plan: Plan): MaterielCmd[] {
+  const rcfg = buildRouterConfigs(ctx, plan);
+  const swcfg = buildSwitchConfigs(ctx, plan);
+  const mlsPlan = buildMlsPlan(ctx, plan);
+  const dhcp = buildDhcp(ctx, plan);
+  const ssh = buildSsh(ctx, plan);
+  const nat = buildNat(ctx, plan);
+  const reset = buildReset();
+  const segs = segmentsDeSortie(ctx, plan);
+  const sortie = ctx.mlsSortie ? sortieEffective(ctx.mlsSortie, segs) : null;
+
+  return ctx.materiels.map(m => {
+    const blocs: BlocCmd[] = [];
+    const ssh1 = (nom: string) =>
+      [...ssh.routers, ...ssh.switches].find(s => s.name === nom);
+
+    if (m.type === 'routeur') {
+      const rc = rcfg.byRouter.find(b => b.routerId === m.id);
+      if (rc) blocs.push({ titre: 'Réinitialiser (si réemploi)', texte: reset });
+      if (rc) blocs.push({ titre: 'Interfaces, VLAN et routage', texte: rc.text });
+      if (nat && ctx.internetRouterId === m.id) blocs.push({ titre: 'NAT — sortie Internet', texte: nat.text });
+      const relay = dhcp.relays.find(r => r.routerId === m.id);
+      if (relay) blocs.push({ titre: 'Relais DHCP', texte: relay.text });
+      const s = ssh1(m.nom);
+      if (s) blocs.push({ titre: 'Accès SSH', texte: s.text });
+    } else if (m.type === 'multicouche') {
+      const mc = mlsPlan.multicouches.find(x => x.id === m.id || x.nom === m.nom);
+      if (mc) {
+        blocs.push({ titre: 'Réinitialiser (si réemploi)', texte: reset });
+        blocs.push({ titre: 'VLAN, SVI et routage inter-VLAN', texte: configMls(mlsPlan, mc) });
+        // La sortie Internet portée en L3 : une seule, sur le multicouche de
+        // bordure — le premier, comme l'écran SVI qui l'affiche une fois.
+        if (sortie && mlsPlan.multicouches[0]?.id === mc.id) {
+          blocs.push({ titre: 'Sortie Internet (couche 3)', texte: configSortieMls(mlsPlan, sortie) });
+        }
+      }
+      const s = ssh1(m.nom);
+      if (s) blocs.push({ titre: 'Accès SSH', texte: s.text });
+    } else if (m.type === 'switch') {
+      const acc = mlsPlan.acces.find(a => a.id === m.id || a.name === m.nom);
+      const soar = swcfg.find(sc => sc.name === m.nom);
+      if (acc || soar) blocs.push({ titre: 'Réinitialiser (si réemploi)', texte: reset });
+      if (acc) blocs.push({ titre: 'VLAN, ports d’accès et trunk', texte: configAcces(acc, mlsPlan) });
+      else if (soar) blocs.push({ titre: 'VLAN et trunk (routeur sur un bâton)', texte: soar.text });
+      const s = ssh1(m.nom);
+      if (s) blocs.push({ titre: 'Accès SSH', texte: s.text });
+    }
+
+    const full = blocs.map(b => `! ── ${b.titre} ──\n${b.texte}`).join('\n\n');
+    return { id: m.id, nom: m.nom, type: m.type, modele: m.modele, ports: m.ports, blocs, full };
+  });
+}
+
 // ─────────────────────────────────────────── Styles ───────────────────────────────────────────
 const field: CSSProperties = { width: '100%', padding: '7px 9px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface)', color: 'var(--text)', fontSize: 13.5, boxSizing: 'border-box' };
 const label: CSSProperties = { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-soft)', marginBottom: 4 };
@@ -1027,6 +1100,7 @@ const td: CSSProperties = { padding: '6px 9px', borderBottom: '1px solid var(--b
 const preStyle: CSSProperties = { background: 'var(--surface-3)', border: '1px solid var(--border)', borderLeft: '3px solid var(--accent)', borderRadius: 8, padding: '11px 13px', overflowX: 'auto', fontSize: 12, lineHeight: 1.55, margin: 0, whiteSpace: 'pre', color: 'var(--text)', ...mono };
 
 const STEPS = [
+  { n: 12, icon: '🧰', title: 'Par matériel' },
   { n: 1, icon: '🧾', title: 'Contexte' },
   { n: 2, icon: '⚙️', title: 'Préférences' },
   { n: 3, icon: '🧮', title: 'Segmentation' },
@@ -1055,11 +1129,13 @@ const ETAGE_DE: Record<TypeMateriel, number> = { nuage: 0, routeur: 1, multicouc
 const ICONE_DE: Record<TypeMateriel, string> = { nuage: '☁️', routeur: '📟', multicouche: '🗼', switch: '🗄️', serveur: '🖥️', poste: '💻' };
 const NOM_ETAGE = ['operateur', 'couche 3 · routeurs', 'couche 3 · multicouche', 'couche 2 · commutation', 'couches 4-7 · terminaux'];
 
-function SchemaPhysique({ ctx, onPos, onCable, onRetirer }: {
+function SchemaPhysique({ ctx, onPos, onCable, onRetirer, onOuvrir }: {
   ctx: Ctx;
   onPos: (id: string, p: { x: number; y: number } | null) => void;
   onCable: (c: Cable) => void;
   onRetirer: (id: string) => void;
+  /** Ouvre la configuration fine d'un equipement (clic sur la roue). */
+  onOuvrir?: (id: string) => void;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
   // Un appui sert a deux choses : deplacer, ou choisir. On tranche au relachement,
@@ -1184,6 +1260,18 @@ function SchemaPhysique({ ctx, onPos, onCable, onRetirer }: {
               <text x={q.x} y={q.y + 11} textAnchor="middle" fontSize={7.5} fill="var(--text-muted)">
                 {portsLibres(m, ctx.cables).length}/{m.ports} libres
               </text>
+              {onOuvrir && (
+                // La roue ouvre la configuration fine. `stopPropagation` sur
+                // l'appui : sans elle, le clic demarrerait un cable au lieu
+                // d'ouvrir le dialogue.
+                <g style={{ cursor: 'pointer' }}
+                  onMouseDown={e => e.stopPropagation()}
+                  onClick={e => { e.stopPropagation(); onOuvrir(m.id); }}>
+                  <title>Configurer {m.nom}</title>
+                  <circle cx={q.x + l / 2 - 8} cy={q.y - 15} r={8} fill="var(--surface)" stroke="var(--border)" strokeWidth={1} />
+                  <text x={q.x + l / 2 - 8} y={q.y - 12} textAnchor="middle" fontSize={9}>⚙</text>
+                </g>
+              )}
             </g>
           );
         })}
@@ -1230,6 +1318,197 @@ const EXTERNE_DEFAUT: ReseauExterne = {
 };
 const tdMls: CSSProperties = { padding: '4px 7px', borderBottom: '1px solid var(--border)', verticalAlign: 'top' };
 
+// ── Configuration fine des ports d'un switch ───────────────────────────────
+
+export type EtatPort = { port: number; role: 'access' | 'trunk' | 'libre'; vlan?: number; cableVers?: string };
+
+const nomDeMat = (ctx: Ctx, id: string) => ctx.materiels.find(m => m.id === id)?.nom ?? '?';
+
+/**
+ * L'état de chaque port d'un switch, port par port.
+ *
+ * Trois sources, dans cet ordre : le câble (un port relié à un voisin ne
+ * s'édite pas ici, c'est le câblage qui le décide), l'override manuel
+ * (`optSwitches[id].ports_`), puis le calcul automatique. Un port sans rien est
+ * libre.
+ */
+export function etatDesPorts(ctx: Ctx, m: Materiel, mlsPlan: MlsPlan): EtatPort[] {
+  const n = Math.max(1, m.ports);
+  const cable = new Map<number, string>();
+  for (const c of ctx.cables) {
+    if (c.deId === m.id) cable.set(c.dePort, nomDeMat(ctx, c.versId));
+    if (c.versId === m.id) cable.set(c.versPort, nomDeMat(ctx, c.deId));
+  }
+  const sw = mlsPlan.acces.find(a => a.id === m.id) ?? null;
+  const parts: AffectationPort[] = ctx.optSwitches[m.id]?.ports_ ?? (sw ? affectations(mlsPlan, sw) : []);
+  const role = new Map<number, { role: 'access' | 'trunk'; vlan?: number }>();
+  for (const p of parts) for (const num of analyserPlage(p.plage)) role.set(num, { role: p.role, vlan: p.vlan });
+
+  const out: EtatPort[] = [];
+  for (let p = 1; p <= n; p++) {
+    const c = cable.get(p);
+    const r = role.get(p);
+    if (c) out.push({ port: p, role: r?.role ?? 'trunk', vlan: r?.vlan, cableVers: c });
+    else if (r) out.push({ port: p, role: r.role, vlan: r.vlan });
+    else out.push({ port: p, role: 'libre' });
+  }
+  return out;
+}
+
+/**
+ * Réécrit les affectations après un changement sur UN port.
+ *
+ * On repart de l'état courant — sans les câbles, qui ne s'écrivent pas ici — on
+ * change le port visé, puis on regroupe en plages contiguës par (rôle, VLAN).
+ * Résultat : la config des autres ports ne bouge pas d'un iota.
+ */
+export function definirPort(
+  ctx: Ctx, m: Materiel, mlsPlan: MlsPlan, port: number,
+  val: { role: 'access' | 'trunk' | 'libre'; vlan?: number },
+): AffectationPort[] {
+  const map = new Map<number, { role: 'access' | 'trunk'; vlan?: number } | null>();
+  for (const e of etatDesPorts(ctx, m, mlsPlan)) {
+    if (e.cableVers) continue;
+    map.set(e.port, e.role === 'libre' ? null : { role: e.role, vlan: e.vlan });
+  }
+  map.set(port, val.role === 'libre' ? null : { role: val.role, vlan: val.vlan });
+
+  const groupes = new Map<string, { role: 'access' | 'trunk'; vlan?: number; ports: number[] }>();
+  for (const [p, r] of map) {
+    if (!r) continue;
+    const key = r.role + ':' + (r.vlan ?? '');
+    (groupes.get(key) ?? groupes.set(key, { role: r.role, vlan: r.vlan, ports: [] }).get(key)!).ports.push(p);
+  }
+  return [...groupes.values()]
+    .filter(g => g.ports.length)
+    .map(g => ({ plage: ecrirePlage(g.ports), role: g.role, vlan: g.vlan }));
+}
+
+/** La boîte de dialogue de configuration fine d'un équipement. */
+function DialogueMateriel({ ctx, m, mlsPlan, onPatch, onPorts, onClose }: {
+  ctx: Ctx; m: Materiel; mlsPlan: MlsPlan;
+  onPatch: (patch: Partial<Materiel>) => void;
+  onPorts: (ports: AffectationPort[]) => void;
+  onClose: () => void;
+}) {
+  const [selPort, setSelPort] = useState<number | null>(null);
+  const commutable = m.type === 'switch' || m.type === 'multicouche';
+  const etat = commutable ? etatDesPorts(ctx, m, mlsPlan) : [];
+  // Les VLAN proposés : ceux du plan, plus ceux déjà posés sur des ports.
+  const vlansPlan = mlsPlan.vlans.map(v => v.id);
+  const vlansPort = etat.filter(e => e.vlan).map(e => e.vlan!);
+  const vlans = [...new Set([...vlansPlan, ...vlansPort])].sort((a, b) => a - b);
+  const modeles = m.type === 'routeur' ? ['2911', '2811'] : m.type === 'switch' ? ['2960'] : m.type === 'multicouche' ? ['3560', '3750'] : [];
+
+  const majPort = (port: number, val: { role: 'access' | 'trunk' | 'libre'; vlan?: number }) => {
+    onPorts(definirPort(ctx, m, mlsPlan, port, val));
+  };
+
+  const couleur = (e: EtatPort) =>
+    e.cableVers ? 'var(--text-muted)'
+      : e.role === 'trunk' ? 'var(--accent)'
+        : e.role === 'access' && e.vlan ? couleurVlan(e.vlan, vlans)
+          : 'var(--border)';
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '5vh 14px', zIndex: 60, overflowY: 'auto' }}>
+      <div onClick={e => e.stopPropagation()} role="dialog" aria-label={`Configurer ${m.nom}`}
+        style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px 18px', maxWidth: 560, width: '100%', boxShadow: '0 18px 50px -20px rgba(0,0,0,.5)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
+          <span style={{ fontSize: 20 }}>{ICONE_DE[m.type]}</span>
+          <strong style={{ fontSize: 16 }}>{m.nom}</strong>
+          <span className="meta" style={{ fontSize: 12 }}>couche {COUCHE_DE[m.type]}</span>
+          <button type="button" onClick={onClose} style={{ ...smallBtn, marginLeft: 'auto' }}>Fermer</button>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
+          <label style={{ fontSize: 12 }}>Nom
+            <input value={m.nom} style={{ ...field, marginTop: 3 }} onChange={e => onPatch({ nom: e.target.value })} />
+          </label>
+          <label style={{ fontSize: 12 }}>Ports
+            <input type="number" min={1} max={48} value={m.ports} style={{ ...field, marginTop: 3 }}
+              onChange={e => onPatch({ ports: Math.max(1, Number(e.target.value) || 1) })} />
+          </label>
+          {!!modeles.length && (
+            <label style={{ fontSize: 12 }}>Modèle
+              <select value={m.modele} style={{ ...field, marginTop: 3 }} onChange={e => onPatch({ modele: e.target.value })}>
+                {modeles.map(x => <option key={x} value={x}>{x}</option>)}
+              </select>
+            </label>
+          )}
+        </div>
+
+        {commutable ? (
+          <>
+            <div style={legend}>🔌 Les ports — clique un port pour le configurer</div>
+            <div className="meta" style={{ fontSize: 11.5, marginBottom: 8 }}>
+              Accès (une couleur par VLAN) · trunk (accent) · relié (grisé, décidé par le câblage) · libre (contour).
+              Le résultat part directement dans les commandes du switch.
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(52px, 1fr))', gap: 6, marginBottom: 10 }}>
+              {etat.map(e => (
+                <button key={e.port} type="button" disabled={!!e.cableVers}
+                  onClick={() => setSelPort(selPort === e.port ? null : e.port)}
+                  title={e.cableVers ? `Relié à ${e.cableVers}` : e.role === 'access' ? `Accès VLAN ${e.vlan ?? '?'}` : e.role === 'trunk' ? 'Trunk' : 'Libre'}
+                  style={{
+                    border: `2px solid ${couleur(e)}`, borderRadius: 8, padding: '6px 2px', cursor: e.cableVers ? 'not-allowed' : 'pointer',
+                    background: selPort === e.port ? 'color-mix(in srgb, var(--accent) 14%, var(--surface-2))' : 'var(--surface-2)',
+                    fontSize: 11, fontWeight: 600, color: 'var(--text)', opacity: e.cableVers ? 0.6 : 1, lineHeight: 1.2,
+                  }}>
+                  <div style={{ ...mono }}>{e.port}</div>
+                  <div style={{ fontSize: 8.5, color: 'var(--text-muted)' }}>
+                    {e.cableVers ? '↔' : e.role === 'access' ? (e.vlan ?? '—') : e.role === 'trunk' ? 'trunk' : '·'}
+                  </div>
+                </button>
+              ))}
+            </div>
+
+            {selPort != null && (() => {
+              const e = etat.find(x => x.port === selPort)!;
+              return (
+                <div style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', background: 'var(--surface-2)' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Port {selPort}</div>
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <span className="meta" style={{ fontSize: 12 }}>Mode</span>
+                    <button type="button" onClick={() => majPort(selPort, { role: 'access', vlan: e.vlan ?? vlans[0] })}
+                      style={{ ...smallBtn, ...(e.role === 'access' ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}) }}>Accès</button>
+                    <button type="button" onClick={() => majPort(selPort, { role: 'trunk' })}
+                      style={{ ...smallBtn, ...(e.role === 'trunk' ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}) }}>Trunk</button>
+                    <button type="button" onClick={() => majPort(selPort, { role: 'libre' })}
+                      style={{ ...smallBtn, ...(e.role === 'libre' ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}) }}>Libre</button>
+                    {e.role === 'access' && (
+                      <>
+                        <span className="meta" style={{ fontSize: 12, marginLeft: 6 }}>VLAN</span>
+                        <select value={e.vlan ?? ''} style={{ ...field, width: 130 }}
+                          onChange={ev => majPort(selPort, { role: 'access', vlan: Number(ev.target.value) || undefined })}>
+                          {!vlans.length && <option value="">aucun VLAN au plan</option>}
+                          {vlans.map(v => <option key={v} value={v}>{v} — {mlsPlan.vlans.find(x => x.id === v)?.name ?? 'VLAN' + v}</option>)}
+                        </select>
+                      </>
+                    )}
+                  </div>
+                  {e.cableVers && <div className="meta" style={{ fontSize: 11.5, marginTop: 6 }}>Ce port est relié à {e.cableVers} — son rôle se décide au câblage.</div>}
+                </div>
+              );
+            })()}
+
+            {!!ctx.optSwitches[m.id]?.ports_?.length && (
+              <button type="button" onClick={() => onPorts([])} style={{ ...smallBtn, marginTop: 10 }}>
+                ↺ Revenir à la répartition automatique
+              </button>
+            )}
+          </>
+        ) : (
+          <div className="meta" style={{ fontSize: 12.5 }}>
+            Un {m.type} n'a pas de VLAN ni de trunk à configurer par port : c'est un équipement d'extrémité.
+            Son rôle dans le réseau se lit dans le schéma et l'adressage.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────── Composant principal ───────────────────────────────────────────
 export interface NetworkWorkshopProps {
   /** Contexte contrôlé (mode application/projet). Absent → l'îlot gère son état via localStorage. */
@@ -1262,6 +1541,7 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
   const setStep = (n: number) => { if (stepControlled) onStep!(n); else setInternalStep(n); };
 
   const [copied, setCopied] = useState('');
+  const [dialMat, setDialMat] = useState<string | null>(null);
   // Les cartes pour comprendre, le tableau pour recopier : les deux servent, a
   // des moments differents.
   const [vuePlan, setVuePlan] = useState<'cartes' | 'tableau'>('cartes');
@@ -1396,6 +1676,7 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
   const natTable = useMemo(() => buildNatTable(ctx, plan, nat), [ctx, plan, nat]);
   const tests = useMemo(() => buildTests(ctx, plan, nat), [ctx, plan, nat]);
   const resetText = buildReset();
+  const tout = useMemo(() => buildTout(ctx, plan), [ctx, plan]);
   const segmentsSortie = segmentsDeSortie(ctx, plan);
   // La sortie telle qu'elle part en configuration : adresses du segment adopte,
   // ou saisie a la main. Tout ce qui suit doit lire celle-ci, pas ctx.mlsSortie.
@@ -1430,6 +1711,96 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
       )}
 
       {/* ── Étape 1 : Contexte ── */}
+      {/* ── Étape « Par matériel » : le schéma unique, puis toutes les commandes de chaque équipement ── */}
+      {step === 12 && (
+        <div>
+          <div style={group}>
+            <div style={legend}>
+              🧰 Par matériel
+              <button type="button" onClick={() => copy('toutMat', tout.filter(t => t.full).map(t => `! ═══ ${t.nom} (${t.type}${t.modele ? ' ' + t.modele : ''}) ═══\n${t.full}`).join('\n\n\n'))}
+                style={{ ...btn, marginLeft: 'auto' }}>{copied === 'toutMat' ? '✓ Copié' : 'Tout copier'}</button>
+            </div>
+            <div className="meta" style={{ fontSize: 11.5 }}>
+              Un seul schéma — l'inventaire physique et le câblage — puis, sous chaque équipement, <strong>toutes ses
+              commandes</strong>, prêtes à coller dans son terminal. Clique la <strong>⚙</strong> d'un équipement pour
+              configurer finement ses ports (VLAN d'accès ou trunk, port par port).
+            </div>
+          </div>
+
+          <div style={group}>
+            <div style={legend}>
+              🗺️ Schéma & câblage
+              <span className="meta" style={{ marginLeft: 'auto', fontSize: 11.5, fontWeight: 400 }}>
+                {ctx.materiels.length} équipement(s) · {ctx.cables.length} lien(s)
+              </span>
+            </div>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+              {(['routeur', 'multicouche', 'switch', 'serveur', 'poste', 'nuage'] as TypeMateriel[]).map(t => (
+                <button key={t} type="button" style={smallBtn}
+                  onClick={() => set({ materiels: [...ctx.materiels, {
+                    id: 'mat' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+                    nom: t.charAt(0).toUpperCase() + t.slice(1) + '-' + (ctx.materiels.filter(m => m.type === t).length + 1),
+                    type: t, modele: '', ports: PORTS_TYPIQUES[t],
+                  }] })}>+ {t}</button>
+              ))}
+            </div>
+            <SchemaPhysique ctx={ctx}
+              onPos={(id, q) => set({ physPos: q ? { ...ctx.physPos, [id]: q } : Object.fromEntries(Object.entries(ctx.physPos).filter(([k]) => k !== id)) })}
+              onCable={c => set({ cables: [...ctx.cables, c] })}
+              onRetirer={id => set({ cables: ctx.cables.filter(x => x.id !== id) })}
+              onOuvrir={setDialMat} />
+            <div className="meta" style={{ fontSize: 11, marginTop: 5 }}>
+              Un clic sur un équipement, un clic sur un autre : le câble se tire. <strong>Double-clic</strong> pour le
+              replacer. La <strong>⚙</strong> ouvre sa configuration fine.
+            </div>
+          </div>
+
+          {tout.map(t => {
+            const m = ctx.materiels.find(x => x.id === t.id)!;
+            return (
+              <div key={t.id} style={group}>
+                <div style={legend}>
+                  {ICONE_DE[m.type]} {t.nom}
+                  <span className="meta" style={{ fontSize: 11.5, fontWeight: 400 }}>
+                    {m.type}{t.modele ? ' · ' + t.modele : ''} · {m.ports} ports
+                  </span>
+                  <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                    <button type="button" onClick={() => setDialMat(t.id)} style={smallBtn}>⚙ Configurer</button>
+                    {!!t.full && <button type="button" onClick={() => copy('mat:' + t.id, t.full)} style={btn}>{copied === 'mat:' + t.id ? '✓ Copié' : 'Copier'}</button>}
+                  </span>
+                </div>
+                {t.blocs.length ? (
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    {t.blocs.map((b, bi) => (
+                      <div key={bi}>
+                        <div className="meta" style={{ fontSize: 11.5, fontWeight: 600, marginBottom: 3 }}>
+                          {b.titre}
+                          <button type="button" onClick={() => copy('bloc:' + t.id + bi, b.texte)} style={{ ...smallBtn, marginLeft: 8, padding: '1px 7px' }}>{copied === 'bloc:' + t.id + bi ? '✓' : 'Copier'}</button>
+                        </div>
+                        <pre style={preStyle}><code>{b.texte}</code></pre>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="meta" style={{ fontSize: 12 }}>
+                    Équipement d'extrémité — aucune commande Cisco à générer. Son adressage se lit dans le plan.
+                  </div>
+                )}
+              </div>
+            );
+          })}
+
+          {!ctx.materiels.length && (
+            <div style={group}>
+              <div className="meta" style={{ fontSize: 12.5 }}>
+                Aucun équipement. Ajoute un routeur, un multicouche, des switches ci-dessus — leurs commandes
+                apparaîtront ici, prêtes à coller.
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {step === 1 && (
         <div>
           <div style={group}>
@@ -3169,6 +3540,17 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
           <StepNav step={step} setStep={setStep} />
         </div>
       )}
+
+      {dialMat && (() => {
+        const m = ctx.materiels.find(x => x.id === dialMat);
+        if (!m) return null;
+        return (
+          <DialogueMateriel ctx={ctx} m={m} mlsPlan={mlsPlan}
+            onPatch={patch => set({ materiels: ctx.materiels.map(x => x.id === m.id ? { ...x, ...patch } : x) })}
+            onPorts={ports => set({ optSwitches: { ...ctx.optSwitches, [m.id]: { vlans: ctx.optSwitches[m.id]?.vlans ?? [], ports_: ports.length ? ports : undefined } } })}
+            onClose={() => setDialMat(null)} />
+        );
+      })()}
     </div>
   );
 }
