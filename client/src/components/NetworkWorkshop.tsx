@@ -585,7 +585,7 @@ export function computePlan(ctx: Ctx): Plan {
         }
         if (ifc) gw = applyOv(r.id, ifc, gw, a.net, a.bc);
       }
-      subs.push({ kind: 'lan', id: 'svc:' + s.id, name: s.name || 'LAN', net: a.net, first: a.first, last: a.last, bc: a.bc, usable: a.usable, mask: a.mask, cidr: a.cidr, gw, switchIp, routerId: r?.id, routerIds: r ? [r.id] : [], dhcp: s.dhcp, vlan: vlanId ?? undefined });
+      subs.push({ kind: 'lan', id: 'svc:' + s.id, name: s.name || 'LAN', net: a.net, first: a.first, last: a.last, bc: a.bc, usable: a.usable, mask: a.mask, cidr: a.cidr, gw, switchIp, routerId: r?.id, routerIds: r ? [r.id] : [], dhcp: s.dhcp, vlan: vlanId ?? undefined, sviId: s.svi });
       if (!r) {
         // Porte par une SVI : ce n'est pas un oubli, c'est l'autre methode.
         if (!s.svi) warnings.push(`« ${s.name || 'LAN'} » n'a ni routeur ni SVI comme passerelle.`);
@@ -721,6 +721,12 @@ export function buildRouterConfigs(ctx: Ctx, plan: Plan): { byRouter: RouterCfg[
     const ipOf = (rid: string) => { const f = plan.ifaces.find(i => i.routerId === rid && i.ip > s.net && i.ip < s.bc); return f ? f.ip : null; };
     s.routerIds.forEach((a) => s.routerIds!.forEach((b) => { if (a !== b) { const via = ipOf(b); if (via !== null) edges.get(a)?.push({ to: b, viaIp: via }); } }));
   }
+  // Le multicouche est un nœud du graphe : chaque routeur du lien l'atteint par
+  // l'adresse que le MLS porte sur ce lien — et, derrière lui, ses VLAN.
+  for (const s of plan.subs) {
+    if (s.kind !== 'link' || !s.sviId || s.sviIp == null) continue;
+    for (const rid of (s.routerIds || [])) edges.get(rid)?.push({ to: s.sviId, viaIp: s.sviIp });
+  }
   const nextHopFrom = (from: string) => {
     const res = new Map<string, number>();
     const seen = new Set<string>([from]);
@@ -797,7 +803,7 @@ export function buildRouterConfigs(ctx: Ctx, plan: Plan): { byRouter: RouterCfg[
     const seen = new Set<string>();
     for (const s of plan.subs) {
       if ((s.routerIds || []).includes(r.id)) continue;         // directement connecté
-      const targets = (s.routerIds && s.routerIds.length) ? s.routerIds : (s.routerId ? [s.routerId] : []);
+      const targets = [...(s.routerIds || []), ...(s.routerId ? [s.routerId] : []), ...(s.sviId ? [s.sviId] : [])];
       let via: number | undefined;
       for (const t of targets) { const v = nh.get(t); if (v !== undefined) { via = v; break; } }
       if (via === undefined) continue;                           // pas de chemin
@@ -1209,6 +1215,48 @@ function configSwitchPorts(m: Materiel, ctx: Ctx, mlsPlan: MlsPlan, plan: Plan):
 }
 
 /**
+ * Le lien routé entre le multicouche et un routeur — un **réseau distinct**.
+ *
+ * Le multicouche fait le routage inter-VLAN (SVI + `ip routing`) ; sa liaison
+ * vers le routeur n'est donc pas un trunk qui prolongerait les VLAN, mais un
+ * **port routé** (`no switchport`) portant l'adresse du /30 d'interconnexion.
+ * On y ajoute la route par défaut : tout ce qui n'est pas un VLAN local part
+ * vers le routeur. Sans cette interface ni cette route, le MLS ne joint rien
+ * hors de ses VLAN, et le routeur ne sait pas revenir vers eux.
+ */
+function configLienRouteurMls(m: Materiel, ctx: Ctx, plan: Plan): string {
+  const liens = plan.subs.filter(z => z.kind === 'link' && z.sviId === m.id && z.sviIp != null);
+  if (!liens.length) return '';
+  const prefixe = ctx.optMls[m.id]?.prefixe ?? PREFIXE_3560;
+  const ipRouteur = (z: Sub, rid: string) => plan.ifaces.find(i => i.routerId === rid && i.ip > z.net && i.ip < z.bc)?.ip ?? null;
+  const l: string[] = ['enable', 'configure terminal', `hostname ${m.nom}`, '!'];
+  let defGw: number | null = null;
+  for (const z of liens) {
+    const rid = (z.routerIds || [])[0];
+    const port = (() => { const v = voisinsDe(ctx.cables, m.id).find(x => x.autreId === rid); return v ? `${prefixe}${v.monPort}` : `${prefixe}?`; })();
+    const nomR = ctx.materiels.find(x => x.id === rid)?.nom ?? 'routeur';
+    l.push(
+      `! --- Lien route vers ${nomR} (reseau distinct ${ipToStr(z.net)}/${z.cidr}) ---`,
+      `interface ${port}`,
+      ` description Lien L3 vers ${nomR}`,
+      // Sur un 3560, un port devient route par `no switchport` : il quitte la
+      // commutation et porte une adresse, comme un port de routeur.
+      ' no switchport',
+      ` ip address ${ipToStr(z.sviIp!)} ${ipToStr(z.mask)}`,
+      ' no shutdown',
+      ' exit',
+      '!',
+    );
+    // La route par defaut vise en priorite le routeur de bordure (sortie Internet).
+    const ipR = rid ? ipRouteur(z, rid) : null;
+    if (ipR !== null && (defGw === null || rid === ctx.internetRouterId)) defGw = ipR;
+  }
+  if (defGw !== null) l.push("! --- La route par defaut : hors VLAN local, tout part vers le routeur ---", `ip route 0.0.0.0 0.0.0.0 ${ipToStr(defGw)}`, '!');
+  l.push('end', 'write memory');
+  return l.join('\n');
+}
+
+/**
  * Les ports d'accès et trunk **du multicouche lui-même**.
  *
  * `configMls` déclare les VLAN, les SVI, le routage et les trunks vers les
@@ -1225,8 +1273,13 @@ function configPortsMls(m: Materiel, ctx: Ctx, mlsPlan: MlsPlan, plan: Plan): st
     const s = plan.subs.find(x => x.vlan === v);
     return s ? vlanName(s.name) : 'VLAN' + v;
   };
-  // Les ports déjà couverts par configMls (trunks vers les switches enfants).
-  const dejaTrunk = new Set(enfantsDe(mlsPlan, m.id).map(e => e.portMls));
+  // Les ports déjà couverts autrement : les trunks vers les switches enfants
+  // (configMls) et les ports routés vers un routeur (configLienRouteurMls) — un
+  // lien MLS <-> routeur est un port routé, pas un trunk.
+  const dejaTrunk = new Set<number>(enfantsDe(mlsPlan, m.id).map(e => e.portMls));
+  for (const v of voisinsDe(ctx.cables, m.id)) {
+    if (ctx.materiels.find(x => x.id === v.autreId)?.type === 'routeur') dejaTrunk.add(v.monPort);
+  }
   const tousVlans = mlsPlan.vlans.map(v => v.id).sort((a, b) => a - b);
   const iface = (seg: string) => seg.includes('-')
     ? `interface range ${prefixe}${seg.replace('-', ' - ')}`
@@ -1290,6 +1343,10 @@ export function buildTout(ctx: Ctx, plan: Plan): MaterielCmd[] {
       if (mc) {
         blocs.push({ titre: 'Réinitialiser (si réemploi)', texte: reset });
         blocs.push({ titre: 'VLAN, SVI et routage inter-VLAN', texte: configMls(mlsPlan, mc) });
+        // Le lien routé vers le routeur : un réseau distinct (/30), avec sa route
+        // par défaut — sans quoi le multicouche ne joint rien hors de ses VLAN.
+        const lienR = configLienRouteurMls(m, ctx, plan);
+        if (lienR) blocs.push({ titre: 'Lien routé vers le routeur (réseau distinct)', texte: lienR });
         // Les ports réglés à la main sur le multicouche : postes en accès et
         // trunk vers un routeur — que configMls, tourné vers les switches
         // enfants, n'émettait pas.
