@@ -28,6 +28,7 @@ const BLOCKS: Record<string, BlockDef> = {
   'linux-commandes': { load: () => named(import('./LinuxCommandes'), 'LinuxCommandes') },
   'debian-reseau': { load: () => named(import('./DebianReseau'), 'DebianReseau') },
   'dns-linux': { load: () => named(import('./DnsLinux'), 'DnsLinux') },
+  'ssh-linux': { load: () => named(import('./SshLinux'), 'SshLinux') },
   'bash-builder': { load: () => named(import('./BashBuilder'), 'BashBuilder') },
   'router-configurator': { load: () => named(import('./RouterConfigurator'), 'RouterConfigurator') },
   'subnet-planner': { load: () => named(import('./SubnetPlanner'), 'SubnetPlanner') },
