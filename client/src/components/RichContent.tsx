@@ -27,6 +27,7 @@ const BLOCKS: Record<string, BlockDef> = {
   'agdlp-builder': { load: () => named(import('./AgdlpBuilder'), 'AgdlpBuilder') },
   'linux-commandes': { load: () => named(import('./LinuxCommandes'), 'LinuxCommandes') },
   'debian-reseau': { load: () => named(import('./DebianReseau'), 'DebianReseau') },
+  'dns-linux': { load: () => named(import('./DnsLinux'), 'DnsLinux') },
   'bash-builder': { load: () => named(import('./BashBuilder'), 'BashBuilder') },
   'router-configurator': { load: () => named(import('./RouterConfigurator'), 'RouterConfigurator') },
   'subnet-planner': { load: () => named(import('./SubnetPlanner'), 'SubnetPlanner') },
@@ -125,6 +126,13 @@ function linkifyAcronyms(root: HTMLElement) {
 /**
  * Rend du HTML (contenu de page/article) et hydrate les blocs dynamiques (îlots React)
  * marqués par data-block, ex. le bloc « derniers articles ».
+ */
+/*
+ * @id     tssr.compRichContent
+ * @do     afficher_contenu_riche
+ * @role   ui
+ * @layer  ui
+ * @human  Rend du contenu HTML riche de façon sûre.
  */
 export function RichContent({ html, className = 'rich' }: { html: string; className?: string }) {
   const ref = useRef<HTMLDivElement>(null);
