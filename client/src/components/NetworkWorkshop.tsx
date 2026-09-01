@@ -597,7 +597,14 @@ export function computePlan(ctx: Ctx): Plan {
       const parts = m.serial ? m.rs.slice(0, 2) : m.rs;
       // Le multicouche prend l'adresse qui suit celle des routeurs ; la gestion
       // du switch se decale d'autant, sinon les deux tomberaient sur la meme.
-      const sviIp = s.svi ? (a.first + parts.length) >>> 0 : null;
+      let sviIp = s.svi ? (a.first + parts.length) >>> 0 : null;
+      // Le port routé du multicouche accepte une IP imposée, comme une interface
+      // de routeur — même carte d'overrides, clé `${mlsId}|${interface}`.
+      if (s.svi && sviIp !== null) {
+        const pref = ctx.optMls[s.svi]?.prefixe ?? PREFIXE_3560;
+        const portMls = voisinsDe(ctx.cables, s.svi).find(v => (s.routerIds || []).includes(v.autreId))?.monPort;
+        if (portMls) sviIp = applyOv(s.svi, `${pref}${portMls}`, sviIp, a.net, a.bc);
+      }
       const swIp = s.hasSwitch ? (a.first + parts.length + (s.svi ? 1 : 0)) >>> 0 : null;
       subs.push({ kind: 'link', id: 'svc:' + s.id, name: s.name || 'Interconnexion', net: a.net, first: a.first, last: a.last, bc: a.bc, usable: a.usable, mask: a.mask, cidr: a.cidr, gw: null, switchIp: (swIp !== null && swIp <= a.last) ? swIp : null, media: m.serial ? 'serial' : 'gig', routerIds: parts.map(r => r.id), sviId: s.svi, sviIp: (sviIp !== null && sviIp <= a.last) ? sviIp : null });
       if (s.svi && sviIp !== null && sviIp > a.last) warnings.push(`« ${s.name} » : plus de place pour l'adresse du multicouche. Augmente le nombre d'hotes de ce segment.`);
@@ -1744,9 +1751,11 @@ const tdMls: CSSProperties = { padding: '4px 7px', borderBottom: '1px solid var(
 // ── Configuration fine des ports d'un switch ───────────────────────────────
 
 export type EtatPort = {
-  port: number; role: 'access' | 'trunk' | 'libre'; vlan?: number;
-  /** Le voisin, s'il y a un câble : nom, id, et l'id du câble pour le retirer. */
-  cableVers?: string; cableVersId?: string; cableId?: string;
+  // 'route' : port routé (no switchport) — un port de multicouche câblé à un
+  // routeur porte l'adresse du lien L3, il ne commute pas.
+  port: number; role: 'access' | 'trunk' | 'libre' | 'route'; vlan?: number;
+  /** Le voisin, s'il y a un câble : nom, id, type, et l'id du câble pour le retirer. */
+  cableVers?: string; cableVersId?: string; cableVersType?: TypeMateriel; cableId?: string;
 };
 
 /** Le type d'équipement d'en face oriente le rôle par défaut d'un port câblé. */
@@ -1781,7 +1790,10 @@ export function etatDesPorts(ctx: Ctx, m: Materiel, mlsPlan: MlsPlan): EtatPort[
   for (let p = 1; p <= n; p++) {
     const c = cable.get(p);
     const r = role.get(p);
-    if (c) out.push({ port: p, role: r?.role ?? roleParDefaut(c.type), vlan: r?.vlan, cableVers: c.nom, cableVersId: c.id, cableId: c.cableId });
+    // Un multicouche relié à un routeur : port routé (no switchport), pas un
+    // trunk — la commutation s'arrête là, il porte l'adresse du lien L3.
+    const routeL3 = !!c && m.type === 'multicouche' && c.type === 'routeur';
+    if (c) out.push({ port: p, role: routeL3 ? 'route' : (r?.role ?? roleParDefaut(c.type)), vlan: r?.vlan, cableVers: c.nom, cableVersId: c.id, cableVersType: c.type, cableId: c.cableId });
     else if (r) out.push({ port: p, role: r.role, vlan: r.vlan });
     else out.push({ port: p, role: 'libre' });
   }
@@ -1805,6 +1817,9 @@ export function definirPort(
   // matérialisé et conservé quand on touche un autre port.
   const map = new Map<number, { role: 'access' | 'trunk'; vlan?: number } | null>();
   for (const e of etatDesPorts(ctx, m, mlsPlan)) {
+    // Un port routé (multicouche <-> routeur) n'est ni accès ni trunk : il se
+    // déduit du câblage, on ne l'écrit pas dans ports_.
+    if (e.role === 'route') continue;
     map.set(e.port, e.role === 'libre' ? null : { role: e.role, vlan: e.vlan });
   }
   map.set(port, val.role === 'libre' ? null : { role: val.role, vlan: val.vlan });
@@ -1948,10 +1963,11 @@ function DialogueMateriel({ ctx, m, mlsPlan, plan, onPatch, onPorts, onCtx, onRe
   };
 
   const couleur = (e: EtatPort) =>
-    e.cableVers ? 'var(--text-muted)'
-      : e.role === 'trunk' ? 'var(--accent)'
-        : e.role === 'access' && e.vlan ? couleurVlan(e.vlan, vlans)
-          : 'var(--border)';
+    e.role === 'route' ? '#38bdf8'
+      : e.cableVers ? 'var(--text-muted)'
+        : e.role === 'trunk' ? 'var(--accent)'
+          : e.role === 'access' && e.vlan ? couleurVlan(e.vlan, vlans)
+            : 'var(--border)';
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '5vh 14px', zIndex: 60, overflowY: 'auto' }}>
@@ -1985,7 +2001,7 @@ function DialogueMateriel({ ctx, m, mlsPlan, plan, onPatch, onPorts, onCtx, onRe
           <>
             <div style={legend}>🔌 Les ports — clique un port pour le configurer</div>
             <div className="meta" style={{ fontSize: 11.5, marginBottom: 8 }}>
-              Accès (une couleur par VLAN) · trunk (accent) · <strong>●</strong> relié (un câble) · libre (contour).
+              Accès (une couleur par VLAN) · trunk (accent) · <strong style={{ color: '#38bdf8' }}>L3</strong> routé vers un routeur · <strong>●</strong> relié · libre (contour).
               Un port branché à un poste reste configurable — clique-le pour choisir son VLAN.
               Le résultat part directement dans les commandes du switch.
             </div>
@@ -1993,7 +2009,7 @@ function DialogueMateriel({ ctx, m, mlsPlan, plan, onPatch, onPorts, onCtx, onRe
               {etat.map(e => (
                 <button key={e.port} type="button"
                   onClick={() => setSelPort(selPort === e.port ? null : e.port)}
-                  title={`${e.cableVers ? `Relié à ${e.cableVers} · ` : ''}${e.role === 'access' ? `Accès VLAN ${e.vlan ?? '?'}` : e.role === 'trunk' ? 'Trunk' : 'Libre'}`}
+                  title={`${e.cableVers ? `Relié à ${e.cableVers} · ` : ''}${e.role === 'route' ? 'Port routé (no switchport)' : e.role === 'access' ? `Accès VLAN ${e.vlan ?? '?'}` : e.role === 'trunk' ? 'Trunk' : 'Libre'}`}
                   style={{
                     position: 'relative',
                     border: `2px solid ${couleur(e)}`, borderRadius: 8, padding: '6px 2px', cursor: 'pointer',
@@ -2005,7 +2021,7 @@ function DialogueMateriel({ ctx, m, mlsPlan, plan, onPatch, onPorts, onCtx, onRe
                   {e.cableVers && <span style={{ position: 'absolute', top: 3, right: 4, fontSize: 8, color: 'var(--accent)' }}>●</span>}
                   <div style={{ ...mono }}>{e.port}</div>
                   <div style={{ fontSize: 8.5, color: 'var(--text-muted)' }}>
-                    {e.role === 'access' ? (e.vlan ?? '—') : e.role === 'trunk' ? 'trunk' : '·'}
+                    {e.role === 'route' ? 'L3' : e.role === 'access' ? (e.vlan ?? '—') : e.role === 'trunk' ? 'trunk' : '·'}
                   </div>
                 </button>
               ))}
@@ -2016,6 +2032,29 @@ function DialogueMateriel({ ctx, m, mlsPlan, plan, onPatch, onPorts, onCtx, onRe
               return (
                 <div style={{ border: '1px solid var(--border)', borderRadius: 10, padding: '10px 12px', background: 'var(--surface-2)' }}>
                   <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 8 }}>Port {selPort}</div>
+                  {e.role === 'route' ? (() => {
+                    // Port routé (no switchport) vers un routeur : il porte l'adresse
+                    // du lien L3, réglable comme une interface de routeur.
+                    const pref = ctx.optMls[m.id]?.prefixe ?? 'FastEthernet0/';
+                    const cle = `${m.id}|${pref}${selPort}`;
+                    const lien = plan.subs.find(z => z.kind === 'link' && z.sviId === m.id && (z.routerIds || []).includes(e.cableVersId || ''));
+                    const auto = lien && lien.sviIp != null ? ipToStr(lien.sviIp) : '';
+                    const forcee = ctx.ifaceIps?.[cle] ?? '';
+                    return (
+                      <div>
+                        <div style={{ fontSize: 12.5, color: '#38bdf8', fontWeight: 600, marginBottom: 6 }}>🔗 Port routé (L3) — no switchport</div>
+                        <div className="meta" style={{ fontSize: 11.5, marginBottom: 8 }}>
+                          Le multicouche route lui-même : ce port vers <strong>{e.cableVers}</strong> n'est pas un trunk, il porte l'adresse du lien{lien ? <> (<span style={mono}>{ipToStr(lien.net)}/{lien.cidr}</span>)</> : null}.
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                          <span className="meta" style={{ fontSize: 12 }}>Adresse</span>
+                          <input value={forcee} placeholder={auto || 'ip du lien'} style={{ ...field, width: 170 }}
+                            onChange={ev => { const v = ev.target.value.trim(); onCtx({ ifaceIps: v ? { ...(ctx.ifaceIps || {}), [cle]: v } : sansCle(ctx.ifaceIps || {}, cle) }); }} />
+                          <span className="meta" style={{ fontSize: 11 }}>vide = adresse calculée</span>
+                        </div>
+                      </div>
+                    );
+                  })() : (
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                     <span className="meta" style={{ fontSize: 12 }}>Mode</span>
                     <button type="button" onClick={() => majPort(selPort, { role: 'access', vlan: e.vlan ?? vlans[0] })}
@@ -2035,6 +2074,7 @@ function DialogueMateriel({ ctx, m, mlsPlan, plan, onPatch, onPorts, onCtx, onRe
                       </>
                     )}
                   </div>
+                  )}
                   {e.cableVers && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 8 }}>
                       <span className="meta" style={{ fontSize: 11.5 }}>🔗 Relié à <strong>{e.cableVers}</strong></span>
