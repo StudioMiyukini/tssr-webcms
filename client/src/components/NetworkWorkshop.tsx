@@ -345,6 +345,9 @@ export function migrateCtx(raw: unknown): Ctx {
     // Absent des projets enregistres avant les VLAN : on laisse vide, le
     // sous-reseau garde alors son interface physique dediee.
     vlan: typeof s?.vlan === 'string' || typeof s?.vlan === 'number' ? String(s.vlan) : '',
+    // Le multicouche porteur de la SVI : sans lui, une interconnexion
+    // routeur <-> multicouche redevenait un simple LAN a chaque rechargement.
+    svi: typeof s?.svi === 'string' && s.svi ? s.svi : undefined,
   }));
   // Anciens liens inter-routeurs → sous-réseaux d'interconnexion (2+ routeurs).
   for (const l of (Array.isArray(r.links) ? r.links : [])) {
@@ -477,20 +480,72 @@ export function computePlan(ctx: Ctx): Plan {
 
   const subs: Sub[] = [];
   const ifaces: Iface[] = [];
-  const cap = new Map<string, { eth: number; ser: number }>();
-  routeursDe(ctx).forEach(r => cap.set(r.id, { eth: 0, ser: 0 }));
+  // Les interfaces déjà prises d'un routeur, par nom. On y réserve d'abord les
+  // interfaces imposées par le câblage (ci-dessous), puis nextEth/nextSer
+  // distribuent les slots restants — jamais ceux déjà réservés.
+  const usedIf = new Map<string, Set<string>>();
+  routeursDe(ctx).forEach(r => usedIf.set(r.id, new Set<string>()));
   const nextEth = (r: RouterDef): string | null => {
-    const c = cap.get(r.id)!; const slots = ethSlots(r.model, r.mod);
-    if (c.eth >= slots.length) {
+    const slots = ethSlots(r.model, r.mod); const u = usedIf.get(r.id)!;
+    const name = slots.find(x => !u.has(x));
+    if (!name) {
       const hint = r.mod ? '' : ` — active le module (slot 1) pour ajouter ${ifAbbr(ethModule(r.model)[0])}`;
       warnings.push(`${r.name} (${r.model}) : plus d'interface ${ethLabel(r.model)} libre (${slots.length} max)${hint}.`); return null;
     }
-    const name = slots[c.eth]; c.eth++; return name;
+    u.add(name); return name;
   };
   const nextSer = (r: RouterDef): string | null => {
-    const c = cap.get(r.id)!; if (c.ser >= SER_SLOTS.length) { warnings.push(`${r.name} : plus d'interface série libre.`); return null; }
-    const name = SER_SLOTS[c.ser]; c.ser++; return name;
+    const u = usedIf.get(r.id)!; const name = SER_SLOTS.find(x => !u.has(x));
+    if (!name) { warnings.push(`${r.name} : plus d'interface série libre.`); return null; }
+    u.add(name); return name;
   };
+
+  // Le câblage impose l'interface : le port physique où l'on a branché chaque
+  // segment décide de quelle interface porte son adresse — sinon la config ne
+  // correspond pas au schéma. Déterminable quand on connaît le voisin : l'autre
+  // routeur ou le multicouche d'une interconnexion, le switch d'un trunk,
+  // l'unique équipement terminal d'un LAN. À défaut, distribution séquentielle.
+  const ifaceForcee = new Map<string, string>();   // `${routerId}|${subId}` -> interface
+  const trunkForce = new Map<string, string>();     // routerId -> interface du trunk (routeur sur un bâton)
+  {
+    const typeDe = (id: string) => ctx.materiels.find(mm => mm.id === id)?.type;
+    const portEth = (r: RouterDef, port: number): string | null => {
+      const n = ethSlots(r.model, r.mod); return port >= 1 && port <= n.length ? n[port - 1] : null;
+    };
+    const cableVers = (r: RouterDef, ok: (id: string) => boolean): string | null => {
+      for (const v of voisinsDe(ctx.cables, r.id).sort((a, b) => a.monPort - b.monPort)) {
+        if (!ok(v.autreId)) continue;
+        const nm = portEth(r, v.monPort);
+        if (nm && !usedIf.get(r.id)!.has(nm)) return nm;
+      }
+      return null;
+    };
+    const reserver = (r: RouterDef, nm: string | null) => { if (nm) usedIf.get(r.id)!.add(nm); return nm; };
+    // 1) Interconnexions ethernet : vers l'autre routeur ou le multicouche.
+    for (const sv of ctx.services) {
+      const mm = meta.get('svc:' + sv.id); if (!mm || !mm.transit || mm.serial) continue;
+      const cibles = new Set<string>([...sv.routerIds, ...(sv.svi ? [sv.svi] : [])]);
+      for (const r of mm.rs) {
+        const nm = reserver(r, cableVers(r, id => id !== r.id && cibles.has(id)));
+        if (nm) ifaceForcee.set(r.id + '|' + sv.id, nm);
+      }
+    }
+    // 2) Trunk « routeur sur un bâton » : une interface vers le switch, partagée.
+    for (const sv of ctx.services) {
+      const mm = meta.get('svc:' + sv.id); if (!mm || mm.transit || vlanOf(sv) === null) continue;
+      const r = mm.rs[0]; if (!r || trunkForce.has(r.id)) continue;
+      const nm = reserver(r, cableVers(r, id => { const t = typeDe(id); return t === 'switch' || t === 'multicouche'; }));
+      if (nm) trunkForce.set(r.id, nm);
+    }
+    // 3) LAN sans VLAN : vers son switch, son nuage, son poste ou son serveur.
+    const finaux = new Set(['switch', 'nuage', 'poste', 'serveur']);
+    for (const sv of ctx.services) {
+      const mm = meta.get('svc:' + sv.id); if (!mm || mm.transit || vlanOf(sv) !== null) continue;
+      const r = mm.rs[0]; if (!r) continue;
+      const nm = reserver(r, cableVers(r, id => finaux.has(typeDe(id) ?? '')));
+      if (nm) ifaceForcee.set(r.id + '|' + sv.id, nm);
+    }
+  }
   // IP manuelle d'une interface (si valide et dans le sous-réseau), sinon la valeur calculée.
   const ovIps = ctx.ifaceIps || {};
   const applyOv = (rid: string, iface: string, fallback: number, net: number, bc: number): number => {
@@ -523,10 +578,10 @@ export function computePlan(ctx: Ctx): Plan {
       if (r) {
         if (vlanId !== null) {
           parent = trunkIf.get(r.id) ?? null;
-          if (!parent) { parent = nextEth(r); if (parent) trunkIf.set(r.id, parent); }
+          if (!parent) { parent = trunkForce.get(r.id) ?? nextEth(r); if (parent) trunkIf.set(r.id, parent); }
           ifc = parent ? `${parent}.${vlanId}` : null;
         } else {
-          ifc = nextEth(r);
+          ifc = ifaceForcee.get(r.id + '|' + s.id) ?? nextEth(r);
         }
         if (ifc) gw = applyOv(r.id, ifc, gw, a.net, a.bc);
       }
@@ -548,7 +603,7 @@ export function computePlan(ctx: Ctx): Plan {
       if (s.svi && sviIp !== null && sviIp > a.last) warnings.push(`« ${s.name} » : plus de place pour l'adresse du multicouche. Augmente le nombre d'hotes de ce segment.`);
       if (m.serial && m.rs.length > 2) warnings.push(`« ${s.name} » : une liaison série relie exactement 2 routeurs — passe en Ethernet pour en relier davantage.`);
       parts.forEach((r, k) => {
-        const ifc = m.serial ? nextSer(r) : nextEth(r);
+        const ifc = m.serial ? nextSer(r) : (ifaceForcee.get(r.id + '|' + s.id) ?? nextEth(r));
         if (!ifc) return;
         const ip = applyOv(r.id, ifc, (a.first + k) >>> 0, a.net, a.bc);
         const role = m.serial ? (k === 0 ? 'Liaison série (DCE)' : 'Liaison série (DTE)') : 'Interconnexion';
