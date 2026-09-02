@@ -6,10 +6,11 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import Database from 'better-sqlite3';
+import crypto from 'node:crypto';
 import { requireAuth } from '../lib/auth';
 import { clearPublicCache } from '../lib/cache';
 import { rawDb } from '../db/client';
-import { DB_PATH, UPLOADS_DIR } from '../env';
+import { DB_PATH, UPLOADS_DIR, EXPORT_TOKEN } from '../env';
 
 /* Export / import du site depuis le back-office (admin) ou en HTTP authentifié.
    - GET  /api/admin/export : télécharge un .zip = base cms.sqlite (backup consistant) + uploads.
@@ -74,7 +75,22 @@ function importDb(file: string): { tables: number; rows: number } {
 }
 
 // ---- EXPORT : télécharge base + uploads en .zip ----
-router.get('/api/admin/export', requireAuth, async (_req, res) => {
+// Accès à l'export : session admin, OU jeton d'export s'il est configuré
+// (Bearer <token> ou ?token=). Comparaison à temps constant. Sans jeton
+// configuré, cela se comporte exactement comme requireAuth.
+function requireAuthOrToken(req: express.Request, res: express.Response, next: express.NextFunction): void {
+  if (EXPORT_TOKEN) {
+    const hdr = req.get('authorization') || '';
+    const provided = hdr.startsWith('Bearer ') ? hdr.slice(7) : (typeof req.query.token === 'string' ? req.query.token : '');
+    if (provided) {
+      const a = Buffer.from(provided), b = Buffer.from(EXPORT_TOKEN);
+      if (a.length === b.length && crypto.timingSafeEqual(a, b)) { next(); return; }
+    }
+  }
+  requireAuth(req, res, next);
+}
+
+router.get('/api/admin/export', requireAuthOrToken, async (_req, res) => {
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'cms-exp-'));
   const stage = path.join(tmp, 'site');
   const cleanup = () => { try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* */ } };
@@ -128,4 +144,11 @@ router.post('/api/admin/import', requireAuth, express.raw({ type: () => true, li
   }
 });
 
+/*
+ * @id     tssr.routeBackup
+ * @do     exposer_routes_sauvegardes
+ * @role   donnee
+ * @layer  infra
+ * @human  Routes de sauvegarde : création et restauration des sauvegardes de la base.
+ */
 export default router;

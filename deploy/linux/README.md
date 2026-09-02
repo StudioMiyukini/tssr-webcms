@@ -100,20 +100,39 @@ depuis la prod — l'étape « contenu » d'un script de mise à jour — utilis
 téléchargeur intégré plutôt qu'un `Invoke-WebRequest`/`curl` maison (qui
 échoue souvent en **401** faute de porter la session de connexion) :
 
+**Recommandé — par jeton d'export** (pas besoin du mot de passe admin). Sur le
+site **source** (prod), lancer le serveur avec `CMS_EXPORT_TOKEN=<un secret>`,
+puis, sur la machine locale :
+
 ```bash
-# serveur ARRÊTÉ (l'import remplace cms.sqlite)
+# serveur local ARRÊTÉ (l'import remplace cms.sqlite)
 WEBCMS_CONTENU_URL=https://tssr.miyukini.com \
-WEBCMS_CONTENU_USER=admin \
+WEBCMS_CONTENU_TOKEN='<le meme secret que CMS_EXPORT_TOKEN>' \
+  npm run pull:content
+```
+
+**Ou — par identifiants admin** (si aucun jeton n'est configuré) :
+
+```bash
+WEBCMS_CONTENU_URL=https://tssr.miyukini.com \
+WEBCMS_CONTENU_USER='<identifiant admin — souvent un e-mail>' \
 WEBCMS_CONTENU_PASSWORD='…' \
   npm run pull:content
 ```
 
-Le script se connecte (`/api/auth/login`, en JSON), **conserve le cookie de
-session**, télécharge `/api/admin/export`, puis importe (l'ancienne base est
-sauvegardée avant remplacement). Codes de sortie distincts : `2` configuration,
-`3` réseau/HTTP (dont 401 = identifiants du site **source** à vérifier), `4`
-import. Multiplateforme (Node ≥ 18) — s'appelle donc identiquement sous Windows
-(`npm run pull:content`) dans un script de mise à jour.
+Par jeton : le script envoie `Authorization: Bearer <jeton>` à
+`/api/admin/export`. Par identifiants : il se connecte (`/api/auth/login`, en
+JSON), **conserve le cookie de session**, puis télécharge l'export. Dans les
+deux cas il importe ensuite (l'ancienne base est sauvegardée avant
+remplacement). Codes de sortie : `2` configuration, `3` réseau/HTTP (dont **401
+= jeton invalide, ou identifiants du site source erronés**), `4` import.
+Multiplateforme (Node ≥ 18) — même commande sous Windows dans un script de mise
+à jour.
+
+> Un **401 sur `/api/auth/login`** avec un corps `{"error":"Identifiants
+> invalides"}` signifie que le site répond bien : ce sont l'**identifiant** (un
+> e-mail, le plus souvent) ou le **mot de passe** du site source qui ne
+> correspondent pas. Le jeton d'export évite ce piège.
 
 ### Le compte administrateur, après import
 

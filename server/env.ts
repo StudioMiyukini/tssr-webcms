@@ -1,3 +1,10 @@
+/*
+ * @id     tssr.env
+ * @do     charger_configuration
+ * @role   config
+ * @layer  infra
+ * @human  Charge et valide la configuration d'environnement du serveur.
+ */
 import path from 'node:path';
 import fs from 'node:fs';
 import crypto from 'node:crypto';
@@ -60,6 +67,10 @@ export const SESSION_SECRET = (() => {
 })();
 export const ADMIN_USER = process.env.CMS_ADMIN_USER || 'admin';
 export const ADMIN_PASSWORD = process.env.CMS_ADMIN_PASSWORD || 'changeme';
+// Jeton facultatif pour le pull de contenu machine-a-machine : s'il est
+// defini, /api/admin/export l'accepte (Bearer ou ?token=) EN PLUS de la
+// session admin — sans exposer le mot de passe admin dans un script.
+export const EXPORT_TOKEN = process.env.CMS_EXPORT_TOKEN || '';
 export const SMTP_HOST = process.env.SMTP_HOST || '';
 export const SMTP_PORT = Number(process.env.SMTP_PORT || 587);
 export const SMTP_USER = process.env.SMTP_USER || '';

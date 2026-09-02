@@ -7,8 +7,11 @@
 
    Configuration (variables d'environnement, ou arguments) :
      WEBCMS_CONTENU_URL        adresse du site source   (défaut https://tssr.miyukini.com)
-     WEBCMS_CONTENU_USER       identifiant admin source (défaut admin)
-     WEBCMS_CONTENU_PASSWORD   mot de passe admin source (obligatoire)
+     WEBCMS_CONTENU_TOKEN      jeton d'export du site source (recommandé) — évite
+                               d'avoir à connaître le mot de passe admin ; le
+                               site source doit tourner avec CMS_EXPORT_TOKEN=<ce jeton>.
+     WEBCMS_CONTENU_USER       identifiant admin source (défaut admin) — si pas de jeton
+     WEBCMS_CONTENU_PASSWORD   mot de passe admin source — si pas de jeton
 
    Usage :
      node scripts/pull-content.mjs [url] [user]
@@ -25,12 +28,13 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const url = (process.argv[2] || process.env.WEBCMS_CONTENU_URL || 'https://tssr.miyukini.com').replace(/\/+$/, '');
 const user = process.argv[3] || process.env.WEBCMS_CONTENU_USER || 'admin';
 const password = process.env.WEBCMS_CONTENU_PASSWORD || '';
+const token = (process.env.WEBCMS_CONTENU_TOKEN || '').trim();
 
 const log = (m) => console.log(`[pull-content] ${m}`);
 const die = (code, m, hint) => { console.error(`[pull-content] ✗ ${m}`); if (hint) console.error(`             ${hint}`); process.exit(code); };
 
 if (!/^https?:\/\//i.test(url)) die(2, `URL invalide : ${url}`, 'Attendu : https://mon-site …');
-if (!password) die(2, 'Mot de passe admin absent.', 'Définis WEBCMS_CONTENU_PASSWORD (le site SOURCE).');
+if (!token && !password) die(2, 'Aucune authentification fournie.', 'Définis WEBCMS_CONTENU_TOKEN (recommandé), ou WEBCMS_CONTENU_USER + WEBCMS_CONTENU_PASSWORD.');
 
 // Récupère le cookie de session d'une réponse (une ou plusieurs en-têtes Set-Cookie).
 function cookieFrom(res) {
@@ -39,36 +43,42 @@ function cookieFrom(res) {
 }
 
 async function main() {
-  log(`Source : ${url} (admin : ${user})`);
+  log(`Source : ${url}${token ? ' (par jeton d\'export)' : ` (admin : ${user})`}`);
 
-  // 1. Connexion → cookie de session admin.
-  let login;
-  try {
-    login = await fetch(`${url}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username: user, password }),
-      redirect: 'manual',
-    });
-  } catch (e) {
-    die(3, `Site source injoignable : ${url}`, String(e && e.message || e));
+  // 1. Authentification : jeton d'export (recommandé) OU session admin.
+  const exportHeaders = {};
+  if (token) {
+    exportHeaders.Authorization = `Bearer ${token}`;
+  } else {
+    let login;
+    try {
+      login = await fetch(`${url}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: user, password }),
+        redirect: 'manual',
+      });
+    } catch (e) {
+      die(3, `Site source injoignable : ${url}`, String(e && e.message || e));
+    }
+    if (login.status === 401) die(3, 'Identifiants refusés par le site source.', 'Vérifie WEBCMS_CONTENU_USER / WEBCMS_CONTENU_PASSWORD (le site SOURCE), ou passe par WEBCMS_CONTENU_TOKEN.');
+    if (login.status === 429) die(3, 'Trop de tentatives (limiteur de débit).', 'Attends une quinzaine de minutes.');
+    if (!login.ok) die(3, `Connexion refusée : HTTP ${login.status}.`);
+    const cookie = cookieFrom(login);
+    if (!cookie) die(3, 'Aucun cookie de session renvoyé par la connexion.', 'Le site source expose-t-il bien /api/auth/login ?');
+    exportHeaders.Cookie = cookie;
+    log('Authentifié sur le site source.');
   }
-  if (login.status === 401) die(3, 'Identifiants refusés par le site source.', 'Vérifie WEBCMS_CONTENU_USER / WEBCMS_CONTENU_PASSWORD (le site SOURCE).');
-  if (login.status === 429) die(3, 'Trop de tentatives (limiteur de débit).', 'Attends une quinzaine de minutes.');
-  if (!login.ok) die(3, `Connexion refusée : HTTP ${login.status}.`);
-  const cookie = cookieFrom(login);
-  if (!cookie) die(3, 'Aucun cookie de session renvoyé par la connexion.', 'Le site source expose-t-il bien /api/auth/login ?');
-  log('Authentifié sur le site source.');
 
   // 2. Téléchargement de l'export (base + médias).
   log('Téléchargement de l\'export (base + médias)…');
   let exp;
   try {
-    exp = await fetch(`${url}/api/admin/export`, { headers: { Cookie: cookie } });
+    exp = await fetch(`${url}/api/admin/export`, { headers: exportHeaders });
   } catch (e) {
     die(3, 'Téléchargement de l\'export impossible.', String(e && e.message || e));
   }
-  if (exp.status === 401) die(3, 'Export refusé (session non acceptée).', `Ouvre ${url}/admin et vérifie que l'export fonctionne.`);
+  if (exp.status === 401) die(3, token ? 'Export refusé : jeton invalide.' : 'Export refusé (session non acceptée).', token ? 'Le site source tourne-t-il avec le même CMS_EXPORT_TOKEN ?' : `Ouvre ${url}/admin et vérifie que l'export fonctionne.`);
   if (!exp.ok) die(3, `Export refusé : HTTP ${exp.status}.`);
   const buf = Buffer.from(await exp.arrayBuffer());
   if (!buf.length) die(3, 'Export vide.');
