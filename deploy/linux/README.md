@@ -93,6 +93,28 @@ sudo WEBCMS_CONTENU=site      WEBCMS_CONTENU_URL=https://tssr.miyukini.com      
 Pour produire une archive depuis une instance existante : `npm run export`
 (fichier dans `export/`), ou le bouton d'export de l'administration.
 
+### Rafraîchir le contenu d'une instance déjà installée
+
+Pour ne mettre à jour que le **contenu** (base + médias) d'une instance locale
+depuis la prod — l'étape « contenu » d'un script de mise à jour — utilise le
+téléchargeur intégré plutôt qu'un `Invoke-WebRequest`/`curl` maison (qui
+échoue souvent en **401** faute de porter la session de connexion) :
+
+```bash
+# serveur ARRÊTÉ (l'import remplace cms.sqlite)
+WEBCMS_CONTENU_URL=https://tssr.miyukini.com \
+WEBCMS_CONTENU_USER=admin \
+WEBCMS_CONTENU_PASSWORD='…' \
+  npm run pull:content
+```
+
+Le script se connecte (`/api/auth/login`, en JSON), **conserve le cookie de
+session**, télécharge `/api/admin/export`, puis importe (l'ancienne base est
+sauvegardée avant remplacement). Codes de sortie distincts : `2` configuration,
+`3` réseau/HTTP (dont 401 = identifiants du site **source** à vérifier), `4`
+import. Multiplateforme (Node ≥ 18) — s'appelle donc identiquement sous Windows
+(`npm run pull:content`) dans un script de mise à jour.
+
 ### Le compte administrateur, après import
 
 `server/db/client.ts` ne crée un administrateur **que si la table est vide**.
