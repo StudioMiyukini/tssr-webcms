@@ -715,6 +715,137 @@ export function buildDns(ctx: Ctx, plan: Plan): { recs: DnsRec[]; domain: string
   return { recs, domain, hostLines, zone, tests };
 }
 
+// ─────────────────────── Scripts Linux : DHCP (isc-dhcp-server) et DNS (BIND9) ───────────────────────
+// Le même plan d'adressage qui alimente les configs Cisco produit ici les
+// fichiers Linux, prêts à coller sur un serveur Debian. Les options laissées à
+// l'utilisateur (bail, redirecteurs, zone inverse…) arrivent par `opts`.
+
+export type DhcpLinuxOpts = { iface: string; authoritative: boolean; leaseDays: number };
+export function buildDhcpLinux(ctx: Ctx, plan: Plan, opts: DhcpLinuxOpts): { install: string; conf: string; defauts: string; verifs: string } {
+  const domaine = (ctx.domaine || '').trim() || 'lan';
+  const dns = (ctx.dnsServer || '').trim();
+  const bail = clampNum(opts.leaseDays || Number(ctx.leaseDays) || 7, 0, 365) * 86400;
+  const lans = plan.subs.filter(s => s.kind === 'lan' && s.dhcp && s.gw !== null);
+
+  const install = ['# Debian/Ubuntu — installation du serveur DHCP', 'sudo apt update', 'sudo apt install isc-dhcp-server'].join('\n');
+
+  const l: string[] = [
+    '# /etc/dhcp/dhcpd.conf',
+    `option domain-name "${domaine}";`,
+    dns ? `option domain-name-servers ${dns};` : '# option domain-name-servers <IP_DNS>;',
+    `default-lease-time ${bail};`,
+    `max-lease-time ${bail};`,
+    opts.authoritative ? 'authoritative;' : '# authoritative;   # à activer sur le DHCP officiel du réseau',
+    '',
+  ];
+  if (!lans.length) l.push('# Aucun LAN « DHCP » : coche « DHCP » sur un sous-réseau (Segmentation).');
+  for (const s of lans) {
+    const cr = clientRange(ctx, s);
+    l.push(
+      `# ${s.name || 'LAN'}${s.vlan ? ` (VLAN ${s.vlan})` : ''}`,
+      `subnet ${ipToStr(s.net)} netmask ${ipToStr(s.mask)} {`,
+      cr ? `    range ${ipToStr(cr[0])} ${ipToStr(cr[1])};` : '    # range <debut> <fin>;',
+      `    option routers ${ipToStr(s.gw!)};`,
+      dns ? `    option domain-name-servers ${dns};` : '',
+      `    option broadcast-address ${ipToStr(s.bc)};`,
+      '}',
+      '',
+    );
+  }
+  const conf = l.filter(x => x !== '').join('\n').replace(/\n}/g, '\n}').replace(/}\n(?!$)/g, '}\n\n');
+
+  const defauts = ['# /etc/default/isc-dhcp-server', `INTERFACESv4="${opts.iface || 'ens18'}"`].join('\n');
+  const verifs = [
+    'sudo dhcpd -t -cf /etc/dhcp/dhcpd.conf     # valider la syntaxe AVANT',
+    'sudo systemctl restart isc-dhcp-server',
+    'sudo systemctl status isc-dhcp-server',
+    'sudo journalctl -u isc-dhcp-server -f      # voir les baux distribués',
+  ].join('\n');
+  return { install, conf, defauts, verifs };
+}
+
+export type DnsLinuxOpts = { forwarders: string; allowQuery: string; reverse: boolean };
+export function buildDnsLinux(ctx: Ctx, plan: Plan, opts: DnsLinuxOpts): { install: string; options: string; local: string; zoneDirecte: string; zoneInverse: string; verifs: string; reverseName: string } {
+  const dnsAll = buildDns(ctx, plan);
+  const domaine = dnsAll.domain;
+  const recs = dnsAll.recs;
+  const dnsIp = strToIp((ctx.dnsServer || '').trim());
+  const nsHost = recs.find(r => r.host === 'dns') ?? recs[0];
+  const nsFqdn = nsHost ? nsHost.fqdn + '.' : `dns.${domaine}.`;
+  const serial = '2026090201';
+
+  const install = ['# Debian/Ubuntu — installation du serveur DNS', 'sudo apt update', 'sudo apt install bind9 bind9utils bind9-dnsutils'].join('\n');
+
+  const fwd = (opts.forwarders || '').split(/[\s,;]+/).map(x => x.trim()).filter(Boolean);
+  const options = [
+    '// /etc/bind/named.conf.options',
+    'options {',
+    '    directory "/var/cache/bind";',
+    fwd.length ? `    forwarders { ${fwd.join('; ')}; };` : '    // forwarders { 1.1.1.1; 8.8.8.8; };',
+    `    allow-query { ${(opts.allowQuery || '').trim() || 'localhost'}; };`,
+    '    recursion yes;',
+    '    dnssec-validation auto;',
+    '    listen-on-v6 { any; };',
+    '};',
+  ].join('\n');
+
+  // Zone inverse : le /24 du serveur DNS (les 3 premiers octets, à l'envers).
+  const base24 = dnsIp !== null ? (dnsIp & 0xFFFFFF00) >>> 0 : null;
+  const reverseName = base24 !== null ? `${(base24 >>> 8) & 255}.${(base24 >>> 16) & 255}.${(base24 >>> 24) & 255}.in-addr.arpa` : '';
+  const dansBase = (ip: number) => base24 !== null && ((ip & 0xFFFFFF00) >>> 0) === base24;
+
+  const local = [
+    '// /etc/bind/named.conf.local',
+    `zone "${domaine}" {`,
+    '    type master;',
+    `    file "/etc/bind/db.${domaine}";`,
+    '};',
+    ...(opts.reverse && reverseName ? [
+      '',
+      `zone "${reverseName}" {`,
+      '    type master;',
+      `    file "/etc/bind/db.${reverseName}";`,
+      '};',
+    ] : []),
+  ].join('\n');
+
+  const enTete = (titre: string) => [
+    `; ${titre}`,
+    '$TTL    604800',
+    `@       IN      SOA     ${nsFqdn} admin.${domaine}. (`,
+    `                        ${serial}      ; Serial (a incrementer)`,
+    '                         604800         ; Refresh',
+    '                          86400         ; Retry',
+    '                        2419200         ; Expire',
+    '                         604800 )       ; TTL negatif',
+    ';',
+    `@       IN      NS      ${nsFqdn}`,
+    ';',
+  ];
+  const zoneDirecte = [
+    ...enTete(`Zone directe — ${domaine}`),
+    ...recs.map(r => `${r.host.padEnd(12)}IN      A       ${ipToStr(r.ip)}`),
+  ].join('\n');
+
+  const zoneInverse = (opts.reverse && reverseName)
+    ? [
+        ...enTete(`Zone inverse — ${reverseName}`),
+        ...recs.filter(r => dansBase(r.ip)).map(r => `${String(r.ip & 255).padEnd(8)}IN      PTR     ${r.fqdn}.`),
+      ].join('\n')
+    : '';
+
+  const verifs = [
+    'sudo named-checkconf',
+    `sudo named-checkzone ${domaine} /etc/bind/db.${domaine}`,
+    ...(opts.reverse && reverseName ? [`sudo named-checkzone ${reverseName} /etc/bind/db.${reverseName}`] : []),
+    'sudo systemctl restart named        # ou bind9',
+    `dig @127.0.0.1 ${recs[0]?.fqdn || domaine}`,
+    ...(opts.reverse && dnsIp !== null ? [`dig @127.0.0.1 -x ${ipToStr(dnsIp)}`] : []),
+  ].join('\n');
+
+  return { install, options, local, zoneDirecte, zoneInverse, verifs, reverseName };
+}
+
 // Configuration CLI COMPLÈTE de chaque routeur : sécurité, interfaces (NAT inside + relais DHCP + horloge DCE),
 // routage statique (plus court chemin) + route par défaut, NAT/PAT de bordure, et SSH (console/vty).
 export type RouterCfg = { routerId: string; routerName: string; text: string; routes: number };
@@ -1474,6 +1605,7 @@ const STEPS = [
   { n: 10, icon: '🗼', title: 'Switch multicouche (SVI)' },
   { n: 11, icon: '🔌', title: 'Materiel & cablage' },
   { n: 8, icon: '🔌', title: 'Tests' },
+  { n: 13, icon: '🐧', title: 'DNS & DHCP Linux' },
 ];
 const STORAGE_KEY = 'net_workshop_v1';
 /**
@@ -2211,6 +2343,16 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
 
   const dhcp = useMemo(() => buildDhcp(ctx, plan), [ctx, plan]);
   const dns = useMemo(() => buildDns(ctx, plan), [ctx, plan]);
+  // Options des scripts Linux (locales à l'atelier — dérivées du plan).
+  const [lxIface, setLxIface] = useState('ens18');
+  const [lxAuthoritative, setLxAuthoritative] = useState(true);
+  const [lxForwarders, setLxForwarders] = useState('1.1.1.1, 8.8.8.8');
+  const [lxReverse, setLxReverse] = useState(true);
+  const lxAllowQuery = useMemo(() => {
+    const b = plan.bases?.[0]; return b ? `localhost; ${ipToStr(b.net)}/${b.cidr}` : 'localhost';
+  }, [plan]);
+  const dhcpLx = useMemo(() => buildDhcpLinux(ctx, plan, { iface: lxIface, authoritative: lxAuthoritative, leaseDays: Number(ctx.leaseDays) || 7 }), [ctx, plan, lxIface, lxAuthoritative]);
+  const dnsLx = useMemo(() => buildDnsLinux(ctx, plan, { forwarders: lxForwarders, allowQuery: lxAllowQuery, reverse: lxReverse }), [ctx, plan, lxForwarders, lxAllowQuery, lxReverse]);
   const routerCfg = useMemo(() => buildRouterConfigs(ctx, plan), [ctx, plan]);
   const ssh = useMemo(() => buildSsh(ctx, plan), [ctx, plan]);
   const majMls = (i: number, patch: Partial<Multicouche>) => {
@@ -4140,6 +4282,95 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
             ))}
             {!tests.sections.length && <div className="meta">Définis des sous-réseaux et une topologie (étapes 1 &amp; 3) pour générer les tests.</div>}
             <div className="meta" style={{ fontSize: 11.5, marginTop: 4 }}>Un ping vers un <strong>poste/serveur Windows</strong> peut échouer à cause du <strong>pare-feu</strong> même si le routage est bon → autorise l’ICMP entrant, ou fie-toi aux interfaces de routeur. Pinguer sa <em>propre</em> passerelle réussit même sans passerelle par défaut : ça ne prouve pas le routage.</div>
+          </div>
+          <StepNav step={step} setStep={setStep} />
+        </div>
+      )}
+
+      {/* ── Étape 13 : DNS & DHCP pour Linux ── */}
+      {step === 13 && (
+        <div>
+          <div style={group}>
+            <div style={legend}>🐧 Options des scripts Linux</div>
+            <div className="meta" style={{ fontSize: 11.5, margin: '0 0 10px' }}>
+              Le plan d'adressage produit ici les fichiers d'un serveur <strong>Debian</strong> : le <strong>DHCP</strong> (isc-dhcp-server) et le <strong>DNS</strong> (BIND9), prêts à coller. Domaine <code>{dns.domain}</code>, serveur DNS <code>{(ctx.dnsServer || '').trim() || '(non défini — Préférences)'}</code>.
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(210px,1fr))', gap: 10 }}>
+              <label style={{ fontSize: 12 }}>Interface d'écoute (DHCP)<br />
+                <input style={{ ...field, ...mono }} value={lxIface} onChange={e => setLxIface(e.target.value)} placeholder="ens18" />
+              </label>
+              <label style={{ fontSize: 12 }}>Redirecteurs DNS (forwarders)<br />
+                <input style={{ ...field, ...mono }} value={lxForwarders} onChange={e => setLxForwarders(e.target.value)} placeholder="1.1.1.1, 8.8.8.8" />
+              </label>
+              <label style={{ fontSize: 12, display: 'flex', gap: 6, alignItems: 'center', marginTop: 20 }}>
+                <input type="checkbox" checked={lxAuthoritative} onChange={e => setLxAuthoritative(e.target.checked)} /> DHCP <code>authoritative</code>
+              </label>
+              <label style={{ fontSize: 12, display: 'flex', gap: 6, alignItems: 'center', marginTop: 20 }}>
+                <input type="checkbox" checked={lxReverse} onChange={e => setLxReverse(e.target.checked)} /> Générer la zone <strong>inverse</strong>
+              </label>
+            </div>
+            <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>Requêtes DNS autorisées : <code>{lxAllowQuery}</code> · bail DHCP : <code>{clampNum(Number(ctx.leaseDays) || 7, 0, 365)} j</code> (Préférences).</div>
+          </div>
+
+          <div style={group}>
+            <div style={legend}>📡 DHCP — isc-dhcp-server</div>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 5 }}><strong style={{ fontSize: 13 }}>1. Installation</strong>
+                <button type="button" onClick={() => copy('lxDhcpI', dhcpLx.install)} style={{ ...smallBtn, marginLeft: 'auto' }}>{copied === 'lxDhcpI' ? '✓ Copié' : 'Copier'}</button></div>
+              <pre style={preStyle}><code>{dhcpLx.install}</code></pre>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 5 }}><strong style={{ fontSize: 13, ...mono }}>2. /etc/dhcp/dhcpd.conf</strong>
+                <button type="button" onClick={() => copy('lxDhcpC', dhcpLx.conf)} style={{ ...smallBtn, marginLeft: 'auto' }}>{copied === 'lxDhcpC' ? '✓ Copié' : 'Copier'}</button></div>
+              <pre style={preStyle}><code>{dhcpLx.conf}</code></pre>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 5 }}><strong style={{ fontSize: 13, ...mono }}>3. /etc/default/isc-dhcp-server</strong>
+                <button type="button" onClick={() => copy('lxDhcpD', dhcpLx.defauts)} style={{ ...smallBtn, marginLeft: 'auto' }}>{copied === 'lxDhcpD' ? '✓ Copié' : 'Copier'}</button></div>
+              <pre style={preStyle}><code>{dhcpLx.defauts}</code></pre>
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 5 }}><strong style={{ fontSize: 13 }}>4. Vérifier &amp; démarrer</strong>
+                <button type="button" onClick={() => copy('lxDhcpV', dhcpLx.verifs)} style={{ ...smallBtn, marginLeft: 'auto' }}>{copied === 'lxDhcpV' ? '✓ Copié' : 'Copier'}</button></div>
+              <pre style={preStyle}><code>{dhcpLx.verifs}</code></pre>
+            </div>
+          </div>
+
+          <div style={group}>
+            <div style={legend}>🌐 DNS — BIND9</div>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 5 }}><strong style={{ fontSize: 13 }}>1. Installation</strong>
+                <button type="button" onClick={() => copy('lxDnsI', dnsLx.install)} style={{ ...smallBtn, marginLeft: 'auto' }}>{copied === 'lxDnsI' ? '✓ Copié' : 'Copier'}</button></div>
+              <pre style={preStyle}><code>{dnsLx.install}</code></pre>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 5 }}><strong style={{ fontSize: 13, ...mono }}>2. named.conf.options</strong>
+                <button type="button" onClick={() => copy('lxDnsO', dnsLx.options)} style={{ ...smallBtn, marginLeft: 'auto' }}>{copied === 'lxDnsO' ? '✓ Copié' : 'Copier'}</button></div>
+              <pre style={preStyle}><code>{dnsLx.options}</code></pre>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 5 }}><strong style={{ fontSize: 13, ...mono }}>3. named.conf.local</strong>
+                <button type="button" onClick={() => copy('lxDnsL', dnsLx.local)} style={{ ...smallBtn, marginLeft: 'auto' }}>{copied === 'lxDnsL' ? '✓ Copié' : 'Copier'}</button></div>
+              <pre style={preStyle}><code>{dnsLx.local}</code></pre>
+            </div>
+            <div style={{ marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 5 }}><strong style={{ fontSize: 13, ...mono }}>4. db.{dns.domain} (zone directe)</strong>
+                <button type="button" onClick={() => copy('lxDnsZ', dnsLx.zoneDirecte)} style={{ ...smallBtn, marginLeft: 'auto' }}>{copied === 'lxDnsZ' ? '✓ Copié' : 'Copier'}</button></div>
+              <pre style={preStyle}><code>{dnsLx.zoneDirecte}</code></pre>
+            </div>
+            {lxReverse && dnsLx.zoneInverse && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 5 }}><strong style={{ fontSize: 13, ...mono }}>5. db.{dnsLx.reverseName} (zone inverse)</strong>
+                  <button type="button" onClick={() => copy('lxDnsR', dnsLx.zoneInverse)} style={{ ...smallBtn, marginLeft: 'auto' }}>{copied === 'lxDnsR' ? '✓ Copié' : 'Copier'}</button></div>
+                <pre style={preStyle}><code>{dnsLx.zoneInverse}</code></pre>
+              </div>
+            )}
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 5 }}><strong style={{ fontSize: 13 }}>{lxReverse && dnsLx.zoneInverse ? '6.' : '5.'} Vérifier &amp; tester</strong>
+                <button type="button" onClick={() => copy('lxDnsV', dnsLx.verifs)} style={{ ...smallBtn, marginLeft: 'auto' }}>{copied === 'lxDnsV' ? '✓ Copié' : 'Copier'}</button></div>
+              <pre style={preStyle}><code>{dnsLx.verifs}</code></pre>
+            </div>
+            <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>💡 Sur le client, mettre ce serveur en <code>nameserver</code> (<code>/etc/resolv.conf</code> ou reçu par DHCP). Toujours <code>named-checkconf</code> / <code>named-checkzone</code> <strong>avant</strong> de recharger.</div>
           </div>
           <StepNav step={step} setStep={setStep} />
         </div>

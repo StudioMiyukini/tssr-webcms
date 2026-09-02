@@ -42,6 +42,7 @@ const NAV: { title: string; items: NavItem[] }[] = [
   { title: 'Couches 4-7 — Services', items: [
     { key: 'dhcp', icon: '📶', label: 'DHCP', step: 5 },
     { key: 'dns', icon: '🌐', label: 'DNS', step: 6 },
+    { key: 'dns-dhcp-linux', icon: '🐧', label: 'DNS & DHCP Linux', step: 13 },
     { key: 'ssh', icon: '🔑', label: 'SSH', step: 7 },
   ] },
   { title: 'Validation', items: [
@@ -72,12 +73,20 @@ function statusesOf(ctx: Ctx, plan: Plan): Record<string, Status> {
     routeurs: plan.ifaces.length ? 'ok' : 'empty',
     dhcp: dhcpAny ? 'ok' : 'empty',
     dns: ctx.domaine.trim() ? 'ok' : 'empty',
+    'dns-dhcp-linux': (ctx.domaine.trim() || dhcpAny) ? 'ok' : 'empty',
     ssh: routeursDe(ctx).length ? 'ok' : 'empty',
     nat: ctx.internetRouterId ? 'ok' : 'empty',
     tests: plan.subs.length ? 'ok' : 'empty',
   };
 }
 
+/*
+ * @id     tssr.atelier.app
+ * @do     afficher_atelier
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : application principale regroupant les exercices et outils de formation.
+ */
 export function AtelierApp() {
   const { toggleTheme } = useTheme();
   const me = useAtelierMe();
