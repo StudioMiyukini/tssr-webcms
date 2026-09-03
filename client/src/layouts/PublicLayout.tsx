@@ -5,7 +5,15 @@ import { usePublicMenus, useCart, useCustomerMe, usePublicFeatures, usePublicThe
 import { SiteGate } from '@/components/SiteGate';
 import { MemberGate } from '@/components/MemberGate';
 import { SearchPalette } from '@/components/SearchPalette';
+import { TelechargerHorsLigne } from '@/components/TelechargerHorsLigne';
 
+/*
+ * @id     tssr.layoutPublic
+ * @do     encadrer_site_public
+ * @role   ui
+ * @layer  ui
+ * @human  Mise en page du site public : en-tête, menu, pied de page et contenu des pages visibles.
+ */
 export function PublicLayout() {
   const access = useSiteAccess();
   const menus = usePublicMenus();
@@ -76,6 +84,7 @@ export function PublicLayout() {
                 {me.data ? me.data.name.split(' ')[0] : 'Compte'}
               </Link>
             )}
+            <TelechargerHorsLigne />
             <button type="button" className="public-link search-btn" onClick={() => setSearchOpen(true)} aria-label="Rechercher" title="Rechercher (Ctrl/⌘ + K)">🔍</button>
             <button className="icon-btn" onClick={toggleTheme} title="Thème" aria-label="Thème">◐</button>
           </nav>

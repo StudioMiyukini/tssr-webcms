@@ -40,6 +40,13 @@ export interface CustomerSession { id: number; name: string; email: string; phon
 export interface CustomerOrder { id: number; order_number: string; status: string; total_cents: number; created_at: string; tax_cents: number; shipping_price_cents: number; }
 
 // ===== Public reads =====
+/*
+ * @id     tssr.apiPublic
+ * @do     exposer_hooks_public
+ * @role   orchestration
+ * @layer  infra
+ * @human  Hooks React Query du site public : contenu, produits, panier, devis et paiement.
+ */
 export const usePublicFeatures = () => useQuery<FeatureFlags>({ queryKey: ['public-features'], queryFn: () => apiGet('/api/public/features'), staleTime: 60_000 });
 export const usePublicThemeSettings = () => useQuery<ThemeSettings>({ queryKey: ['public-theme'], queryFn: () => apiGet('/api/public/theme'), staleTime: 60_000 });
 
@@ -122,6 +129,10 @@ export function useSubmitForm(slug: string) {
   });
 }
 export const usePublicMenus = () => useQuery<MenuRecord[]>({ queryKey: ['public-menus'], queryFn: () => apiGet('/api/public/menus') });
+
+/** Le site à emporter : proposé par ce serveur ? une archive est-elle déjà prête ? */
+export interface HorsLigneEtat { disponible: boolean; pret: boolean; taille: number; genereLe: string | null }
+export const useHorsLigne = () => useQuery<HorsLigneEtat>({ queryKey: ['hors-ligne'], queryFn: () => apiGet('/api/public/hors-ligne/infos'), staleTime: 300_000, retry: false });
 export const usePublicPage = (slug: string) => useQuery<PageRecord>({ queryKey: ['public-page', slug], queryFn: () => apiGet(`/api/public/pages/${slug}`), enabled: !!slug });
 export const usePublicProducts = (category?: string) => useQuery<ProductRecord[]>({ queryKey: ['public-products', category || ''], queryFn: () => apiGet(`/api/public/products${category ? `?category=${encodeURIComponent(category)}` : ''}`) });
 export const usePublicCategories = () => useQuery<string[]>({ queryKey: ['public-categories'], queryFn: () => apiGet('/api/public/categories') });

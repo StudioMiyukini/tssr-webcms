@@ -2,8 +2,15 @@
    - Bundle tout le serveur en un seul fichier (esbuild) → plus besoin de l'énorme node_modules.
    - N'embarque que le module natif better-sqlite3 (+ ses 2 deps runtime).
    - Copie le front buildé (dist), la base de contenu et les polices auto-hébergées.
+   - Y ajoute un metteur à jour : « Mettre-a-jour » recharge le contenu depuis le site en ligne.
    Sortie : ./portable/   (à copier sur clé USB / autre poste)
-   Usage : npm run build:portable */
+   Usage : npm run build:portable
+
+   Réglages (variables d'environnement — le serveur s'en sert pour bâtir l'archive
+   « site hors-ligne » proposée aux visiteurs, avec une base assainie) :
+     PORTABLE_OUT          dossier de sortie            (défaut ./portable)
+     PORTABLE_DB           base à embarquer             (défaut ./cms.sqlite)
+     PORTABLE_SOURCE_URL   site visé par le metteur à jour (défaut PUBLIC_BASE_URL) */
 import { build } from 'esbuild';
 import Database from 'better-sqlite3';
 import fs from 'node:fs';
@@ -11,7 +18,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const OUT = path.join(ROOT, 'portable');
+const OUT = path.resolve(process.env.PORTABLE_OUT || path.join(ROOT, 'portable'));
+const SOURCE_URL = (process.env.PORTABLE_SOURCE_URL || process.env.PUBLIC_BASE_URL || 'https://tssr.miyukini.com').replace(/\/+$/, '');
 const rm = (p) => fs.rmSync(p, { recursive: true, force: true });
 const cp = (s, d) => fs.cpSync(s, d, { recursive: true });
 const size = (p) => { let t = 0; for (const e of fs.readdirSync(p, { withFileTypes: true })) { const f = path.join(p, e.name); t += e.isDirectory() ? size(f) : fs.statSync(f).size; } return t; };
@@ -59,7 +67,7 @@ console.log('✓ front (dist/client) copié');
 
 // 5. Contenu : copie CONSISTANTE de la base via l'API backup de better-sqlite3
 //    (replie le WAL → embarque bien les écritures récentes, sans perturber le serveur live).
-const db = path.join(ROOT, 'cms.sqlite');
+const db = path.resolve(process.env.PORTABLE_DB || path.join(ROOT, 'cms.sqlite'));
 if (fs.existsSync(db)) {
   const src = new Database(db, { readonly: true });
   await src.backup(path.join(OUT, 'cms.sqlite'));
@@ -70,22 +78,47 @@ const up = path.join(ROOT, 'uploads');
 if (fs.existsSync(up)) cp(up, path.join(OUT, 'uploads'));
 
 // 6. Config portable (mode local HTTP hors-ligne)
+//    CMS_ADMIN_* ne sert QUE si la base embarquée n'a aucun compte (cas de l'archive
+//    publique, dont les comptes sont retirés) : le serveur en crée un au 1er lancement.
 fs.writeFileSync(path.join(OUT, '.env.local'),
   '# Config de la version portable (hébergement local HTTP, hors-ligne).\n'
-  + 'NODE_ENV=development\nSERVE_STATIC=1\nCOOKIE_SECURE=0\nPORT=3460\nPUBLIC_BASE_URL=http://localhost:3460\n');
+  + 'NODE_ENV=development\nSERVE_STATIC=1\nCOOKIE_SECURE=0\nPORT=3460\nPUBLIC_BASE_URL=http://localhost:3460\n'
+  + 'CMS_ADMIN_USER=admin\nCMS_ADMIN_PASSWORD=admin\n');
 
-// 7. Lanceur Windows + notice
+// 7. Lanceurs + metteur à jour + notice
 fs.writeFileSync(path.join(OUT, 'Lancer-le-site.bat'),
   '@echo off\r\nchcp 65001 >nul\r\ncd /d "%~dp0"\r\necho Demarrage du site sur http://localhost:3460 ...\r\n'
   + 'start "" http://localhost:3460\r\nnode server\\index.mjs\r\npause\r\n');
+
+// Le metteur à jour : recharge le CONTENU depuis le site en ligne, sans toucher au programme.
+// L'adresse du site source est fixée ici, à la construction de l'archive.
+const maj = fs.readFileSync(path.join(ROOT, 'scripts', 'portable', 'mettre-a-jour.mjs'), 'utf8').replace('__SOURCE__', SOURCE_URL);
+fs.writeFileSync(path.join(OUT, 'mettre-a-jour.mjs'), maj);
+fs.writeFileSync(path.join(OUT, 'Mettre-a-jour.bat'),
+  '@echo off\r\nchcp 65001 >nul\r\ncd /d "%~dp0"\r\n'
+  + 'echo Fermez d\'abord la fenetre du site s\'il tourne encore.\r\n'
+  + 'node mettre-a-jour.mjs\r\npause\r\n');
+fs.writeFileSync(path.join(OUT, 'mettre-a-jour.sh'),
+  '#!/bin/sh\n# Ferme d\'abord le site s\'il tourne encore.\ncd "$(dirname "$0")" && exec node mettre-a-jour.mjs\n', { mode: 0o755 });
+
 fs.writeFileSync(path.join(OUT, 'LISEZ-MOI.txt'),
-  'SITE PORTABLE — consultation hors-ligne\r\n'
-  + '=======================================\r\n\r\n'
+  'SITE HORS-LIGNE — le site complet sur ton poste\r\n'
+  + '==============================================\r\n\r\n'
   + 'Prerequis : Node.js 20+ installe sur le poste (https://nodejs.org).\r\n\r\n'
-  + 'Demarrer : double-cliquer sur "Lancer-le-site.bat".\r\n'
-  + 'Le navigateur s\'ouvre sur http://localhost:3460\r\n'
-  + 'Back-office : http://localhost:3460/admin\r\n\r\n'
-  + 'Tout fonctionne sans Internet. Pour arreter : fermer la fenetre noire.\r\n');
+  + 'DEMARRER\r\n'
+  + '  Double-clic sur "Lancer-le-site.bat"  (Linux/Mac : node server/index.mjs)\r\n'
+  + '  Le navigateur s\'ouvre sur http://localhost:3460\r\n'
+  + '  Tout fonctionne sans Internet. Pour arreter : fermer la fenetre noire.\r\n\r\n'
+  + 'METTRE A JOUR LE CONTENU\r\n'
+  + '  Double-clic sur "Mettre-a-jour.bat"   (Linux/Mac : ./mettre-a-jour.sh)\r\n'
+  + `  Recupere les cours et medias a jour depuis ${SOURCE_URL}.\r\n`
+  + '  Ferme d\'abord le site. L\'ancienne base est sauvegardee (cms.sqlite.bak-...).\r\n'
+  + '  Une connexion Internet est necessaire pour cette etape seulement.\r\n\r\n'
+  + 'BACK-OFFICE\r\n'
+  + '  http://localhost:3460/admin\r\n'
+  + '  Identifiants de CETTE copie : admin / admin (a changer dans .env.local\r\n'
+  + '  AVANT le tout premier lancement). Les comptes du site en ligne ne sont\r\n'
+  + '  pas dans cette archive : ce que tu modifies ici ne part nulle part.\r\n');
 
 // 8. Bilan
 const mo = (size(OUT) / (1024 * 1024)).toFixed(1);

@@ -96,12 +96,40 @@ pm2 restart webcms   # après modification du code serveur
 | `SESSION_SECRET` | `dev-session-secret` | Secret de session (**à changer en prod**) |
 | `CMS_ADMIN_USER` | `admin` | Identifiant admin |
 | `CMS_ADMIN_PASSWORD` | `changeme` | Mot de passe admin (**à changer en prod**) |
-| `PUBLIC_BASE_URL` | `https://example.com` | URL publique (liens absolus, OG/SEO) |
+| `PUBLIC_BASE_URL` | `https://example.com` | URL publique (liens absolus, OG/SEO, adresse gravée dans l'archive hors-ligne) |
+| `CMS_EXPORT_TOKEN` | — | Jeton d'export machine-à-machine (`npm run pull:content` depuis une autre instance) |
 | `SMTP_HOST` / `SMTP_PORT` / `SMTP_USER` / `SMTP_PASS` / `SMTP_FROM` | — | Envoi d'emails transactionnels |
 | `STRIPE_SECRET_KEY` / `STRIPE_PUBLIC_KEY` | — | Paiement boutique (optionnel) |
 
 En production, le serveur refuse de démarrer si `SESSION_SECRET` ou
 `CMS_ADMIN_PASSWORD` ne sont pas définis.
+
+## Le site hors-ligne, pour les élèves
+
+Le menu public porte un bouton **💾 Hors-ligne** : il télécharge le site entier
+en un `.zip` qui tourne sans Internet, avec son propre metteur à jour.
+
+| | |
+| --- | --- |
+| Bouton | `client/src/components/TelechargerHorsLigne.tsx`, posé dans `PublicLayout` |
+| Fabrication | `server/lib/hors-ligne.ts` → `scripts/build-portable.mjs` |
+| Routes | `GET /api/public/hors-ligne/{infos,site,contenu}` |
+| Cache | `export/hors-ligne/` — refait quand la base ou `dist/` bougent |
+
+Dans l'archive : `Lancer-le-site.bat` (Node.js 20+ requis) et
+**`Mettre-a-jour.bat`**, qui recharge cours et médias depuis `PUBLIC_BASE_URL`
+sans toucher au programme ni aux comptes. L'ancienne base est sauvegardée avant
+remplacement ; le site doit être arrêté pendant l'opération.
+
+**La base embarquée est assainie** : comptes, sessions, commandes, écrits du
+forum, fichiers des membres et réglages sensibles (mot de passe du site privé,
+SMTP, Stripe) sont retirés — ces archives sont publiques. La liste vit dans
+`TABLES_VIDEES` / `REGLAGE_SENSIBLE` : **une nouvelle table portant des données
+personnelles doit y être ajoutée.** Un compte `admin` / `admin` est créé au
+premier lancement de la copie, puisqu'elle n'en contient aucun.
+
+Le bouton s'efface là où le serveur ne sait pas fabriquer l'archive — c'est le
+cas d'une copie hors-ligne, qui ne se recopie donc pas elle-même.
 
 ## Le moteur, hors TSSR
 

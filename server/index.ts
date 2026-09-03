@@ -1,3 +1,10 @@
+/*
+ * @id     tssr
+ * @do     demarrer_serveur
+ * @role   orchestration
+ * @layer  infra
+ * @human  Point d'entrée du serveur TSSR CMS : configure Express, les sessions, les routes et sert le site de formation.
+ */
 import express from 'express';
 import session from 'express-session';
 import path from 'node:path';
@@ -32,6 +39,7 @@ import atelierRouter from './routes/atelier';
 import planningsRouter from './routes/plannings';
 import forumRouter from './routes/forum';
 import backupRouter from './routes/backup';
+import horsLigneRouter from './routes/hors-ligne';
 import { SqliteSessionStore } from './lib/session-store';
 import { errorHandler } from './lib/http';
 import { resolveMeta, metaTags } from './lib/seo';
@@ -87,6 +95,9 @@ async function createServer() {
   app.use('/api', cacheBustOnWrite());
   // Confidentialité : si le site est privé, bloque le contenu public avant le cache (réponses verrouillées non mises en cache).
   app.use('/api/public', siteGate);
+  // Le site hors-ligne passe AVANT le cache : « infos » rend un état vivant (l'archive
+  // vient-elle d'être bâtie ?) qu'une réponse figée 60 s ferait mentir.
+  app.use(horsLigneRouter);
   app.use('/api/public', publicCache(getCacheConfig));
 
   // ===== API routes =====
