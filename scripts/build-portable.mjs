@@ -10,10 +10,14 @@
    « site hors-ligne » proposée aux visiteurs, avec une base assainie) :
      PORTABLE_OUT          dossier de sortie            (défaut ./portable)
      PORTABLE_DB           base à embarquer             (défaut ./cms.sqlite)
-     PORTABLE_SOURCE_URL   site visé par le metteur à jour (défaut PUBLIC_BASE_URL) */
+     PORTABLE_SOURCE_URL   site visé par le metteur à jour (défaut PUBLIC_BASE_URL)
+     PORTABLE_ABIS         ABI Node embarquées          (défaut 127,131,137,141,147)
+     PORTABLE_CIBLES       systèmes embarqués           (défaut win32-x64,linux-x64,darwin-x64,darwin-arm64) */
 import { build } from 'esbuild';
 import Database from 'better-sqlite3';
+import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -59,7 +63,56 @@ cp(path.join(ROOT, 'node_modules/better-sqlite3/lib'), path.join(bs, 'lib'));
 cp(path.join(ROOT, 'node_modules/better-sqlite3/package.json'), path.join(bs, 'package.json'));
 cp(path.join(ROOT, 'node_modules/better-sqlite3/build/Release/better_sqlite3.node'), path.join(bs, 'build/Release/better_sqlite3.node'));
 for (const dep of ['bindings', 'file-uri-to-path']) cp(path.join(ROOT, 'node_modules', dep), path.join(NM, dep));
-console.log('✓ better-sqlite3 (natif) + bindings embarqués');
+
+// 3 bis. Le binaire natif ne vaut que pour UNE version d'ABI Node et UN système.
+// Le poste d'en face a rarement le même Node que le serveur : on embarque donc
+// les binaires officiels des ABI et plateformes courantes, et demarrer.mjs pose
+// le bon avant le démarrage. Sans cela : « was compiled against a different
+// Node.js version », et le site refuse de s'ouvrir.
+const VERSION_BS = JSON.parse(fs.readFileSync(path.join(ROOT, 'node_modules/better-sqlite3/package.json'), 'utf8')).version;
+const ABIS = (process.env.PORTABLE_ABIS || '127,131,137,141,147').split(',').map(s => s.trim()).filter(Boolean);
+const CIBLES = (process.env.PORTABLE_CIBLES || 'win32-x64,linux-x64,darwin-x64,darwin-arm64').split(',').map(s => s.trim()).filter(Boolean);
+const CACHE = path.join(ROOT, 'export', 'prebuilds'); // export/ est ignoré par git
+const PB = path.join(bs, 'prebuilds');
+
+// Le binaire local d'abord : il couvre au moins le système qui construit.
+fs.mkdirSync(path.join(PB, `${process.platform}-${process.arch}`), { recursive: true });
+cp(path.join(ROOT, 'node_modules/better-sqlite3/build/Release/better_sqlite3.node'),
+   path.join(PB, `${process.platform}-${process.arch}`, `abi-${process.versions.modules}.node`));
+
+async function recupererPrebuild(cible, abi) {
+  const nom = `better-sqlite3-v${VERSION_BS}-node-v${abi}-${cible}.tar.gz`;
+  const arch = path.join(CACHE, nom);
+  if (!fs.existsSync(arch)) {
+    const url = `https://github.com/WiseLibs/better-sqlite3/releases/download/v${VERSION_BS}/${nom}`;
+    const res = await fetch(url);
+    if (!res.ok) return false; // combinaison non publiée : on passe, sans bruit
+    fs.mkdirSync(CACHE, { recursive: true });
+    fs.writeFileSync(arch, Buffer.from(await res.arrayBuffer()));
+  }
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'pb-'));
+  try {
+    // Nom RELATIF + cwd : le tar de Git for Windows lit « D:\… » comme un hôte
+    // distant (« Cannot connect to D »), là où le tar de Windows s'en accommode.
+    execFileSync('tar', ['-xzf', path.basename(arch), '-C', tmp], { cwd: path.dirname(arch), stdio: 'pipe' });
+    const bin = path.join(tmp, 'build', 'Release', 'better_sqlite3.node');
+    if (!fs.existsSync(bin)) return false;
+    fs.mkdirSync(path.join(PB, cible), { recursive: true });
+    fs.copyFileSync(bin, path.join(PB, cible, `abi-${abi}.node`));
+    return true;
+  } catch { return false; } finally { rm(tmp); }
+}
+
+let poses = 0;
+for (const cible of CIBLES) {
+  for (const abi of ABIS) {
+    if (fs.existsSync(path.join(PB, cible, `abi-${abi}.node`))) continue;
+    if (await recupererPrebuild(cible, abi)) poses += 1;
+  }
+}
+const couverture = fs.readdirSync(PB).map(c => `${c} (${fs.readdirSync(path.join(PB, c)).length})`).join(', ');
+console.log(`✓ better-sqlite3 : ${poses} binaire(s) récupéré(s) — couverture : ${couverture}`);
+if (!poses && CIBLES.length) console.log('  ⚠  aucun binaire téléchargé (pas de réseau ?) : l\'archive ne tournera que sur un Node de même ABI.');
 
 // 4. Front buildé (inclut les polices auto-hébergées dans /fonts)
 cp(DIST, path.join(OUT, 'dist', 'client'));
@@ -86,9 +139,13 @@ fs.writeFileSync(path.join(OUT, '.env.local'),
   + 'CMS_ADMIN_USER=admin\nCMS_ADMIN_PASSWORD=admin\n');
 
 // 7. Lanceurs + metteur à jour + notice
+// Le lanceur passe par demarrer.mjs, qui met en place le binaire SQLite de l'ABI du poste.
+cp(path.join(ROOT, 'scripts', 'portable', 'demarrer.mjs'), path.join(OUT, 'demarrer.mjs'));
 fs.writeFileSync(path.join(OUT, 'Lancer-le-site.bat'),
   '@echo off\r\nchcp 65001 >nul\r\ncd /d "%~dp0"\r\necho Demarrage du site sur http://localhost:3460 ...\r\n'
-  + 'start "" http://localhost:3460\r\nnode server\\index.mjs\r\npause\r\n');
+  + 'start "" http://localhost:3460\r\nnode demarrer.mjs\r\npause\r\n');
+fs.writeFileSync(path.join(OUT, 'lancer-le-site.sh'),
+  '#!/bin/sh\ncd "$(dirname "$0")" && exec node demarrer.mjs\n', { mode: 0o755 });
 
 // Le metteur à jour : recharge le CONTENU depuis le site en ligne, sans toucher au programme.
 // L'adresse du site source est fixée ici, à la construction de l'archive.
@@ -104,9 +161,11 @@ fs.writeFileSync(path.join(OUT, 'mettre-a-jour.sh'),
 fs.writeFileSync(path.join(OUT, 'LISEZ-MOI.txt'),
   'SITE HORS-LIGNE — le site complet sur ton poste\r\n'
   + '==============================================\r\n\r\n'
-  + 'Prerequis : Node.js 20+ installe sur le poste (https://nodejs.org).\r\n\r\n'
+  + 'Prerequis : Node.js 22 LTS ou plus recent (https://nodejs.org).\r\n'
+  + '  Node 20 ne convient pas : le moteur de base de donnees n\'est plus\r\n'
+  + '  publie pour cette version.\r\n\r\n'
   + 'DEMARRER\r\n'
-  + '  Double-clic sur "Lancer-le-site.bat"  (Linux/Mac : node server/index.mjs)\r\n'
+  + '  Double-clic sur "Lancer-le-site.bat"  (Linux/Mac : ./lancer-le-site.sh)\r\n'
   + '  Le navigateur s\'ouvre sur http://localhost:3460\r\n'
   + '  Tout fonctionne sans Internet. Pour arreter : fermer la fenetre noire.\r\n\r\n'
   + 'METTRE A JOUR LE CONTENU\r\n'
