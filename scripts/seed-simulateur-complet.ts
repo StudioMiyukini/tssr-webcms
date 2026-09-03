@@ -20,7 +20,7 @@ const blocks: PageBlock[] = [
   ] }),
   note('blue', 'ℹ️ Comment l’utiliser', '<p>Clique une <strong>icône du bureau</strong> ou le bouton <strong>Démarrer</strong> pour lancer un outil. Utilise la <strong>barre des tâches</strong> pour basculer entre les fenêtres ouvertes, le bouton <strong>⛶ plein écran</strong> pour travailler comme sur un poste dédié. Astuce examen : enchaîne <em>console routeur</em> → <em>invite de commandes</em> (tests ping/nslookup) → <em>Windows Server</em> (AD/DNS/DHCP) pour dérouler un TP de bout en bout.</p>'),
   block('html', { html: '<div class="pb-dynamic" data-block="virtual-lab"></div>' }),
-  note('green', '🎓 Se justifier sans l’outil', '<p>Ces simulateurs servent à <strong>t’entraîner au geste</strong> (parcours graphiques, commandes, config CLI). Le jour de l’examen tu dois savoir <strong>refaire à la main</strong> : révise les procédures détaillées — <a href="/pages/procedure-atelier-reseau-az">réseau multi-routeurs de A à Z</a>, <a href="/pages/procedure-ad">Active Directory</a>, <a href="/pages/cmd-powershell">cmd &amp; PowerShell</a> — et l’<a href="/pages/atelier-reseau">Atelier Réseau</a> pour le plan d’adressage.</p>'),
+  note('green', '🎓 Se justifier sans l’outil', '<p>Ces simulateurs servent à <strong>t’entraîner au geste</strong> (parcours graphiques, commandes, config CLI). Le jour de l’examen tu dois savoir <strong>refaire à la main</strong> : révise les procédures détaillées — <a href="/pages/procedure-atelier-reseau-az">réseau multi-routeurs de A à Z</a>, <a href="/pages/procedure-ad">Active Directory</a>, <a href="/pages/cmd-powershell">cmd &amp; PowerShell</a> — et l’<a href="/atelier">Atelier Réseau</a> pour le plan d’adressage.</p>'),
 ];
 
 function cookieFrom(res: Response): string {

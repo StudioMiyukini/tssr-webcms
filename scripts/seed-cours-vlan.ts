@@ -131,7 +131,7 @@ show ip interface brief
 ! test : un PC du VLAN 10 doit pinguer un PC du VLAN 20 (via la passerelle)`),
   note('yellow', '🛠️ Dépannage courant', '<ul><li>Deux PC du même VLAN ne se voient pas → mauvais <code>access vlan</code> ou VLAN non créé.</li><li>Pas de communication inter-VLAN → passerelle du PC absente/erronée, ou sous-interface/SVI mal configurée.</li><li>Sur switch L3 : tout semble juste mais rien ne passe → <code>ip routing</code> oublié, ou SVI <code>down/down</code> faute de port actif dans le VLAN.</li><li>Trunk KO → <strong>VLAN natif</strong> différent des deux côtés, ou VLAN absent de la liste <code>allowed</code>.</li></ul>'),
 
-  note('green', '🔗 Pour aller plus loin', '<p>Cours liés : <a href="/pages/le-switch">Le switch</a>, <a href="/pages/bases-du-reseau">Les bases du réseau</a>, <a href="/pages/adresses-ip">Les adresses IP</a>. Procédures : <a href="/pages/procedure-cisco-routeur-cli">Configurer un routeur en CLI</a>, <a href="/pages/procedure-dhcp-relais">DHCP par relais</a>. Outil : <a href="/pages/atelier-reseau">Atelier Réseau</a>.</p>'),
+  note('green', '🔗 Pour aller plus loin', '<p>Cours liés : <a href="/pages/le-switch">Le switch</a>, <a href="/pages/bases-du-reseau">Les bases du réseau</a>, <a href="/pages/adresses-ip">Les adresses IP</a>. Procédures : <a href="/pages/procedure-cisco-routeur-cli">Configurer un routeur en CLI</a>, <a href="/pages/procedure-dhcp-relais">DHCP par relais</a>. Outil : <a href="/atelier">Atelier Réseau</a>.</p>'),
 ];
 
 function cookieFrom(res: Response): string {

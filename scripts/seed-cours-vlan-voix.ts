@@ -162,7 +162,7 @@ show mac address-table interface Fa0/5   ! 2 MAC : une par VLAN`),
 
   note('yellow', '🛠️ Le classique du port-security', '<p>Si le port applique <code>switchport port-security maximum 1</code> (voir <a href="/pages/vlan-securite">Sécuriser les VLAN</a>), le téléphone occupe l’unique place autorisée et le PC déclenche une violation. Sur un port avec téléphone, le minimum est <strong>2</strong> — souvent <strong>3</strong> pour tolérer un changement de poste sans intervention.</p>'),
 
-  note('green', '🔗 Pour aller plus loin', '<p>Cours liés : <a href="/pages/les-vlan">Les VLAN &amp; le routage inter-VLAN</a>, <a href="/pages/vlan-securite">Sécuriser les VLAN</a>, <a href="/pages/vlan-vtp">VTP</a>, <a href="/pages/le-switch">Le switch</a>. Procédure : <a href="/pages/procedure-dhcp-packet-tracer">Configurer un serveur DHCP sur Packet Tracer</a>. Outil : <a href="/pages/atelier-reseau">Atelier Réseau</a>.</p>'),
+  note('green', '🔗 Pour aller plus loin', '<p>Cours liés : <a href="/pages/les-vlan">Les VLAN &amp; le routage inter-VLAN</a>, <a href="/pages/vlan-securite">Sécuriser les VLAN</a>, <a href="/pages/vlan-vtp">VTP</a>, <a href="/pages/le-switch">Le switch</a>. Procédure : <a href="/pages/procedure-dhcp-packet-tracer">Configurer un serveur DHCP sur Packet Tracer</a>. Outil : <a href="/atelier">Atelier Réseau</a>.</p>'),
 ];
 
 function cookieFrom(res: Response): string {

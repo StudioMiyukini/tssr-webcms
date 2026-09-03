@@ -12,7 +12,7 @@ const note = (cls: string, title: string, html: string) => block('html', { html:
 
 const blocks: PageBlock[] = [
   block('hero', { eyebrow: 'Procédure · Cisco / Packet Tracer', title: PAGE.title, subtitle: 'La méthode complète, dans l’ordre, pour te justifier de tout ce que fait l’Atelier Réseau.' }),
-  note('blue', '🎯 But', '<p>Cette procédure <strong>maîtresse</strong> déroule, dans l’ordre, la construction d’une infrastructure réseau à <strong>plusieurs routeurs</strong> sous Packet Tracer. C’est la démarche manuelle qui <strong>justifie</strong> l’<a href="/pages/atelier-reseau">Atelier Réseau</a> : chaque étape renvoie à sa procédure détaillée.</p>'),
+  note('blue', '🎯 But', '<p>Cette procédure <strong>maîtresse</strong> déroule, dans l’ordre, la construction d’une infrastructure réseau à <strong>plusieurs routeurs</strong> sous Packet Tracer. C’est la démarche manuelle qui <strong>justifie</strong> l’<a href="/atelier">Atelier Réseau</a> : chaque étape renvoie à sa procédure détaillée.</p>'),
 
   block('heading', { level: 2, text: '① Recueillir le contexte' }),
   block('list', { listItems: [
@@ -62,7 +62,7 @@ const blocks: PageBlock[] = [
     'En cas d’échec, remonter les couches : lien/interface up ? IP correcte ? route retour ? service (DHCP/DNS) actif ?',
   ] }),
 
-  note('green', '✅ Justification complète', '<p>En suivant ces 9 étapes, tu produis manuellement l’intégralité de ce que génère l’<a href="/pages/atelier-reseau">Atelier Réseau</a> (plan, interfaces, routes, DHCP, DNS, SSH). Méthode de dépannage transverse : <a href="/pages/procedure-test-connectivite">test de connectivité méthodique</a>.</p>'),
+  note('green', '✅ Justification complète', '<p>En suivant ces 9 étapes, tu produis manuellement l’intégralité de ce que génère l’<a href="/atelier">Atelier Réseau</a> (plan, interfaces, routes, DHCP, DNS, SSH). Méthode de dépannage transverse : <a href="/pages/procedure-test-connectivite">test de connectivité méthodique</a>.</p>'),
 ];
 
 function cookieFrom(res: Response): string {

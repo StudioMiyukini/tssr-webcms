@@ -14,7 +14,11 @@ const pre = (code: string, lang = 'PowerShell') => `<div style="margin:6px 0 12p
 // ===================================================================================
 // Catalogue des scripts (ajoute ici les futurs scripts)
 // ===================================================================================
-type Script = { slug: string; icon: string; title: string; desc: string; tags: string[]; cat: string; featured?: string };
+// `url` : pour les outils qui sont une APPLICATION du site et non une page CMS
+// (l'Atelier Réseau vit sur /atelier). Sans lui, la carte pointerait sur la page
+// de présentation, alors que l'accueil ouvre l'app — deux chemins pour un outil.
+type Script = { slug: string; icon: string; title: string; desc: string; tags: string[]; cat: string; featured?: string; url?: string };
+const lienScript = (s: Script) => s.url || `/pages/${s.slug}`;
 const CATEGORIES: { id: string; icon: string; label: string }[] = [
   { id: 'cisco', icon: '📟', label: 'Cisco / Packet Tracer' },
   { id: 'reseau', icon: '🌐', label: 'Réseau & adressage' },
@@ -42,7 +46,7 @@ const SCRIPTS: Script[] = [
     tags: ['Interactif', 'Réseau', 'cmd', 'PowerShell', 'netsh'], cat: 'reseau',
   },
   {
-    slug: 'atelier-reseau', icon: '🗺️',
+    slug: 'atelier-reseau', icon: '🗺️', url: '/atelier',
     title: 'Atelier Réseau & Packet Tracer (assistant)',
     desc: 'Assistant multi-étapes à contexte partagé : contexte, préférences, segmentation VLSM multi-routeurs (2811/2911) avec attribution auto des interfaces (LAN + liaisons série/Gig, DCE/clock), schéma (blocs + SVG), pools DHCP par routeur et enregistrements DNS + tests.',
     tags: ['Interactif', 'Réseau', 'Cisco', 'Packet Tracer', 'VLSM', 'Assistant'], cat: 'cisco', featured: 'Un TP réseau de A à Z',
@@ -148,7 +152,7 @@ function card(s: Script) {
   const interactif = s.tags.includes('Interactif');
   const badge = `<span class="sc-badge sc-badge-${interactif ? 'int' : 'ps'}">${interactif ? '⚡ Interactif' : '📜 Script'}</span>`;
   const tags = s.tags.filter(t => t !== 'Interactif').slice(0, 3);
-  return `<a class="script-card" href="/pages/${s.slug}">`
+  return `<a class="script-card" href="${lienScript(s)}">`
     + `<div class="sc-top"><span class="sc-ico">${s.icon}</span>${badge}</div>`
     + `<div class="sc-title">${s.title}</div>`
     + `<div class="sc-desc meta">${s.desc}</div>`
@@ -157,7 +161,7 @@ function card(s: Script) {
 }
 // Grande carte « À la une » — pour les outils phares.
 function heroCard(s: Script) {
-  return `<a class="sc-feat" href="/pages/${s.slug}">`
+  return `<a class="sc-feat" href="${lienScript(s)}">`
     + `<span class="sc-feat-ico">${s.icon}</span>`
     + `<span class="sc-feat-body"><span class="sc-feat-kicker">${s.featured}</span>`
     + `<span class="sc-feat-title">${s.title}</span>`

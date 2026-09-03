@@ -141,7 +141,7 @@ show interfaces status err-disabled   ! ports coupés par une violation`),
 
   note('blue', '🔎 Ce qu’on lit dans « show interfaces switchport »', '<p>Deux lignes valent le déplacement : <code>Administrative Mode</code> (ce que tu as configuré) et <code>Operational Mode</code> (ce que le port <strong>fait réellement</strong>). Si tu lis <code>dynamic auto</code> ou <code>dynamic desirable</code> en mode administratif, la négociation est active : le port est vulnérable au switch spoofing.</p>'),
 
-  note('green', '🔗 Pour aller plus loin', '<p>Cours liés : <a href="/pages/les-vlan">Les VLAN &amp; le routage inter-VLAN</a>, <a href="/pages/le-switch">Le switch</a>, <a href="/pages/radius-8021x">RADIUS &amp; 802.1X</a> (l’étape suivante : authentifier la machine avant même de lui donner un VLAN), <a href="/pages/le-pare-feu">Le pare-feu</a>. Outil : <a href="/pages/atelier-reseau">Atelier Réseau</a>.</p>'),
+  note('green', '🔗 Pour aller plus loin', '<p>Cours liés : <a href="/pages/les-vlan">Les VLAN &amp; le routage inter-VLAN</a>, <a href="/pages/le-switch">Le switch</a>, <a href="/pages/radius-8021x">RADIUS &amp; 802.1X</a> (l’étape suivante : authentifier la machine avant même de lui donner un VLAN), <a href="/pages/le-pare-feu">Le pare-feu</a>. Outil : <a href="/atelier">Atelier Réseau</a>.</p>'),
 ];
 
 function cookieFrom(res: Response): string {

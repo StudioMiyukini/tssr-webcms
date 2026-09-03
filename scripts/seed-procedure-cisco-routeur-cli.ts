@@ -16,7 +16,7 @@ const cmd = (t: string) => block('html', { html: `<div class="proc-cmd">${esc(t)
 const blocks: PageBlock[] = [
   block('hero', { eyebrow: 'Procédure · Cisco / Packet Tracer', title: PAGE.title, subtitle: 'Ce que fait le configurateur de routeur, étape par étape, à la main dans la CLI.' }),
   stepsStyle,
-  note('blue', '🎯 Objectif', '<p>Configurer un routeur Cisco (2811 / 2911) en <strong>ligne de commande</strong> : lui donner un nom, activer et adresser ses <strong>interfaces</strong>, puis sauvegarder. C’est la démarche manuelle qui <strong>justifie</strong> l’outil <a href="/pages/configurateur-routeur-cisco">Configurateur — Routeur Cisco</a> et l’étape « interfaces » de l’<a href="/pages/atelier-reseau">Atelier Réseau</a>.</p>'),
+  note('blue', '🎯 Objectif', '<p>Configurer un routeur Cisco (2811 / 2911) en <strong>ligne de commande</strong> : lui donner un nom, activer et adresser ses <strong>interfaces</strong>, puis sauvegarder. C’est la démarche manuelle qui <strong>justifie</strong> l’outil <a href="/pages/configurateur-routeur-cisco">Configurateur — Routeur Cisco</a> et l’étape « interfaces » de l’<a href="/atelier">Atelier Réseau</a>.</p>'),
 
   block('heading', { level: 2, text: '0) Repartir d’une configuration vierge (matériel réutilisé)' }),
   note('red', '🧨 Réflexe avant toute config', '<p>Un routeur ou un switch qui a déjà servi peut garder une config qui <strong>bloque tout</strong> : routes par défaut bidon, ACL/NAT hors sujet, doublons d’adresses, VLAN parasites. Avant de configurer, on <strong>efface la startup-config</strong> et on <strong>redémarre</strong> pour partir sur une base propre.</p>'),

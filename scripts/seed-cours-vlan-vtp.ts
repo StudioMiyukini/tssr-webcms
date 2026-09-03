@@ -136,7 +136,7 @@ show interfaces trunk    ! sur quels liens VTP peut circuler`),
 
   note('yellow', '🛠️ Dépannage courant', '<ul><li><strong>Un switch ne reçoit rien</strong> → nom de domaine différent (attention à la casse), ou mot de passe différent, ou aucun lien <strong>trunk</strong> vers lui : VTP ne circule pas sur un port access.</li><li><strong>Des VLAN ont disparu</strong> → un switch a imposé une révision plus élevée. Voir la section 3.</li><li><strong>« VTP is not configured »</strong> → le domaine est vide. Un switch sans domaine adopte le premier qu’il entend : c’est une autre bonne raison de nommer le domaine explicitement partout.</li><li><strong>Le mode transparent ne bloque pas la panne</strong> → il protège <em>ce</em> switch, mais laisse passer les annonces vers les suivants.</li></ul>'),
 
-  note('green', '🔗 Pour aller plus loin', '<p>Cours liés : <a href="/pages/les-vlan">Les VLAN &amp; le routage inter-VLAN</a>, <a href="/pages/vlan-securite">Sécuriser les VLAN</a>, <a href="/pages/le-switch">Le switch</a>. Procédure : <a href="/pages/procedure-atelier-reseau-az">Construire un réseau multi-routeurs de A à Z</a>. Outil : <a href="/pages/atelier-reseau">Atelier Réseau</a>.</p>'),
+  note('green', '🔗 Pour aller plus loin', '<p>Cours liés : <a href="/pages/les-vlan">Les VLAN &amp; le routage inter-VLAN</a>, <a href="/pages/vlan-securite">Sécuriser les VLAN</a>, <a href="/pages/le-switch">Le switch</a>. Procédure : <a href="/pages/procedure-atelier-reseau-az">Construire un réseau multi-routeurs de A à Z</a>. Outil : <a href="/atelier">Atelier Réseau</a>.</p>'),
 ];
 
 function cookieFrom(res: Response): string {

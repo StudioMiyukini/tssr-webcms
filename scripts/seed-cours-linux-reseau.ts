@@ -339,7 +339,7 @@ traceroute 1.1.1.1          # ou l'on s'arrete
 mtr 1.1.1.1                 # traceroute continu : voit les pertes intermittentes
 nc -zv srv.miyukini.lan 445 # ce port precis est-il joignable ?
 sudo tcpdump -i ens18 port 53 -n   # ce qui part vraiment sur le fil`),
-  note('blue', '🧩 Le lien avec le reste du cursus', '<p>Ces couches sont celles du <a href="/pages/modele-osi">modèle OSI</a>, et le raisonnement est le même que dans l’<a href="/pages/atelier-reseau">Atelier Réseau</a> : adresse, passerelle, route, service. Ce qui change entre un routeur Cisco et un serveur Debian, c’est la syntaxe — pas la démarche.</p>'),
+  note('blue', '🧩 Le lien avec le reste du cursus', '<p>Ces couches sont celles du <a href="/pages/modele-osi">modèle OSI</a>, et le raisonnement est le même que dans l’<a href="/atelier">Atelier Réseau</a> : adresse, passerelle, route, service. Ce qui change entre un routeur Cisco et un serveur Debian, c’est la syntaxe — pas la démarche.</p>'),
 
   liens('/pages/linux-reseau'),
 ];
