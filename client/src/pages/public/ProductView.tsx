@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { usePublicProduct, useAddToCart } from '@/api/public';
 import { formatPriceEUR } from '@/lib/format';
@@ -6,6 +7,13 @@ import { useToast } from '@/lib/toast';
 
 interface Variant { key: string; label: string; price_cents: number; stock: number; sku: string; }
 
+/*
+ * @id     tssr.pageProductView
+ * @do     afficher_produit
+ * @role   ui
+ * @layer  ui
+ * @human  Page publique d'un produit : détails, variantes et ajout au panier.
+ */
 export function ProductView() {
   const { slug } = useParams({ strict: false }) as { slug: string };
   const q = usePublicProduct(slug);
@@ -35,7 +43,7 @@ export function ProductView() {
           <div className="price" style={{ fontSize: 22 }}>{formatPriceEUR(current)}{product.sale_price_cents > 0 && product.sale_price_cents < product.price_cents && <span className="meta" style={{ marginLeft: 8, textDecoration: 'line-through' }}>{formatPriceEUR(product.price_cents)}</span>}</div>
           <p className="meta">{product.sku || 'SKU à définir'} · {product.manage_stock ? `Stock : ${product.stock}` : 'Stock non suivi'}</p>
           <p>{product.short_description}</p>
-          <div className="rich" style={{ marginTop: 14 }} dangerouslySetInnerHTML={{ __html: product.description }} />
+          <div className="rich" style={{ marginTop: 14 }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(product.description) }} />
 
           <form onSubmit={(e) => { e.preventDefault(); add.mutate({ product_id: product.id, quantity, variant_key: variantKey }, { onSuccess: () => { push('Ajouté.', 'success'); navigate({ to: '/cart' }); } }); }} style={{ marginTop: 18 }}>
             {variants.length > 0 && (

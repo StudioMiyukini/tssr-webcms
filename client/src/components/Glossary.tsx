@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { GLOSSARY, GLOSSARY_CATEGORIES, GLOSSARY_ALIASES, GLOSSARY_LINKS, glossarySlug } from '@/lib/glossary-data';
 
 const FILTERS = [{ key: 'all', label: 'Tout' }, ...GLOSSARY_CATEGORIES.map(c => ({ key: c.key, label: c.label.replace(/^[^ ]+ /, '') }))];
@@ -33,6 +34,13 @@ const TERMS = GLOSSARY.map(t => ({ ...t, slug: glossarySlug(t.acronym), aliases:
 /** Glossaire TSSR interactif (îlot React) — index de recherche des notions.
  *  Recherche (acronyme, terme, définition, synonymes, tags), filtres, cartes dépliables,
  *  renvois vers les cours et liens partageables (ancres). */
+/*
+ * @id     tssr.atelier.glossary
+ * @do     afficher_glossaire
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : glossaire technique interactif.
+ */
 export function Glossary() {
   const [filter, setFilter] = useState('all');
   const [search, setSearch] = useState('');
@@ -133,8 +141,8 @@ export function Glossary() {
                       <div key={item.slug} id={`gt-${item.slug}`} className={`gloss-card ${open ? 'expanded' : ''}`} onClick={() => toggle(item.slug)}>
                         <div className="gloss-card-head">
                           <div>
-                            <div className="gloss-acr" dangerouslySetInnerHTML={{ __html: highlight(item.acronym, q) }} />
-                            <div className="gloss-term" dangerouslySetInnerHTML={{ __html: highlight(item.name, q) }} />
+                            <div className="gloss-acr" dangerouslySetInnerHTML={{ __html: sanitizeHtml(highlight(item.acronym, q)) }} />
+                            <div className="gloss-term" dangerouslySetInnerHTML={{ __html: sanitizeHtml(highlight(item.name, q)) }} />
                           </div>
                           <div className="gloss-actions">
                             <button type="button" className="gloss-link-btn" title="Copier le lien vers cette notion" onClick={e => copyLink(item.slug, e)}>{copied === item.slug ? '✓' : '🔗'}</button>
@@ -143,7 +151,7 @@ export function Glossary() {
                         </div>
                         {open && (
                           <div className="gloss-body">
-                            <div dangerouslySetInnerHTML={{ __html: item.definition }} />
+                            <div dangerouslySetInnerHTML={{ __html: sanitizeHtml(item.definition) }} />
                             {item.links.length > 0 && (
                               <div className="gloss-links">
                                 <span className="gloss-links-label">📖 En savoir plus :</span>

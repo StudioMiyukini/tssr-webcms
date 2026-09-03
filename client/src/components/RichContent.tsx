@@ -1,4 +1,5 @@
 import { useEffect, useRef, lazy, Suspense, type ComponentType } from 'react';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { createRoot, type Root } from 'react-dom/client';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/lib/query';
@@ -159,5 +160,5 @@ export function RichContent({ html, className = 'rich' }: { html: string; classN
     return () => { roots.forEach(r => setTimeout(() => { try { r.unmount(); } catch { /* ignore */ } }, 0)); };
   }, [html]);
 
-  return <div ref={ref} className={className} dangerouslySetInnerHTML={{ __html: html }} />;
+  return <div ref={ref} className={className} dangerouslySetInnerHTML={{ __html: sanitizeHtml(html) }} />;
 }

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { sanitizeHtml } from '@/lib/sanitize';
 
 /**
  * Lecteur « pages » : affiche une page (section) à la fois, avec ◀ Précédent / Suivant ▶,
@@ -6,6 +7,13 @@ import { useEffect, useRef, useState } from 'react';
  * TOUTES les pages sont rendues dans le DOM (masquées via display) → l'impression PDF les
  * garde toutes. Le HTML des pages est capturé par RichContent avant l'hydratation.
  * Îlots : data-block="doc-pager" (sections, avec labels) et data-block="wizard-pager".
+ */
+/*
+ * @id     tssr.compWizardPager
+ * @do     paginer_assistant
+ * @role   ui
+ * @layer  ui
+ * @human  Pagination d'un assistant multi-étapes.
  */
 export function WizardPager({ slides = [], labels = [], title = '' }: { slides?: string[]; labels?: string[]; title?: string }) {
   const [i, setI] = useState(0);
@@ -42,7 +50,7 @@ export function WizardPager({ slides = [], labels = [], title = '' }: { slides?:
         </div>
       )}
       {nav(false)}
-      {slides.map((h, k) => <div key={k} className="dp-page" style={{ display: k === i ? 'block' : 'none', padding: '8px 14px 16px' }} dangerouslySetInnerHTML={{ __html: h }} />)}
+      {slides.map((h, k) => <div key={k} className="dp-page" style={{ display: k === i ? 'block' : 'none', padding: '8px 14px 16px' }} dangerouslySetInnerHTML={{ __html: sanitizeHtml(h) }} />)}
       {nav(true)}
     </div>
   );

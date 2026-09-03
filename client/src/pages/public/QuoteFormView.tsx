@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { usePublicQuoteForm, useSubmitQuote } from '@/api/public';
 import { useToast } from '@/lib/toast';
@@ -9,6 +10,13 @@ const LAYOUT_TYPES = ['heading', 'separator', 'section'];
 const FIELD_TYPES = ['text', 'email', 'tel', 'number', 'textarea', 'select', 'radio', 'checkbox', 'date'];
 const PRICING_TYPES = ['price_fixed', 'price_option', 'price_select', 'quantity', 'price_percent_option', 'price_percent_select', 'total'];
 
+/*
+ * @id     tssr.pageQuoteFormView
+ * @do     remplir_devis
+ * @role   ui
+ * @layer  ui
+ * @human  Page publique d'un formulaire de devis : saisie et chiffrage en direct.
+ */
 export function QuoteFormView() {
   const { slug } = useParams({ strict: false }) as { slug: string };
   const q = usePublicQuoteForm(slug);
@@ -49,7 +57,7 @@ export function QuoteFormView() {
       <div>
         <h1>{form.title}</h1>
         <p>{form.description}</p>
-        {form.intro_html && <div className="card rich" dangerouslySetInnerHTML={{ __html: form.intro_html }} />}
+        {form.intro_html && <div className="card rich" dangerouslySetInnerHTML={{ __html: sanitizeHtml(form.intro_html) }} />}
 
         <form onSubmit={onSubmit} className="card">
           <h2>Votre brief</h2>
@@ -268,6 +276,13 @@ function BlockRenderer({ block: b, value, onChange, breakdown }: {
   );
 }
 
+/*
+ * @id     tssr.pageQuoteThanks
+ * @do     confirmer_devis
+ * @role   ui
+ * @layer  ui
+ * @human  Page publique de remerciement après l'envoi d'une demande de devis.
+ */
 export function QuoteThanksPage() {
   const { slug } = useParams({ strict: false }) as { slug: string };
   return (

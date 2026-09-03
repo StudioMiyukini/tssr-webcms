@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { sanitizeHtml } from '@/lib/sanitize';
 import { usePublicSearchTop, type SearchResult } from '@/api/public';
 import { GLOSSARY, GLOSSARY_ALIASES, glossarySlug } from '@/lib/glossary-data';
 
@@ -52,6 +53,13 @@ const GROUP_ORDER = ['Cours', 'Procédure', 'Astuce', 'Index', 'Article', 'Gloss
 const GROUP_LABEL: Record<string, string> = { Cours: 'Cours', 'Procédure': 'Procédures', Astuce: 'Astuces', Index: 'Index & sommaires', Article: 'Articles', Glossaire: 'Glossaire' };
 const GROUP_ICON: Record<string, string> = { Cours: '📘', 'Procédure': '🧭', Astuce: '💡', Index: '🗂️', Article: '📰', Glossaire: '📖' };
 
+/*
+ * @id     tssr.compSearchPalette
+ * @do     ouvrir_recherche
+ * @role   ui
+ * @layer  ui
+ * @human  Palette de recherche rapide du site.
+ */
 export function SearchPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
   const [q, setQ] = useState('');
   const [dq, setDq] = useState('');
@@ -126,8 +134,8 @@ export function SearchPalette({ open, onClose }: { open: boolean; onClose: () =>
                     onMouseEnter={() => setActive(i)}
                     onClick={e => { e.preventDefault(); go(it); }}
                   >
-                    <div className="spal-item-title" dangerouslySetInnerHTML={{ __html: highlight(it.title, dq) }} />
-                    {it.snippet && <div className="spal-item-snip" dangerouslySetInnerHTML={{ __html: it.snippet }} />}
+                    <div className="spal-item-title" dangerouslySetInnerHTML={{ __html: sanitizeHtml(highlight(it.title, dq)) }} />
+                    {it.snippet && <div className="spal-item-snip" dangerouslySetInnerHTML={{ __html: sanitizeHtml(it.snippet) }} />}
                   </a>
                 );
               })}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { sanitizeHtml } from '@/lib/sanitize';
 import {
   PAGE_BLOCK_PALETTE, BLOCK_LABELS, SOCIAL_NETWORKS, BUTTON_EFFECTS, makePageBlock, renderPageBlocksToHtml,
   type PageBlock, type PageBlockType, type PostsMode, type CardItem, type LinkItem, type MediaItem,
@@ -11,6 +12,13 @@ import { RichTextEditor } from './RichTextEditor';
 interface Props { blocks: PageBlock[]; onChange: (blocks: PageBlock[]) => void; }
 
 /** Éditeur de page = éditeur de liste de blocs au niveau racine (avec bloc Colonnes autorisé). */
+/*
+ * @id     tssr.compPageBuilder
+ * @do     construire_page
+ * @role   ui
+ * @layer  ui
+ * @human  Constructeur de pages : ajout, réorganisation et édition des blocs de contenu.
+ */
 export function PageBuilder({ blocks, onChange }: Props) {
   return <BlockListEditor blocks={blocks} onChange={onChange} allowColumns compact={false} />;
 }
@@ -60,7 +68,7 @@ function BlockListEditor({ blocks, onChange, allowColumns, compact }: ListProps)
                 {b.type !== 'columns' && (
                   <details className="block-preview">
                     <summary>Aperçu</summary>
-                    <div className="rich" dangerouslySetInnerHTML={{ __html: renderPageBlocksToHtml([b]) || '<p class="meta">(vide)</p>' }} />
+                    <div className="rich" dangerouslySetInnerHTML={{ __html: sanitizeHtml(renderPageBlocksToHtml([b]) || '<p class="meta">(vide)</p>') }} />
                   </details>
                 )}
               </div>
