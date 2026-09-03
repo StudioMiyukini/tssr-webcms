@@ -73,4 +73,11 @@ router.delete('/api/admin/pages/:id', requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
+/*
+ * @id     tssr.routePages
+ * @do     exposer_routes_pages
+ * @role   orchestration
+ * @layer  infra
+ * @human  Routes admin des pages du CMS (CRUD, publication).
+ */
 export default router;

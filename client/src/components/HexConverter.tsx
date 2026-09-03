@@ -35,6 +35,13 @@ const readableStrings = (bytes: number[]) => { const out: string[] = []; let cur
 const hexdump = (bytes: number[]) => { const lines: string[] = []; for (let i = 0; i < bytes.length; i += 16) { const c = bytes.slice(i, i + 16); const off = i.toString(16).padStart(8, '0'); const hx = c.map(toHex).join(' ').padEnd(47, ' '); const asc = c.map(b => (b >= 32 && b < 127) ? String.fromCharCode(b) : '.').join(''); lines.push(`${off}  ${hx}  ${asc}`); } return lines.join('\n'); };
 const DEFAULT_HEX = '47 45 54 20 2f 69 6e 64 65 78 2e 68 74 6d 6c 20 48 54 54 50 2f 31 2e 31';
 
+/*
+ * @id     tssr.atelier.hexConverter
+ * @do     convertir_hexadecimal
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : convertisseur binaire / décimal / hexadécimal.
+ */
 export function HexConverter() {
   const [mode, setMode] = useState<Mode>('hex2txt');
   const [input, setInput] = useState(DEFAULT_HEX);

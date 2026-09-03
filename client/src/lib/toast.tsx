@@ -6,6 +6,13 @@ interface ToastContextValue { push: (message: string, type?: ToastType) => void;
 
 const ToastContext = createContext<ToastContextValue>({ push: () => {} });
 
+/*
+ * @id     tssr.webToastProvider
+ * @do     fournir_toasts
+ * @role   ui
+ * @layer  ui
+ * @human  Fournisseur de notifications éphémères (toasts) pour l'application.
+ */
 export function ToastProvider({ children }: { children: ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
@@ -25,4 +32,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   );
 }
 
+/*
+ * @id     tssr.webUseToast
+ * @do     consommer_toasts
+ * @role   ui
+ * @layer  ui
+ * @human  Hook d'émission de notifications éphémères.
+ */
 export const useToast = () => useContext(ToastContext);

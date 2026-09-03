@@ -15,6 +15,13 @@ const LABELS: Record<FeatureKey, string> = {
 };
 
 /** Affiche le contenu seulement si le module est activé, sinon un message + retour accueil. */
+/*
+ * @id     tssr.compFeatureGuard
+ * @do     garder_fonctionnalite
+ * @role   rule
+ * @layer  ui
+ * @human  Garde d'affichage : masque un contenu si la fonctionnalité associée est désactivée.
+ */
 export function FeatureGuard({ feature, children }: { feature: FeatureKey; children: ReactNode }) {
   const f = usePublicFeatures();
   if (f.isLoading) return <div className="loading">Chargement…</div>;

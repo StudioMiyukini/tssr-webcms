@@ -26,6 +26,13 @@ const pre: React.CSSProperties = { ...mono, background: 'var(--surface-3)', bord
 const COULEUR: Record<Gravite, string> = { erreur: '#dc2626', alerte: '#d97706', conseil: 'var(--text-muted)' };
 const SIGNE: Record<Gravite, string> = { erreur: '🚫', alerte: '⚠', conseil: '💡' };
 
+/*
+ * @id     tssr.atelier.debianReseauComp
+ * @do     configurer_reseau_debian
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : configuration guidée du réseau Debian.
+ */
 export function DebianReseau() {
   const [c, setC] = useState<Config>(CONFIG_VIDE);
   const [copie, setCopie] = useState('');

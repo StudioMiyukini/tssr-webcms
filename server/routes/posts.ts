@@ -107,4 +107,11 @@ router.get('/api/public/posts/:slug', requireFeature('blog'), (req, res) => {
   res.json(p);
 });
 
+/*
+ * @id     tssr.routePosts
+ * @do     exposer_routes_articles
+ * @role   orchestration
+ * @layer  infra
+ * @human  Routes du blog : articles publics et gestion admin.
+ */
 export default router;

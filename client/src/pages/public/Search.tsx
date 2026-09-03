@@ -3,6 +3,13 @@ import { usePublicSearch } from '@/api/public';
 
 const PAGE_SIZE = 10;
 
+/*
+ * @id     tssr.pageSearch
+ * @do     rechercher_site
+ * @role   ui
+ * @layer  ui
+ * @human  Page publique « Recherche » : résultats de recherche sur le site.
+ */
 export function SearchPage() {
   const [q, setQ] = useState('');
   const [page, setPage] = useState(1);

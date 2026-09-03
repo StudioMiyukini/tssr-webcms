@@ -13,6 +13,13 @@
  */
 
 /** Un switch d'accès : un nom, les VLAN qu'il porte, et combien de ports il a. */
+/*
+ * @id     tssr.atelier.mls
+ * @do     definir_donnees_mls
+ * @role   donnee
+ * @layer  outil
+ * @human  Données de l'atelier : commutateurs et VLAN pour l'exercice MLS.
+ */
 export interface AccessSwitch {
   id: string;
   name: string;

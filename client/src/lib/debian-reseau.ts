@@ -10,6 +10,13 @@
  * entre et du texte qui sort, donc quelque chose qui se teste.
  */
 
+/*
+ * @id     tssr.atelier.debianReseau
+ * @do     definir_donnees_debian
+ * @role   donnee
+ * @layer  outil
+ * @human  Données de l'atelier : configuration réseau Debian (méthodes, exemples).
+ */
 export type Methode = 'static' | 'dhcp';
 export type Montage = 'auto' | 'allow-hotplug' | 'manuel';
 

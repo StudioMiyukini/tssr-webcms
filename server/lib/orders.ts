@@ -1,3 +1,10 @@
+/*
+ * @id     tssr.libOrders
+ * @do     gerer_commandes
+ * @role   rule
+ * @layer  domaine
+ * @human  Création et recherche des commandes.
+ */
 import { asc, eq } from 'drizzle-orm';
 import { db } from '../db/client';
 import { products, orders, order_items } from '../db/schema';
@@ -25,6 +32,13 @@ export interface OrderPaymentMeta {
 /**
  * Crée une commande + ses lignes à partir d'un panier détaillé, dans une transaction,
  * et décrémente le stock. Centralise la logique partagée entre checkout manuel et Stripe.
+ */
+/*
+ * @id     tssr.libOrders.createOrderFromCart
+ * @do     creer_commande
+ * @role   rule
+ * @layer  domaine
+ * @human  Crée une commande et ses lignes à partir d'un panier et des infos de paiement.
  */
 export function createOrderFromCart(cart: CartDetails, info: OrderCustomerInfo, meta: OrderPaymentMeta): { order: Order; items: OrderItem[] } {
   const orderNumber = generateOrderNumber();
@@ -78,6 +92,13 @@ export function createOrderFromCart(cart: CartDetails, info: OrderCustomerInfo, 
 }
 
 /** Cherche une commande déjà créée pour une session Stripe (idempotence de la finalisation). */
+/*
+ * @id     tssr.libOrders.findOrderByStripeSession
+ * @do     trouver_commande_stripe
+ * @role   donnee
+ * @layer  domaine
+ * @human  Retrouve une commande à partir d'un identifiant de session Stripe.
+ */
 export function findOrderByStripeSession(sessionId: string): Order | null {
   if (!sessionId) return null;
   return db.select().from(orders).where(eq(orders.stripe_session_id, sessionId)).get() ?? null;

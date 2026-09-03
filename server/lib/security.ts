@@ -1,3 +1,10 @@
+/*
+ * @id     tssr.libSecurity
+ * @do     securiser_entetes
+ * @role   securite
+ * @layer  infra
+ * @human  En-têtes de sécurité et politique de contenu (CSP).
+ */
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 
 // En-têtes de sécurité HTTP. Centralisés ici ; CSP et HSTS sont configurables
@@ -18,6 +25,13 @@ export interface SecurityConfig {
  * - iframes : YouTube nocookie (bloc vidéo) uniquement
  * Le paiement Stripe se fait par redirection complète (pas de Stripe.js), rien à autoriser ici.
  */
+/*
+ * @id     tssr.libSecurity.buildCsp
+ * @do     composer_csp
+ * @role   securite
+ * @layer  infra
+ * @human  Construit l'en-tête Content-Security-Policy du site.
+ */
 export function buildCsp(frameDeny: boolean): string {
   return [
     `default-src 'self'`,
@@ -36,6 +50,13 @@ export function buildCsp(frameDeny: boolean): string {
 }
 
 /** Middleware d'en-têtes de sécurité. `getConfig` est relu à chaque requête (bascule à chaud). */
+/*
+ * @id     tssr.libSecurity.securityHeaders
+ * @do     poser_entetes_securite
+ * @role   securite
+ * @layer  infra
+ * @human  Middleware : ajoute les en-têtes de sécurité HTTP.
+ */
 export function securityHeaders(getConfig: () => SecurityConfig): RequestHandler {
   return (_req: Request, res: Response, next: NextFunction): void => {
     const cfg = getConfig();

@@ -41,6 +41,13 @@ function PaletteEditor({ palette, onChange }: { palette: ThemePalette; onChange:
   );
 }
 
+/*
+ * @id     tssr.pageTheme
+ * @do     regler_theme
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Thème » : personnalisation des couleurs et styles du site.
+ */
 export function ThemePage() {
   const q = useThemeSettings();
   const update = useUpdateThemeSettings();

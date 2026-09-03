@@ -10,6 +10,13 @@
  * c'est que le resultat soit du Bash valide dans toutes les combinaisons.
  */
 
+/*
+ * @id     tssr.atelier.bashScript
+ * @do     definir_donnees_bash
+ * @role   donnee
+ * @layer  outil
+ * @human  Données de l'atelier : modèles et fragments de scripts bash.
+ */
 export type Cle = 'strict' | 'usage' | 'journal' | 'root' | 'depend' | 'verrou' | 'nettoyage' | 'confirme' | 'boucle' | 'dryrun';
 
 export interface Brique {

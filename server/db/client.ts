@@ -1,3 +1,10 @@
+/*
+ * @id     tssr.dbClient
+ * @do     ouvrir_base
+ * @role   donnee
+ * @layer  infra
+ * @human  Ouvre la base SQLite et expose le client Drizzle et l'accès brut.
+ */
 import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import bcrypt from 'bcryptjs';

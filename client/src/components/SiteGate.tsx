@@ -3,6 +3,13 @@ import { useUnlockSite, usePublicThemeSettings } from '@/api/public';
 import { ApiError } from '@/api/client';
 
 /** Écran plein-page de saisie du mot de passe quand le site est en mode privé. */
+/*
+ * @id     tssr.compSiteGate
+ * @do     garder_site
+ * @role   securite
+ * @layer  ui
+ * @human  Barrière d'accès au site privé (mot de passe).
+ */
 export function SiteGate() {
   const theme = usePublicThemeSettings();
   const unlock = useUnlockSite();

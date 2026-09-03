@@ -26,6 +26,13 @@ const RULES: Array<{ test: RegExp; crumbs: Array<[string, string | null]>; }> = 
   { test: /^\/admin\/quote-submissions\/\d+$/, crumbs: [['Admin', '/admin'], ['Demandes devis', '/admin/quote-submissions'], ['Détail', null]] },
 ];
 
+/*
+ * @id     tssr.compBreadcrumbs
+ * @do     afficher_fil_ariane
+ * @role   ui
+ * @layer  ui
+ * @human  Fil d'Ariane de l'administration : chemin de la page courante.
+ */
 export function Breadcrumbs() {
   const loc = useLocation();
   const crumbs = RULES.find(r => r.test.test(loc.pathname))?.crumbs ?? [['Admin', '/admin']];

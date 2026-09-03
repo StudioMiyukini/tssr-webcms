@@ -64,4 +64,11 @@ router.delete('/api/admin/products/:id', requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
+/*
+ * @id     tssr.routeProducts
+ * @do     exposer_routes_produits
+ * @role   orchestration
+ * @layer  infra
+ * @human  Routes admin du catalogue de produits.
+ */
 export default router;

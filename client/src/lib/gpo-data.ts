@@ -13,6 +13,13 @@
 // Les alias sont ce qui rend la recherche utile : personne ne tape « Accès au
 // stockage amovible », on tape « USB » ou « clé ».
 
+/*
+ * @id     tssr.atelier.gpoData
+ * @do     definir_donnees_gpo
+ * @role   donnee
+ * @layer  outil
+ * @human  Données de l'atelier : stratégies de groupe (GPO) et leur portée.
+ */
 export type GpoScope = 'ordinateur' | 'utilisateur';
 
 export interface GpoCategorie {

@@ -46,4 +46,11 @@ router.delete('/api/admin/shipping-methods/:id', requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
+/*
+ * @id     tssr.routeShipping
+ * @do     exposer_routes_livraison
+ * @role   orchestration
+ * @layer  infra
+ * @human  Routes admin des méthodes de livraison.
+ */
 export default router;

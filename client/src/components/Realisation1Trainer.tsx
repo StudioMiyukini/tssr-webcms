@@ -154,6 +154,13 @@ const legend: React.CSSProperties = { fontWeight: 700, fontSize: 14.5, marginBot
 const btn = (primary: boolean): React.CSSProperties => ({ padding: '9px 16px', border: primary ? 'none' : '1px solid var(--border)', borderRadius: 8, background: primary ? 'var(--accent)' : 'transparent', color: primary ? '#fff' : 'var(--text)', fontWeight: 700, cursor: 'pointer', fontSize: 13.5 });
 const mono: React.CSSProperties = { fontFamily: 'ui-monospace,"Space Mono",monospace' };
 
+/*
+ * @id     tssr.atelier.realisation1Trainer
+ * @do     entrainer_realisation1
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : entraîneur guidé de la réalisation 1.
+ */
 export function Realisation1Trainer() {
   const [ans, setAns] = useState<Ans>(() => {
     try { return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(LS_KEY) || '{}') }; } catch { return { ...DEFAULTS }; }

@@ -25,6 +25,13 @@ function PostCard({ p }: { p: PublicPostListItem }) {
 
 const PAGE_SIZE = 9;
 
+/*
+ * @id     tssr.pageBlog
+ * @do     afficher_blog
+ * @role   ui
+ * @layer  ui
+ * @human  Page publique « Blog » : liste des articles.
+ */
 export function BlogPage() {
   const [category, setCategory] = useState('');
   const [page, setPage] = useState(1);
@@ -72,6 +79,13 @@ export function BlogPage() {
   );
 }
 
+/*
+ * @id     tssr.pagePostView
+ * @do     afficher_article
+ * @role   ui
+ * @layer  ui
+ * @human  Page publique de lecture d'un article.
+ */
 export function PostViewPage() {
   const { slug } = useParams({ strict: false }) as { slug: string };
   const q = usePublicPost(slug);
@@ -96,6 +110,13 @@ export function PostViewPage() {
   );
 }
 
+/*
+ * @id     tssr.pageCategory
+ * @do     afficher_categorie
+ * @role   ui
+ * @layer  ui
+ * @human  Page publique listant les articles d'une catégorie.
+ */
 export function CategoryPage() {
   const { cat } = useParams({ strict: false }) as { cat: string };
   const category = decodeURIComponent(cat || '');

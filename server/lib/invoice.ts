@@ -1,3 +1,10 @@
+/*
+ * @id     tssr.libInvoice
+ * @do     gerer_factures
+ * @role   donnee
+ * @layer  infra
+ * @human  Génération des factures PDF des commandes.
+ */
 import type { Response } from 'express';
 import PDFDocument from 'pdfkit';
 import { formatPriceEUR, generateInvoiceNumber } from './utils';
@@ -23,6 +30,13 @@ interface ItemForInvoice {
   line_total_cents: number;
 }
 
+/*
+ * @id     tssr.libInvoice.streamInvoicePdf
+ * @do     generer_facture_pdf
+ * @role   donnee
+ * @layer  infra
+ * @human  Génère et diffuse la facture PDF d'une commande dans la réponse.
+ */
 export function streamInvoicePdf(res: Response, order: OrderForInvoice, items: ItemForInvoice[]): void {
   const doc = new PDFDocument({ margin: 40 });
   res.setHeader('Content-Type', 'application/pdf');

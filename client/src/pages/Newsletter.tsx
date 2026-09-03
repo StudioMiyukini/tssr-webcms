@@ -5,6 +5,13 @@ import { useToast } from '@/lib/toast';
 
 type Source = 'customers' | 'form' | 'manual';
 
+/*
+ * @id     tssr.pageNewsletter
+ * @do     gerer_newsletter
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Newsletter » : abonnés et envois.
+ */
 export function NewsletterPage() {
   const templates = EmailTemplates.useList();
   const formsList = Forms.useList();

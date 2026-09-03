@@ -50,4 +50,11 @@ router.delete('/api/admin/coupons/:id', requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
+/*
+ * @id     tssr.routeCoupons
+ * @do     exposer_routes_coupons
+ * @role   orchestration
+ * @layer  infra
+ * @human  Routes admin des coupons de réduction.
+ */
 export default router;

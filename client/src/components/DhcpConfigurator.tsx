@@ -27,6 +27,13 @@ const mono: React.CSSProperties = { fontFamily: 'ui-monospace,monospace' };
 const D_POOLS: Pool[] = [{ name: 'LAN', net: '192.168.10.0', cidr: 24, gw: '192.168.10.254', dns: '192.168.10.1', domain: 'miyukini.lan', lease: '8' }];
 const D_EXCL: Excl[] = [{ from: '192.168.10.1', to: '192.168.10.10' }];
 
+/*
+ * @id     tssr.atelier.dhcpConfigurator
+ * @do     configurer_dhcp
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : configurateur de serveur DHCP.
+ */
 export function DhcpConfigurator() {
   const [pools, setPools] = useState<Pool[]>(() => load('dhcp_pools', D_POOLS));
   const [excl, setExcl] = useState<Excl[]>(() => load('dhcp_excl', D_EXCL));

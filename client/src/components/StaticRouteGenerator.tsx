@@ -39,6 +39,13 @@ const D_LANS: Lan[] = [
   { id: 'n3', router: 'r3', net: '192.168.3.0', cidr: 24 },
 ];
 
+/*
+ * @id     tssr.atelier.staticRouteGenerator
+ * @do     generer_routes_statiques
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : générateur de routes statiques.
+ */
 export function StaticRouteGenerator() {
   const [routers, setRouters] = useState<Router[]>(() => load('sr_routers', D_ROUTERS));
   const [links, setLinks] = useState<Link[]>(() => load('sr_links', D_LINKS));

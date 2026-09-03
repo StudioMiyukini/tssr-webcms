@@ -3,6 +3,13 @@ import { apiGet, apiPost, apiPut, apiDelete } from './client';
 import type { AdminSession, DashboardStats, RecentActivity, FeatureItem, FeatureKey, ThemeSettings, FormMetrics, EmailSettings, EmailLogRow, SiteSettings, AdminSiteSettings, SiteSettingsUpdate, CacheStats, SecurityStatus, PlanningRecord, PlanningInput, ForumCategory, ForumCategoryInput, ForumTopic } from '@shared/types';
 
 // ===== Auth =====
+/*
+ * @id     tssr.apiHooks
+ * @do     exposer_hooks_admin
+ * @role   orchestration
+ * @layer  infra
+ * @human  Hooks React Query de l'administration : lecture et écriture des ressources du CMS et de la boutique.
+ */
 export function useMe() {
   return useQuery<AdminSession>({ queryKey: ['me'], queryFn: () => apiGet('/api/auth/me'), retry: false });
 }

@@ -1,3 +1,10 @@
+/*
+ * @id     tssr.webBlocks
+ * @do     outiller_blocs
+ * @role   donnee
+ * @layer  outil
+ * @human  Utilitaires des blocs de page : palette, création, normalisation et rendu HTML.
+ */
 // Modèle de blocs du page builder + rendu HTML (réutilise les classes publiques .hero/.card/.grid/.rich).
 // Le builder_json stocke { version, blocks }. L'utilisateur n'édite jamais ce JSON : tout passe par l'UI.
 
@@ -7,6 +14,13 @@ export type PageBlockType = 'hero' | 'heading' | 'text' | 'image' | 'button' | '
 export type PostsMode = 'latest' | 'featured' | 'selected';
 
 /** Réseaux sociaux connus du bloc « social » : clé (= valeur stockée dans link.label), nom affiché et glyphe. */
+/*
+ * @id     tssr.webBlocks.SOCIAL_NETWORKS
+ * @do     definir_reseaux_sociaux
+ * @role   config
+ * @layer  outil
+ * @human  Liste des réseaux sociaux gérés par les blocs de page.
+ */
 export const SOCIAL_NETWORKS: Array<{ key: string; label: string; glyph: string }> = [
   { key: 'x', label: 'X', glyph: '𝕏' },
   { key: 'facebook', label: 'Facebook', glyph: 'f' },
@@ -67,6 +81,13 @@ export const BUTTON_EFFECTS: Array<{ key: string; label: string }> = [
   { key: 'pulse', label: 'Pulsation' },
 ];
 
+/*
+ * @id     tssr.webBlocks.PAGE_BLOCK_PALETTE
+ * @do     definir_palette_blocs
+ * @role   config
+ * @layer  outil
+ * @human  Palette des types de blocs de page proposés dans l'éditeur.
+ */
 export const PAGE_BLOCK_PALETTE: Array<{ type: PageBlockType; label: string; icon: string }> = [
   { type: 'hero', label: 'En-tête (hero)', icon: '🏷️' },
   { type: 'heading', label: 'Titre', icon: 'H' },
@@ -97,6 +118,13 @@ export const PAGE_BLOCK_PALETTE: Array<{ type: PageBlockType; label: string; ico
   { type: 'html', label: 'HTML brut', icon: '</>' },
 ];
 
+/*
+ * @id     tssr.webBlocks.BLOCK_LABELS
+ * @do     libeller_blocs
+ * @role   config
+ * @layer  outil
+ * @human  Libellés lisibles des types de blocs de page.
+ */
 export const BLOCK_LABELS: Record<PageBlockType, string> = Object.fromEntries(
   PAGE_BLOCK_PALETTE.map(p => [p.type, p.label]),
 ) as Record<PageBlockType, string>;
@@ -104,6 +132,13 @@ export const BLOCK_LABELS: Record<PageBlockType, string> = Object.fromEntries(
 let counter = 0;
 function uid() { counter += 1; return `pb-${Date.now()}-${counter}`; }
 
+/*
+ * @id     tssr.webBlocks.makePageBlock
+ * @do     creer_bloc
+ * @role   donnee
+ * @layer  outil
+ * @human  Crée un bloc de page vierge d'un type donné.
+ */
 export function makePageBlock(type: PageBlockType): PageBlock {
   const titleDefaults: Partial<Record<PageBlockType, string>> = { hero: 'Titre principal', cta: 'Titre de la bannière', latestposts: 'Derniers articles', agenda: 'Agenda' };
   const subtitleDefaults: Partial<Record<PageBlockType, string>> = { hero: 'Sous-titre descriptif.', cta: 'Un sous-titre incitatif pour pousser à l’action.' };
@@ -173,6 +208,13 @@ function normalizeOne(b: any): PageBlock {
   };
 }
 
+/*
+ * @id     tssr.webBlocks.normalizePageBlocks
+ * @do     normaliser_blocs
+ * @role   donnee
+ * @layer  outil
+ * @human  Normalise le JSON de construction en liste de blocs de page.
+ */
 export function normalizePageBlocks(builderJson: string | undefined | null): PageBlock[] {
   try {
     const parsed = JSON.parse(builderJson || '');
@@ -184,6 +226,13 @@ export function normalizePageBlocks(builderJson: string | undefined | null): Pag
   }
 }
 
+/*
+ * @id     tssr.webBlocks.serializePageBlocks
+ * @do     serialiser_blocs
+ * @role   donnee
+ * @layer  outil
+ * @human  Sérialise une liste de blocs de page en JSON.
+ */
 export function serializePageBlocks(blocks: PageBlock[]): string {
   return JSON.stringify({ version: 1, blocks });
 }
@@ -196,6 +245,13 @@ const paragraphs = (t = '') =>
 const richOrPara = (t = '') => /</.test(t) ? t : paragraphs(t);
 
 /** Extrait l'identifiant d'une vidéo YouTube depuis une URL (watch, youtu.be, embed, shorts) ou un ID brut. */
+/*
+ * @id     tssr.webBlocks.youTubeId
+ * @do     extraire_id_youtube
+ * @role   donnee
+ * @layer  outil
+ * @human  Extrait l'identifiant d'une vidéo YouTube depuis une URL.
+ */
 export function youTubeId(url: string): string {
   const u = (url || '').trim();
   const m = u.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|shorts\/|v\/))([\w-]{11})/);
@@ -347,6 +403,13 @@ function renderBlock(b: PageBlock): string {
   }
 }
 
+/*
+ * @id     tssr.webBlocks.renderPageBlocksToHtml
+ * @do     rendre_blocs_html
+ * @role   ui
+ * @layer  outil
+ * @human  Rend une liste de blocs de page en HTML.
+ */
 export function renderPageBlocksToHtml(blocks: PageBlock[]): string {
   return blocks.map(renderBlock).join('\n');
 }

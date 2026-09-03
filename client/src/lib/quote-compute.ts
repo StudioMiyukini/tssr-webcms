@@ -34,6 +34,13 @@ export interface QuoteBreakdown {
   totalCents: number;
 }
 
+/*
+ * @id     tssr.webQuoteBreakdown
+ * @do     detailler_devis
+ * @role   rule
+ * @layer  outil
+ * @human  Calcule le détail ligne à ligne d'un devis à partir des blocs et des réponses.
+ */
 export function computeQuoteBreakdown(blocks: RenderableBlock[], payload: Record<string, string>): QuoteBreakdown {
   const baseLines: QuoteLineDetail[] = [];
   const percentLines: QuoteLineDetail[] = [];

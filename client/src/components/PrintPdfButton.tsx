@@ -59,6 +59,13 @@ h2,h3{break-after:avoid}
 .proc-cmd{break-inside:avoid}
 `;
 
+/*
+ * @id     tssr.compPrintPdfButton
+ * @do     imprimer_pdf
+ * @role   ui
+ * @layer  ui
+ * @human  Bouton d'impression / export PDF de la page.
+ */
 export function PrintPdfButton({ title = '', label = 'Télécharger en PDF' }: { title?: string; label?: string }) {
   const ref = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);

@@ -24,6 +24,13 @@ function EventCard({ ev }: { ev: EventRecord }) {
   );
 }
 
+/*
+ * @id     tssr.pageAgenda
+ * @do     afficher_agenda
+ * @role   ui
+ * @layer  ui
+ * @human  Page publique « Agenda » : événements à venir.
+ */
 export function AgendaPage() {
   const q = usePublicEvents();
   const [showPast, setShowPast] = useState(false);
@@ -53,6 +60,13 @@ export function AgendaPage() {
   );
 }
 
+/*
+ * @id     tssr.pageEventView
+ * @do     afficher_evenement
+ * @role   ui
+ * @layer  ui
+ * @human  Page publique de détail d'un événement.
+ */
 export function EventViewPage() {
   const { slug } = useParams({ strict: false }) as { slug: string };
   const q = usePublicEvent(slug);

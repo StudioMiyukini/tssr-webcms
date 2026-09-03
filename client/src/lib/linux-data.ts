@@ -13,6 +13,13 @@
 // Le champ `piege` n'est rempli que lorsqu'il y a réellement quelque chose à
 // dire. Une note sur chaque ligne ne serait plus lue.
 
+/*
+ * @id     tssr.atelier.linuxData
+ * @do     definir_donnees_linux
+ * @role   donnee
+ * @layer  outil
+ * @human  Données de l'atelier : commandes Linux classées par catégorie.
+ */
 export interface LinuxCategorie {
   key: string;
   label: string;

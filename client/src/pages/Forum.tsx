@@ -3,6 +3,13 @@ import { ForumCategories, useForumTopicsAdmin, useModerateForumTopic, useDeleteF
 import { useToast } from '@/lib/toast';
 import type { ForumCategory } from '@shared/types';
 
+/*
+ * @id     tssr.pageForumAdmin
+ * @do     moderer_forum
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Forum » : modération des sujets et messages.
+ */
 export function ForumAdminPage() {
   const cats = ForumCategories.useList();
   const createCat = ForumCategories.useCreate();

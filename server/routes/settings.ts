@@ -313,4 +313,11 @@ router.get('/api/public/theme', (_req, res) => {
   res.json(readThemeSettings());
 });
 
+/*
+ * @id     tssr.routeSettings
+ * @do     exposer_routes_reglages
+ * @role   config
+ * @layer  infra
+ * @human  Routes admin des réglages du site (identité, thème, accès).
+ */
 export default router;

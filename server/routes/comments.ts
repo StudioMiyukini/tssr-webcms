@@ -72,4 +72,11 @@ router.post('/api/public/posts/:slug/comments', requireFeature('blog'), commentL
   res.status(201).json({ ok: true, message: 'Merci ! Ton commentaire sera publié après modération.' });
 }));
 
+/*
+ * @id     tssr.routeComments
+ * @do     exposer_routes_commentaires
+ * @role   orchestration
+ * @layer  infra
+ * @human  Routes des commentaires : lecture publique et modération admin.
+ */
 export default router;

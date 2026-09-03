@@ -147,4 +147,11 @@ router.post('/api/checkout', checkoutLimiter, async (req, res) => {
   res.status(201).json({ ok: true, order_number: orderNumber, total_cents: cart.totalCents });
 });
 
+/*
+ * @id     tssr.routeCart
+ * @do     exposer_routes_panier
+ * @role   orchestration
+ * @layer  infra
+ * @human  Routes du panier : contenu, ajout, mise à jour, coupons et livraison.
+ */
 export default router;

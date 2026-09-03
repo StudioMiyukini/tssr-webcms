@@ -4,6 +4,13 @@ import { Products, type ProductInput } from '@/api/hooks';
 import { formatPriceEUR } from '@/lib/format';
 import { useToast } from '@/lib/toast';
 
+/*
+ * @id     tssr.pageProductsList
+ * @do     lister_produits
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Produits » : liste du catalogue.
+ */
 export function ProductsListPage() {
   const list = Products.useList();
   const del = Products.useDelete();
@@ -45,6 +52,13 @@ export function ProductsListPage() {
 
 const EMPTY: ProductInput = { name: '', slug: '', description: '', short_description: '', price_cents: 0, sale_price_cents: 0, compare_at_price_cents: 0, stock: 0, image_url: '', sku: '', category: '', featured: 0, manage_stock: 1, published: 1, variants_json: '[]' };
 
+/*
+ * @id     tssr.pageProductEdit
+ * @do     editer_produit
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin d'édition d'un produit (prix, variantes, stock, images).
+ */
 export function ProductEditPage() {
   const params = useParams({ strict: false }) as { id?: string };
   const navigate = useNavigate();

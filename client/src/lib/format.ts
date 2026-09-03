@@ -1,7 +1,21 @@
+/*
+ * @id     tssr.webFormatPrice
+ * @do     formater_prix_euros
+ * @role   ui
+ * @layer  outil
+ * @human  Met en forme un montant en centimes en prix en euros, côté client.
+ */
 export function formatPriceEUR(cents: number): string {
   return new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format((cents || 0) / 100);
 }
 
+/*
+ * @id     tssr.webFormatOrderStatus
+ * @do     libeller_statut_commande
+ * @role   ui
+ * @layer  outil
+ * @human  Traduit un statut de commande en libellé lisible.
+ */
 export function formatOrderStatus(status: string): string {
   const labels: Record<string, string> = {
     pending: 'En attente',
@@ -13,6 +27,13 @@ export function formatOrderStatus(status: string): string {
   return labels[status] || status;
 }
 
+/*
+ * @id     tssr.webFormatDate
+ * @do     formater_date
+ * @role   ui
+ * @layer  outil
+ * @human  Met en forme une date en texte lisible en français.
+ */
 export function formatDate(dateString: string | null | undefined): string {
   if (!dateString) return '';
   try { return new Date(dateString).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }); }
@@ -23,6 +44,13 @@ const DATE_OPTS: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric',
 const TIME_OPTS: Intl.DateTimeFormatOptions = { hour: '2-digit', minute: '2-digit' };
 
 /** Plage de date/heure lisible d'un événement (gère journée entière et fin optionnelle). */
+/*
+ * @id     tssr.webFormatEventDate
+ * @do     formater_date_evenement
+ * @role   ui
+ * @layer  outil
+ * @human  Met en forme la plage de dates d'un événement (journée entière incluse).
+ */
 export function formatEventDate(start: string, end?: string, allDay?: boolean): string {
   if (!start) return '';
   const s = new Date(start);

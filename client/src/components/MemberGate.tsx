@@ -3,6 +3,13 @@ import { usePublicThemeSettings } from '@/api/public';
 
 /** Écran plein-page affiché quand le site est réservé aux membres et que le visiteur n'est pas connecté.
  *  Seul l'accueil reste public ; tout le reste invite à se connecter ou à créer un compte. */
+/*
+ * @id     tssr.compMemberGate
+ * @do     garder_membre
+ * @role   securite
+ * @layer  ui
+ * @human  Barrière d'accès : réserve un contenu aux membres connectés.
+ */
 export function MemberGate() {
   const theme = usePublicThemeSettings();
   const brand = theme.data?.brandName || 'Mon Site';

@@ -13,6 +13,13 @@ const SHORTCUTS: Record<string, string> = {
   'g s': '/admin/quote-submissions', 'g m': '/admin/menus',
 };
 
+/*
+ * @id     tssr.layoutAdmin
+ * @do     encadrer_administration
+ * @role   ui
+ * @layer  ui
+ * @human  Mise en page de l'administration : barre latérale, en-tête et zone de contenu.
+ */
 export function AdminLayout() {
   const me = useMe();
   const logout = useLogout();

@@ -122,4 +122,11 @@ router.get('/api/admin/newsletter/campaigns', requireAuth, (_req, res) => {
   res.json(db.select().from(campaigns).orderBy(desc(campaigns.id)).limit(50).all());
 });
 
+/*
+ * @id     tssr.routeNewsletter
+ * @do     exposer_routes_newsletter
+ * @role   orchestration
+ * @layer  infra
+ * @human  Routes de la newsletter : inscription et envoi.
+ */
 export default router;

@@ -40,6 +40,13 @@ const D_NAT: Nat = {
   nets: [{ net: '192.168.10.0', cidr: 24 }], rules: [],
 };
 
+/*
+ * @id     tssr.atelier.routerConfigurator
+ * @do     configurer_routeur
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : configurateur de routeur.
+ */
 export function RouterConfigurator() {
   const [hostname, setHostname] = useState(() => load('router_host', 'R1'));
   const [ifaces, setIfaces] = useState<Iface[]>(() => load('router_ifaces', D_IFACES));

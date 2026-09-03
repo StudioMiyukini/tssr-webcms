@@ -32,6 +32,13 @@ const PROTOCOLS: { k: string; label: string; port: number }[] = [
   { k: 'winrm', label: 'WinRM', port: 5985 },
 ];
 
+/*
+ * @id     tssr.atelier.netDiagnostic
+ * @do     diagnostiquer_reseau
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : outil de diagnostic réseau.
+ */
 export function NetDiagnostic() {
   const [iface, setIface] = useState('Ethernet');
   const [ip, setIp] = useState('192.168.10.101');

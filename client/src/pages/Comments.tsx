@@ -2,6 +2,13 @@ import { useState } from 'react';
 import { useComments, useApproveComment, useDeleteComment } from '@/api/hooks';
 import { useToast } from '@/lib/toast';
 
+/*
+ * @id     tssr.pageComments
+ * @do     moderer_commentaires
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Commentaires » : modération des commentaires.
+ */
 export function CommentsPage() {
   const [status, setStatus] = useState('pending');
   const list = useComments(status || undefined);

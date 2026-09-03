@@ -1,3 +1,10 @@
+/*
+ * @id     tssr.libCustomers
+ * @do     gerer_clients
+ * @role   donnee
+ * @layer  domaine
+ * @human  Gestion des clients : recherche et création par e-mail.
+ */
 import bcrypt from 'bcryptjs';
 import { eq, sql } from 'drizzle-orm';
 import { db } from '../db/client';
@@ -8,6 +15,13 @@ import type { Customer } from '../db/schema';
 // SÉCURITÉ — un checkout invité ne doit JAMAIS ouvrir de session sur un compte EXISTANT
 // (l'email ne prouve pas l'identité → sinon prise de contrôle de compte). Les appelants
 // n'ouvrent une session que si `created` est vrai (compte invité neuf, sans données).
+/*
+ * @id     tssr.libCustomers.getOrCreateCustomerByEmail
+ * @do     trouver_ou_creer_client
+ * @role   donnee
+ * @layer  domaine
+ * @human  Retrouve un client par e-mail ou le crée s'il n'existe pas.
+ */
 export function getOrCreateCustomerByEmail({ name = '', email = '', phone = '', company = '', address = '' }: { name?: string; email?: string; phone?: string; company?: string; address?: string; } = {}): { customer: Customer | null; created: boolean } {
   const normalizedEmail = String(email || '').trim().toLowerCase();
   if (!normalizedEmail) return { customer: null, created: false };

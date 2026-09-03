@@ -4,6 +4,13 @@ import { usePublicForm, useSubmitForm } from '@/api/public';
 import type { FormField } from '@shared/types';
 import { ApiError } from '@/api/client';
 
+/*
+ * @id     tssr.pageFormView
+ * @do     remplir_formulaire
+ * @role   ui
+ * @layer  ui
+ * @human  Page publique d'un formulaire personnalisé : saisie et envoi.
+ */
 export function FormPage() {
   const { slug } = useParams({ strict: false }) as { slug: string };
   const q = usePublicForm(slug);

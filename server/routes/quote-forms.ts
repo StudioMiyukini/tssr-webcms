@@ -106,4 +106,11 @@ router.delete('/api/admin/quote-submissions/:id', requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
+/*
+ * @id     tssr.routeQuoteForms
+ * @do     exposer_routes_formulaires_devis
+ * @role   orchestration
+ * @layer  infra
+ * @human  Routes admin des formulaires de devis et des demandes reçues.
+ */
 export default router;

@@ -24,6 +24,13 @@ export interface QuoteBlock extends QuoteField {
   option_percents: number[];
 }
 
+/*
+ * @id     tssr.quoteUtils
+ * @do     outiller_devis
+ * @role   rule
+ * @layer  outil
+ * @human  Utilitaires de devis côté serveur : types de champs, analyse des blocs et calcul du total.
+ */
 export const FIELD_TYPES = ['text', 'email', 'tel', 'textarea', 'select', 'radio', 'checkbox', 'number', 'date'] as const;
 export const LAYOUT_TYPES = ['heading', 'separator', 'section'] as const;
 export const PRICING_TYPES = ['price_fixed', 'price_option', 'price_select', 'quantity', 'price_percent_option', 'price_percent_select', 'total'] as const;

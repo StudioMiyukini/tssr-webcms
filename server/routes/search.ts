@@ -131,4 +131,11 @@ router.get('/api/public/search', (req, res) => {
   res.json({ items: items.slice((page - 1) * pageSize, page * pageSize), total: items.length, page, pageSize });
 });
 
+/*
+ * @id     tssr.routeSearch
+ * @do     exposer_routes_recherche
+ * @role   orchestration
+ * @layer  infra
+ * @human  Routes de recherche sur le contenu du site.
+ */
 export default router;

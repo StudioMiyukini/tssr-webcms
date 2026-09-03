@@ -2,6 +2,13 @@ import { useEffect, useState } from 'react';
 import { Link, useSearch } from '@tanstack/react-router';
 import { useFinalizeStripe } from '@/api/public';
 
+/*
+ * @id     tssr.pageCheckoutSuccess
+ * @do     confirmer_commande
+ * @role   ui
+ * @layer  ui
+ * @human  Page publique de confirmation après un paiement réussi.
+ */
 export function CheckoutSuccessPage() {
   const search = useSearch({ strict: false }) as { order?: string; session_id?: string; stripe?: string };
   const finalize = useFinalizeStripe();

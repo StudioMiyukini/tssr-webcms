@@ -152,4 +152,11 @@ router.post('/api/public/forms/:slug/submit', requireFeature('forms'), submitLim
   res.status(201).json({ ok: true, success_message: form.success_message });
 }));
 
+/*
+ * @id     tssr.routeForms
+ * @do     exposer_routes_formulaires
+ * @role   orchestration
+ * @layer  infra
+ * @human  Routes des formulaires personnalisés et de leurs soumissions.
+ */
 export default router;

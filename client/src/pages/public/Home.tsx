@@ -3,6 +3,13 @@ import { usePublicPage, usePublicProducts, usePublicFeatures } from '@/api/publi
 import { formatPriceEUR } from '@/lib/format';
 import { RichContent } from '@/components/RichContent';
 
+/*
+ * @id     tssr.pageHome
+ * @do     afficher_accueil
+ * @role   ui
+ * @layer  ui
+ * @human  Page d'accueil publique du site.
+ */
 export function HomePage() {
   const home = usePublicPage('accueil');
   const features = usePublicFeatures();

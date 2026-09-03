@@ -26,6 +26,13 @@ try {
 const root = document.getElementById('root');
 if (!root) throw new Error('#root not found');
 
+/*
+ * @id     tssr.web
+ * @do     monter_application
+ * @role   orchestration
+ * @layer  ui
+ * @human  Point d'entrée du client CMS : monte l'application React (fournisseurs et routeur).
+ */
 createRoot(root).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>

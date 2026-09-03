@@ -3,6 +3,13 @@ import { useFeatures, useUpdateFeatures } from '@/api/hooks';
 import { useToast } from '@/lib/toast';
 import type { FeatureKey } from '@shared/types';
 
+/*
+ * @id     tssr.pageFeatures
+ * @do     regler_fonctionnalites
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Fonctionnalités » : activation des modules du site.
+ */
 export function FeaturesPage() {
   const list = useFeatures();
   const update = useUpdateFeatures();

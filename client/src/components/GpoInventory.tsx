@@ -25,6 +25,13 @@ const surligne = (texte: string, q: string) => {
   );
 };
 
+/*
+ * @id     tssr.atelier.gpoInventory
+ * @do     inventorier_gpo
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : inventaire des stratégies de groupe (GPO).
+ */
 export function GpoInventory() {
   const [q, setQ] = useState('');
   const [cat, setCat] = useState('all');

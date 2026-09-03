@@ -1,9 +1,23 @@
+/*
+ * @id     tssr.webTheme
+ * @do     outiller_theme
+ * @role   ui
+ * @layer  outil
+ * @human  Utilitaires de thème côté client : couleurs, CSS et bascule clair/sombre.
+ */
 import { useEffect, useState } from 'react';
 import type { ThemeSettings, ThemePalette } from '@shared/types';
 
 export type Theme = 'light' | 'dark';
 
 /** Convertit un hex #rrggbb en rgba() avec l'alpha donné. */
+/*
+ * @id     tssr.webTheme.hexToRgba
+ * @do     convertir_couleur
+ * @role   ui
+ * @layer  outil
+ * @human  Convertit une couleur hexadécimale en rgba avec transparence.
+ */
 export function hexToRgba(hex: string, alpha: number): string {
   const m = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
   if (!m) return hex;
@@ -21,6 +35,13 @@ function paletteVars(p: ThemePalette, accentLightAlpha: number): string {
 }
 
 /** Construit la feuille de style du thème personnalisé (clair + sombre + typo + CSS perso). */
+/*
+ * @id     tssr.webTheme.buildThemeCss
+ * @do     composer_css_theme
+ * @role   ui
+ * @layer  outil
+ * @human  Construit la feuille CSS des variables de thème du site.
+ */
 export function buildThemeCss(t: ThemeSettings): string {
   const semantic = (a: number) => [
     `--success:${t.success}`, `--success-light:${hexToRgba(t.success, a)}`,
@@ -39,6 +60,13 @@ export function buildThemeCss(t: ThemeSettings): string {
 }
 
 /** Applique le thème personnalisé via une feuille <style> injectée + favicon. */
+/*
+ * @id     tssr.webTheme.applyThemeSettings
+ * @do     appliquer_theme
+ * @role   ui
+ * @layer  outil
+ * @human  Applique les réglages de thème à la page.
+ */
 export function applyThemeSettings(t: ThemeSettings) {
   let el = document.getElementById('mk-theme') as HTMLStyleElement | null;
   if (!el) { el = document.createElement('style'); el.id = 'mk-theme'; document.head.appendChild(el); }
@@ -57,6 +85,13 @@ function getInitialTheme(): Theme {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
+/*
+ * @id     tssr.webTheme.useTheme
+ * @do     basculer_theme
+ * @role   ui
+ * @layer  outil
+ * @human  Hook de thème clair/sombre : lit et bascule le thème.
+ */
 export function useTheme() {
   const [theme, setThemeState] = useState<Theme>(getInitialTheme);
 

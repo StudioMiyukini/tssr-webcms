@@ -1,3 +1,10 @@
+/*
+ * @id     tssr.libAuth
+ * @do     garder_sessions
+ * @role   securite
+ * @layer  infra
+ * @human  Authentification : gardes de session admin et client.
+ */
 import type { Request, Response, NextFunction } from 'express';
 import type { AdminSession, CustomerSession } from '../../shared/types';
 
@@ -24,10 +31,24 @@ declare module 'express-session' {
   }
 }
 
+/*
+ * @id     tssr.libAuth.isAuthed
+ * @do     verifier_session_admin
+ * @role   securite
+ * @layer  infra
+ * @human  Indique si la requête porte une session admin valide.
+ */
 export function isAuthed(req: Request): boolean {
   return Boolean(req.session?.admin);
 }
 
+/*
+ * @id     tssr.libAuth.requireAuth
+ * @do     exiger_session_admin
+ * @role   securite
+ * @layer  infra
+ * @human  Middleware : bloque l'accès sans session admin.
+ */
 export function requireAuth(req: Request, res: Response, next: NextFunction): void {
   if (!isAuthed(req)) {
     res.status(401).json({ error: 'Unauthorized' });
@@ -36,10 +57,24 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
   next();
 }
 
+/*
+ * @id     tssr.libAuth.isCustomerAuthed
+ * @do     verifier_session_client
+ * @role   securite
+ * @layer  infra
+ * @human  Indique si la requête porte une session client valide.
+ */
 export function isCustomerAuthed(req: Request): boolean {
   return Boolean(req.session?.customer);
 }
 
+/*
+ * @id     tssr.libAuth.requireCustomerAuth
+ * @do     exiger_session_client
+ * @role   securite
+ * @layer  infra
+ * @human  Middleware : bloque l'accès sans session client.
+ */
 export function requireCustomerAuth(req: Request, res: Response, next: NextFunction): void {
   if (!isCustomerAuthed(req)) {
     res.status(401).json({ error: 'Customer auth required' });

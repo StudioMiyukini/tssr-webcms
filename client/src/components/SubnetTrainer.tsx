@@ -50,6 +50,13 @@ function solve(ip: number, cidr: number) {
   return { mask, network, broadcast, first, last, hosts };
 }
 
+/*
+ * @id     tssr.atelier.subnetTrainer
+ * @do     entrainer_sous_reseaux
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : entraîneur au calcul de sous-réseaux.
+ */
 export function SubnetTrainer() {
   const [diff, setDiff] = useState<Diff>('moyen');
   const [ex, setEx] = useState(() => makeExercise('moyen'));

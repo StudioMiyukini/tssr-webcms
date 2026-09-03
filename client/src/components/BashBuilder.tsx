@@ -19,6 +19,13 @@ const groupe: React.CSSProperties = { border: '1px solid var(--border)', borderR
 const legende: React.CSSProperties = { fontWeight: 700, fontSize: 14, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' };
 const petit: React.CSSProperties = { padding: '4px 10px', border: '1px solid var(--border)', borderRadius: 8, background: 'transparent', color: 'var(--text-soft)', fontWeight: 600, cursor: 'pointer', fontSize: 12 };
 
+/*
+ * @id     tssr.atelier.bashBuilder
+ * @do     construire_script_bash
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : constructeur de scripts bash guidé.
+ */
 export function BashBuilder() {
   const [nom, setNom] = useState('sauvegarde.sh');
   const [desc, setDesc] = useState('Sauvegarde les données métier vers le volume de secours');

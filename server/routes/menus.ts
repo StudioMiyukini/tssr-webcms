@@ -43,4 +43,11 @@ router.delete('/api/admin/menus/:id', requireAuth, (req, res) => {
   res.json({ ok: true });
 });
 
+/*
+ * @id     tssr.routeMenus
+ * @do     exposer_routes_menus
+ * @role   orchestration
+ * @layer  infra
+ * @human  Routes admin des menus de navigation.
+ */
 export default router;

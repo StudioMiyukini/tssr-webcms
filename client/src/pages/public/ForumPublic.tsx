@@ -9,6 +9,13 @@ function Body({ text }: { text: string }) {
 }
 
 // ===== Liste des catégories =====
+/*
+ * @id     tssr.pageForumPublic
+ * @do     afficher_forum
+ * @role   ui
+ * @layer  ui
+ * @human  Page publique « Forum » : liste des catégories et sujets.
+ */
 export function ForumPage() {
   const forum = usePublicForum();
   if (forum.isLoading) return <div className="loading">Chargement…</div>;
@@ -35,6 +42,13 @@ export function ForumPage() {
 }
 
 // ===== Sujets d'une catégorie + nouveau sujet =====
+/*
+ * @id     tssr.pageForumCategory
+ * @do     afficher_categorie_forum
+ * @role   ui
+ * @layer  ui
+ * @human  Page publique d'une catégorie du forum.
+ */
 export function ForumCategoryPage() {
   const { cat } = useParams({ strict: false }) as { cat: string };
   const navigate = useNavigate();
@@ -100,6 +114,13 @@ export function ForumCategoryPage() {
 }
 
 // ===== Sujet + réponses =====
+/*
+ * @id     tssr.pageForumTopic
+ * @do     afficher_sujet_forum
+ * @role   ui
+ * @layer  ui
+ * @human  Page publique d'un sujet du forum et de ses réponses.
+ */
 export function ForumTopicPage() {
   const { slug } = useParams({ strict: false }) as { slug: string };
   const q = usePublicForumTopic(slug);

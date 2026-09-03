@@ -2,6 +2,13 @@ import { useRef, useState } from 'react';
 import { useToast } from '@/lib/toast';
 
 /** Sauvegarde & export du site (back-office) : télécharger un .zip (base + médias) et le réimporter. */
+/*
+ * @id     tssr.pageBackup
+ * @do     gerer_sauvegardes
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Sauvegardes » : création et restauration des sauvegardes.
+ */
 export function BackupPage() {
   const { push } = useToast();
   const [busy, setBusy] = useState<'' | 'export' | 'import'>('');

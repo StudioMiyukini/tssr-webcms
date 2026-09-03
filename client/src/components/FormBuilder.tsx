@@ -5,6 +5,13 @@ let counter = 0;
 const uid = () => { counter += 1; return `f-${Date.now()}-${counter}`; };
 const LABELS = Object.fromEntries(FORM_FIELD_TYPES.map(t => [t.type, t.label])) as Record<FormFieldType, string>;
 
+/*
+ * @id     tssr.compFormBuilder
+ * @do     construire_formulaire
+ * @role   ui
+ * @layer  ui
+ * @human  Constructeur de formulaires personnalisés : champs, options et disposition.
+ */
 export function makeFormField(type: FormFieldType): FormField {
   counter += 1;
   return {

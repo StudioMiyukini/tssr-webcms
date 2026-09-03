@@ -1,3 +1,10 @@
+/*
+ * @id     tssr.types
+ * @do     definir_types_partages
+ * @role   config
+ * @layer  domain
+ * @human  Types partagés client/serveur : sessions, entités du CMS, de la boutique et de l'atelier.
+ */
 export interface AdminSession {
   id: number;
   username: string;

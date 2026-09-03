@@ -4,6 +4,13 @@ import { formatPriceEUR } from '@/lib/format';
 import { useState } from 'react';
 import { useToast } from '@/lib/toast';
 
+/*
+ * @id     tssr.pageCart
+ * @do     afficher_panier
+ * @role   ui
+ * @layer  ui
+ * @human  Page publique « Panier » : contenu du panier et passage à la commande.
+ */
 export function CartPage() {
   const cart = useCart();
   const update = useUpdateCart();

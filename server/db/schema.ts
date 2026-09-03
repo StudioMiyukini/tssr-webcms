@@ -1,3 +1,10 @@
+/*
+ * @id     tssr.dbSchema
+ * @do     definir_schema
+ * @role   donnee
+ * @layer  domaine
+ * @human  Schéma Drizzle : tables du CMS, de la boutique et de l'atelier.
+ */
 import { sql } from 'drizzle-orm';
 import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
 

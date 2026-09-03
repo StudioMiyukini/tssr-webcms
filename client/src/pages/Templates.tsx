@@ -3,6 +3,13 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { EmailTemplates, type EmailTemplateInput } from '@/api/hooks';
 import { useToast } from '@/lib/toast';
 
+/*
+ * @id     tssr.pageTemplatesList
+ * @do     lister_modeles
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Modèles » : liste des modèles de page réutilisables.
+ */
 export function TemplatesListPage() {
   const list = EmailTemplates.useList();
   const del = EmailTemplates.useDelete();
@@ -41,6 +48,13 @@ export function TemplatesListPage() {
 
 const EMPTY: EmailTemplateInput = { name: '', subject: '', body_html: '' };
 
+/*
+ * @id     tssr.pageTemplateEdit
+ * @do     editer_modele
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin d'édition d'un modèle de page.
+ */
 export function TemplateEditPage() {
   const params = useParams({ strict: false }) as { id?: string };
   const navigate = useNavigate();

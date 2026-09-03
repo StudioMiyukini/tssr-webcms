@@ -1,3 +1,10 @@
+/*
+ * @id     tssr.dbSeed
+ * @do     semer_donnees
+ * @role   donnee
+ * @layer  infra
+ * @human  Script de semis : données initiales de la base.
+ */
 import { db, rawDb } from './client';
 import { pages, menu_items, products, coupons, shipping_methods, quote_forms } from './schema';
 

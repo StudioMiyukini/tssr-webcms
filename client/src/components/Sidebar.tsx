@@ -102,6 +102,13 @@ const NAV_GROUPS: NavGroup[] = [
   },
 ];
 
+/*
+ * @id     tssr.compSidebar
+ * @do     afficher_barre_laterale
+ * @role   ui
+ * @layer  ui
+ * @human  Barre latérale de navigation de l'administration.
+ */
 export function Sidebar({ onClose }: SidebarProps = {}) {
   const location = useLocation();
   const path = location.pathname;

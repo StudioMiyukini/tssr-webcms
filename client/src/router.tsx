@@ -246,6 +246,13 @@ const routeTree = rootRoute.addChildren([
   ]),
 ]);
 
+/*
+ * @id     tssr.webRouter
+ * @do     declarer_routes_client
+ * @role   orchestration
+ * @layer  ui
+ * @human  Déclare l'arbre des routes du client : pages d'administration et pages publiques (chargées à la demande).
+ */
 export const router = createRouter({ routeTree, defaultPreload: 'intent' });
 
 declare module '@tanstack/react-router' {

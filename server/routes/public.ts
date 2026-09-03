@@ -104,4 +104,11 @@ router.post('/api/public/quote-forms/:slug/submit', requireFeature('quotes'), qu
   res.status(201).json({ ok: true, id: inserted.id, success_message: form.success_message, computed_total_cents: computedTotalCents });
 });
 
+/*
+ * @id     tssr.routePublic
+ * @do     exposer_routes_publiques
+ * @role   orchestration
+ * @layer  infra
+ * @human  Routes publiques du site : pages, produits, menus consultés par les visiteurs.
+ */
 export default router;

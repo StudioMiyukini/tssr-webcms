@@ -1,3 +1,10 @@
+/*
+ * @id     tssr.libCache
+ * @do     cacher_reponses
+ * @role   orchestration
+ * @layer  infra
+ * @human  Cache des réponses publiques : mise en cache et invalidation.
+ */
 import type { Request, Response, NextFunction, RequestHandler } from 'express';
 import type { CacheStats } from '../../shared/types';
 
@@ -21,9 +28,23 @@ function weakEtag(body: string): string {
 }
 
 /** Vide entièrement le cache public (appelé après toute écriture admin réussie). */
+/*
+ * @id     tssr.libCache.clearPublicCache
+ * @do     vider_cache
+ * @role   orchestration
+ * @layer  infra
+ * @human  Vide entièrement le cache des réponses publiques.
+ */
 export function clearPublicCache(): void { store.clear(); }
 
 /** Statistiques pour le panneau d'admin. */
+/*
+ * @id     tssr.libCache.cacheStats
+ * @do     mesurer_cache
+ * @role   donnee
+ * @layer  infra
+ * @human  Retourne les statistiques du cache public.
+ */
 export function cacheStats(cfg: CacheConfig): CacheStats {
   let approxBytes = 0;
   for (const e of store.values()) approxBytes += e.bytes;
@@ -42,6 +63,13 @@ export function cacheStats(cfg: CacheConfig): CacheStats {
  * Middleware de cache pour les réponses publiques GET.
  * Court-circuite et sert depuis la RAM (ou renvoie 304) tant que l'entrée est fraîche.
  * `getConfig` est relu à chaque requête → bascule activé/TTL à chaud depuis l'admin.
+ */
+/*
+ * @id     tssr.libCache.publicCache
+ * @do     mettre_en_cache
+ * @role   orchestration
+ * @layer  infra
+ * @human  Middleware : met en cache les réponses publiques selon la configuration.
  */
 export function publicCache(getConfig: () => CacheConfig): RequestHandler {
   return (req: Request, res: Response, next: NextFunction): void => {
@@ -93,6 +121,13 @@ export function publicCache(getConfig: () => CacheConfig): RequestHandler {
 // (les notes s'auto-sauvegardent très souvent : on évite de purger le cache à chaque frappe).
 const NEVER_PUBLIC = ['/api/admin/notes', '/api/admin/note-folders'];
 
+/*
+ * @id     tssr.libCache.cacheBustOnWrite
+ * @do     invalider_cache
+ * @role   orchestration
+ * @layer  infra
+ * @human  Middleware : invalide le cache public à chaque écriture.
+ */
 export function cacheBustOnWrite(): RequestHandler {
   return (req: Request, res: Response, next: NextFunction): void => {
     const mutating = req.method !== 'GET' && req.method !== 'HEAD' && req.method !== 'OPTIONS';

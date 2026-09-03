@@ -18,6 +18,13 @@ function Toggle({ on, onChange, title }: { on: boolean; onChange: () => void; ti
   );
 }
 
+/*
+ * @id     tssr.pagePerformance
+ * @do     mesurer_performance
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Performance » : cache et indicateurs techniques.
+ */
 export function PerformancePage() {
   const settings = useSiteSettings();
   const update = useUpdateSiteSettings();

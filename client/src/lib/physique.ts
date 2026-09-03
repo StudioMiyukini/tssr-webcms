@@ -15,6 +15,13 @@
  * première question de tout TP.
  */
 
+/*
+ * @id     tssr.atelier.physique
+ * @do     definir_donnees_physique
+ * @role   donnee
+ * @layer  outil
+ * @human  Données de l'atelier : matériel physique et câblage.
+ */
 export type TypeMateriel = 'routeur' | 'switch' | 'multicouche' | 'serveur' | 'poste' | 'nuage';
 
 export interface Materiel {

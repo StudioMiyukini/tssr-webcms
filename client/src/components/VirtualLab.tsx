@@ -48,6 +48,13 @@ function capIcon(kind: 'min' | 'max' | 'restore' | 'close') {
   return <svg {...common} strokeLinecap="round"><path d="M0.6 0.6 L9.4 9.4 M9.4 0.6 L0.6 9.4" /></svg>;
 }
 
+/*
+ * @id     tssr.atelier.virtualLab
+ * @do     simuler_laboratoire
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : laboratoire virtuel de mise en pratique.
+ */
 export function VirtualLab() {
   const wrapRef = useRef<HTMLDivElement>(null);
   const screenRef = useRef<HTMLDivElement>(null);

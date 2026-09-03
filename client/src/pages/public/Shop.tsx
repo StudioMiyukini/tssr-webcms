@@ -3,6 +3,13 @@ import { usePublicProducts, usePublicCategories, useAddToCart } from '@/api/publ
 import { formatPriceEUR } from '@/lib/format';
 import { useToast } from '@/lib/toast';
 
+/*
+ * @id     tssr.pageShop
+ * @do     afficher_boutique
+ * @role   ui
+ * @layer  ui
+ * @human  Page publique « Boutique » : catalogue des produits en vente.
+ */
 export function ShopPage() {
   const search = useSearch({ strict: false }) as { category?: string };
   const category = search.category;

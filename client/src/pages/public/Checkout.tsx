@@ -13,6 +13,13 @@ interface FormState {
   notes: string;
 }
 
+/*
+ * @id     tssr.pageCheckout
+ * @do     passer_commande
+ * @role   ui
+ * @layer  ui
+ * @human  Page publique de commande : coordonnées, livraison et paiement.
+ */
 export function CheckoutPage() {
   const cart = useCart();
   const manual = useCheckoutManual();

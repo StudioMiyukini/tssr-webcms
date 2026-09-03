@@ -3,6 +3,13 @@ import { usePublicPage } from '@/api/public';
 import { RichContent } from '@/components/RichContent';
 import { ShareButtons } from '@/components/ShareButtons';
 
+/*
+ * @id     tssr.pagePageView
+ * @do     afficher_page_cms
+ * @role   ui
+ * @layer  ui
+ * @human  Page publique qui rend une page du CMS par son chemin.
+ */
 export function PageView() {
   const { slug } = useParams({ strict: false }) as { slug: string };
   const q = usePublicPage(slug);

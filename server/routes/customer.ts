@@ -173,4 +173,11 @@ router.get('/api/customer/orders/:id/invoice.pdf', requireCustomerAuth, (req, re
   streamInvoicePdf(res, order, items as any);
 });
 
+/*
+ * @id     tssr.routeCustomer
+ * @do     exposer_routes_client
+ * @role   securite
+ * @layer  infra
+ * @human  Routes de l'espace client : compte, connexion, inscription, commandes.
+ */
 export default router;

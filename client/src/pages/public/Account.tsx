@@ -13,6 +13,13 @@ function fmtBytes(n: number): string {
   return `${(n / 1024 / 1024).toFixed(1)} Mo`;
 }
 
+/*
+ * @id     tssr.pageAccount
+ * @do     afficher_compte_client
+ * @role   ui
+ * @layer  ui
+ * @human  Page publique « Mon compte » : informations et commandes du client.
+ */
 export function AccountPage() {
   const me = useCustomerMe();
   const logout = useCustomerLogout();
@@ -207,6 +214,13 @@ export function CloudPage() {
   );
 }
 
+/*
+ * @id     tssr.pageAccountLogin
+ * @do     connecter_client
+ * @role   securite
+ * @layer  ui
+ * @human  Page publique de connexion à l'espace client.
+ */
 export function AccountLoginPage() {
   const login = useCustomerLogin();
   const navigate = useNavigate();
@@ -237,6 +251,13 @@ export function AccountLoginPage() {
   );
 }
 
+/*
+ * @id     tssr.pageAccountRegister
+ * @do     inscrire_client
+ * @role   securite
+ * @layer  ui
+ * @human  Page publique de création d'un compte client.
+ */
 export function AccountRegisterPage() {
   const register = useCustomerRegister();
   const navigate = useNavigate();

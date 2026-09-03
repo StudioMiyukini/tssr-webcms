@@ -5,6 +5,13 @@ import { useToast } from '@/lib/toast';
 import { PLANNING_COLORS, type PlanningInput, type PlanningRow, type PlanningLegendItem } from '@shared/types';
 import { PlanningTable } from '@/components/PlanningTable';
 
+/*
+ * @id     tssr.pagePlanningList
+ * @do     lister_plannings
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Plannings » : liste des plannings.
+ */
 export function PlanningListPage() {
   const list = Plannings.useList();
   const del = Plannings.useDelete();
@@ -44,6 +51,13 @@ export function PlanningListPage() {
 const EMPTY: PlanningInput = { title: '', slug: '', section: '', period: '', columns: 4, legend: [], rows: [], published: 1, sort_order: 0 };
 const emptyRow = (cols: number): PlanningRow => ({ weekday: '', day: '', weekend: false, cells: Array.from({ length: cols }, () => ({ text: '', color: '' })) });
 
+/*
+ * @id     tssr.pagePlanningEdit
+ * @do     editer_planning
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin d'édition d'un planning.
+ */
 export function PlanningEditPage() {
   const params = useParams({ strict: false }) as { id?: string };
   const navigate = useNavigate();

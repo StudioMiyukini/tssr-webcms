@@ -47,4 +47,11 @@ router.post('/api/admin/email/test', requireAuth, asyncHandler(async (req, res) 
   res.json(r);
 }));
 
+/*
+ * @id     tssr.routeEmail
+ * @do     exposer_routes_email
+ * @role   orchestration
+ * @layer  infra
+ * @human  Routes d'envoi et de gestion des e-mails.
+ */
 export default router;

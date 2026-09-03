@@ -5,6 +5,13 @@ import type { EmailSettings } from '@shared/types';
 
 const EMPTY: EmailSettings = { host: '', port: 587, user: '', pass: '', from: '', notifyTo: '', notifyOnForm: true, notifyOnQuote: true, notifyOnOrder: true, ackToSubmitter: false };
 
+/*
+ * @id     tssr.pageEmail
+ * @do     gerer_emails
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « E-mails » : réglages et journal des envois.
+ */
 export function EmailPage() {
   const q = useEmailSettings();
   const update = useUpdateEmailSettings();

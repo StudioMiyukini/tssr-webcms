@@ -5,6 +5,13 @@ import { useToast } from '@/lib/toast';
 import { formatEventDate } from '@/lib/format';
 import { MediaField } from '@/components/MediaPicker';
 
+/*
+ * @id     tssr.pageEventsList
+ * @do     lister_evenements
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Événements » : liste de l'agenda.
+ */
 export function EventsListPage() {
   const list = Events.useList();
   const del = Events.useDelete();
@@ -49,6 +56,13 @@ export function EventsListPage() {
 
 const EMPTY: EventInput = { title: '', slug: '', description: '', location: '', start_at: '', end_at: '', all_day: 0, url: '', image_url: '', published: 1 };
 
+/*
+ * @id     tssr.pageEventEdit
+ * @do     editer_evenement
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin d'édition d'un événement.
+ */
 export function EventEditPage() {
   const params = useParams({ strict: false }) as { id?: string };
   const navigate = useNavigate();

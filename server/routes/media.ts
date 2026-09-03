@@ -64,4 +64,11 @@ function hash(s: string): number {
   return h;
 }
 
+/*
+ * @id     tssr.routeMedia
+ * @do     exposer_routes_medias
+ * @role   orchestration
+ * @layer  infra
+ * @human  Routes de la médiathèque : téléversement et gestion des fichiers.
+ */
 export default router;

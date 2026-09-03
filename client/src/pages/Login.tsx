@@ -2,6 +2,13 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useLogin } from '@/api/hooks';
 
+/*
+ * @id     tssr.pageLogin
+ * @do     connecter_admin
+ * @role   securite
+ * @layer  ui
+ * @human  Page de connexion à l'administration.
+ */
 export function LoginPage() {
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('');

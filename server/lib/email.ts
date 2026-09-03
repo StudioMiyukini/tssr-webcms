@@ -1,3 +1,10 @@
+/*
+ * @id     tssr.libEmail
+ * @do     gerer_emails
+ * @role   orchestration
+ * @layer  infra
+ * @human  Envoi d'e-mails transactionnels et composition des messages.
+ */
 import nodemailer from 'nodemailer';
 import { eq } from 'drizzle-orm';
 import { db } from '../db/client';
@@ -13,6 +20,13 @@ let cache: EmailSettings | null = null;
 let transport: nodemailer.Transporter | null = null;
 
 /** Config email effective : réglages admin (table settings) par-dessus les variables d'env. */
+/*
+ * @id     tssr.libEmail.readEmailSettings
+ * @do     lire_reglages_email
+ * @role   config
+ * @layer  infra
+ * @human  Lit la configuration d'envoi d'e-mails depuis les réglages.
+ */
 export function readEmailSettings(): EmailSettings {
   if (cache) return cache;
   let stored: Partial<EmailSettings> = {};
@@ -36,6 +50,13 @@ export function readEmailSettings(): EmailSettings {
 }
 
 /** Invalide le cache et le transport (à appeler après modification des réglages). */
+/*
+ * @id     tssr.libEmail.resetEmailCache
+ * @do     reinitialiser_cache_email
+ * @role   config
+ * @layer  infra
+ * @human  Réinitialise le cache de configuration e-mail et le transport.
+ */
 export function resetEmailCache(): void { cache = null; transport = null; }
 
 function getTransport(cfg: EmailSettings): nodemailer.Transporter {
@@ -53,6 +74,13 @@ function getTransport(cfg: EmailSettings): nodemailer.Transporter {
 export interface SendEmailArgs { to: string; subject: string; html: string; eventType?: string; }
 export interface SendEmailResult { ok: boolean; skipped?: boolean; error?: unknown; }
 
+/*
+ * @id     tssr.libEmail.sendTransactionalEmail
+ * @do     envoyer_email
+ * @role   orchestration
+ * @layer  infra
+ * @human  Envoie un e-mail transactionnel et journalise le résultat.
+ */
 export async function sendTransactionalEmail({ to, subject, html, eventType = 'generic' }: SendEmailArgs): Promise<SendEmailResult> {
   const cfg = readEmailSettings();
   const recipient = String(to || '').trim();
@@ -75,11 +103,25 @@ export async function sendTransactionalEmail({ to, subject, html, eventType = 'g
   }
 }
 
+/*
+ * @id     tssr.libEmail.buildOrderEmailHtml
+ * @do     composer_email_commande
+ * @role   ui
+ * @layer  infra
+ * @human  Construit le corps HTML de l'e-mail de confirmation de commande.
+ */
 export function buildOrderEmailHtml(order: { order_number: string; total_cents: number }, items: Array<{ product_name: string; variant_label: string; quantity: number; line_total_cents: number }>): string {
   return `<h1>Commande ${safe(order.order_number)}</h1><p>Merci pour votre commande.</p><ul>${items.map((i) => `<li>${safe(i.product_name)}${i.variant_label ? ` — ${safe(i.variant_label)}` : ''} × ${safe(i.quantity)} : ${formatPriceEUR(i.line_total_cents)}</li>`).join('')}</ul><p>Total : <strong>${formatPriceEUR(order.total_cents)}</strong></p>`;
 }
 
 /** Tableau HTML clé/valeur générique (réutilisé pour les notifications de formulaire). */
+/*
+ * @id     tssr.libEmail.buildKeyValuesEmailHtml
+ * @do     composer_email_cle_valeur
+ * @role   ui
+ * @layer  infra
+ * @human  Construit un corps d'e-mail HTML générique en tableau clé/valeur.
+ */
 export function buildKeyValuesEmailHtml(title: string, intro: string, rows: Array<{ label: string; value: string }>): string {
   return `<h1>${safe(title)}</h1>${intro ? `<p>${safe(intro)}</p>` : ''}<table style="border-collapse:collapse">${rows.map(r => `<tr><td style="padding:4px 10px 4px 0;color:#666;vertical-align:top"><strong>${safe(r.label)}</strong></td><td style="padding:4px 0">${safe(r.value)}</td></tr>`).join('')}</table>`;
 }

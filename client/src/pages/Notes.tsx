@@ -21,6 +21,13 @@ interface WorkspaceProps {
 }
 
 /** Wrapper pour la route /admin/notes. */
+/*
+ * @id     tssr.pageNotes
+ * @do     gerer_notes
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Notes » : notes internes de l'équipe.
+ */
 export function NotesPage() { return <NotesWorkspace />; }
 
 /** Espace de travail Notes complet (liste + dossiers + recherche + éditeur riche), réutilisable. */

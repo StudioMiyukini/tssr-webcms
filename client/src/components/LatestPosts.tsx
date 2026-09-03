@@ -3,6 +3,13 @@ import type { PostsMode } from '@/lib/page-blocks';
 
 /** Îlot dynamique : articles publiés (liens en <a> car hors contexte router).
  *  mode = 'latest' (derniers, filtrables par catégorie) · 'featured' (mis en avant) · 'selected' (slugs choisis). */
+/*
+ * @id     tssr.compLatestPosts
+ * @do     afficher_derniers_articles
+ * @role   ui
+ * @layer  ui
+ * @human  Bloc affichant les derniers articles du blog.
+ */
 export function LatestPosts({ count, category, title, mode = 'latest', slugs = [] }: {
   count: number; category: string; title: string; mode?: PostsMode; slugs?: string[];
 }) {

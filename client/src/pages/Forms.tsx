@@ -6,6 +6,13 @@ import { FormBuilder, normalizeFormFields } from '@/components/FormBuilder';
 import type { FormField, FormFieldMetric } from '@shared/types';
 
 // ===== Liste =====
+/*
+ * @id     tssr.pageFormsList
+ * @do     lister_formulaires
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Formulaires » : liste des formulaires personnalisés.
+ */
 export function FormsListPage() {
   const list = Forms.useList();
   const del = Forms.useDelete();
@@ -48,6 +55,13 @@ export function FormsListPage() {
 // ===== Édition =====
 const EMPTY: FormInput = { title: '', slug: '', description: '', fields_json: '[]', success_message: 'Merci, votre réponse a bien été enregistrée.', published: 1 };
 
+/*
+ * @id     tssr.pageFormEdit
+ * @do     editer_formulaire
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin d'édition d'un formulaire personnalisé.
+ */
 export function FormEditPage() {
   const params = useParams({ strict: false }) as { id?: string };
   const navigate = useNavigate();
@@ -108,6 +122,13 @@ export function FormEditPage() {
 }
 
 // ===== Résultats (métriques + réponses) =====
+/*
+ * @id     tssr.pageFormResults
+ * @do     consulter_reponses_formulaire
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin des réponses reçues à un formulaire.
+ */
 export function FormResultsPage() {
   const params = useParams({ strict: false }) as { id?: string };
   const id = params.id ? Number(params.id) : null;

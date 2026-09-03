@@ -143,4 +143,11 @@ router.get('/api/public/notes/:id', (req, res) => {
   res.json(rec);
 });
 
+/*
+ * @id     tssr.routeNotes
+ * @do     exposer_routes_notes
+ * @role   orchestration
+ * @layer  infra
+ * @human  Routes des notes internes de l'administration.
+ */
 export default router;

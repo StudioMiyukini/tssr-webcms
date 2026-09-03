@@ -10,6 +10,13 @@ import { useToast } from '@/lib/toast';
 import { BlockEditor } from '@/components/BlockEditor';
 
 // ============== MENUS ==============
+/*
+ * @id     tssr.pageMenusList
+ * @do     lister_menus
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Menus » : liste des menus de navigation.
+ */
 export function MenusListPage() {
   const list = Menus.useList();
   const del = Menus.useDelete();
@@ -37,6 +44,13 @@ export function MenusListPage() {
   );
 }
 
+/*
+ * @id     tssr.pageMenuEdit
+ * @do     editer_menu
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin d'édition d'un menu.
+ */
 export function MenuEditPage() {
   const params = useParams({ strict: false }) as { id?: string };
   const navigate = useNavigate();
@@ -66,6 +80,13 @@ export function MenuEditPage() {
 }
 
 // ============== COUPONS ==============
+/*
+ * @id     tssr.pageCouponsList
+ * @do     lister_coupons
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Coupons » : liste des coupons de réduction.
+ */
 export function CouponsListPage() {
   const list = Coupons.useList();
   const del = Coupons.useDelete();
@@ -95,6 +116,13 @@ export function CouponsListPage() {
   );
 }
 
+/*
+ * @id     tssr.pageCouponEdit
+ * @do     editer_coupon
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin d'édition d'un coupon.
+ */
 export function CouponEditPage() {
   const params = useParams({ strict: false }) as { id?: string };
   const navigate = useNavigate();
@@ -133,6 +161,13 @@ export function CouponEditPage() {
 }
 
 // ============== SHIPPING ==============
+/*
+ * @id     tssr.pageShippingList
+ * @do     lister_livraisons
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Livraison » : liste des méthodes d'expédition.
+ */
 export function ShippingListPage() {
   const list = Shipping.useList();
   const del = Shipping.useDelete();
@@ -162,6 +197,13 @@ export function ShippingListPage() {
   );
 }
 
+/*
+ * @id     tssr.pageShippingEdit
+ * @do     editer_livraison
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin d'édition d'une méthode de livraison.
+ */
 export function ShippingEditPage() {
   const params = useParams({ strict: false }) as { id?: string };
   const navigate = useNavigate();
@@ -198,6 +240,13 @@ export function ShippingEditPage() {
 }
 
 // ============== QUOTE FORMS ==============
+/*
+ * @id     tssr.pageQuoteFormsList
+ * @do     lister_formulaires_devis
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Formulaires de devis » : liste des modèles de devis.
+ */
 export function QuoteFormsListPage() {
   const list = QuoteForms.useList();
   const del = QuoteForms.useDelete();
@@ -230,6 +279,13 @@ export function QuoteFormsListPage() {
 
 const EMPTY_QF: QuoteFormInput = { title: '', slug: '', description: '', intro_html: '', cta_label: 'Envoyer ma demande', success_message: 'Votre demande a bien été envoyée.', recipient_email: '', fields_json: '[]', blocks_json: '[]', published: 1 };
 
+/*
+ * @id     tssr.pageQuoteFormEdit
+ * @do     editer_formulaire_devis
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin d'édition d'un formulaire de devis.
+ */
 export function QuoteFormEditPage() {
   const params = useParams({ strict: false }) as { id?: string };
   const navigate = useNavigate();
@@ -282,6 +338,13 @@ export function QuoteFormEditPage() {
 }
 
 // ============== QUOTE SUBMISSIONS ==============
+/*
+ * @id     tssr.pageQuoteSubmissionsList
+ * @do     lister_demandes_devis
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Demandes de devis » : liste des devis soumis.
+ */
 export function QuoteSubmissionsListPage() {
   const list = useQuoteSubmissions();
   const del = useDeleteQuoteSubmission();
@@ -312,6 +375,13 @@ export function QuoteSubmissionsListPage() {
   );
 }
 
+/*
+ * @id     tssr.pageQuoteSubmissionDetail
+ * @do     detailler_demande_devis
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin de détail d'une demande de devis.
+ */
 export function QuoteSubmissionDetailPage() {
   const params = useParams({ strict: false }) as { id?: string };
   const id = params.id ? Number(params.id) : null;

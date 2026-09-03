@@ -84,4 +84,11 @@ router.get('/api/public/plannings/:slug', requireFeature('planning'), (req, res)
   res.json(toRecord(rec));
 });
 
+/*
+ * @id     tssr.routePlannings
+ * @do     exposer_routes_plannings
+ * @role   orchestration
+ * @layer  infra
+ * @human  Routes des plannings : agendas et créneaux partagés.
+ */
 export default router;

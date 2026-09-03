@@ -3,6 +3,13 @@ import { PLANNING_COLORS, type PlanningRecord } from '@shared/types';
 const COLOR = Object.fromEntries(PLANNING_COLORS.map(c => [c.key, c]));
 
 /** Rend un planning sous forme de grille colorée (jours en lignes, créneaux en colonnes). */
+/*
+ * @id     tssr.compPlanningTable
+ * @do     afficher_tableau_planning
+ * @role   ui
+ * @layer  ui
+ * @human  Tableau d'affichage d'un planning.
+ */
 export function PlanningTable({ planning }: { planning: PlanningRecord }) {
   const cols = Math.max(1, planning.columns);
   return (

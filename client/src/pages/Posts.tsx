@@ -6,6 +6,13 @@ import { MediaField } from '@/components/MediaPicker';
 import { PageBuilder } from '@/components/PageBuilder';
 import { normalizePageBlocks, serializePageBlocks, renderPageBlocksToHtml, makePageBlock, type PageBlock } from '@/lib/page-blocks';
 
+/*
+ * @id     tssr.pagePostsList
+ * @do     lister_articles
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Articles » : liste des articles du blog.
+ */
 export function PostsListPage() {
   const list = Posts.useList();
   const del = Posts.useDelete();
@@ -47,6 +54,13 @@ export function PostsListPage() {
 
 const EMPTY: PostInput = { title: '', slug: '', excerpt: '', content: '', builder_json: '', cover_url: '', category: '', author: '', published: 1, featured: 0, published_at: '' };
 
+/*
+ * @id     tssr.pagePostEdit
+ * @do     editer_article
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin d'édition d'un article de blog.
+ */
 export function PostEditPage() {
   const params = useParams({ strict: false }) as { id?: string };
   const navigate = useNavigate();

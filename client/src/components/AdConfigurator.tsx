@@ -19,6 +19,13 @@ const btnStyle: React.CSSProperties = { padding: '8px 12px', border: '1px solid 
 const slug = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');
 const domainToDN = (d: string) => d.split('.').filter(Boolean).map(p => `DC=${p}`).join(',');
 
+/*
+ * @id     tssr.atelier.adConfigurator
+ * @do     configurer_ad
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : configurateur Active Directory (domaine, unités, comptes).
+ */
 export function AdConfigurator() {
   const [domain, setDomain] = useState('miyukini.lan');
   const [ouName, setOuName] = useState('Direction');

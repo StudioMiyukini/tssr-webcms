@@ -44,6 +44,13 @@ function MultiSelect({ options, value, onChange, placeholder }: { options: { id:
   );
 }
 
+/*
+ * @id     tssr.atelier.adBulkConfigurator
+ * @do     configurer_ad_masse
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : création en masse de comptes Active Directory.
+ */
 export function AdBulkConfigurator() {
   const [domain, setDomain] = useState('miyukini.lan');
   const [ous, setOus] = useState<OU[]>([{ id: 'o1', name: 'Formations', parent: '' }]);

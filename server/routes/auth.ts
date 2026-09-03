@@ -42,4 +42,11 @@ router.get('/api/auth/me', (req, res) => {
   res.json(req.session.admin);
 });
 
+/*
+ * @id     tssr.routeAuth
+ * @do     exposer_routes_auth
+ * @role   securite
+ * @layer  infra
+ * @human  Routes d'authentification de l'administration.
+ */
 export default router;

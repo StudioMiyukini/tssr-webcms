@@ -1,3 +1,10 @@
+/*
+ * @id     tssr.libRateLimit
+ * @do     limiter_debit
+ * @role   securite
+ * @layer  infra
+ * @human  Limitation de débit des requêtes.
+ */
 import type { Request, Response, NextFunction } from 'express';
 
 interface Bucket { count: number; resetAt: number; }
@@ -5,6 +12,13 @@ interface Bucket { count: number; resetAt: number; }
 /**
  * Limiteur de débit simple à fenêtre fixe, en mémoire (mono-instance).
  * Suffisant pour freiner le brute-force sur les endpoints de login.
+ */
+/*
+ * @id     tssr.libRateLimit.rateLimit
+ * @do     limiter_debit
+ * @role   securite
+ * @layer  infra
+ * @human  Middleware : limite le nombre de requêtes par fenêtre de temps.
  */
 export function rateLimit(opts: { windowMs: number; max: number; message?: string }) {
   const { windowMs, max, message = 'Trop de tentatives. Réessaie plus tard.' } = opts;

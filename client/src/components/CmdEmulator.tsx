@@ -466,6 +466,13 @@ export function CmdConsole({ shell = 'cmd', height = 360 }: { shell?: 'cmd' | 'p
   );
 }
 
+/*
+ * @id     tssr.atelier.cmdEmulator
+ * @do     emuler_terminal
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : émulateur de terminal de commandes.
+ */
 export function CmdEmulator() {
   const [vm, setVm] = useState<VM>(() => { try { return { ...defaultVM(), ...JSON.parse(localStorage.getItem(LS) || '{}') }; } catch { return defaultVM(); } });
   const [lines, setLines] = useState<Line[]>([

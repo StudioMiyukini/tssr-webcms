@@ -1,5 +1,12 @@
 import { MediaGrid } from '@/components/MediaPicker';
 
+/*
+ * @id     tssr.pageMedia
+ * @do     gerer_medias
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Médiathèque » : téléversement et gestion des fichiers.
+ */
 export function MediaPage() {
   return (
     <>

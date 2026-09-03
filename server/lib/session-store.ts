@@ -1,9 +1,23 @@
+/*
+ * @id     tssr.libSessionStore
+ * @do     stocker_sessions
+ * @role   securite
+ * @layer  infra
+ * @human  Magasin de sessions persistant dans SQLite.
+ */
 import session from 'express-session';
 import { rawDb } from '../db/client';
 
 /**
  * Store de session persistant adossé à better-sqlite3 (table `sessions`).
  * Remplace le MemoryStore : sessions conservées entre redémarrages, pas de fuite mémoire.
+ */
+/*
+ * @id     tssr.libSessionStore.SqliteSessionStore
+ * @do     stocker_sessions
+ * @role   securite
+ * @layer  infra
+ * @human  Magasin de sessions Express persistant dans SQLite.
  */
 export class SqliteSessionStore extends session.Store {
   private getStmt = rawDb.prepare('SELECT data, expires FROM sessions WHERE sid = ?');

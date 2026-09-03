@@ -18,6 +18,13 @@ const groupStyle: React.CSSProperties = { border: '1px solid var(--border)', bor
 const legendStyle: React.CSSProperties = { fontWeight: 700, fontSize: 14, marginBottom: 10 };
 const mono: React.CSSProperties = { fontFamily: 'ui-monospace,monospace' };
 
+/*
+ * @id     tssr.atelier.sshConfigurator
+ * @do     configurer_ssh
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : configurateur d'accès SSH.
+ */
 export function SshConfigurator() {
   const [type, setType] = useState<'router' | 'switch'>(() => load('ssh_type', 'router'));
   const [hostname, setHostname] = useState(() => load('ssh_host', 'R1'));

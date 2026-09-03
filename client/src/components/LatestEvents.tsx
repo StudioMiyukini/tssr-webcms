@@ -2,6 +2,13 @@ import { usePublicEvents } from '@/api/public';
 import { formatEventDate } from '@/lib/format';
 
 /** Îlot dynamique : prochains événements de l'agenda (liens en <a> car hors contexte router). */
+/*
+ * @id     tssr.compLatestEvents
+ * @do     afficher_derniers_evenements
+ * @role   ui
+ * @layer  ui
+ * @human  Bloc affichant les prochains événements.
+ */
 export function LatestEvents({ count, title }: { count: number; title: string }) {
   const events = usePublicEvents();
   const now = Date.now();

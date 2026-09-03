@@ -34,6 +34,13 @@ const legendStyle: React.CSSProperties = { fontWeight: 700, fontSize: 14, margin
 const rowStyle: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))', gap: 12 };
 const btnStyle: React.CSSProperties = { padding: '8px 12px', border: '1px solid var(--accent)', borderRadius: 8, background: 'transparent', color: 'var(--accent)', fontWeight: 600, cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap' };
 
+/*
+ * @id     tssr.atelier.vmConfigurator
+ * @do     configurer_vm
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : configurateur de machine virtuelle.
+ */
 export function VmConfigurator() {
   const [type, setType] = useState<'Client' | 'SRV'>('SRV');
   const [num, setNum] = useState('01');

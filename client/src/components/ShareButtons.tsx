@@ -1,6 +1,13 @@
 import { useState } from 'react';
 
 /** Boutons de partage social (utilise l'URL courante). */
+/*
+ * @id     tssr.compShareButtons
+ * @do     afficher_partage
+ * @role   ui
+ * @layer  ui
+ * @human  Boutons de partage vers les réseaux sociaux.
+ */
 export function ShareButtons({ title }: { title: string }) {
   const [copied, setCopied] = useState(false);
   const url = typeof window !== 'undefined' ? window.location.href : '';

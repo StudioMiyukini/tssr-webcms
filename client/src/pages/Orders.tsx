@@ -3,6 +3,13 @@ import { useOrders, useOrder, useUpdateOrderStatus } from '@/api/hooks';
 import { formatPriceEUR, formatOrderStatus, formatDate } from '@/lib/format';
 import { useToast } from '@/lib/toast';
 
+/*
+ * @id     tssr.pageOrdersList
+ * @do     lister_commandes
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Commandes » : liste et suivi des commandes.
+ */
 export function OrdersListPage() {
   const list = useOrders();
   return (
@@ -36,6 +43,13 @@ export function OrdersListPage() {
   );
 }
 
+/*
+ * @id     tssr.pageOrderDetail
+ * @do     detailler_commande
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin de détail d'une commande.
+ */
 export function OrderDetailPage() {
   const params = useParams({ strict: false }) as { id?: string };
   const id = params.id ? Number(params.id) : null;

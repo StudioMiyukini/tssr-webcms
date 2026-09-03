@@ -43,6 +43,13 @@ const ITEMS: PaletteItem[] = [
 
 interface Props { open: boolean; onClose: () => void; }
 
+/*
+ * @id     tssr.compCommandPalette
+ * @do     ouvrir_palette_commandes
+ * @role   ui
+ * @layer  ui
+ * @human  Palette de commandes (⌘K) : recherche et navigation rapide dans l'admin.
+ */
 export function CommandPalette({ open, onClose }: Props) {
   const [query, setQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);

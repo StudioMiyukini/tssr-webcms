@@ -1,6 +1,13 @@
 import { usePublicPlannings } from '@/api/public';
 import { PlanningTable } from '@/components/PlanningTable';
 
+/*
+ * @id     tssr.pagePlanningPublic
+ * @do     afficher_planning
+ * @role   ui
+ * @layer  ui
+ * @human  Page publique affichant un planning.
+ */
 export function PlanningPublicPage() {
   const list = usePublicPlannings();
   if (list.isLoading) return <div className="loading">Chargement…</div>;

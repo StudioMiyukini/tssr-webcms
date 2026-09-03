@@ -22,6 +22,13 @@ export interface Block {
   option_percents: number[];
 }
 
+/*
+ * @id     tssr.compBlockEditor
+ * @do     definir_types_blocs
+ * @role   ui
+ * @layer  ui
+ * @human  Éditeur de blocs de contenu : types de champs et construction des pages du CMS.
+ */
 export const FIELD_TYPES = ['text', 'email', 'tel', 'number', 'textarea', 'select', 'radio', 'checkbox', 'date'] as const;
 export const LAYOUT_TYPES = ['heading', 'separator', 'section'] as const;
 export const PRICING_TYPES = ['price_fixed', 'price_option', 'price_select', 'quantity', 'price_percent_option', 'price_percent_select', 'total'] as const;

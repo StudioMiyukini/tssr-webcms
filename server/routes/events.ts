@@ -66,4 +66,11 @@ router.get('/api/public/events/:slug', requireFeature('events'), (req, res) => {
   res.json(ev);
 });
 
+/*
+ * @id     tssr.routeEvents
+ * @do     exposer_routes_evenements
+ * @role   orchestration
+ * @layer  infra
+ * @human  Routes des événements (agenda public et gestion admin).
+ */
 export default router;

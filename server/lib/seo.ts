@@ -1,3 +1,10 @@
+/*
+ * @id     tssr.libSeo
+ * @do     gerer_seo
+ * @role   donnee
+ * @layer  infra
+ * @human  Métadonnées SEO : résolution et rendu des balises meta.
+ */
 import { eq, and } from 'drizzle-orm';
 import { db } from '../db/client';
 import { pages, posts, events } from '../db/schema';
@@ -13,6 +20,13 @@ export interface Meta { title: string; description: string; image: string; url: 
 
 /** Résout les métadonnées (OG/SEO) d'une route publique à partir du contenu en base.
  *  Si `locked` (site privé non déverrouillé), on renvoie uniquement la marque — aucun extrait de contenu. */
+/*
+ * @id     tssr.libSeo.resolveMeta
+ * @do     resoudre_meta
+ * @role   donnee
+ * @layer  infra
+ * @human  Résout les métadonnées SEO pour un chemin donné.
+ */
 export function resolveMeta(path: string, locked = false): Meta {
   const theme = readThemeSettings();
   const brand = theme.brandName || 'Mon Site';
@@ -40,6 +54,13 @@ export function resolveMeta(path: string, locked = false): Meta {
 }
 
 /** Génère les balises <title> + OpenGraph + Twitter. */
+/*
+ * @id     tssr.libSeo.metaTags
+ * @do     composer_meta
+ * @role   ui
+ * @layer  infra
+ * @human  Rend les balises meta HTML à partir des métadonnées SEO.
+ */
 export function metaTags(m: Meta): string {
   const t = esc(m.title), d = esc(m.description), img = esc(m.image), url = esc(m.url);
   return [

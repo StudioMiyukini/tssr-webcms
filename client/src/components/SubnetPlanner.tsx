@@ -41,6 +41,13 @@ const btnStyle: React.CSSProperties = { padding: '6px 11px', border: '1px solid 
 const smallBtn: React.CSSProperties = { ...btnStyle, padding: '3px 9px', fontSize: 12, borderColor: 'var(--border)', color: 'var(--text-soft)' };
 const mono: React.CSSProperties = { fontFamily: 'ui-monospace,monospace' };
 
+/*
+ * @id     tssr.atelier.subnetPlanner
+ * @do     planifier_sous_reseaux
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : planificateur de sous-réseaux (VLSM).
+ */
 export function SubnetPlanner() {
   const [baseIp, setBaseIp] = useState('192.168.10.0');
   const [baseCidr, setBaseCidr] = useState('24');

@@ -52,6 +52,13 @@ const puce: React.CSSProperties = { padding: '3px 10px', borderRadius: 999, curs
 const mono: React.CSSProperties = { fontFamily: "ui-monospace,'Space Mono',SFMono-Regular,Menlo,Consolas,monospace" };
 const bloc: React.CSSProperties = { ...mono, background: 'var(--surface-3)', border: '1px solid var(--border)', borderLeft: '3px solid var(--accent)', borderRadius: 8, padding: '9px 11px', fontSize: 12.5, whiteSpace: 'pre-wrap', overflowX: 'auto', lineHeight: 1.55, margin: '6px 0 0' };
 
+/*
+ * @id     tssr.atelier.linuxCommandes
+ * @do     explorer_commandes_linux
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : explorateur des commandes Linux.
+ */
 export function LinuxCommandes() {
   const [q, setQ] = useState('');
   const [cat, setCat] = useState('all');

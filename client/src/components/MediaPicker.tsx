@@ -12,6 +12,13 @@ function fileToDataUrl(file: File): Promise<string> {
 }
 
 /** Grille de médias avec import (drag/clic), sélection et suppression optionnelles. */
+/*
+ * @id     tssr.compMediaPicker
+ * @do     choisir_media
+ * @role   ui
+ * @layer  ui
+ * @human  Sélecteur de médias : grille et choix d'un fichier de la médiathèque.
+ */
 export function MediaGrid({ onPick, allowDelete }: { onPick?: (m: MediaRecord) => void; allowDelete?: boolean }) {
   const list = useMediaList();
   const upload = useUploadMedia();

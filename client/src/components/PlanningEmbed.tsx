@@ -2,6 +2,13 @@ import { usePublicPlanning, usePublicPlannings } from '@/api/public';
 import { PlanningTable } from './PlanningTable';
 
 /** Îlot dynamique : affiche un planning précis (par slug) ou tous les plannings publiés. */
+/*
+ * @id     tssr.compPlanningEmbed
+ * @do     integrer_planning
+ * @role   ui
+ * @layer  ui
+ * @human  Encart intégrant un planning dans une page.
+ */
 export function PlanningEmbed({ slug }: { slug: string }) {
   return slug ? <PlanningOne slug={slug} /> : <PlanningAll />;
 }

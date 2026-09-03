@@ -1,4 +1,11 @@
 // Données du glossaire TSSR (porté depuis la page HTML autonome, RAID restauré).
+/*
+ * @id     tssr.atelier.glossaryData
+ * @do     definir_glossaire
+ * @role   donnee
+ * @layer  outil
+ * @human  Données de l'atelier : termes du glossaire technique.
+ */
 export interface GlossaryTerm { acronym: string; name: string; category: string; definition: string; tags: string[]; aliases?: string[]; links?: Array<{ label: string; href: string }>; }
 
 /** Ancre stable d'un terme (pour le partage de lien et le deep-linking). */

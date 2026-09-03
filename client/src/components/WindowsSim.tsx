@@ -196,6 +196,13 @@ function Ip({ value, onChange, disabled }: { value: string; onChange: (v: string
 const box: React.CSSProperties = { border: '1px solid var(--border)', borderRadius: 10, background: 'var(--surface-2)', padding: 12 };
 const btnT: React.CSSProperties = { padding: '6px 12px', border: '1px solid var(--border)', borderRadius: 7, background: 'transparent', color: 'var(--text)', fontWeight: 600, cursor: 'pointer', fontSize: 12.5 };
 
+/*
+ * @id     tssr.atelier.windowsSim
+ * @do     simuler_windows
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : simulateur d'environnement Windows.
+ */
 export function WindowsSim() {
   const [win, setWin] = useState('desktop');
   const [, setHist] = useState<string[]>([]);

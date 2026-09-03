@@ -121,4 +121,11 @@ router.post('/api/public/forum/topics/:slug/replies', requireFeature('forum'), p
   res.status(201).json(rec);
 });
 
+/*
+ * @id     tssr.routeForum
+ * @do     exposer_routes_forum
+ * @role   orchestration
+ * @layer  infra
+ * @human  Routes du forum : sujets, messages et modération.
+ */
 export default router;

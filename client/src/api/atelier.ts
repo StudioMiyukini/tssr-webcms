@@ -2,6 +2,13 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiGet, apiPost, apiPut, apiDelete } from './client';
 
 // ── Types ──
+/*
+ * @id     tssr.apiAtelier
+ * @do     exposer_hooks_atelier
+ * @role   orchestration
+ * @layer  infra
+ * @human  Hooks et appels d'API de l'atelier : progression, exercices et données de formation.
+ */
 export interface AtelierMe { canSave: boolean; kind?: 'admin' | 'customer'; name?: string; }
 export interface AtelierProjectMeta { id: number; name: string; created_at: string; updated_at: string; }
 export interface AtelierProjectFull extends AtelierProjectMeta { data: Record<string, unknown>; }

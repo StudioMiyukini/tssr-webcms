@@ -2,6 +2,13 @@ import { Link } from '@tanstack/react-router';
 import { useDashboardStats, useDashboardActivity } from '@/api/hooks';
 import { formatPriceEUR, formatOrderStatus } from '@/lib/format';
 
+/*
+ * @id     tssr.pageDashboard
+ * @do     afficher_tableau_bord
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Tableau de bord » : vue d'ensemble et indicateurs du site.
+ */
 export function DashboardPage() {
   const stats = useDashboardStats();
   const activity = useDashboardActivity();

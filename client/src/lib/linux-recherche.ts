@@ -18,6 +18,13 @@
 import type { LinuxEntry } from './linux-data';
 
 /** Minuscules sans accents : « répertoire » se trouve en tapant « repertoire ». */
+/*
+ * @id     tssr.atelier.linuxRecherche
+ * @do     rechercher_commandes_linux
+ * @role   donnee
+ * @layer  outil
+ * @human  Recherche dans les commandes Linux de l'atelier (normalisation et filtrage).
+ */
 export const normaliser = (s: string) =>
   s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 

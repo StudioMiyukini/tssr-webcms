@@ -108,4 +108,11 @@ router.post('/api/checkout/stripe/finalize', async (req, res) => {
   res.json({ ok: true, order_number: order.order_number, total_cents: cart.totalCents });
 });
 
+/*
+ * @id     tssr.routeStripe
+ * @do     exposer_routes_stripe
+ * @role   securite
+ * @layer  infra
+ * @human  Routes de paiement Stripe : création de session et finalisation.
+ */
 export default router;

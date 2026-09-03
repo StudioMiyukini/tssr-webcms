@@ -44,4 +44,11 @@ router.get('/api/admin/dashboard/activity', requireAuth, (_req, res) => {
   res.json(activity);
 });
 
+/*
+ * @id     tssr.routeDashboard
+ * @do     exposer_routes_tableau_bord
+ * @role   orchestration
+ * @layer  infra
+ * @human  Routes du tableau de bord admin : statistiques et activité récente.
+ */
 export default router;

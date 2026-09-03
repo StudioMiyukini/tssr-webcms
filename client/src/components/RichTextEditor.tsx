@@ -3,6 +3,13 @@ import { MediaPicker } from './MediaPicker';
 
 /** Éditeur de texte riche réutilisable (contentEditable + execCommand), sans dépendance.
  *  Contrôlé : `value` (HTML) réécrit le DOM seulement s'il diffère (pas de saut de curseur en frappe). */
+/*
+ * @id     tssr.compRichTextEditor
+ * @do     editer_texte_riche
+ * @role   ui
+ * @layer  ui
+ * @human  Éditeur de texte riche (mise en forme, liens, images).
+ */
 export function RichTextEditor({ value, onChange, minHeight = 120 }: { value: string; onChange: (html: string) => void; minHeight?: number }) {
   const ref = useRef<HTMLDivElement>(null);
   const savedRange = useRef<Range | null>(null);

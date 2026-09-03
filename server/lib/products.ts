@@ -1,3 +1,10 @@
+/*
+ * @id     tssr.libProducts
+ * @do     gerer_produits
+ * @role   rule
+ * @layer  domaine
+ * @human  Logique produits : prix, variantes et résolution.
+ */
 import { slugify } from './utils';
 import type { Product } from '../db/schema';
 
@@ -9,12 +16,26 @@ export interface ParsedVariant {
   sku: string;
 }
 
+/*
+ * @id     tssr.libProducts.currentPriceCents
+ * @do     lire_prix_courant
+ * @role   rule
+ * @layer  domaine
+ * @human  Retourne le prix courant d'un produit en centimes.
+ */
 export function currentPriceCents(product: Partial<Product>): number {
   const regular = Number(product.price_cents || 0);
   const sale = Number(product.sale_price_cents || 0);
   return sale > 0 && sale < regular ? sale : regular;
 }
 
+/*
+ * @id     tssr.libProducts.comparePriceCents
+ * @do     lire_prix_barre
+ * @role   rule
+ * @layer  domaine
+ * @human  Retourne le prix barré (avant remise) d'un produit.
+ */
 export function comparePriceCents(product: Partial<Product>): number {
   const regular = Number(product.price_cents || 0);
   const compareAt = Number(product.compare_at_price_cents || 0);
@@ -22,6 +43,13 @@ export function comparePriceCents(product: Partial<Product>): number {
   return Math.max(compareAt, regular, current);
 }
 
+/*
+ * @id     tssr.libProducts.parseProductVariants
+ * @do     analyser_variantes
+ * @role   donnee
+ * @layer  domaine
+ * @human  Analyse le JSON des variantes d'un produit.
+ */
 export function parseProductVariants(json: string | null | undefined): ParsedVariant[] {
   try {
     const parsed = JSON.parse(json || '[]');
@@ -48,6 +76,13 @@ export interface ResolvedVariant {
   variantStock: number;
 }
 
+/*
+ * @id     tssr.libProducts.resolveVariant
+ * @do     resoudre_variante
+ * @role   rule
+ * @layer  domaine
+ * @human  Résout la variante choisie d'un produit (prix, stock, libellé).
+ */
 export function resolveVariant(product: Partial<Product>, variantKey = ''): ResolvedVariant {
   const variants = parseProductVariants(product?.variants_json || '[]');
   const selected = variants.find((v) => v.key === String(variantKey || '').trim()) || null;

@@ -41,4 +41,11 @@ router.post('/api/admin/orders/:id/status', requireAuth, (req, res) => {
   res.json(updated);
 });
 
+/*
+ * @id     tssr.routeOrders
+ * @do     exposer_routes_commandes
+ * @role   orchestration
+ * @layer  infra
+ * @human  Routes des commandes : liste, détail et changement de statut.
+ */
 export default router;

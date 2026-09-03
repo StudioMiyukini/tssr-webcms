@@ -5,6 +5,13 @@ import { useToast } from '@/lib/toast';
 import { PageBuilder } from '@/components/PageBuilder';
 import { normalizePageBlocks, serializePageBlocks, renderPageBlocksToHtml, makePageBlock, type PageBlock } from '@/lib/page-blocks';
 
+/*
+ * @id     tssr.pagePagesList
+ * @do     lister_pages
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin « Pages » : liste des pages du CMS.
+ */
 export function PagesListPage() {
   const list = Pages.useList();
   const del = Pages.useDelete();
@@ -46,6 +53,13 @@ export function PagesListPage() {
 
 const EMPTY: PageInput = { title: '', slug: '', excerpt: '', content: '', builder_json: '', published: 1 };
 
+/*
+ * @id     tssr.pagePageEdit
+ * @do     editer_page
+ * @role   ui
+ * @layer  ui
+ * @human  Page admin d'édition d'une page (constructeur de blocs, SEO, publication).
+ */
 export function PageEditPage() {
   const params = useParams({ strict: false }) as { id?: string };
   const navigate = useNavigate();

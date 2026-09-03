@@ -83,4 +83,11 @@ router.delete('/api/atelier/projects/:id', requireOwner, (req, res) => {
   res.json({ ok: true });
 });
 
+/*
+ * @id     tssr.atelier
+ * @do     exposer_routes_atelier
+ * @role   orchestration
+ * @layer  infra
+ * @human  Routes de l'atelier : exercices et outils pratiques de formation réseau et système.
+ */
 export default router;

@@ -151,6 +151,13 @@ function descendants<T extends { id: string; parent: string }>(items: T[], id: s
   return out;
 }
 
+/*
+ * @id     tssr.atelier.agdlpBuilder
+ * @do     construire_agdlp
+ * @role   ui
+ * @layer  ui
+ * @human  Atelier : constructeur de délégations AGDLP (rôles et permissions AD).
+ */
 export function AgdlpBuilder() {
   const [domain, setDomain] = useState(() => load('agdlp2_domain', 'miyukini.lan'));
   const [basePath, setBasePath] = useState(() => load('agdlp2_base', 'E:\\Partages'));
