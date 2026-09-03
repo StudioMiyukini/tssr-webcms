@@ -32,7 +32,9 @@ for (const file of ['.env.local', '.env']) {
   }
 }
 export const DB_PATH = process.env.DB_PATH || path.join(ROOT_DIR, 'cms.sqlite');
-export const UPLOADS_DIR = path.join(ROOT_DIR, 'uploads');
+// Surchargeable comme DB_PATH : l'exécutable autonome dépose ses données à côté
+// de lui, hors du paquet, seul endroit où il puisse écrire.
+export const UPLOADS_DIR = process.env.UPLOADS_DIR || path.join(ROOT_DIR, 'uploads');
 export const CLOUD_DIR = process.env.CLOUD_DIR || path.join(ROOT_DIR, 'cloud'); // fichiers privés par profil (non servis statiquement)
 export const PORT = Number(process.env.PORT || 3460);
 export const NODE_ENV = process.env.NODE_ENV || 'development';

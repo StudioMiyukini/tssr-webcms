@@ -106,15 +106,42 @@ En production, le serveur refuse de démarrer si `SESSION_SECRET` ou
 
 ## Le site hors-ligne, pour les élèves
 
-Le menu public porte un bouton **💾 Hors-ligne** : il télécharge le site entier
-en un `.zip` qui tourne sans Internet, avec son propre metteur à jour.
+Le menu public porte un bouton **💾 Hors-ligne**. Il propose l'**exécutable
+Windows** — un seul fichier, moteur Node compris, rien à installer — et à défaut
+l'archive `.zip`, qui tourne partout mais demande Node.js.
+
+| Paquet | Pour qui | Poids | Prérequis |
+| --- | --- | --- | --- |
+| `TSSR-Site-hors-ligne.exe` | Windows x64 | ~69 Mo | aucun |
+| `tssr-site-hors-ligne.zip` | Windows, Linux, macOS | ~31 Mo | Node.js 22+ |
+| `tssr-contenu.zip` | — | ~13 Mo | ce que rechargent les metteurs à jour |
+
+L'exécutable est produit par `scripts/build-exe.mjs` (`npm run build:exe`), qui
+empaquette le runtime avec [@yao-pkg/pkg](https://github.com/yao-pkg/pkg). Un
+paquet est en lecture seule, or le CMS écrit : au premier lancement, l'exe
+dépose base, médias, front et module natif dans un dossier **`TSSR-donnees`** à
+côté de lui — une clé USB emporte donc le site *et* son contenu. Options :
+`--maj` (recharge le contenu depuis le site), `--port`, `--donnees`, `--aide`.
+
+Deux pièges valent d'être connus, ils ont coûté un aller-retour chacun :
+`fs.cpSync` et `fs.copyFileSync` **ne lisent pas** le système de fichiers
+virtuel du paquet (`ENOENT: lstat C:\snapshot\…`) — d'où la copie manuelle par
+`readdirSync` + `readFileSync` ; et le module SQLite natif ne peut pas être
+chargé depuis ce même système virtuel, d'où l'option `nativeBinding` de
+better-sqlite3, à qui l'on donne le chemin du binaire déposé sur le disque.
+
+L'ABI du binaire natif doit s'accorder à la cible pkg (`EXE_CIBLE`, défaut
+`node22-win-x64` → ABI 127) : le script refuse de construire s'il ne trouve pas
+le bon. `@yao-pkg/pkg` est une dépendance de développement ; là où elle manque,
+le bouton retombe simplement sur le `.zip`.
 
 | | |
 | --- | --- |
 | Bouton | `client/src/components/TelechargerHorsLigne.tsx`, posé dans `PublicLayout` |
 | Fabrication | `server/lib/hors-ligne.ts` → `scripts/build-portable.mjs` |
+| Exécutable | `scripts/build-exe.mjs` + `scripts/portable/exe.cjs` (lanceur) |
 | Publication | `scripts/publier-hors-ligne.mts` → release GitHub, tag `hors-ligne` |
-| Routes | `GET /api/public/hors-ligne/{infos,site,contenu}` |
+| Routes | `GET /api/public/hors-ligne/{infos,exe,site,contenu}` |
 | Cache | `export/hors-ligne/` — refait quand la base, son WAL ou `dist/` bougent |
 
 **Le serveur ne fabrique plus l'archive à la demande.** Servir 31 Mo par le

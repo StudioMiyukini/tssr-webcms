@@ -5,7 +5,8 @@ import { archive, etat, publication, type Genre } from '../lib/hors-ligne';
 
 /* Le site à emporter, pour les visiteurs :
      GET /api/public/hors-ligne/infos   : l'archive est-elle proposée, et de quand date-t-elle ;
-     GET /api/public/hors-ligne/site    : le site entier, exécutable sans Internet ;
+     GET /api/public/hors-ligne/exe     : l'exécutable Windows, Node compris, rien à installer ;
+     GET /api/public/hors-ligne/site    : le site entier en .zip (tous systèmes, Node requis) ;
      GET /api/public/hors-ligne/contenu : la base + les médias, ce que recharge le metteur à jour.
    Contenu public assaini (voir lib/hors-ligne) : aucun compte, aucune donnée personnelle.
    La première demande construit l'archive (une à la fois), les suivantes la relisent du cache. */
@@ -28,11 +29,12 @@ function servir(genre: Genre) {
     // vite que le tunnel. On redirige — les archives deja distribuees, dont le
     // metteur a jour tape cette meme adresse, en profitent sans rien changer.
     const pub = publication();
-    if (pub) { res.redirect(302, pub[genre].url); return; }
+    const depose = pub && pub[genre];
+    if (depose) { res.redirect(302, depose.url); return; }
     // Rien de publie encore : on fabrique et on sert nous-memes.
     try {
       const a = await archive(genre, origine(req));
-      res.setHeader('Content-Type', 'application/zip');
+      res.setHeader('Content-Type', genre === 'exe' ? 'application/vnd.microsoft.portable-executable' : 'application/zip');
       res.setHeader('Content-Disposition', `attachment; filename="${a.nom}"`);
       res.setHeader('Content-Length', String(a.taille));
       res.setHeader('Cache-Control', 'no-store'); // l'archive suit le contenu du site
@@ -48,6 +50,7 @@ function servir(genre: Genre) {
 
 router.get('/api/public/hors-ligne/site', limiteur, servir('site'));
 router.get('/api/public/hors-ligne/contenu', limiteur, servir('contenu'));
+router.get('/api/public/hors-ligne/exe', limiteur, servir('exe'));
 
 /*
  * @id     tssr.routeHorsLigne

@@ -67,7 +67,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = path.resolve(__dirname, '..');
 const CLIENT_DIR = path.resolve(ROOT_DIR, 'client');
-const DIST_DIR = path.resolve(ROOT_DIR, 'dist/client');
+// DIST_DIR surchargeable : l'exécutable autonome sert le front depuis le dossier
+// qu'il a déposé à côté de lui, et non depuis l'arborescence du paquet.
+const DIST_DIR = process.env.DIST_DIR || path.resolve(ROOT_DIR, 'dist/client');
 
 async function createServer() {
   const app = express();

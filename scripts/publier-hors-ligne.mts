@@ -53,14 +53,20 @@ if (!BASE) {
 process.env.PUBLIC_BASE_URL = BASE;
 
 const { archive, publication, ecrirePublication, disponible } = await import('../server/lib/hors-ligne');
-type Genre = 'site' | 'contenu';
+type Genre = 'exe' | 'site' | 'contenu';
 
 const TAG = process.env.HORS_LIGNE_TAG || 'hors-ligne';
 const DEPOT = process.env.HORS_LIGNE_DEPOT || 'StudioMiyukini/tssr-webcms';
 const FORCE = process.argv.includes('--force');
 // Noms FIXES : l'adresse de telechargement doit rester la meme d'un jour a l'autre,
 // sans quoi les archives deja distribuees ne sauraient plus ou revenir.
-const NOMS: Record<Genre, string> = { site: 'tssr-site-hors-ligne.zip', contenu: 'tssr-contenu.zip' };
+const NOMS: Record<Genre, string> = {
+  exe: 'TSSR-Site-hors-ligne.exe',
+  site: 'tssr-site-hors-ligne.zip',
+  contenu: 'tssr-contenu.zip',
+};
+// L'exécutable d'abord : c'est ce que le bouton du site propose.
+const GENRES: Genre[] = ['exe', 'site', 'contenu'];
 
 const log = (m: string) => console.log(`[publication] ${new Date().toISOString().slice(0, 19).replace('T', ' ')}  ${m}`);
 const echec = (m: string, e?: unknown): never => {
@@ -82,10 +88,13 @@ async function main() {
 
   try { gh(['auth', 'status']); } catch (e) { echec('gh n’est pas authentifié (gh auth login).', e); }
 
-  log('Construction des archives…');
-  const site = await archive('site');
-  const contenu = await archive('contenu');
-  log(`site : ${(site.taille / 1048576).toFixed(1)} Mo — contenu : ${(contenu.taille / 1048576).toFixed(1)} Mo`);
+  log('Construction des paquets…');
+  const paquets = {} as Record<Genre, Awaited<ReturnType<typeof archive>>>;
+  for (const g of GENRES) {
+    paquets[g] = await archive(g);
+    log(`  ${g.padEnd(8)} ${(paquets[g].taille / 1048576).toFixed(1)} Mo`);
+  }
+  const site = paquets.site;
 
   // L'empreinte du cache dit si le contenu a bouge depuis la derniere publication.
   const marque = JSON.parse(fs.readFileSync(path.join(path.dirname(site.fichier), 'site.json'), 'utf8')).empreinte as string;
@@ -103,13 +112,15 @@ async function main() {
     try {
       gh(['release', 'create', TAG, '--repo', DEPOT, '--title', 'Site hors-ligne',
         '--notes', 'Archives du site TSSR pour un usage hors connexion, refaites chaque jour à 8h.\n\n'
-        + `- **${NOMS.site}** — le site complet, à dézipper et lancer (voir LISEZ-MOI.txt)\n`
+        + `- **${NOMS.exe}** — Windows : un seul fichier, moteur Node compris, rien à installer\n`
+        + `- **${NOMS.site}** — tous systèmes : à dézipper et lancer (Node.js 22+ requis)\n`
         + `- **${NOMS.contenu}** — le contenu seul, ce que recharge « Mettre-a-jour »\n\n`
         + 'Contenu public uniquement : ni comptes, ni données personnelles.']);
     } catch (e) { echec('Création de la release impossible.', e); }
   }
 
-  for (const [genre, a] of [['site', site], ['contenu', contenu]] as const) {
+  for (const genre of GENRES) {
+    const a = paquets[genre];
     const cible = path.join(path.dirname(a.fichier), NOMS[genre]);
     fs.copyFileSync(a.fichier, cible); // le nom deposé doit être stable, pas « site.zip »
     log(`Dépôt de ${NOMS[genre]}…`);
@@ -121,10 +132,11 @@ async function main() {
   ecrirePublication({
     empreinte: marque,
     genereLe: new Date().toISOString(),
-    site: { url: urlAsset(NOMS.site), taille: site.taille },
-    contenu: { url: urlAsset(NOMS.contenu), taille: contenu.taille },
+    site: { url: urlAsset(NOMS.site), taille: paquets.site.taille },
+    contenu: { url: urlAsset(NOMS.contenu), taille: paquets.contenu.taille },
+    exe: { url: urlAsset(NOMS.exe), taille: paquets.exe.taille },
   });
-  log(`✓ Publié : ${urlAsset(NOMS.site)}`);
+  log(`✓ Publié : ${urlAsset(NOMS.exe)}`);
 }
 
 main().catch((e) => echec('Échec inattendu.', e));
