@@ -9,6 +9,11 @@
 #>
 param([switch]$Force)
 
+# Le script Node ecrit en UTF-8 ; sans cette ligne PowerShell le relit dans la
+# page de codes du systeme et le journal se remplit de « grav├®  ».
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+$OutputEncoding = [System.Text.Encoding]::UTF8
+
 $racine = Split-Path $PSScriptRoot -Parent
 $journal = Join-Path $racine 'logs\publication-hors-ligne.log'
 New-Item -ItemType Directory -Force -Path (Split-Path $journal) | Out-Null

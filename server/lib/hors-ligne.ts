@@ -3,6 +3,7 @@ import { promisify } from 'node:util';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import Database from 'better-sqlite3';
 import { ROOT_DIR, DB_PATH, UPLOADS_DIR, PUBLIC_BASE_URL } from '../env';
 
@@ -29,7 +30,7 @@ const DIST_INDEX = path.join(ROOT_DIR, 'dist', 'client', 'index.html');
 const BUILD_PORTABLE = path.join(ROOT_DIR, 'scripts', 'build-portable.mjs');
 const BUILD_EXE = path.join(ROOT_DIR, 'scripts', 'build-exe.mjs');
 // Change de valeur quand la composition des archives change → invalide les caches en place.
-const FORMAT = 2;
+const FORMAT = 3; // 3 : empreinte fondee sur le contenu, plus sur les dates de fichiers
 
 export type Genre = 'contenu' | 'site' | 'exe';
 export type Archive = { fichier: string; taille: number; genereLe: string; nom: string };
@@ -68,16 +69,47 @@ function source(origine?: string): string {
   return (origine || base).replace(/\/+$/, '');
 }
 
-/** Empreinte de l'état du site : si elle change, les archives en cache sont périmées.
-    Le journal WAL en fait partie : en mode WAL les écritures y vont d'abord, et la
-    date du fichier principal ne bouge qu'au point de reprise — s'y fier seul,
-    c'est servir une archive d'hier en croyant qu'elle est fraîche. */
+/** Tables qui font le contenu d'une archive. Ce qui n'y est pas — sessions,
+    commandes, écrits des membres — est de toute façon retiré à l'assainissement. */
+const TABLES_CONTENU = [
+  'pages', 'posts', 'events', 'plannings', 'notes', 'note_folders', 'menu_items',
+  'media', 'settings', 'products', 'coupons', 'shipping_methods', 'forms',
+  'quote_forms', 'forum_categories', 'email_templates',
+];
+
+let signatureEnCache: { valeur: string; jusqua: number } | null = null;
+
+/** Signature de ce que contient le site.
+
+    Se fier aux dates des fichiers ne marche pas : en mode WAL, la moindre visite
+    écrit une session dans le journal, et une archive identique passerait pour
+    périmée à chaque consultation — le cache ne servirait jamais, et la
+    publication quotidienne redéposerait 113 Mo tous les matins pour rien.
+    On interroge donc le contenu lui-même. Mémorisé 30 s : « infos » est appelé
+    à chaque affichage de page. */
+function signatureContenu(): string {
+  if (signatureEnCache && signatureEnCache.jusqua > Date.now()) return signatureEnCache.valeur;
+  const db = new Database(DB_PATH, { readonly: true });
+  try {
+    const connues = new Set(db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all().map((r: any) => r.name as string));
+    const morceaux: string[] = [];
+    for (const t of TABLES_CONTENU) {
+      if (!connues.has(t)) continue;
+      const colonnes = new Set(db.prepare(`PRAGMA table_info("${t}")`).all().map((r: any) => r.name as string));
+      const date = colonnes.has('updated_at') ? 'updated_at' : colonnes.has('created_at') ? 'created_at' : null;
+      const r = db.prepare(`SELECT count(*) n${date ? `, max("${date}") d` : ''} FROM "${t}"`).get() as { n: number; d?: string };
+      morceaux.push(`${t}:${r.n}:${r.d ?? ''}`);
+    }
+    const valeur = crypto.createHash('sha1').update(morceaux.join('|')).digest('hex').slice(0, 16);
+    signatureEnCache = { valeur, jusqua: Date.now() + 30_000 };
+    return valeur;
+  } finally { db.close(); }
+}
+
+/** Empreinte de l'état du site : si elle change, les archives en cache sont périmées. */
 function empreinte(origine?: string): string {
-  const db = fs.statSync(DB_PATH);
-  let wal = '0';
-  try { const w = fs.statSync(`${DB_PATH}-wal`); wal = `${w.mtimeMs}:${w.size}`; } catch { /* pas de WAL */ }
   const dist = fs.existsSync(DIST_INDEX) ? fs.statSync(DIST_INDEX).mtimeMs : 0;
-  return `${FORMAT}:${db.mtimeMs}:${db.size}:${wal}:${dist}:${source(origine)}`;
+  return `${FORMAT}:${signatureContenu()}:${dist}:${source(origine)}`;
 }
 
 /** Copie consistante de la base (WAL replié), puis purge de tout ce qui n'est pas du contenu. */
