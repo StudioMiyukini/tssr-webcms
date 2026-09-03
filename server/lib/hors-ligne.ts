@@ -59,11 +59,16 @@ function source(origine?: string): string {
   return (origine || base).replace(/\/+$/, '');
 }
 
-/** Empreinte de l'état du site : si elle change, les archives en cache sont périmées. */
+/** Empreinte de l'état du site : si elle change, les archives en cache sont périmées.
+    Le journal WAL en fait partie : en mode WAL les écritures y vont d'abord, et la
+    date du fichier principal ne bouge qu'au point de reprise — s'y fier seul,
+    c'est servir une archive d'hier en croyant qu'elle est fraîche. */
 function empreinte(origine?: string): string {
   const db = fs.statSync(DB_PATH);
+  let wal = '0';
+  try { const w = fs.statSync(`${DB_PATH}-wal`); wal = `${w.mtimeMs}:${w.size}`; } catch { /* pas de WAL */ }
   const dist = fs.existsSync(DIST_INDEX) ? fs.statSync(DIST_INDEX).mtimeMs : 0;
-  return `${FORMAT}:${db.mtimeMs}:${db.size}:${dist}:${source(origine)}`;
+  return `${FORMAT}:${db.mtimeMs}:${db.size}:${wal}:${dist}:${source(origine)}`;
 }
 
 /** Copie consistante de la base (WAL replié), puis purge de tout ce qui n'est pas du contenu. */
@@ -167,13 +172,47 @@ export function archive(genre: Genre, origine?: string): Promise<Archive> {
   return travail;
 }
 
+/* ---- Publication sur GitHub ----
+   Servir 31 Mo par le tunnel Cloudflare prend deux bonnes minutes, et faire
+   fabriquer l'archive a chaque demande n'a pas de sens : le contenu ne change
+   pas d'une visite a l'autre. Une tache quotidienne (voir
+   scripts/publier-hors-ligne.mts) construit les archives et les depose sur une
+   release GitHub, dont le CDN sert les eleves. Le serveur ne fait plus que
+   rediriger — et ne construit qu'a defaut de publication. */
+
+export type Publication = {
+  empreinte: string;
+  genereLe: string;
+  site: { url: string; taille: number };
+  contenu: { url: string; taille: number };
+};
+
+const MANIFESTE = path.join(CACHE_DIR, 'publication.json');
+
+/** La derniere publication connue, ou null si rien n'a encore ete depose. */
+export function publication(): Publication | null {
+  try {
+    const p = JSON.parse(fs.readFileSync(MANIFESTE, 'utf8')) as Publication;
+    return p?.site?.url && p?.contenu?.url ? p : null;
+  } catch { return null; }
+}
+
+export function ecrirePublication(p: Publication): void {
+  fs.mkdirSync(CACHE_DIR, { recursive: true });
+  fs.writeFileSync(MANIFESTE, JSON.stringify(p, null, 2));
+}
+
 /** État affiché par le site public (sans rien construire). */
-export function etat(origine?: string): { disponible: boolean; pret: boolean; taille: number; genereLe: string | null } {
+export function etat(origine?: string): { disponible: boolean; pret: boolean; taille: number; genereLe: string | null; url: string | null } {
+  const pub = publication();
+  if (pub) return { disponible: true, pret: true, taille: pub.site.taille, genereLe: pub.genereLe, url: pub.site.url };
+  // Rien de publie : on retombe sur la fabrication a la demande.
   const cache = disponible() ? lireCache('site', origine) : null;
   return {
     disponible: disponible(),
     pret: cache !== null,
     taille: cache?.taille ?? 0,
     genereLe: cache?.genereLe ?? null,
+    url: null,
   };
 }

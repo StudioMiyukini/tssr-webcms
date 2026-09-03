@@ -113,13 +113,41 @@ en un `.zip` qui tourne sans Internet, avec son propre metteur à jour.
 | --- | --- |
 | Bouton | `client/src/components/TelechargerHorsLigne.tsx`, posé dans `PublicLayout` |
 | Fabrication | `server/lib/hors-ligne.ts` → `scripts/build-portable.mjs` |
+| Publication | `scripts/publier-hors-ligne.mts` → release GitHub, tag `hors-ligne` |
 | Routes | `GET /api/public/hors-ligne/{infos,site,contenu}` |
-| Cache | `export/hors-ligne/` — refait quand la base ou `dist/` bougent |
+| Cache | `export/hors-ligne/` — refait quand la base, son WAL ou `dist/` bougent |
 
-Dans l'archive : `Lancer-le-site.bat` (Node.js 20+ requis) et
-**`Mettre-a-jour.bat`**, qui recharge cours et médias depuis `PUBLIC_BASE_URL`
-sans toucher au programme ni aux comptes. L'ancienne base est sauvegardée avant
-remplacement ; le site doit être arrêté pendant l'opération.
+**Le serveur ne fabrique plus l'archive à la demande.** Servir 31 Mo par le
+tunnel prenait deux minutes, et refaire le paquet à chaque clic n'avait pas de
+sens. La tâche planifiée **`TSSR-WebCMS-PublicationHorsLigne`** construit les
+deux archives chaque jour à **8 h** (heure de la machine, réglée sur Paris) et
+les dépose sur la release GitHub ; `/site` et `/contenu` ne font plus que
+rediriger vers le CDN. Si rien n'a changé depuis la veille, rien n'est déposé.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\install-publication-hors-ligne.ps1   # une fois
+powershell -ExecutionPolicy Bypass -File scripts\publier-hors-ligne.ps1 -Force        # à la main
+```
+
+Journal : `logs/publication-hors-ligne.log`. Le manifeste lu par le serveur est
+`export/hors-ligne/publication.json` ; **s'il est absent, le serveur retombe sur
+la fabrication à la demande** — c'est le filet, pas le régime normal. La
+publication demande un `gh` authentifié (scope `repo`).
+
+Les noms des fichiers déposés sont **fixes** (`tssr-site-hors-ligne.zip`,
+`tssr-contenu.zip`) : les archives déjà distribuées reviennent à cette adresse
+pour se mettre à jour, elle ne doit pas changer d'un jour à l'autre.
+
+Dans l'archive : `Lancer-le-site.bat` (**Node.js 22+** — better-sqlite3 12.x ne
+publie plus rien pour Node 20) et **`Mettre-a-jour.bat`**, qui recharge cours et
+médias depuis `PUBLIC_BASE_URL` sans toucher au programme ni aux comptes.
+L'ancienne base est sauvegardée avant remplacement ; le site doit être arrêté
+pendant l'opération.
+
+Le module SQLite est natif : un binaire par ABI Node et par système. L'archive
+en embarque **16** (ABI 127/137/141/147 × win32-x64, linux-x64, darwin-x64,
+darwin-arm64) et `demarrer.mjs` pose le bon au lancement. `PORTABLE_CIBLES` et
+`PORTABLE_ABIS` retaillent la couverture — et donc le poids.
 
 **La base embarquée est assainie** : comptes, sessions, commandes, écrits du
 forum, fichiers des membres et réglages sensibles (mot de passe du site privé,

@@ -1,7 +1,7 @@
 import { Router, type Request, type Response } from 'express';
 import fs from 'node:fs';
 import { rateLimit } from '../lib/rate-limit';
-import { archive, etat, type Genre } from '../lib/hors-ligne';
+import { archive, etat, publication, type Genre } from '../lib/hors-ligne';
 
 /* Le site à emporter, pour les visiteurs :
      GET /api/public/hors-ligne/infos   : l'archive est-elle proposée, et de quand date-t-elle ;
@@ -24,6 +24,12 @@ router.get('/api/public/hors-ligne/infos', (req, res) => {
 
 function servir(genre: Genre) {
   return async (req: Request, res: Response): Promise<void> => {
+    // Cas normal : l'archive du jour est sur GitHub, dont le CDN va bien plus
+    // vite que le tunnel. On redirige — les archives deja distribuees, dont le
+    // metteur a jour tape cette meme adresse, en profitent sans rien changer.
+    const pub = publication();
+    if (pub) { res.redirect(302, pub[genre].url); return; }
+    // Rien de publie encore : on fabrique et on sert nous-memes.
     try {
       const a = await archive(genre, origine(req));
       res.setHeader('Content-Type', 'application/zip');

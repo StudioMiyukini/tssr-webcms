@@ -131,7 +131,7 @@ export function useSubmitForm(slug: string) {
 export const usePublicMenus = () => useQuery<MenuRecord[]>({ queryKey: ['public-menus'], queryFn: () => apiGet('/api/public/menus') });
 
 /** Le site à emporter : proposé par ce serveur ? une archive est-elle déjà prête ? */
-export interface HorsLigneEtat { disponible: boolean; pret: boolean; taille: number; genereLe: string | null }
+export interface HorsLigneEtat { disponible: boolean; pret: boolean; taille: number; genereLe: string | null; url: string | null }
 export const useHorsLigne = () => useQuery<HorsLigneEtat>({ queryKey: ['hors-ligne'], queryFn: () => apiGet('/api/public/hors-ligne/infos'), staleTime: 300_000, retry: false });
 export const usePublicPage = (slug: string) => useQuery<PageRecord>({ queryKey: ['public-page', slug], queryFn: () => apiGet(`/api/public/pages/${slug}`), enabled: !!slug });
 export const usePublicProducts = (category?: string) => useQuery<ProductRecord[]>({ queryKey: ['public-products', category || ''], queryFn: () => apiGet(`/api/public/products${category ? `?category=${encodeURIComponent(category)}` : ''}`) });
