@@ -10,10 +10,12 @@ cms.sqlite-wal
 uploads
 cloud
 .smoke-test.sqlite*
-portable
+/portable
 .backup-miyukini-db/
 .legacy/
 ecosystem.config.cjs
 .session-secret
 export/
 cms.sqlite.bak*
+__pycache__/
+*.avant.html
