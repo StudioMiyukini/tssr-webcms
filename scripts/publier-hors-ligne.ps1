@@ -22,11 +22,12 @@ function Log($m) {
 Set-Location $racine
 Log "--- Publication du site hors-ligne ---"
 
-$args = @('tsx', 'scripts/publier-hors-ligne.mts')
-if ($Force) { $args += '--force' }
+# NB : ne pas nommer cette variable $args - c'est une variable automatique de PowerShell.
+$arguments = @('tsx', 'scripts/publier-hors-ligne.mts')
+if ($Force) { $arguments += '--force' }
 
 # npx tsx : le meme runtime que le serveur, pas de build intermediaire a maintenir.
-$sortie = & npx @args 2>&1
+$sortie = & npx @arguments 2>&1
 $code = $LASTEXITCODE
 foreach ($ligne in $sortie) { Log $ligne }
 

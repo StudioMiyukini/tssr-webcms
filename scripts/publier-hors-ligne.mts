@@ -17,7 +17,43 @@
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { archive, publication, ecrirePublication, disponible, type Genre } from '../server/lib/hors-ligne';
+import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
+
+const RACINE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+/* L'adresse publique du site est GRAVÉE dans le metteur à jour de l'archive.
+   Ce script tourne hors PM2 (tâche planifiée), donc sans l'environnement du
+   serveur : sans ce rattrapage, PUBLIC_BASE_URL vaut son défaut « example.com »
+   et l'archive part avec un metteur à jour qui ne trouvera jamais son site.
+   On la reprend donc de l'environnement, sinon de l'ecosystem PM2. */
+function adressePublique(): string {
+  const env = (process.env.PUBLIC_BASE_URL || '').trim();
+  if (env && !/example\.com/i.test(env)) return env.replace(/\/+$/, '');
+  const eco = path.join(RACINE, 'ecosystem.config.cjs');
+  if (fs.existsSync(eco)) {
+    try {
+      const conf = createRequire(import.meta.url)(eco) as { apps?: Array<{ name?: string; env?: Record<string, string> }> };
+      const app = conf.apps?.find((a) => a.env?.PUBLIC_BASE_URL);
+      const url = app?.env?.PUBLIC_BASE_URL?.trim();
+      if (url && !/example\.com/i.test(url)) return url.replace(/\/+$/, '');
+    } catch { /* ecosystem illisible : on tombera sur l'arrêt ci-dessous */ }
+  }
+  return '';
+}
+
+const BASE = adressePublique();
+if (!BASE) {
+  console.error('[publication] ✗ Adresse publique du site inconnue.');
+  console.error('             Renseigne PUBLIC_BASE_URL (ou son entrée dans ecosystem.config.cjs) :');
+  console.error('             sans elle, le metteur à jour de l’archive ne saurait pas où revenir.');
+  process.exit(1);
+}
+// Doit être posée AVANT le chargement de server/env.ts, qui la lit à l'import.
+process.env.PUBLIC_BASE_URL = BASE;
+
+const { archive, publication, ecrirePublication, disponible } = await import('../server/lib/hors-ligne');
+type Genre = 'site' | 'contenu';
 
 const TAG = process.env.HORS_LIGNE_TAG || 'hors-ligne';
 const DEPOT = process.env.HORS_LIGNE_DEPOT || 'StudioMiyukini/tssr-webcms';
@@ -41,6 +77,7 @@ function urlAsset(nom: string): string {
 }
 
 async function main() {
+  log(`Site source gravé dans l’archive : ${BASE}`);
   if (!disponible()) echec('Ce serveur ne peut pas fabriquer les archives (dist/ ou esbuild manquant).');
 
   try { gh(['auth', 'status']); } catch (e) { echec('gh n’est pas authentifié (gh auth login).', e); }
