@@ -1,4 +1,5 @@
 import { Fragment, useEffect, useMemo, useState, type CSSProperties, useRef} from 'react';
+import { PictoMateriel, SchemaAtelier, type EtatSchema, type InterfaceSchema } from './SchemaAtelier';
 
 /**
  * Atelier Réseau & Packet Tracer — assistant multi-étapes à contexte partagé.
@@ -28,7 +29,7 @@ import {
   sortieEffective, verifierSortie, type SegmentSortie,
 } from '@/lib/mls';
 import {
-  cableAttendu, nomDuMedia, portsLibres, verifierCablage, cheminPhysique, voisinsDe, remontees,
+  cableAttendu, portsLibres, verifierCablage, cheminPhysique, voisinsDe, remontees,
   COUCHE_DE, PORTS_TYPIQUES, type Cable, type Materiel, type Media, type TypeMateriel,
 } from '@/lib/physique';
 import { OuvrirDansPlan } from './OuvrirDansPlan';
@@ -1608,239 +1609,6 @@ const STEPS = [
   { n: 13, icon: '🐧', title: 'DNS & DHCP Linux' },
 ];
 const STORAGE_KEY = 'net_workshop_v1';
-/**
- * Le schema physique — la couche 1, celle ou l'on branche.
- *
- * Deux clics font un cable : l'equipement de depart, puis celui d'arrivee. Les
- * ports libres sont pris tout seuls et le media se deduit de la regle des
- * couches ; on n'en saisit un que pour en imposer un autre, dans la liste.
- *
- * Les etages suivent l'OSI, de haut en bas : l'operateur, les routeurs, le
- * multicouche, les switches, les postes. Un schema qui rangerait un poste
- * au-dessus d'un routeur enseignerait le contraire de ce qu'on veut montrer.
- */
-const ETAGE_DE: Record<TypeMateriel, number> = { nuage: 0, routeur: 1, multicouche: 2, switch: 3, serveur: 4, poste: 4 };
-const ICONE_DE: Record<TypeMateriel, string> = { nuage: '☁️', routeur: '📟', multicouche: '🗼', switch: '🗄️', serveur: '🖥️', poste: '💻' };
-const NOM_ETAGE = ['operateur', 'couche 3 · routeurs', 'couche 3 · multicouche', 'couche 2 · commutation', 'couches 4-7 · terminaux'];
-
-function SchemaPhysique({ ctx, onPos, onCable, onRetirer, onOuvrir }: {
-  ctx: Ctx;
-  onPos: (id: string, p: { x: number; y: number } | null) => void;
-  onCable: (c: Cable) => void;
-  onRetirer: (id: string) => void;
-  /** Ouvre la configuration fine d'un equipement (clic sur la roue). */
-  onOuvrir?: (id: string) => void;
-}) {
-  const svgRef = useRef<SVGSVGElement>(null);
-  // Un appui sert a deux choses : deplacer, ou choisir. On tranche au relachement,
-  // selon que le pointeur a bouge — sinon tout deplacement tirerait un cable.
-  const [presse, setPresse] = useState<{ id: string; x0: number; y0: number; bouge: boolean } | null>(null);
-  const [depart, setDepart] = useState<string | null>(null);
-  const [souci, setSouci] = useState('');
-  // Le branchement en attente : les deux équipements choisis, dont on va
-  // désigner les ports précis (comme Packet Tracer) avant de tirer le câble.
-  const [aBrancher, setABrancher] = useState<{ a: Materiel; b: Materiel } | null>(null);
-
-  const W = 880, H_ETAGE = 100;
-  const etages = [0, 1, 2, 3, 4].map(e => ctx.materiels.filter(m => ETAGE_DE[m.type] === e));
-  const occupes = etages.map((l, i) => ({ i, n: l.length })).filter(x => x.n > 0);
-  const rang = new Map(occupes.map((x, k) => [x.i, k]));
-  const hauteur = Math.max(180, occupes.length * H_ETAGE + 30);
-  const auto = (m: Materiel) => {
-    const l = etages[ETAGE_DE[m.type]]!;
-    const k = Math.max(0, l.findIndex(x => x.id === m.id));
-    return { x: ((k + 0.5) * W) / l.length, y: (rang.get(ETAGE_DE[m.type]) ?? 0) * H_ETAGE + 55 };
-  };
-  const pos = (m: Materiel) => ctx.physPos[m.id] ?? auto(m);
-  const parId = new Map(ctx.materiels.map(m => [m.id, m]));
-  const versDessin = (e: { clientX: number; clientY: number }) => {
-    const r = svgRef.current?.getBoundingClientRect();
-    if (!r || !r.width) return null;
-    return { x: ((e.clientX - r.left) / r.width) * W, y: ((e.clientY - r.top) / r.height) * hauteur };
-  };
-
-  const choisir = (id: string) => {
-    setSouci('');
-    if (!depart) { setDepart(id); return; }
-    if (depart === id) { setDepart(null); return; }
-    const a = parId.get(depart), b = parId.get(id);
-    setDepart(null);
-    if (!a || !b) return;
-    if (ctx.cables.some(c => (c.deId === a.id && c.versId === b.id) || (c.deId === b.id && c.versId === a.id))) {
-      setSouci(`${a.nom} et ${b.nom} sont deja relies. Un second lien entre les memes equipements ferait une boucle.`);
-      return;
-    }
-    const pa = portsLibres(a, ctx.cables)[0], pb = portsLibres(b, ctx.cables)[0];
-    if (pa === undefined || pb === undefined) {
-      const plein = pa === undefined ? a : b;
-      setSouci(`${plein.nom} n'a plus de port libre : ses ${plein.ports} ports sont tous pris. Augmente son nombre de ports dans l'inventaire.`);
-      return;
-    }
-    // On ne tire pas le câble tout de suite : on ouvre le choix des ports, le
-    // premier port libre de chaque côté servant de proposition.
-    setABrancher({ a, b });
-  };
-
-  if (!ctx.materiels.length) {
-    return (
-      <div className="meta" style={{ fontSize: 12, padding: '18px 0' }}>
-        Ajoute des equipements ci-dessous, puis relie-les ici : un clic sur le premier, un clic sur le second.
-      </div>
-    );
-  }
-
-  return (
-    <>
-      <div className="meta" style={{ fontSize: 11.5, marginBottom: 6 }}>
-        {depart
-          ? <strong>Clique l'equipement d'arrivee — ou le meme pour annuler.</strong>
-          : 'Un clic sur un equipement, un clic sur un autre : tu choisis alors le port de chaque cote (comme Packet Tracer) avant de tirer le cable.'}
-      </div>
-      {souci && <div style={{ fontSize: 11.5, color: 'var(--danger, #c4462f)', marginBottom: 6 }}>⚠ {souci}</div>}
-      <svg ref={svgRef} viewBox={`0 0 ${W} ${hauteur}`}
-        style={{ width: '100%', height: 'auto', background: 'var(--surface)', borderRadius: 10, border: '1px solid var(--border)', userSelect: 'none' }}
-        onMouseMove={e => {
-          if (!presse) return;
-          const q = versDessin(e);
-          if (!q) return;
-          if (!presse.bouge && Math.abs(q.x - presse.x0) + Math.abs(q.y - presse.y0) < 5) return;
-          setPresse({ ...presse, bouge: true });
-          onPos(presse.id, q);
-        }}
-        onMouseUp={() => { if (presse && !presse.bouge) choisir(presse.id); setPresse(null); }}
-        onMouseLeave={() => setPresse(null)}>
-
-        {/* Les etages, nommes par leur couche : c'est la lecon du schema. */}
-        {occupes.map(x => {
-          const y = (rang.get(x.i) ?? 0) * H_ETAGE + 55;
-          return (
-            <g key={x.i}>
-              <line x1={0} y1={y - 34} x2={W} y2={y - 34} stroke="var(--border)" strokeWidth={0.6} strokeDasharray="3 4" />
-              <text x={6} y={y - 38} fontSize={8.5} fill="var(--text-muted)">{NOM_ETAGE[x.i]}</text>
-            </g>
-          );
-        })}
-
-        {/* Les cables, sous les boites. Double-clic pour retirer. */}
-        {ctx.cables.map(c => {
-          const a = parId.get(c.deId), b = parId.get(c.versId);
-          if (!a || !b) return null;
-          const qa = pos(a), qb = pos(b);
-          const attendu = cableAttendu(a.type, b.type);
-          const faux = c.media !== attendu && c.media !== 'fibre' && c.media !== 'serie';
-          return (
-            <g key={c.id} style={{ cursor: 'pointer' }} onDoubleClick={() => onRetirer(c.id)}>
-              <title>{`${a.nom} ${c.dePort} ↔ ${b.nom} ${c.versPort} · ${nomDuMedia(c.media)} — double-clic pour retirer`}</title>
-              <line x1={qa.x} y1={qa.y} x2={qb.x} y2={qb.y}
-                stroke={faux ? 'var(--danger, #c4462f)' : 'var(--border)'} strokeWidth={faux ? 2.4 : 1.8}
-                strokeDasharray={c.media === 'serie' ? '6 4' : undefined} />
-              <text x={(qa.x + qb.x) / 2} y={(qa.y + qb.y) / 2 - 3} textAnchor="middle" fontSize={8}
-                fill={faux ? 'var(--danger, #c4462f)' : 'var(--text-muted)'}>
-                {c.dePort}↔{c.versPort} · {c.media}
-              </text>
-            </g>
-          );
-        })}
-
-        {ctx.materiels.map(m => {
-          const q = pos(m);
-          const choisi = depart === m.id;
-          const l = Math.max(76, m.nom.length * 6.6 + 26);
-          return (
-            <g key={m.id} style={{ cursor: presse?.id === m.id && presse.bouge ? 'grabbing' : 'pointer' }}
-              onMouseDown={e => { e.preventDefault(); const q2 = versDessin(e); if (q2) setPresse({ id: m.id, x0: q2.x, y0: q2.y, bouge: false }); }}
-              onDoubleClick={() => onPos(m.id, null)}>
-              <rect x={q.x - l / 2} y={q.y - 15} width={l} height={30} rx={7}
-                fill={choisi ? 'color-mix(in srgb, var(--accent) 18%, var(--surface-2))' : 'var(--surface-2)'}
-                stroke={choisi ? 'var(--accent)' : 'var(--border)'} strokeWidth={choisi ? 2.2 : 1.4} />
-              <text x={q.x} y={q.y + 1} textAnchor="middle" fontSize={10.5} fontWeight={600} fill="var(--text)">
-                {ICONE_DE[m.type]} {m.nom}
-              </text>
-              <text x={q.x} y={q.y + 11} textAnchor="middle" fontSize={7.5} fill="var(--text-muted)">
-                {portsLibres(m, ctx.cables).length}/{m.ports} libres
-              </text>
-              {onOuvrir && (
-                // La roue ouvre la configuration fine. `stopPropagation` sur
-                // l'appui : sans elle, le clic demarrerait un cable au lieu
-                // d'ouvrir le dialogue.
-                <g style={{ cursor: 'pointer' }}
-                  onMouseDown={e => e.stopPropagation()}
-                  onClick={e => { e.stopPropagation(); onOuvrir(m.id); }}>
-                  <title>Configurer {m.nom}</title>
-                  <circle cx={q.x + l / 2 - 8} cy={q.y - 15} r={8} fill="var(--surface)" stroke="var(--border)" strokeWidth={1} />
-                  <text x={q.x + l / 2 - 8} y={q.y - 12} textAnchor="middle" fontSize={9}>⚙</text>
-                </g>
-              )}
-            </g>
-          );
-        })}
-      </svg>
-
-      {aBrancher && (
-        <DialogueBranchement
-          ctx={ctx} a={aBrancher.a} b={aBrancher.b}
-          onValider={c => { onCable(c); setABrancher(null); }}
-          onAnnuler={() => setABrancher(null)} />
-      )}
-    </>
-  );
-}
-
-/**
- * Le choix des ports au branchement — à la Packet Tracer.
- *
- * Deux clics ont désigné les équipements ; ici on choisit l'interface précise
- * de chaque côté (le premier port libre est proposé) et le média, avant de
- * tirer le câble. Rien n'est imposé : on garde la main sur où l'on branche.
- */
-function DialogueBranchement({ ctx, a, b, onValider, onAnnuler }: {
-  ctx: Ctx; a: Materiel; b: Materiel;
-  onValider: (c: Cable) => void;
-  onAnnuler: () => void;
-}) {
-  const libA = portsLibres(a, ctx.cables);
-  const libB = portsLibres(b, ctx.cables);
-  const [pa, setPa] = useState<number>(libA[0]);
-  const [pb, setPb] = useState<number>(libB[0]);
-  const [media, setMedia] = useState<Media>(cableAttendu(a.type, b.type));
-  const attendu = cableAttendu(a.type, b.type);
-  const MEDIAS: Media[] = ['droit', 'croise', 'serie', 'fibre', 'console'];
-
-  const bloc = (m: Materiel, libres: number[], val: number, set: (n: number) => void) => (
-    <div style={{ flex: 1, minWidth: 0 }}>
-      <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4 }}>{ICONE_DE[m.type]} {m.nom}</div>
-      <select style={{ ...field, width: '100%' }} value={val} onChange={e => set(Number(e.target.value))}>
-        {libres.map(n => <option key={n} value={n}>{nomPortDe(ctx, m, n)} (port {n})</option>)}
-      </select>
-    </div>
-  );
-
-  return (
-    <div onClick={onAnnuler} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '5vh 14px', zIndex: 60 }}>
-      <div onClick={e => e.stopPropagation()} role="dialog" aria-label={`Brancher ${a.nom} et ${b.nom}`}
-        style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px 18px', maxWidth: 460, width: '100%', boxShadow: '0 18px 50px -20px rgba(0,0,0,.5)' }}>
-        <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 10 }}>🔌 Choisis les ports à relier</div>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'flex-end', marginBottom: 12 }}>
-          {bloc(a, libA, pa, setPa)}
-          <div style={{ fontSize: 18, paddingBottom: 6, color: 'var(--text-muted)' }}>↔</div>
-          {bloc(b, libB, pb, setPb)}
-        </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 14 }}>
-          <span className="meta" style={{ fontSize: 12 }}>Média</span>
-          <select style={{ ...field, width: 200 }} value={media} onChange={e => setMedia(e.target.value as Media)}>
-            {MEDIAS.map(md => <option key={md} value={md}>{nomDuMedia(md)}{md === attendu ? ' — conseillé' : ''}</option>)}
-          </select>
-        </div>
-        <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end' }}>
-          <button type="button" onClick={onAnnuler} style={{ ...smallBtn }}>Annuler</button>
-          <button type="button"
-            onClick={() => onValider({ id: uid('cab'), deId: a.id, dePort: pa, versId: b.id, versPort: pb, media })}
-            style={{ ...smallBtn, borderColor: 'var(--accent)', color: 'var(--accent)', fontWeight: 700 }}>Brancher</button>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /**
  * Les segments qui relient un multicouche a un routeur.
@@ -2106,7 +1874,7 @@ function DialogueMateriel({ ctx, m, mlsPlan, plan, onPatch, onPorts, onCtx, onRe
       <div onClick={e => e.stopPropagation()} role="dialog" aria-label={`Configurer ${m.nom}`}
         style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px 18px', maxWidth: 560, width: '100%', boxShadow: '0 18px 50px -20px rgba(0,0,0,.5)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <span style={{ fontSize: 20 }}>{ICONE_DE[m.type]}</span>
+          <PictoMateriel type={m.type} taille={22} />
           <strong style={{ fontSize: 16 }}>{m.nom}</strong>
           <span className="meta" style={{ fontSize: 12 }}>couche {COUCHE_DE[m.type]}</span>
           <button type="button" onClick={onClose} style={{ ...smallBtn, marginLeft: 'auto' }}>Fermer</button>
@@ -2288,6 +2056,20 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
 
   const set = (p: Partial<Ctx>) => setCtx(c => ({ ...c, ...p }));
   const plan = useMemo(() => computePlan(ctx), [ctx]);
+  /*
+   * Les interfaces telles que le moteur les a resolues, dans la forme que le
+   * schema attend. C'est ce qui separe un schema de cablage d'un schema
+   * d'adressage : sans elles, l'affichage « nom + adresse » n'aurait rien a
+   * ecrire.
+   */
+  const ifacesSchema = useMemo<InterfaceSchema[]>(
+    () => plan.ifaces.map(i => ({
+      materielId: i.routerId, nom: i.iface, ip: `${ipToStr(i.ip)}/${i.cidr}`, vlan: i.vlan,
+    })),
+    [plan.ifaces],
+  );
+  /** Ce qu'une annulation remet en place : les positions ET le cablage. */
+  const restaurerSchema = (e: EtatSchema) => set({ physPos: e.positions, cables: e.cables });
 
   const copy = (key: string, text: string) => { navigator.clipboard?.writeText(text).then(() => { setCopied(key); setTimeout(() => setCopied(''), 1600); }).catch(() => {}); };
 
@@ -2490,11 +2272,15 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                   }] })}>+ {t}</button>
               ))}
             </div>
-            <SchemaPhysique ctx={ctx}
+            <SchemaAtelier
+              materiels={ctx.materiels} cables={ctx.cables} positions={ctx.physPos}
+              interfaces={ifacesSchema} nomPort={(m, p) => nomPortDe(ctx, m, p)}
               onPos={(id, q) => set({ physPos: q ? { ...ctx.physPos, [id]: q } : Object.fromEntries(Object.entries(ctx.physPos).filter(([k]) => k !== id)) })}
               onCable={c => set({ cables: [...ctx.cables, c] })}
               onRetirer={id => set({ cables: ctx.cables.filter(x => x.id !== id) })}
-              onOuvrir={setDialMat} />
+              onOuvrir={setDialMat}
+              onReplacerTout={() => set({ physPos: {} })}
+              onRestaurer={restaurerSchema} />
             <div className="meta" style={{ fontSize: 11, marginTop: 5 }}>
               Un clic sur un équipement, un clic sur un autre : le câble se tire. <strong>Double-clic</strong> pour le
               replacer. La <strong>⚙</strong> ouvre sa configuration fine.
@@ -2506,7 +2292,7 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
             return (
               <div key={t.id} style={group}>
                 <div style={legend}>
-                  {ICONE_DE[m.type]} {t.nom}
+                  <PictoMateriel type={m.type} /> {t.nom}
                   <span className="meta" style={{ fontSize: 11.5, fontWeight: 400 }}>
                     {m.type}{t.modele ? ' · ' + t.modele : ''} · {m.ports} ports
                   </span>
@@ -4160,10 +3946,14 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
 
           <div style={group}>
             <div style={legend}>🧵 Le cablage</div>
-            <SchemaPhysique ctx={ctx}
+            <SchemaAtelier
+              materiels={ctx.materiels} cables={ctx.cables} positions={ctx.physPos}
+              interfaces={ifacesSchema} nomPort={(m, p) => nomPortDe(ctx, m, p)}
               onPos={(id, q) => set({ physPos: q ? { ...ctx.physPos, [id]: q } : Object.fromEntries(Object.entries(ctx.physPos).filter(([k]) => k !== id)) })}
               onCable={c => set({ cables: [...ctx.cables, c] })}
-              onRetirer={id => set({ cables: ctx.cables.filter(x => x.id !== id) })} />
+              onRetirer={id => set({ cables: ctx.cables.filter(x => x.id !== id) })}
+              onReplacerTout={() => set({ physPos: {} })}
+              onRestaurer={restaurerSchema} />
             <div className="meta" style={{ fontSize: 11, marginTop: 5 }}>
               Le media suit la regle des couches : <strong>meme couche → croise</strong>, couches differentes → droit.
               Un cable en rouge ne la respecte pas. Double-clic sur un equipement pour le remettre a sa place.
