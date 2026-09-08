@@ -32,6 +32,14 @@ import {
   cableAttendu, portsLibres, verifierCablage, cheminPhysique, voisinsDe, remontees,
   COUCHE_DE, PORTS_TYPIQUES, type Cable, type Materiel, type Media, type TypeMateriel,
 } from '@/lib/physique';
+import {
+  SERVICES, MESSAGES_ICMP, VERIFICATIONS as VERIFICATIONS_ACL,
+  ecrireAcl, verifier as verifierAcl, ombres as ombresAcl, placement as placementAcl,
+  numeroLibre, wildcard as wildcardTexte, analyserColler, ecrireAce, MODELE_COLLER,
+  genererAcls, SERVICES_FLUX, OPTIONS_PAR_DEFAUT as OPTIONS_ACL,
+  type ZoneSource, type ZoneCible, type Flux as FluxAcl, type OptionsPolitique,
+  type Acl, type Ace, type Cible, type Port, type TypeAcl, type Transport,
+} from '@/lib/acl';
 import { OuvrirDansPlan } from './OuvrirDansPlan';
 
 function strToIp(s: string): number | null {
@@ -144,7 +152,33 @@ export type Ctx = {
    * choisie dans un sous-reseau) ou DHCP (adresse recue d'un serveur).
    */
   postesIp: Record<string, { mode: 'fixe' | 'dhcp'; ip?: string; subId?: string }>;
+  /**
+   * Le filtrage : les ACL, rattachees chacune a un routeur.
+   *
+   * Elles vivent dans le contexte comme le reste, donc dans le navigateur : une
+   * ACL ecrite avant la pause de midi est encore la apres. `routeurId` dit sur
+   * quel materiel la coller — sans lui, la configuration generee ne saurait pas
+   * quelles interfaces proposer.
+   */
+  acls: AclAtelier[];
+  /**
+   * La matrice de flux : qui joint quel service, et l'allure de la politique.
+   *
+   * C'est la source dont les ACL se deduisent. On la garde a cote d'elles
+   * plutot que de ne conserver que le resultat : regenerer apres avoir ajoute
+   * un sous-reseau doit rester possible sans tout ressaisir.
+   */
+  politique: { flux: FluxAcl[]; options: OptionsPolitique };
 };
+
+/**
+ * Une ACL de l'atelier : la liste de regles, plus le routeur qui la porte.
+ *
+ * `genere` distingue ce qui vient de la matrice de ce qui a ete ecrit a la
+ * main. Sans lui, relancer la generation ferait perdre les corrections — ou en
+ * produirait deux exemplaires.
+ */
+export type AclAtelier = Acl & { routeurId: string; genere?: boolean; pourquoi?: string };
 // Un hôte terminal à adresse fixe rattaché à un sous-réseau.
 export type StaticHost = { id: string; name: string; subId: string; ip: string };
 
@@ -176,7 +210,7 @@ export const DEFAULT_CTX: Ctx = {
     { id: 'rA', nom: 'R1', type: 'routeur', modele: '2911', ports: 4 },
     { id: 'rB', nom: 'R2', type: 'routeur', modele: '2811', ports: 4 },
   ],
-  cables: [], physPos: {},
+  cables: [], physPos: {}, acls: [], politique: { flux: [], options: OPTIONS_ACL },
   optRouteurs: {}, optMls: { m1: { prefixe: 'FastEthernet0/', vlans: [] } }, optSwitches: {},
   ifaceIps: {}, ifaceDhcp: {}, hosts: [], postesIp: {},
 };
@@ -264,6 +298,13 @@ export function migrateCtx(raw: unknown): Ctx {
   const herite = !Array.isArray(r.materiels);
   c.materiels = Array.isArray(r.materiels) ? [...r.materiels] : [];
   c.cables = Array.isArray(r.cables) ? [...r.cables] : [];
+  // Comme `materiels` : on repart du tableau enregistre, jamais de celui de
+  // DEFAULT_CTX, dont la reference serait partagee par tous les projets.
+  c.acls = Array.isArray(r.acls) ? [...r.acls] : [];
+  c.politique = {
+    flux: Array.isArray(r.politique?.flux) ? [...r.politique.flux] : [],
+    options: { ...OPTIONS_ACL, ...(r.politique?.options ?? {}) },
+  };
   c.optRouteurs = (r.optRouteurs && typeof r.optRouteurs === 'object') ? { ...r.optRouteurs } : {};
   c.optMls = (r.optMls && typeof r.optMls === 'object') ? { ...r.optMls } : {};
   c.optSwitches = (r.optSwitches && typeof r.optSwitches === 'object') ? { ...r.optSwitches } : {};
@@ -1602,6 +1643,7 @@ const STEPS = [
   { n: 5, icon: '📶', title: 'DHCP' },
   { n: 6, icon: '🌐', title: 'DNS' },
   { n: 7, icon: '🔑', title: 'SSH' },
+  { n: 14, icon: '🚦', title: 'ACL (filtrage)' },
   { n: 9, icon: '🔀', title: 'VLAN & switches' },
   { n: 10, icon: '🗼', title: 'Switch multicouche (SVI)' },
   { n: 11, icon: '🔌', title: 'Materiel & cablage' },
@@ -2124,6 +2166,274 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
   }, [plan]);
 
   const dhcp = useMemo(() => buildDhcp(ctx, plan), [ctx, plan]);
+
+  /*
+   * L'import en masse : le texte collé, par ACL.
+   *
+   * Gardé hors du contexte enregistré — c'est un brouillon de saisie, pas une
+   * donnée du projet. Ce qui compte finit dans `aces` ; le reste n'a aucune
+   * raison de survivre à un rechargement.
+   */
+  const [collage, setCollage] = useState<Record<string, string>>({});
+  const [remplacer, setRemplacer] = useState<Record<string, boolean>>({});
+
+  const importDe = (aclId: string) => analyserColler(collage[aclId] ?? '');
+
+  const appliquerImport = (aclId: string) => {
+    const lu = importDe(aclId);
+    const nouvelles = lu.lignes.filter(l => l.ace).map(l => ({ ...l.ace!, id: uid('ace') }));
+    if (!nouvelles.length) return;
+    majAcls(l => l.map(a => (a.id === aclId
+      ? { ...a, aces: remplacer[aclId] ? nouvelles : [...a.aces, ...nouvelles] } : a)));
+    setCollage(c => ({ ...c, [aclId]: '' }));
+  };
+
+  /** Lit un fichier déposé et le verse dans la zone de collage. */
+  const lireFichier = (aclId: string, f: File | null | undefined) => {
+    if (!f) return;
+    const lecteur = new FileReader();
+    lecteur.onload = () => setCollage(c => ({ ...c, [aclId]: String(lecteur.result ?? '') }));
+    // Les tableurs français exportent souvent en Windows-1252 ; on lit en UTF-8
+    // et les accents perdus n'affectent que les commentaires, jamais une règle.
+    lecteur.readAsText(f, 'utf-8');
+  };
+
+  // ── Étape 14 : la politique de flux ───────────────────────────────────
+  const politique = ctx.politique ?? { flux: [], options: OPTIONS_ACL };
+  const majPolitique = (patch: Partial<{ flux: FluxAcl[]; options: OptionsPolitique }>) =>
+    setCtx(c => ({ ...c, politique: { ...(c.politique ?? { flux: [], options: OPTIONS_ACL }), ...patch } }));
+
+  /*
+   * Les zones d'où part du trafic : les LAN, et la porte par laquelle ils
+   * entrent dans le routeur.
+   *
+   * Un segment d'interconnexion n'en est pas une — personne n'y branche de
+   * poste. Une ACL posée dessus filtrerait le transit, ce qui n'est pas ce que
+   * décrit une matrice de flux.
+   */
+  const zonesSource = useMemo<ZoneSource[]>(() => plan.subs
+    .filter(s => s.kind === 'lan' && s.gw !== null)
+    .map((s): ZoneSource | null => {
+      const porte = plan.ifaces.find(i => i.ip === s.gw);
+      return porte ? {
+        id: s.id, nom: s.name,
+        cible: { genre: 'reseau', ip: ipToStr(s.net), cidr: s.cidr },
+        routeurId: porte.routerId, routeurNom: porte.routerName,
+        interfaceNom: porte.iface, dhcp: s.dhcp,
+      } : null;
+    })
+    .filter((z): z is ZoneSource => z !== null), [plan]);
+
+  /** Tout ce qu'un flux peut viser : un réseau, une machine, ou l'extérieur. */
+  const zonesCible = useMemo<ZoneCible[]>(() => [
+    { id: 'any', nom: 'N’importe où (any)', cible: { genre: 'any' } },
+    ...plan.subs.map(s => ({
+      id: s.id, nom: `${s.name} — ${ipToStr(s.net)}/${s.cidr}`,
+      cible: { genre: 'reseau' as const, ip: ipToStr(s.net), cidr: s.cidr },
+    })),
+    ...plan.hosts.filter(h => h.ip !== null).map(h => ({
+      id: `h:${h.id}`, nom: `${h.name} — ${ipToStr(h.ip!)}`,
+      cible: { genre: 'host' as const, ip: ipToStr(h.ip!) },
+    })),
+  ], [plan]);
+
+  const apercuPolitique = useMemo(
+    () => genererAcls(zonesSource, zonesCible, politique.flux, politique.options,
+      (ctx.acls ?? []).filter(a => !a.genere).map(a => a.nom)),
+    [zonesSource, zonesCible, politique, ctx.acls],
+  );
+
+  const ajouterFlux = () => majPolitique({
+    flux: [...politique.flux, {
+      id: uid('flux'), sourceId: zonesSource[0]?.id ?? '', destinationId: 'any',
+      services: ['tcp:443'], decision: 'permit',
+    }],
+  });
+  const majFlux = (id: string, patch: Partial<FluxAcl>) =>
+    majPolitique({ flux: politique.flux.map(f => (f.id === id ? { ...f, ...patch } : f)) });
+  const retirerFlux = (id: string) => majPolitique({ flux: politique.flux.filter(f => f.id !== id) });
+
+  /*
+   * Générer remplace les ACL générées, jamais celles écrites à la main.
+   *
+   * On corrige souvent une règle produite avant de relancer la génération ;
+   * tout écraser ferait perdre le travail, ne rien écraser en produirait deux
+   * exemplaires. Le drapeau `genere` tranche.
+   */
+  const appliquerPolitique = () => setCtx(c => ({
+    ...c,
+    acls: [...(c.acls ?? []).filter(a => !a.genere), ...apercuPolitique.acls],
+  }));
+
+  // ── Étape 14 : les ACL ────────────────────────────────────────────────
+  const aclsCtx = ctx.acls ?? [];
+  const majAcls = (f: (l: AclAtelier[]) => AclAtelier[]) => setCtx(c => ({ ...c, acls: f(c.acls ?? []) }));
+
+  const ajouterAcl = () => {
+    const routeur = routeursDe(ctx)[0];
+    majAcls(l => [...l, {
+      id: uid('acl'), nom: numeroLibre('etendue', l.map(x => x.nom)), type: 'etendue',
+      routeurId: routeur?.id ?? '', aces: [], permitFinal: false, applications: [],
+    }]);
+  };
+  const retirerAcl = (id: string) => majAcls(l => l.filter(a => a.id !== id));
+  const majAcl = (id: string, patch: Partial<AclAtelier>) =>
+    majAcls(l => l.map(a => (a.id === id ? { ...a, ...patch } : a)));
+
+  /*
+   * Changer de type renumérote.
+   *
+   * Une ACL étendue passée en standard garderait un numéro que le routeur
+   * refuse — 110 n'existe pas en standard. On lui donne le premier numéro libre
+   * de la nouvelle plage, sauf si elle porte un nom, qui lui n'a pas de plage.
+   */
+  const changerType = (id: string, type: TypeAcl) => majAcls(l => l.map(a => {
+    if (a.id !== id) return a;
+    const nomme = !Number.isInteger(Number(a.nom));
+    return { ...a, type, nom: nomme ? a.nom : numeroLibre(type, l.filter(x => x.id !== id).map(x => x.nom)) };
+  }));
+
+  const ajouterAce = (aclId: string) => majAcls(l => l.map(a => (a.id === aclId ? {
+    ...a,
+    aces: [...a.aces, {
+      id: uid('ace'), autorisation: 'permit' as const, protocole: a.type === 'standard' ? 'ip' as const : 'tcp' as const,
+      source: { genre: 'any' } as Cible, destination: { genre: 'any' } as Cible,
+    }],
+  } : a)));
+  const majAce = (aclId: string, aceId: string, patch: Partial<Ace>) => majAcls(l => l.map(a => (a.id === aclId
+    ? { ...a, aces: a.aces.map(x => (x.id === aceId ? { ...x, ...patch } : x)) } : a)));
+  const retirerAce = (aclId: string, aceId: string) => majAcls(l => l.map(a => (a.id === aclId
+    ? { ...a, aces: a.aces.filter(x => x.id !== aceId) } : a)));
+  const deplacerAce = (aclId: string, i: number, pas: -1 | 1) => majAcls(l => l.map(a => {
+    if (a.id !== aclId) return a;
+    const cible = i + pas;
+    if (cible < 0 || cible >= a.aces.length) return a;
+    const aces = [...a.aces];
+    [aces[i], aces[cible]] = [aces[cible], aces[i]];
+    return { ...a, aces };
+  }));
+
+  const ajouterApplication = (aclId: string, iface: string) => majAcls(l => l.map(a => (a.id === aclId
+    ? { ...a, applications: [...a.applications, { interface: iface, sens: 'in' as const }] } : a)));
+  const majApplication = (aclId: string, i: number, patch: Partial<{ interface: string; sens: 'in' | 'out' }>) =>
+    majAcls(l => l.map(a => (a.id === aclId
+      ? { ...a, applications: a.applications.map((x, k) => (k === i ? { ...x, ...patch } : x)) } : a)));
+  const retirerApplication = (aclId: string, i: number) => majAcls(l => l.map(a => (a.id === aclId
+    ? { ...a, applications: a.applications.filter((_, k) => k !== i) } : a)));
+
+  /*
+   * Les cibles proposées viennent du plan, pas d'une saisie libre.
+   *
+   * Choisir « Production » plutôt que retaper 192.168.10.0 /26 supprime la
+   * faute la plus fréquente de l'exercice : le masque générique calculé à
+   * l'envers. La saisie libre reste possible pour ce qui n'est pas dans le plan.
+   */
+  const ciblesDuPlan = useMemo(() => [
+    ...plan.subs.map(s => ({
+      cle: `net:${s.id}`, libelle: `${s.name} — ${ipToStr(s.net)}/${s.cidr}`,
+      cible: { genre: 'reseau' as const, ip: ipToStr(s.net), cidr: s.cidr },
+    })),
+    ...plan.ifaces.map(i => ({
+      cle: `if:${i.routerId}:${i.iface}`, libelle: `${i.routerName} ${ifAbbr(i.iface)} — ${ipToStr(i.ip)}`,
+      cible: { genre: 'host' as const, ip: ipToStr(i.ip) },
+    })),
+    ...plan.hosts.filter(h => h.ip !== null).map(h => ({
+      cle: `host:${h.id}`, libelle: `${h.name} — ${ipToStr(h.ip!)}`,
+      cible: { genre: 'host' as const, ip: ipToStr(h.ip!) },
+    })),
+  ], [plan]);
+
+  /** Un sélecteur de cible : le plan, « n'importe qui », ou une adresse à la main. */
+  const ChoixCible = ({ valeur, onChange }: { valeur: Cible; onChange: (c: Cible) => void }) => {
+    const courant = valeur.genre === 'any' ? 'any'
+      : ciblesDuPlan.find(c => c.cible.genre === valeur.genre
+        && c.cible.ip === (valeur as { ip: string }).ip
+        && (c.cible as { cidr?: number }).cidr === (valeur as { cidr?: number }).cidr)?.cle ?? 'libre';
+    return (
+      <div style={{ display: 'grid', gap: 3, minWidth: 190 }}>
+        <select
+          value={courant}
+          onChange={e => {
+            const v = e.target.value;
+            if (v === 'any') return onChange({ genre: 'any' });
+            if (v === 'libre') return onChange({ genre: 'host', ip: '' });
+            const t = ciblesDuPlan.find(c => c.cle === v);
+            if (t) onChange(t.cible);
+          }}
+          style={{ ...field, fontSize: 12 }}
+        >
+          <option value="any">any — n’importe qui</option>
+          {ciblesDuPlan.map(c => <option key={c.cle} value={c.cle}>{c.libelle}</option>)}
+          <option value="libre">adresse à la main…</option>
+        </select>
+        {valeur.genre !== 'any' && courant === 'libre' && (
+          <div style={{ display: 'flex', gap: 4 }}>
+            <input value={(valeur as { ip: string }).ip} placeholder="192.168.1.10"
+                   onChange={e => onChange(valeur.genre === 'reseau'
+                     ? { ...valeur, ip: e.target.value }
+                     : { genre: 'host', ip: e.target.value })}
+                   style={{ ...field, ...mono, fontSize: 12 }} />
+            <select
+              value={valeur.genre === 'reseau' ? String(valeur.cidr) : 'host'}
+              onChange={e => onChange(e.target.value === 'host'
+                ? { genre: 'host', ip: (valeur as { ip: string }).ip }
+                : { genre: 'reseau', ip: (valeur as { ip: string }).ip, cidr: Number(e.target.value) })}
+              style={{ ...field, width: 86, fontSize: 12 }}
+            >
+              <option value="host">host</option>
+              {[8, 16, 24, 25, 26, 27, 28, 29, 30].map(c => <option key={c} value={c}>/{c}</option>)}
+            </select>
+          </div>
+        )}
+        {valeur.genre === 'reseau' && (
+          <span className="meta" style={{ fontSize: 10.5, ...mono }}>wildcard {wildcardTexte(valeur.cidr)}</span>
+        )}
+      </div>
+    );
+  };
+
+  /** Un sélecteur de port : les services de l'exercice, ou une condition libre. */
+  const ChoixPort = ({ valeur, proto, onChange }: { valeur?: Port; proto: 'tcp' | 'udp'; onChange: (p: Port) => void }) => {
+    const services = SERVICES.filter(s => s.proto === proto);
+    const courant = !valeur?.operateur ? ''
+      : (valeur.operateur === 'eq' && services.some(s => s.port === valeur.valeur)) ? `svc:${valeur.valeur}` : 'libre';
+    return (
+      <div style={{ display: 'grid', gap: 3, minWidth: 150 }}>
+        <select
+          value={courant}
+          onChange={e => {
+            const v = e.target.value;
+            if (!v) return onChange({ operateur: '' });
+            if (v === 'libre') return onChange({ operateur: 'gt', valeur: 1023 });
+            onChange({ operateur: 'eq', valeur: Number(v.slice(4)) });
+          }}
+          style={{ ...field, fontSize: 12 }}
+        >
+          <option value="">tous les ports</option>
+          {services.map(s => <option key={s.port} value={`svc:${s.port}`}>{s.port} — {s.nom}</option>)}
+          <option value="libre">condition à la main…</option>
+        </select>
+        {courant === 'libre' && (
+          <div style={{ display: 'flex', gap: 4 }}>
+            <select value={valeur?.operateur || 'eq'} onChange={e => onChange({ ...valeur, operateur: e.target.value as Port['operateur'] })}
+                    style={{ ...field, width: 74, fontSize: 12 }}>
+              <option value="eq">eq</option><option value="neq">neq</option>
+              <option value="gt">gt</option><option value="lt">lt</option><option value="range">range</option>
+            </select>
+            <input value={valeur?.valeur ?? ''} inputMode="numeric" placeholder="1023"
+                   onChange={e => onChange({ ...valeur, operateur: valeur?.operateur || 'eq', valeur: Number(e.target.value) || 0 })}
+                   style={{ ...field, ...mono, width: 70, fontSize: 12 }} />
+            {valeur?.operateur === 'range' && (
+              <input value={valeur?.fin ?? ''} inputMode="numeric" placeholder="65535"
+                     onChange={e => onChange({ ...valeur, operateur: 'range', fin: Number(e.target.value) || 0 })}
+                     style={{ ...field, ...mono, width: 76, fontSize: 12 }} />
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const dns = useMemo(() => buildDns(ctx, plan), [ctx, plan]);
   // Options des scripts Linux (locales à l'atelier — dérivées du plan).
   const [lxIface, setLxIface] = useState('ens18');
@@ -2994,6 +3304,415 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
             <div style={legend}>✅ Tests</div>
             <pre style={preStyle}><code>{dns.tests.join('\n') || '(rien à tester)'}</code></pre>
             <div className="meta" style={{ fontSize: 11.5, marginTop: 6 }}>Depuis un client : <code>nslookup</code> pour vérifier la résolution, <code>ping &lt;fqdn&gt;</code> pour la connectivité. Vérifie que les clients ont bien reçu le <strong>serveur DNS</strong> par DHCP (étape 5).</div>
+          </div>
+          <StepNav step={step} setStep={setStep} />
+        </div>
+      )}
+
+      {/* ── Étape 14 : ACL (filtrage) ── */}
+      {step === 14 && (
+        <div>
+          {/*
+            La matrice de flux.
+            On déclare qui joint quel service ; les ACL s'en déduisent. C'est la
+            forme qu'on remet au client, et celle qu'on sait défendre à l'oral —
+            bien plus qu'une liste de lignes `access-list`.
+          */}
+          <div style={group}>
+            <div style={legend}>
+              🧭 Politique de flux — calculer les ACL
+              <button type="button" onClick={ajouterFlux} disabled={!zonesSource.length}
+                      style={{ ...btn, marginLeft: 'auto', opacity: zonesSource.length ? 1 : .4 }}>+ Ajouter un flux</button>
+            </div>
+            <div className="meta" style={{ fontSize: 11.5, margin: '0 0 10px' }}>
+              Déclare <strong>qui</strong> a le droit de joindre <strong>quel service</strong>. L’outil en déduit
+              une ACL étendue par zone, posée <strong>en entrée</strong> sur l’interface qui fait face à cette
+              zone — au plus près de la source, comme le veut la règle de placement.
+            </div>
+
+            {!zonesSource.length && (
+              <div className="meta">Aucun LAN avec passerelle : renseigne l’étape <strong>Adressage</strong> d’abord.</div>
+            )}
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginBottom: 12 }}>
+              <label style={{ fontSize: 12 }}>Politique<br />
+                <select value={politique.options.mode}
+                        onChange={e => majPolitique({ options: { ...politique.options, mode: e.target.value as 'liste-blanche' | 'liste-noire' } })}
+                        style={{ ...field, width: 260 }}>
+                  <option value="liste-blanche">Liste blanche — refus par défaut</option>
+                  <option value="liste-noire">Liste noire — tout passe sauf les refus</option>
+                </select>
+              </label>
+              <label style={{ fontSize: 12 }}>Serveur DNS à joindre<br />
+                <input value={politique.options.dns} placeholder={ctx.dnsServer || '192.168.10.11'} style={{ ...field, ...mono, width: 170 }}
+                       onChange={e => majPolitique({ options: { ...politique.options, dns: e.target.value } })} />
+              </label>
+              <label style={{ fontSize: 12, alignSelf: 'end' }}>
+                <input type="checkbox" checked={politique.options.dhcp}
+                       onChange={e => majPolitique({ options: { ...politique.options, dhcp: e.target.checked } })} /> laisser passer le DHCP
+              </label>
+              <label style={{ fontSize: 12, alignSelf: 'end' }}>
+                <input type="checkbox" checked={politique.options.ping}
+                       onChange={e => majPolitique({ options: { ...politique.options, ping: e.target.checked } })} /> laisser passer le ping
+              </label>
+              <label style={{ fontSize: 12, alignSelf: 'end' }}>
+                <input type="checkbox" checked={politique.options.nommer}
+                       onChange={e => majPolitique({ options: { ...politique.options, nommer: e.target.checked } })} /> ACL nommées
+              </label>
+            </div>
+
+            {politique.options.mode === 'liste-blanche' && (
+              <div className="meta" style={{ fontSize: 11.5, marginBottom: 10 }}>
+                ℹ️ En liste blanche, le <code>deny any</code> implicite coupe tout le reste — y compris le DHCP et
+                le DNS. Les deux cases ci-dessus ajoutent d’office les règles qui les épargnent ; sans elles, les
+                postes ne s’adressent plus et plus rien ne résout.
+              </div>
+            )}
+
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: 900 }}>
+                <thead>
+                  <tr>
+                    <th style={th}>Depuis</th><th style={th}>Vers</th><th style={th}>Services</th>
+                    <th style={th}>Décision</th><th style={th}>Motif</th><th style={th}></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {politique.flux.map(f => (
+                    <tr key={f.id}>
+                      <td style={td}>
+                        <select value={f.sourceId} onChange={e => majFlux(f.id, { sourceId: e.target.value })} style={{ ...field, minWidth: 150 }}>
+                          {zonesSource.map(z => <option key={z.id} value={z.id}>{z.nom}</option>)}
+                        </select>
+                      </td>
+                      <td style={td}>
+                        <select value={f.destinationId} onChange={e => majFlux(f.id, { destinationId: e.target.value })} style={{ ...field, minWidth: 180 }}>
+                          {zonesCible.map(z => <option key={z.id} value={z.id}>{z.nom}</option>)}
+                        </select>
+                      </td>
+                      <td style={td}>
+                        {/* Des pastilles plutôt qu'une liste à sélection multiple :
+                            on voit ce qui est choisi sans ouvrir, et on retire d'un clic. */}
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 4 }}>
+                          {f.services.map(c => (
+                            <button key={c} type="button" title="Retirer"
+                                    onClick={() => majFlux(f.id, { services: f.services.filter(x => x !== c) })}
+                                    style={{ ...smallBtn, padding: '2px 7px', fontSize: 11 }}>
+                              {SERVICES_FLUX.find(s => s.cle === c)?.nom.replace(/ \(.*\)$/, '') ?? c} ✕
+                            </button>
+                          ))}
+                          {!f.services.length && <span className="meta" style={{ fontSize: 11 }}>aucun service</span>}
+                        </div>
+                        <select value="" style={{ ...field, minWidth: 190, fontSize: 12 }}
+                                onChange={e => { if (e.target.value) majFlux(f.id, { services: [...f.services, e.target.value] }); }}>
+                          <option value="">+ ajouter un service…</option>
+                          {SERVICES_FLUX.filter(s => !f.services.includes(s.cle))
+                            .map(s => <option key={s.cle} value={s.cle}>{s.nom}</option>)}
+                        </select>
+                      </td>
+                      <td style={td}>
+                        <select value={f.decision} onChange={e => majFlux(f.id, { decision: e.target.value as 'permit' | 'deny' })} style={{ ...field, width: 100 }}>
+                          <option value="permit">autoriser</option>
+                          <option value="deny">refuser</option>
+                        </select>
+                      </td>
+                      <td style={td}>
+                        <input value={f.commentaire || ''} placeholder="pourquoi ce flux existe"
+                               onChange={e => majFlux(f.id, { commentaire: e.target.value })}
+                               style={{ ...field, minWidth: 160 }} />
+                      </td>
+                      <td style={td}><button type="button" onClick={() => retirerFlux(f.id)} style={smallBtn}>✕</button></td>
+                    </tr>
+                  ))}
+                  {!politique.flux.length && (
+                    <tr><td style={td} colSpan={6}>
+                      <span className="meta">Aucun flux déclaré. En liste blanche, aucune ACL n’est générée : une zone sans flux resterait entièrement coupée.</span>
+                    </td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {!!apercuPolitique.avertissements.length && (
+              <ul style={{ margin: '12px 0 0', paddingLeft: 18, fontSize: 12, lineHeight: 1.6 }}>
+                {apercuPolitique.avertissements.map((w, i) => (
+                  <li key={i} style={{ color: w.gravite === 'erreur' ? 'var(--danger, #d33)' : 'var(--text-soft)' }}>
+                    {w.gravite === 'erreur' ? '⛔ ' : '⚠️ '}{w.texte}
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 12, marginTop: 12 }}>
+              <button type="button" onClick={appliquerPolitique} disabled={!apercuPolitique.acls.length}
+                      style={{ ...btn, opacity: apercuPolitique.acls.length ? 1 : .4 }}>
+                Générer {apercuPolitique.acls.length} ACL ({apercuPolitique.acls.reduce((n, a) => n + a.aces.length, 0)} règles)
+              </button>
+              <span className="meta" style={{ fontSize: 11.5, flex: '1 1 24ch' }}>
+                Les ACL écrites à la main ne sont pas touchées : seules les précédentes générations sont remplacées.
+              </span>
+            </div>
+          </div>
+
+          <div style={group}>
+            <div style={legend}>
+              🚦 Listes de contrôle d’accès
+              <button type="button" onClick={ajouterAcl} style={{ ...btn, marginLeft: 'auto' }}>+ Nouvelle ACL</button>
+            </div>
+            <div className="meta" style={{ fontSize: 11.5, margin: '0 0 10px' }}>
+              Le routeur lit les règles <strong>de haut en bas</strong> et s’arrête à la <strong>première qui correspond</strong>.
+              Une ACL par interface, par sens, par protocole. Sources et destinations se piochent dans ton plan d’adressage —
+              le masque générique est calculé pour toi.
+            </div>
+            {!aclsCtx.length && (
+              <div className="meta">Aucune ACL. Ajoutes-en une : elle sera rattachée à un routeur de l’étape 3.</div>
+            )}
+          </div>
+
+          {aclsCtx.map((a, ia) => {
+            const routeur = routeursDe(ctx).find(r => r.id === a.routeurId);
+            const interfaces = plan.ifaces.filter(i => i.routerId === a.routeurId);
+            const avertissements = verifierAcl(a);
+            const masquees = new Set(ombresAcl(a));
+            return (
+              <div key={a.id} style={group}>
+                <div style={legend}>
+                  <span style={mono}>{a.type === 'standard' ? 'ACL standard' : 'ACL étendue'} {a.nom}</span>
+                  <button type="button" onClick={() => retirerAcl(a.id)} style={{ ...smallBtn, marginLeft: 'auto' }}>Supprimer</button>
+                </div>
+
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: 10 }}>
+                  <label style={{ fontSize: 12 }}>Numéro ou nom<br />
+                    <input value={a.nom} onChange={e => majAcl(a.id, { nom: e.target.value })}
+                           style={{ ...field, width: 150, ...mono }} />
+                  </label>
+                  <label style={{ fontSize: 12 }}>Type<br />
+                    <select value={a.type} onChange={e => changerType(a.id, e.target.value as TypeAcl)} style={{ ...field, width: 190 }}>
+                      <option value="standard">standard — source seule</option>
+                      <option value="etendue">étendue — source, destination, port</option>
+                    </select>
+                  </label>
+                  <label style={{ fontSize: 12 }}>Routeur<br />
+                    <select value={a.routeurId} onChange={e => majAcl(a.id, { routeurId: e.target.value, applications: [] })} style={{ ...field, width: 150 }}>
+                      {routeursDe(ctx).map(r => <option key={r.id} value={r.id}>{r.name}</option>)}
+                    </select>
+                  </label>
+                  <label style={{ fontSize: 12, alignSelf: 'end' }}>
+                    <input type="checkbox" checked={a.permitFinal} onChange={e => majAcl(a.id, { permitFinal: e.target.checked })} />
+                    {' '}<code>permit {a.type === 'standard' ? 'any' : 'ip any any'}</code> final
+                  </label>
+                </div>
+
+                {/* Les règles. L'ordre est la moitié du sens : on peut les déplacer. */}
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ borderCollapse: 'collapse', width: '100%', minWidth: a.type === 'standard' ? 560 : 980 }}>
+                    <thead>
+                      <tr>
+                        <th style={th}>#</th>
+                        <th style={th}>Action</th>
+                        {a.type === 'etendue' && <th style={th}>Protocole</th>}
+                        <th style={th}>Source</th>
+                        {a.type === 'etendue' && <th style={th}>Port src.</th>}
+                        {a.type === 'etendue' && <th style={th}>Destination</th>}
+                        {a.type === 'etendue' && <th style={th}>Port dest.</th>}
+                        <th style={th}>Commentaire</th>
+                        <th style={th}></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {a.aces.map((ace, i) => (
+                        <tr key={ace.id} style={masquees.has(i) ? { opacity: .55 } : undefined}>
+                          <td style={{ ...td, ...mono }}>{(i + 1) * 10}</td>
+                          <td style={td}>
+                            <select value={ace.autorisation} onChange={e => majAce(a.id, ace.id, { autorisation: e.target.value as 'permit' | 'deny' })} style={{ ...field, width: 90 }}>
+                              <option value="permit">permit</option>
+                              <option value="deny">deny</option>
+                            </select>
+                          </td>
+                          {a.type === 'etendue' && (
+                            <td style={td}>
+                              <select value={ace.protocole} onChange={e => majAce(a.id, ace.id, { protocole: e.target.value as Transport })} style={{ ...field, width: 84 }}>
+                                <option value="ip">ip</option><option value="tcp">tcp</option>
+                                <option value="udp">udp</option><option value="icmp">icmp</option>
+                              </select>
+                            </td>
+                          )}
+                          <td style={td}><ChoixCible valeur={ace.source} onChange={c => majAce(a.id, ace.id, { source: c })} /></td>
+                          {a.type === 'etendue' && (
+                            <td style={td}>{ace.protocole === 'tcp' || ace.protocole === 'udp'
+                              ? <ChoixPort valeur={ace.portSource} proto={ace.protocole} onChange={p => majAce(a.id, ace.id, { portSource: p })} />
+                              : <span className="meta" style={{ fontSize: 11 }}>—</span>}
+                            </td>
+                          )}
+                          {a.type === 'etendue' && (
+                            <td style={td}><ChoixCible valeur={ace.destination} onChange={c => majAce(a.id, ace.id, { destination: c })} /></td>
+                          )}
+                          {a.type === 'etendue' && (
+                            <td style={td}>
+                              {ace.protocole === 'tcp' || ace.protocole === 'udp'
+                                ? <ChoixPort valeur={ace.portDestination} proto={ace.protocole} onChange={p => majAce(a.id, ace.id, { portDestination: p })} />
+                                : ace.protocole === 'icmp'
+                                  ? (
+                                    <select value={ace.messageIcmp || ''} onChange={e => majAce(a.id, ace.id, { messageIcmp: e.target.value })} style={{ ...field, width: 120 }}>
+                                      {MESSAGES_ICMP.map(m => <option key={m.cle} value={m.cle}>{m.cle || 'tous'}</option>)}
+                                    </select>
+                                  )
+                                  : <span className="meta" style={{ fontSize: 11 }}>—</span>}
+                            </td>
+                          )}
+                          <td style={td}>
+                            <input value={ace.remarque || ''} placeholder="pourquoi cette règle"
+                                   onChange={e => majAce(a.id, ace.id, { remarque: e.target.value })}
+                                   style={{ ...field, width: 150 }} />
+                          </td>
+                          <td style={{ ...td, whiteSpace: 'nowrap' }}>
+                            <button type="button" onClick={() => deplacerAce(a.id, i, -1)} disabled={i === 0} style={{ ...smallBtn, opacity: i === 0 ? .4 : 1 }}>↑</button>
+                            <button type="button" onClick={() => deplacerAce(a.id, i, 1)} disabled={i === a.aces.length - 1} style={{ ...smallBtn, marginLeft: 4, opacity: i === a.aces.length - 1 ? .4 : 1 }}>↓</button>
+                            <button type="button" onClick={() => retirerAce(a.id, ace.id)} style={{ ...smallBtn, marginLeft: 4 }}>✕</button>
+                          </td>
+                        </tr>
+                      ))}
+                      {!a.aces.length && (
+                        <tr><td style={td} colSpan={a.type === 'standard' ? 5 : 9}>
+                          <span className="meta">Aucune règle. Sans règle, l’ACL ne fait rien — avec des règles mais sans <code>permit</code>, elle bloque tout.</span>
+                        </td></tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+                <button type="button" onClick={() => ajouterAce(a.id)} style={{ ...smallBtn, marginTop: 8 }}>+ Ajouter une règle</button>
+
+                {/* Où l'ACL est posée. Sans application, elle est écrite et sans effet. */}
+                <div style={{ marginTop: 12 }}>
+                  <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 5 }}>Appliquée sur</div>
+                  {a.applications.map((ap, i) => (
+                    <div key={i} style={{ display: 'flex', gap: 8, marginBottom: 5, alignItems: 'center' }}>
+                      <select value={ap.interface} onChange={e => majApplication(a.id, i, { interface: e.target.value })} style={{ ...field, width: 240 }}>
+                        {interfaces.map(f => <option key={f.iface} value={f.iface}>{ifAbbr(f.iface)} — {f.target}</option>)}
+                        {!interfaces.length && <option value="">(aucune interface sur ce routeur)</option>}
+                      </select>
+                      <select value={ap.sens} onChange={e => majApplication(a.id, i, { sens: e.target.value as 'in' | 'out' })} style={{ ...field, width: 190 }}>
+                        <option value="in">in — trafic qui entre</option>
+                        <option value="out">out — trafic qui sort</option>
+                      </select>
+                      <button type="button" onClick={() => retirerApplication(a.id, i)} style={smallBtn}>✕</button>
+                    </div>
+                  ))}
+                  <button type="button" onClick={() => ajouterApplication(a.id, interfaces[0]?.iface || '')} style={smallBtn}>+ Appliquer à une interface</button>
+                </div>
+
+                {!!avertissements.length && (
+                  <ul style={{ margin: '12px 0 0', paddingLeft: 18, fontSize: 12, lineHeight: 1.6 }}>
+                    {avertissements.map((w, i) => (
+                      <li key={i} style={{ color: w.gravite === 'erreur' ? 'var(--danger, #d33)' : 'var(--text-soft)' }}>
+                        {w.gravite === 'erreur' ? '⛔ ' : '⚠️ '}{w.texte}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {/*
+                  L'import en masse.
+                  L'exercice se prépare dans un tableur ; retaper vingt règles
+                  ici, c'est vingt occasions de se tromper sur un wildcard. On
+                  colle, on regarde ce qui a été compris, puis on ajoute.
+                */}
+                <details style={{ marginTop: 12, border: '1px solid var(--border)', borderRadius: 10, padding: '8px 12px' }}>
+                  <summary style={{ cursor: 'pointer', fontSize: 12.5, fontWeight: 600 }}>
+                    📋 Coller un tableau ou importer un CSV
+                  </summary>
+
+                  <div className="meta" style={{ fontSize: 11.5, margin: '8px 0' }}>
+                    Colle directement depuis le tableur de l’exercice (colonnes <em>Autorisation, Protocole,
+                    Source, Port, Destination, Port, Commentaire</em>), un CSV, ou des lignes de configuration
+                    Cisco déjà écrites. Les notations <code>Idsr: / Wldc:</code>, <code>192.168.1.0/24</code>,
+                    <code>&gt;1023</code> et <code>eq www</code> sont comprises.
+                  </div>
+
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
+                    <input type="file" accept=".csv,.tsv,.txt,text/csv,text/plain"
+                           onChange={e => { lireFichier(a.id, e.target.files?.[0]); e.target.value = ''; }}
+                           style={{ fontSize: 12 }} />
+                    <button type="button" onClick={() => copy('modele:' + a.id, MODELE_COLLER)} style={smallBtn}>
+                      {copied === 'modele:' + a.id ? '✓ Modèle copié' : 'Copier un modèle de tableau'}
+                    </button>
+                  </div>
+
+                  <textarea
+                    value={collage[a.id] ?? ''}
+                    onChange={e => setCollage(c => ({ ...c, [a.id]: e.target.value }))}
+                    placeholder={'permit\ttcp\t192.168.1.0 0.0.0.255\tgt 1023\thost 172.16.10.20\teq 443'}
+                    rows={6}
+                    style={{ ...field, ...mono, fontSize: 12, whiteSpace: 'pre', overflowX: 'auto' }}
+                  />
+
+                  {(() => {
+                    const lu = importDe(a.id);
+                    if (!lu.lignes.length) return null;
+                    const bonnes = lu.lignes.filter(l => l.ace);
+                    const mauvaises = lu.lignes.filter(l => l.erreur);
+                    return (
+                      <div style={{ marginTop: 10 }}>
+                        <div className="meta" style={{ fontSize: 11.5, marginBottom: 6 }}>
+                          {bonnes.length} règle(s) comprise(s){mauvaises.length ? `, ${mauvaises.length} ligne(s) en erreur` : ''}
+                          {' · '}séparateur : {lu.separateur === 'cli' ? 'configuration Cisco' : lu.separateur === '\t' ? 'tabulation' : lu.separateur}
+                          {lu.entete ? ' · en-tête reconnu' : ''}
+                        </div>
+                        <div style={{ maxHeight: 200, overflowY: 'auto', border: '1px solid var(--border)', borderRadius: 8 }}>
+                          <table style={{ borderCollapse: 'collapse', width: '100%' }}>
+                            <tbody>
+                              {lu.lignes.map(l => (
+                                <tr key={l.numero}>
+                                  <td style={{ ...td, ...mono, width: 34, color: 'var(--text-muted)' }}>{l.numero}</td>
+                                  <td style={{ ...td, ...mono, fontSize: 11.5 }}>
+                                    {l.ace
+                                      ? ecrireAce(l.ace, a.type)
+                                      : <span style={{ color: 'var(--danger, #d33)' }}>⛔ {l.erreur}</span>}
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+
+                        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10, marginTop: 8 }}>
+                          <button type="button" onClick={() => appliquerImport(a.id)} disabled={!bonnes.length} style={{ ...btn, opacity: bonnes.length ? 1 : .4 }}>
+                            {remplacer[a.id] ? 'Remplacer par' : 'Ajouter'} {bonnes.length} règle(s)
+                          </button>
+                          <label style={{ fontSize: 12 }}>
+                            <input type="checkbox" checked={!!remplacer[a.id]}
+                                   onChange={e => setRemplacer(r => ({ ...r, [a.id]: e.target.checked }))} />
+                            {' '}remplacer les règles existantes
+                          </label>
+                          {!!mauvaises.length && (
+                            <span className="meta" style={{ fontSize: 11.5 }}>
+                              Les lignes en erreur ne seront pas ajoutées — corrige-les dans le tableau d’origine.
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </details>
+
+                <div style={{ display: 'flex', alignItems: 'center', margin: '12px 0 5px' }}>
+                  <strong style={{ fontSize: 13 }}>🧭 {routeur?.name || 'Routeur'} — à coller</strong>
+                  <button type="button" onClick={() => copy('acl:' + a.id, ecrireAcl(a))} style={{ ...smallBtn, marginLeft: 'auto' }}>{copied === 'acl:' + a.id ? '✓ Copié' : 'Copier'}</button>
+                </div>
+                <pre style={preStyle}><code>{ecrireAcl(a)}</code></pre>
+                <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>{placementAcl(a.type)}</div>
+              </div>
+            );
+          })}
+
+          <div style={group}>
+            <div style={legend}>🔎 Vérifier après avoir collé</div>
+            <pre style={preStyle}><code>{VERIFICATIONS_ACL}</code></pre>
+            <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>
+              Le compteur de correspondances est le seul juge : si la règle que tu crois active reste à zéro,
+              c’est qu’une règle au-dessus l’a déjà attrapée, ou que l’ACL est posée sur la mauvaise interface
+              ou dans le mauvais sens. Cours lié : <a href="/pages/cisco-acl">Les ACL</a>.
+            </div>
           </div>
           <StepNav step={step} setStep={setStep} />
         </div>
