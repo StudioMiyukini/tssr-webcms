@@ -69,7 +69,8 @@ SEGMENTATION = '\n'.join([
          'Les <a href="/pages/opnsense">volets 1</a> à <a href="/pages/opnsense-services">3</a>. La '
          'notion de VLAN elle-même est traitée dans <a href="/pages/les-vlan">Les VLAN</a> et '
          '<a href="/pages/vlan-securite">Sécuriser les VLAN</a> — ici on la met en œuvre côté '
-         'pare-feu.'),
+         'pare-feu. Et la DMZ en tant que telle — ce qu’on y met, comment on la conçoit, la '
+         'surveille et l’entretient — a <a href="/pages/dmz">son cours en trois volets</a>.'),
 
     '<h2>1) Pourquoi découper</h2>',
     '<p>Un réseau plat, c’est une seule pièce où tout le monde se voit. La caméra IP y voit le '

@@ -296,7 +296,8 @@ PARE_FEU = '\n'.join([
          '« Comment publier un serveur web sans donner accès au LAN si ce serveur est piraté ? » '
          'En le mettant dans une zone à part, d’où il ne peut <strong>pas</strong> initier de '
          'connexion vers le LAN. Un serveur exposé posé dans le LAN, c’est une porte ouverte sur '
-         'tout le reste.'),
+         'tout le reste. Le cours dédié : <a href="/pages/dmz"><strong>La DMZ</strong></a>, en trois '
+         'volets — comprendre, mettre en place, surveiller et entretenir.'),
 
     '<h2>4) Les règles de filtrage</h2>',
     '<p>Une règle dit <strong>quel flux</strong> est concerné et <strong>ce qu’on en fait</strong> : '
