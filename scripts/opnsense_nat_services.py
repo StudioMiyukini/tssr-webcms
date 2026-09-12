@@ -268,6 +268,11 @@ NAT = '\n'.join([
     '<li>Les <strong>alias</strong> ne servent pas à aller plus vite, mais à pouvoir modifier et '
     'relire.</li>'
     '</ul>',
+    note('green', '🎓 Passer à la pratique',
+         'Le corrigé du <a href="/pages/tp-opnsense-nat"><strong>TP 1.3 — NAT</strong></a> : '
+         'publier un serveur IIS interne par une redirection de port, la règle associée, le '
+         'piège des réseaux privés sur un WAN de maquette, et la traduction lue dans les '
+         'journaux.'),
     note('blue', '📘 Volet suivant',
          '<a href="/pages/opnsense-services"><strong>DHCP, DNS et les services du boîtier</strong>'
          '</a> — distribuer les adresses, tenir la résolution de noms, mettre en place le DNS partagé '
@@ -483,6 +488,10 @@ SERVICES = '\n'.join([
     'pas le pare-feu.</li>'
     '<li>L’heure n’est pas un détail : Kerberos tolère cinq minutes.</li>'
     '</ul>',
+    note('green', '🎓 Passer à la pratique',
+         'Le <a href="/pages/tp-opnsense-filtrage"><strong>TP 1.2 — Filtrage des flux</strong></a> '
+         'se termine par la mise en place du DHCP sur le LAN, sa vérification depuis un poste '
+         'Windows, et l’installation d’un greffon.'),
     note('blue', '📘 Volet suivant',
          'La <strong>segmentation</strong> : créer une DMZ et des VLAN, écrire les règles entre '
          'zones, et décider ce qui a le droit de parler à quoi. Puis les <strong>accès distants et la '

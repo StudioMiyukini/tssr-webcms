@@ -353,6 +353,12 @@ CONTENU = '\n'.join([
          '<strong>segmentation</strong> (DMZ, VLAN sur une seule carte, règles '
          'inter-zones) et les <strong>accès distants et la détection d’intrusion</strong> '
          '(OpenVPN, WireGuard, Suricata, filtrage web).'),
+    note('green', '🎓 Passer à la pratique',
+         'Les TP corrigés reprennent ce volet sur une maquette à trois cartes : '
+         '<a href="/pages/tp-opnsense-installation"><strong>TP 1.1 — Installation</strong></a> '
+         '(la VM, l’assignation par la MAC, les adresses en console, la prise en main), puis '
+         '<a href="/pages/tp-opnsense-filtrage"><strong>TP 1.2 — Filtrage des flux</strong></a> '
+         '(ce qu’il se passe sans règle, et les règles ping, web, DNS).'),
     note('green', '🔗 À lire à côté',
          'Le concept : <a href="/pages/le-pare-feu">Le pare-feu</a>. La translation d’adresses, dont '
          'OPNsense fait le même usage que Cisco : <a href="/pages/cisco-nat">NAT / PAT</a>. La logique '
