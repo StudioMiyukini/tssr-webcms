@@ -1,0 +1,351 @@
+{
+  "slug": "cisco-route-statique",
+  "title": "Les routes statiques en CLI (Cisco Packet Tracer)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Au départ, un routeur connaît :",
+          "options": [
+            "Tous les réseaux",
+            "Seulement les réseaux directement connectés à ses interfaces",
+            "Rien",
+            "Internet"
+          ],
+          "answer": 1,
+          "explain": "Pour un réseau distant, il faut lui indiquer le chemin."
+        },
+        {
+          "q": "Une route statique est :",
+          "options": [
+            "Un DNS",
+            "Automatique",
+            "Écrite à la main par l'administrateur",
+            "Calculée par OSPF"
+          ],
+          "answer": 2,
+          "explain": "Le panneau de direction posé à la main."
+        },
+        {
+          "q": "Syntaxe :",
+          "options": [
+            "add route",
+            "ip static",
+            "route add",
+            "ip route <réseau> <masque> <prochain saut>"
+          ],
+          "answer": 3,
+          "explain": "En mode configuration globale."
+        },
+        {
+          "q": "R1 veut joindre 192.168.2.0/24 via R2 (10.0.0.2) :",
+          "options": [
+            "ip route 10.0.0.2 192.168.2.0",
+            "ip route 192.168.2.0 255.255.255.0 10.0.0.2",
+            "route 192.168.2.0",
+            "ip route 192.168.2.0/24"
+          ],
+          "answer": 1,
+          "explain": "Réseau, masque, next hop."
+        },
+        {
+          "q": "Le prochain saut (next hop) est :",
+          "options": [
+            "Le DNS",
+            "Le masque",
+            "L'IP de l'interface du routeur voisin",
+            "L'IP du PC"
+          ],
+          "answer": 2,
+          "explain": "Ou l'interface de sortie."
+        },
+        {
+          "q": "Une route ne sert :",
+          "options": [
+            "À rien",
+            "Au retour",
+            "Aux deux sens",
+            "Qu'à l'aller : il en faut une de chaque côté"
+          ],
+          "answer": 3,
+          "explain": "Sinon la réponse est perdue."
+        },
+        {
+          "q": "La route par défaut :",
+          "options": [
+            "ip route 255.255.255.255",
+            "ip route 0.0.0.0 0.0.0.0 <saut>",
+            "ip route all",
+            "ip route default"
+          ],
+          "answer": 1,
+          "explain": "Tout ce que je ne connais pas, envoie-le par là."
+        },
+        {
+          "q": "Voir la table de routage :",
+          "options": [
+            "show ip interface brief",
+            "show route",
+            "show ip route",
+            "ip r"
+          ],
+          "answer": 2,
+          "explain": "Depuis le mode privilégié."
+        },
+        {
+          "q": "Dans show ip route, C signifie :",
+          "options": [
+            "Directement connecté",
+            "Par défaut",
+            "Statique",
+            "Cisco"
+          ],
+          "answer": 0,
+          "explain": "S = statique, S* = par défaut."
+        },
+        {
+          "q": "Supprimer une route :",
+          "options": [
+            "delete ip route",
+            "ip route off",
+            "no ip route 192.168.2.0 255.255.255.0 10.0.0.2",
+            "remove route"
+          ],
+          "answer": 2,
+          "explain": "Préfixe no."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "[1/0] dans show ip route :",
+          "options": [
+            "Port 1",
+            "Distance administrative 1 / métrique 0",
+            "Une erreur",
+            "Version"
+          ],
+          "answer": 1,
+          "explain": "Les statiques sont très prioritaires."
+        },
+        {
+          "q": "Le ping ne passe pas avec une seule route posée :",
+          "options": [
+            "Masque",
+            "Bug",
+            "Symptôme classique : il manque la route de retour",
+            "DNS"
+          ],
+          "answer": 2,
+          "explain": "Toujours dans les deux sens."
+        },
+        {
+          "q": "Variante avec interface de sortie :",
+          "options": [
+            "ip route via Serial",
+            "route Serial0/0/0",
+            "ip route 192.168.2.0 255.255.255.0 Serial0/0/0",
+            "ip route out"
+          ],
+          "answer": 2,
+          "explain": "Sur une liaison point-à-point."
+        },
+        {
+          "q": "Routage dynamique (OSPF, RIP) :",
+          "options": [
+            "Un GPS qui calcule et met à jour les chemins seul",
+            "Manuel",
+            "Obsolète",
+            "Statique"
+          ],
+          "answer": 0,
+          "explain": "Le statique reste simple et fiable sur les petits réseaux."
+        },
+        {
+          "q": "Réseau de liaison R1–R2 dans l'exemple :",
+          "options": [
+            "192.168.1.0/24",
+            "10.0.0.0/24",
+            "172.16.0.0/16",
+            "10.0.0.0/30 (R1 = .1, R2 = .2)"
+          ],
+          "answer": 3,
+          "explain": "Deux hôtes utilisables."
+        },
+        {
+          "q": "S* dans la table :",
+          "options": [
+            "Erreur",
+            "Statique supprimée",
+            "Connectée",
+            "La route par défaut"
+          ],
+          "answer": 3,
+          "explain": "0.0.0.0/0."
+        },
+        {
+          "q": "Si le ping échoue, vérifier :",
+          "options": [
+            "Rien",
+            "Les deux routes, les passerelles des PC, les interfaces up",
+            "Le DNS seulement",
+            "Le câble seulement"
+          ],
+          "answer": 1,
+          "explain": "show ip interface brief."
+        },
+        {
+          "q": "Pourquoi une route par défaut vers Internet ?",
+          "options": [
+            "Pour le DNS",
+            "Pour la vitesse",
+            "Impossible d'écrire une route pour chaque réseau d'Internet",
+            "Obligatoire"
+          ],
+          "answer": 2,
+          "explain": "Passerelle de dernier recours."
+        },
+        {
+          "q": "Sur R2, pour joindre le LAN de R1 :",
+          "options": [
+            "ip route 192.168.2.0 … 10.0.0.2",
+            "ip route 10.0.0.1",
+            "Rien",
+            "ip route 192.168.1.0 255.255.255.0 10.0.0.1"
+          ],
+          "answer": 3,
+          "explain": "Miroir de R1."
+        },
+        {
+          "q": "Une route statique a une distance administrative de :",
+          "options": [
+            "120",
+            "110",
+            "0",
+            "1"
+          ],
+          "answer": 3,
+          "explain": "0 = connecté, 110 = OSPF, 120 = RIP."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Un PC du LAN 1 pingue le LAN 2 : que doit contenir R1 ?",
+          "options": [
+            "Un DNS",
+            "Rien",
+            "Une route vers 192.168.1.0",
+            "Une route vers 192.168.2.0/24 via 10.0.0.2"
+          ],
+          "answer": 3,
+          "explain": "Et R2 la route inverse."
+        },
+        {
+          "q": "Trois routeurs en chaîne (R1–R2–R3) : R1 vers le LAN de R3 :",
+          "options": [
+            "Impossible",
+            "Route via R2 (prochain saut), et R2 doit connaître le LAN de R3",
+            "Automatique",
+            "Route via R3 directement"
+          ],
+          "answer": 1,
+          "explain": "Chaque routeur ne connaît que son voisin."
+        },
+        {
+          "q": "Une route vers un réseau inexistant :",
+          "options": [
+            "Acceptée mais inutile ; le paquet est jeté au dernier saut",
+            "Crée le réseau",
+            "Refusée",
+            "Bloque tout"
+          ],
+          "answer": 0,
+          "explain": "Le routeur ne vérifie pas."
+        },
+        {
+          "q": "Deux routes vers le même réseau, statique et OSPF :",
+          "options": [
+            "OSPF gagne",
+            "Les deux",
+            "Erreur",
+            "La statique gagne (distance administrative 1 < 110)"
+          ],
+          "answer": 3,
+          "explain": "Plus la distance est faible, plus la route est fiable."
+        },
+        {
+          "q": "Un routeur sans route vers la source de la réponse :",
+          "options": [
+            "Route par le DNS",
+            "Répond quand même",
+            "Jette la réponse : ping en échec",
+            "Redémarre"
+          ],
+          "answer": 2,
+          "explain": "Le retour compte autant que l'aller."
+        },
+        {
+          "q": "Avantage du statique sur les petits réseaux :",
+          "options": [
+            "Plus rapide",
+            "Automatique",
+            "Simple, fiable, sans protocole ni trafic de mise à jour",
+            "Aucun"
+          ],
+          "answer": 2,
+          "explain": "Inconvénient : à maintenir à la main."
+        },
+        {
+          "q": "Inconvénient du statique :",
+          "options": [
+            "Trop rapide",
+            "Interdit",
+            "Ne s'adapte pas aux pannes ni aux changements de topologie",
+            "Trop sûr"
+          ],
+          "answer": 2,
+          "explain": "D'où le dynamique sur les grands réseaux."
+        },
+        {
+          "q": "Où taper ip route ?",
+          "options": [
+            "Router>",
+            "Router#",
+            "Router(config-if)#",
+            "Router(config)#"
+          ],
+          "answer": 3,
+          "explain": "Mode configuration globale."
+        },
+        {
+          "q": "Après avoir posé les routes :",
+          "options": [
+            "Rien",
+            "erase",
+            "reload",
+            "copy running-config startup-config"
+          ],
+          "answer": 3,
+          "explain": "Sinon perdu au redémarrage."
+        },
+        {
+          "q": "Cours liés :",
+          "options": [
+            "Configurer un routeur en CLI, Le routeur, Calcul d'IP & masque",
+            "Samba",
+            "AD",
+            "Apache"
+          ],
+          "answer": 0,
+          "explain": "À retenir."
+        }
+      ]
+    }
+  ]
+}

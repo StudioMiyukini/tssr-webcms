@@ -1,0 +1,351 @@
+{
+  "slug": "cisco-routeur-cli",
+  "title": "Configurer un routeur en CLI (Cisco Packet Tracer)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Que signifie le prompt Router> ?",
+          "options": [
+            "Mode utilisateur (on regarde)",
+            "Mode configuration",
+            "Mode interface",
+            "Mode privilégié"
+          ],
+          "answer": 0,
+          "explain": "L'accueil."
+        },
+        {
+          "q": "Commande pour passer en mode privilégié :",
+          "options": [
+            "sudo",
+            "admin",
+            "configure",
+            "enable"
+          ],
+          "answer": 3,
+          "explain": "Router> enable → Router#."
+        },
+        {
+          "q": "Prompt du mode configuration globale :",
+          "options": [
+            "Router(config-if)#",
+            "Router#",
+            "Router(config)#",
+            "Router>"
+          ],
+          "answer": 2,
+          "explain": "Après configure terminal."
+        },
+        {
+          "q": "Entrer dans la configuration de FastEthernet 0/0 :",
+          "options": [
+            "ip interface 0/0",
+            "set interface",
+            "config fa0/0",
+            "interface FastEthernet 0/0"
+          ],
+          "answer": 3,
+          "explain": "Prompt Router(config-if)#."
+        },
+        {
+          "q": "Donner une IP à l'interface :",
+          "options": [
+            "ip 192.168.1.254/24",
+            "ip address 192.168.1.254 255.255.255.0",
+            "set ip",
+            "address 192.168.1.254"
+          ],
+          "answer": 1,
+          "explain": "IP puis masque décimal."
+        },
+        {
+          "q": "Activer l'interface :",
+          "options": [
+            "start",
+            "no shutdown",
+            "up",
+            "enable"
+          ],
+          "answer": 1,
+          "explain": "Par défaut elle est éteinte."
+        },
+        {
+          "q": "Message qui confirme l'activation :",
+          "options": [
+            "Done",
+            "%LINK-5-CHANGED … changed state to up",
+            "OK",
+            "Interface ready"
+          ],
+          "answer": 1,
+          "explain": "Et %LINEPROTO-5-UPDOWN."
+        },
+        {
+          "q": "Sauvegarder la configuration :",
+          "options": [
+            "store",
+            "save",
+            "copy running-config startup-config",
+            "write config"
+          ],
+          "answer": 2,
+          "explain": "Abréviations : copy run start, wr."
+        },
+        {
+          "q": "Pourquoi sauvegarder ?",
+          "options": [
+            "Par habitude",
+            "Pour le DNS",
+            "La running-config vit en RAM et est perdue au redémarrage",
+            "Obligatoire"
+          ],
+          "answer": 2,
+          "explain": "startup-config survit."
+        },
+        {
+          "q": "Voir l'état et l'IP des interfaces :",
+          "options": [
+            "show interfaces",
+            "show ip interface brief",
+            "show ip route",
+            "ip a"
+          ],
+          "answer": 1,
+          "explain": "Depuis le mode privilégié."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "end ou Ctrl+Z :",
+          "options": [
+            "Revient directement au mode privilégié",
+            "Remonte d'un cran",
+            "Quitte le routeur",
+            "Sauvegarde"
+          ],
+          "answer": 0,
+          "explain": "exit remonte d'un seul cran."
+        },
+        {
+          "q": "La touche ? :",
+          "options": [
+            "Affiche l'aide",
+            "Quitte",
+            "Efface",
+            "Complète"
+          ],
+          "answer": 0,
+          "explain": "Tab complète une commande."
+        },
+        {
+          "q": "show running-config :",
+          "options": [
+            "Affiche toute la configuration en cours",
+            "Efface",
+            "Sauvegarde",
+            "Redémarre"
+          ],
+          "answer": 0,
+          "explain": "Depuis Router#."
+        },
+        {
+          "q": "Analogie du cours pour Router(config-if)# :",
+          "options": [
+            "La salle des machines",
+            "Devant une carte réseau précise",
+            "Le bureau de l'admin",
+            "L'accueil"
+          ],
+          "answer": 1,
+          "explain": "config = salle des machines, # = bureau, > = accueil."
+        },
+        {
+          "q": "Séquence correcte :",
+          "options": [
+            "configure terminal → enable → interface",
+            "enable → configure terminal → interface … → ip address → no shutdown",
+            "interface → enable → ip address",
+            "no shutdown → ip address"
+          ],
+          "answer": 1,
+          "explain": "On descend les modes."
+        },
+        {
+          "q": "wr est l'abréviation de :",
+          "options": [
+            "wrap",
+            "wrong",
+            "write erase",
+            "write memory (sauvegarde)"
+          ],
+          "answer": 3,
+          "explain": "Comme copy run start."
+        },
+        {
+          "q": "Où trouve-t-on le CLI dans Packet Tracer ?",
+          "options": [
+            "Onglet Config",
+            "Menu Outils",
+            "Clic sur le routeur → onglet CLI",
+            "Terminal externe"
+          ],
+          "answer": 2,
+          "explain": "On tape les commandes."
+        },
+        {
+          "q": "Le prompt indique :",
+          "options": [
+            "Le modèle",
+            "L'IP",
+            "L'heure",
+            "Toujours où l'on est (le mode)"
+          ],
+          "answer": 3,
+          "explain": "Le secret des modes."
+        },
+        {
+          "q": "Destination filename [startup-config]? :",
+          "options": [
+            "Taper running",
+            "Taper un nom",
+            "Appuyer sur Entrée pour accepter",
+            "Annuler"
+          ],
+          "answer": 2,
+          "explain": "Building configuration… [OK]."
+        },
+        {
+          "q": "Une interface sans no shutdown :",
+          "options": [
+            "Fonctionne",
+            "Est supprimée",
+            "Reste administrativement down",
+            "Route quand même"
+          ],
+          "answer": 2,
+          "explain": "Cause classique de « ça ne pingue pas »."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Router(config)# hostname R1 :",
+          "options": [
+            "Renomme le routeur (le prompt devient R1)",
+            "Sauvegarde",
+            "Crée un utilisateur",
+            "Change l'IP"
+          ],
+          "answer": 0,
+          "explain": "Bonne pratique de nommage."
+        },
+        {
+          "q": "Exit depuis Router(config-if)# mène à :",
+          "options": [
+            "Router(config)#",
+            "Fermeture",
+            "Router#",
+            "Router>"
+          ],
+          "answer": 0,
+          "explain": "Un seul cran."
+        },
+        {
+          "q": "Configurer deux interfaces :",
+          "options": [
+            "Automatique",
+            "Répéter interface / ip address / no shutdown pour chacune",
+            "Une seule IP suffit",
+            "Impossible"
+          ],
+          "answer": 1,
+          "explain": "Chaque interface a son réseau."
+        },
+        {
+          "q": "show ip interface brief affiche « administratively down » :",
+          "options": [
+            "Câble débranché",
+            "Routeur éteint",
+            "Mauvaise IP",
+            "no shutdown oublié"
+          ],
+          "answer": 3,
+          "explain": "« down/down » = pas de lien physique."
+        },
+        {
+          "q": "Le masque dans ip address s'écrit :",
+          "options": [
+            "/24",
+            "0.0.0.255",
+            "24",
+            "255.255.255.0 (décimal)"
+          ],
+          "answer": 3,
+          "explain": "Pas en CIDR sur IOS classique."
+        },
+        {
+          "q": "Après redémarrage sans sauvegarde :",
+          "options": [
+            "IP conservée seulement",
+            "Routeur cassé",
+            "Config conservée",
+            "Configuration perdue : retour à la startup-config"
+          ],
+          "answer": 3,
+          "explain": "D'où copy run start."
+        },
+        {
+          "q": "Cours liés cités :",
+          "options": [
+            "Linux",
+            "AD, GPO",
+            "Le routeur, Les adresses IP, Calcul d'IP & masque",
+            "Samba, Apache"
+          ],
+          "answer": 2,
+          "explain": "À retenir."
+        },
+        {
+          "q": "Pour effacer la configuration sauvegardée :",
+          "options": [
+            "no config",
+            "delete all",
+            "copy run start",
+            "erase startup-config puis reload"
+          ],
+          "answer": 3,
+          "explain": "Retour à zéro."
+        },
+        {
+          "q": "Un PC du LAN doit avoir comme passerelle :",
+          "options": [
+            "L'IP du DNS",
+            "8.8.8.8",
+            "L'IP du switch",
+            "L'IP de l'interface du routeur sur ce LAN (ex. 192.168.1.254)"
+          ],
+          "answer": 3,
+          "explain": "La sortie du réseau."
+        },
+        {
+          "q": "configure terminal s'abrège :",
+          "options": [
+            "config",
+            "cfg",
+            "ct",
+            "conf t"
+          ],
+          "answer": 3,
+          "explain": "IOS accepte les abréviations non ambiguës."
+        }
+      ]
+    }
+  ]
+}

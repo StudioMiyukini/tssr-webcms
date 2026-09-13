@@ -74,7 +74,8 @@ const GLOSS_MAP: Record<string, string> = (() => {
 const GLOSS_KEYS = Object.keys(GLOSS_MAP).sort((a, b) => b.length - a.length);
 const escRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
 const GLOSS_SRC = GLOSS_KEYS.length ? `(?<![\\w/])(${GLOSS_KEYS.map(escRe).join('|')})(?![\\w])` : '';
-const SKIP_TAGS = new Set(['A', 'CODE', 'PRE', 'KBD', 'MARK', 'BUTTON', 'SELECT', 'TEXTAREA', 'OPTION', 'SCRIPT', 'STYLE']);
+// LABEL : un libellé de quiz ou de jeu est une zone cliquable — un lien glossaire au milieu ferait quitter la page au lieu de cocher.
+const SKIP_TAGS = new Set(['A', 'CODE', 'PRE', 'KBD', 'MARK', 'BUTTON', 'SELECT', 'TEXTAREA', 'OPTION', 'SCRIPT', 'STYLE', 'LABEL']);
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const BLOCK_SEL = 'p,li,td,th,dd,dt,figcaption,caption,h1,h2,h3,h4,h5,h6,blockquote,summary,aside,div';
 

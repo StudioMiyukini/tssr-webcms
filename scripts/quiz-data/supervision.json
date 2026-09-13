@@ -1,0 +1,351 @@
+{
+  "slug": "supervision",
+  "title": "La supervision (monitoring)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Objectif de la supervision :",
+          "options": [
+            "Sauvegarder",
+            "Savoir qu'un service est tombé avant que l'utilisateur n'appelle",
+            "Router",
+            "Chiffrer"
+          ],
+          "answer": 1,
+          "explain": "Anticiper et réduire le temps d'indisponibilité."
+        },
+        {
+          "q": "Trois familles de choses surveillées :",
+          "options": [
+            "Prix, poids, couleur",
+            "Mails, fichiers, GPO",
+            "Disponibilité, ressources, réseau",
+            "Users, groupes, UO"
+          ],
+          "answer": 2,
+          "explain": "Ping/services, CPU/RAM/disque, bande passante/ports."
+        },
+        {
+          "q": "État WARNING :",
+          "options": [
+            "Service tombé",
+            "Sonde impossible",
+            "Tout va bien",
+            "Seuil d'alerte atteint (ex. disque > 80 %)"
+          ],
+          "answer": 3,
+          "explain": "CRITICAL > 95 % ou service tombé."
+        },
+        {
+          "q": "État UNKNOWN :",
+          "options": [
+            "Critique",
+            "Service OK",
+            "Alerte",
+            "La sonde n'a pas pu mesurer"
+          ],
+          "answer": 3,
+          "explain": "Ni bon ni mauvais : pas de mesure."
+        },
+        {
+          "q": "Sonde active :",
+          "options": [
+            "La cible envoie son état",
+            "Un agent NRPE",
+            "Un trap",
+            "Le serveur de supervision interroge la cible (ping, HTTP, SNMP)"
+          ],
+          "answer": 3,
+          "explain": "Passive = la cible envoie (agent, trap SNMP)."
+        },
+        {
+          "q": "SNMP sert à :",
+          "options": [
+            "Sauvegarder",
+            "Envoyer des mails",
+            "Chiffrer",
+            "Interroger l'état des équipements réseau (compteurs, ports, température)"
+          ],
+          "answer": 3,
+          "explain": "Valeurs OID via une communauté (public en lecture)."
+        },
+        {
+          "q": "Outil référence historique open source :",
+          "options": [
+            "GLPI",
+            "Excel",
+            "Nagios",
+            "PRTG"
+          ],
+          "answer": 2,
+          "explain": "Très configurable via fichiers."
+        },
+        {
+          "q": "Centreon est :",
+          "options": [
+            "Un ticketing",
+            "Windows seulement",
+            "Basé sur Nagios, interface web complète, très utilisé en France",
+            "Un antivirus"
+          ],
+          "answer": 2,
+          "explain": "Tableau des outils."
+        },
+        {
+          "q": "PRTG :",
+          "options": [
+            "Windows, simple, basé sur des capteurs (freemium)",
+            "Linux seulement",
+            "Un trap",
+            "Un agent"
+          ],
+          "answer": 0,
+          "explain": "Freemium."
+        },
+        {
+          "q": "Quand un état passe en CRITICAL, le superviseur :",
+          "options": [
+            "Notifie (e-mail, SMS, ticket) selon des règles d'escalade",
+            "Supprime",
+            "Redémarre",
+            "Répare"
+          ],
+          "answer": 0,
+          "explain": "Qui, après combien de temps."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "NRPE est :",
+          "options": [
+            "Un agent pour les sondes passives Nagios",
+            "Un tableau de bord",
+            "Un protocole réseau",
+            "Un port"
+          ],
+          "answer": 0,
+          "explain": "La cible exécute la sonde et renvoie l'état."
+        },
+        {
+          "q": "Un trap SNMP :",
+          "options": [
+            "Une requête du superviseur",
+            "Une communauté",
+            "Un OID",
+            "Une alerte envoyée spontanément par l'équipement"
+          ],
+          "answer": 3,
+          "explain": "Sonde passive."
+        },
+        {
+          "q": "OID :",
+          "options": [
+            "Un outil",
+            "L'identifiant d'une valeur lue en SNMP",
+            "Un port",
+            "Un mot de passe"
+          ],
+          "answer": 1,
+          "explain": "Object IDentifier."
+        },
+        {
+          "q": "La communauté SNMP « public » :",
+          "options": [
+            "Donne un accès en lecture (à changer en production)",
+            "Écrit",
+            "Chiffre",
+            "Supprime"
+          ],
+          "answer": 0,
+          "explain": "Valeur par défaut connue de tous."
+        },
+        {
+          "q": "Un disque à 90 % avec seuils 80/95 :",
+          "options": [
+            "OK",
+            "WARNING",
+            "UNKNOWN",
+            "CRITICAL"
+          ],
+          "answer": 1,
+          "explain": "Entre alerte et critique."
+        },
+        {
+          "q": "Zabbix :",
+          "options": [
+            "Open source tout-en-un : agents, graphes, alertes",
+            "Windows seulement",
+            "Basé sur Nagios",
+            "Un ticketing"
+          ],
+          "answer": 0,
+          "explain": "Tableau des outils."
+        },
+        {
+          "q": "Les tableaux de bord et graphes servent à :",
+          "options": [
+            "Notifier",
+            "Sauvegarder",
+            "Voir les tendances et anticiper",
+            "Décorer"
+          ],
+          "answer": 2,
+          "explain": "Historique CPU/disque."
+        },
+        {
+          "q": "Règle d'escalade :",
+          "options": [
+            "Un seuil",
+            "Un OID",
+            "Monter un escalier",
+            "Qui est notifié, après combien de temps sans résolution"
+          ],
+          "answer": 3,
+          "explain": "Chaîne de notification."
+        },
+        {
+          "q": "Pour l'inventaire et les tickets, le cours renvoie à :",
+          "options": [
+            "GLPI",
+            "Zabbix",
+            "Nagios",
+            "PRTG"
+          ],
+          "answer": 0,
+          "explain": "Et au ticketing pour la méthode incident."
+        },
+        {
+          "q": "Port SNMP :",
+          "options": [
+            "22",
+            "161 (162 pour les traps)",
+            "80",
+            "514"
+          ],
+          "answer": 1,
+          "explain": "UDP."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Un service HTTP qui répond 500 :",
+          "options": [
+            "OK",
+            "UNKNOWN",
+            "CRITICAL : le service répond mais est en erreur",
+            "WARNING"
+          ],
+          "answer": 2,
+          "explain": "La sonde HTTP vérifie le code de réponse."
+        },
+        {
+          "q": "Superviser un certificat TLS :",
+          "options": [
+            "Une sonde qui alerte avant expiration (ex. 14 jours)",
+            "NRPE",
+            "SNMP",
+            "Impossible"
+          ],
+          "answer": 0,
+          "explain": "Voir le cours DMZ, volet 3."
+        },
+        {
+          "q": "Sonde vue de dehors :",
+          "options": [
+            "Un agent",
+            "Inutile",
+            "SNMP",
+            "Vérifie que le service répond comme le voient les utilisateurs"
+          ],
+          "answer": 3,
+          "explain": "Différent d'une sonde interne."
+        },
+        {
+          "q": "Pourquoi des seuils WARNING et CRITICAL distincts ?",
+          "options": [
+            "Par habitude",
+            "Pour agir avant la panne (WARNING) et prioriser l'urgence (CRITICAL)",
+            "Pour les couleurs",
+            "Obligatoire"
+          ],
+          "answer": 1,
+          "explain": "Anticipation."
+        },
+        {
+          "q": "Un équipement injoignable en ping :",
+          "options": [
+            "CRITICAL (hôte DOWN)",
+            "WARNING",
+            "UNKNOWN",
+            "OK"
+          ],
+          "answer": 0,
+          "explain": "Disponibilité."
+        },
+        {
+          "q": "CCP2 TSSR concerne :",
+          "options": [
+            "L'exploitation : supervision, sauvegarde, incidents",
+            "L'anglais",
+            "Le hardware",
+            "Le réseau seul"
+          ],
+          "answer": 0,
+          "explain": "Compétence clé de l'exploitation."
+        },
+        {
+          "q": "Une sonde active trop fréquente :",
+          "options": [
+            "Charge le réseau et les cibles",
+            "Sans effet",
+            "Améliore",
+            "Chiffre"
+          ],
+          "answer": 0,
+          "explain": "Choisir l'intervalle."
+        },
+        {
+          "q": "Superviser la bande passante d'un port de switch :",
+          "options": [
+            "HTTP",
+            "SNMP (compteurs d'interface)",
+            "NRPE",
+            "Ping"
+          ],
+          "answer": 1,
+          "explain": "État des ports via SNMP."
+        },
+        {
+          "q": "Avantage d'un agent sur la cible :",
+          "options": [
+            "Aucun",
+            "Mesures fines (processus, disques, journaux) impossibles de l'extérieur",
+            "Moins sûr",
+            "Plus lent"
+          ],
+          "answer": 1,
+          "explain": "Sonde passive / agent."
+        },
+        {
+          "q": "Après une alerte, la suite logique :",
+          "options": [
+            "Ignorer",
+            "Rien",
+            "Redémarrer tout",
+            "Un ticket d'incident et le diagnostic (test de connectivité)"
+          ],
+          "answer": 3,
+          "explain": "Liens du cours."
+        }
+      ]
+    }
+  ]
+}

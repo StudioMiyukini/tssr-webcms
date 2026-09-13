@@ -1,0 +1,351 @@
+{
+  "slug": "linux-systemd",
+  "title": "systemd : services, démarrage et unités",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "systemd est :",
+          "options": [
+            "Un éditeur",
+            "Un pare-feu",
+            "Un shell",
+            "Le premier processus lancé par le noyau (PID 1)"
+          ],
+          "answer": 3,
+          "explain": "Il démarre tout le reste, surveille, relance, collecte les journaux."
+        },
+        {
+          "q": "Démarrer un service maintenant :",
+          "options": [
+            "systemctl start",
+            "systemctl status",
+            "systemctl reload",
+            "systemctl enable"
+          ],
+          "answer": 0,
+          "explain": "start ne survit pas au redémarrage."
+        },
+        {
+          "q": "Démarrer un service au prochain boot :",
+          "options": [
+            "systemctl start",
+            "systemctl is-active",
+            "systemctl enable",
+            "systemctl restart"
+          ],
+          "answer": 2,
+          "explain": "enable ne lance rien tout de suite."
+        },
+        {
+          "q": "Les deux d'un coup :",
+          "options": [
+            "systemctl boot",
+            "systemctl start --enable",
+            "systemctl on",
+            "systemctl enable --now"
+          ],
+          "answer": 3,
+          "explain": "Le raccourci utile."
+        },
+        {
+          "q": "L'erreur du TP :",
+          "options": [
+            "stop sans disable",
+            "enable sans start",
+            "start sans enable : le service disparaît après redémarrage",
+            "reload sans restart"
+          ],
+          "answer": 2,
+          "explain": "Le classique de l'examen et de la vraie vie."
+        },
+        {
+          "q": "reload vs restart :",
+          "options": [
+            "reload redémarre",
+            "reload relit la conf sans couper les connexions ; restart arrête puis démarre",
+            "Identiques",
+            "restart relit seulement"
+          ],
+          "answer": 1,
+          "explain": "Tous les services ne proposent pas reload."
+        },
+        {
+          "q": "Voir ce qui a échoué :",
+          "options": [
+            "systemctl list",
+            "systemctl --failed",
+            "systemctl errors",
+            "journalctl -f"
+          ],
+          "answer": 1,
+          "explain": "À regarder en premier."
+        },
+        {
+          "q": "systemctl status montre :",
+          "options": [
+            "Seulement l'état",
+            "Le fichier d'unité",
+            "État, PID, mémoire ET les dernières lignes de journal",
+            "La config"
+          ],
+          "answer": 2,
+          "explain": "La commande la plus tapée et la plus survolée."
+        },
+        {
+          "q": "Loaded: not-found signifie :",
+          "options": [
+            "Service masqué",
+            "Erreur de syntaxe",
+            "Service arrêté",
+            "Aucun fichier d'unité : faute de frappe ou paquet non installé"
+          ],
+          "answer": 3,
+          "explain": "Neuf fois sur dix."
+        },
+        {
+          "q": "Équivalent Windows de systemd :",
+          "options": [
+            "Le BIOS",
+            "Le registre",
+            "Le Gestionnaire de contrôle des services, en plus large",
+            "L'Explorateur"
+          ],
+          "answer": 2,
+          "explain": "Il gère aussi montages, sockets, tâches planifiées."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Mode de démarrage static :",
+          "options": [
+            "Est masqué",
+            "Ne peut pas être géré",
+            "Est désactivé",
+            "Pas de section [Install] : ni enable ni disable, mais start/stop/status fonctionnent"
+          ],
+          "answer": 3,
+          "explain": "Tiré par une autre unité qui en dépend."
+        },
+        {
+          "q": "Mode masked :",
+          "options": [
+            "Alias",
+            "Démarre à la main",
+            "Démarre au boot",
+            "Verrouillé : aucun démarrage possible, ni automatique ni manuel"
+          ],
+          "answer": 3,
+          "explain": "Masqué volontairement."
+        },
+        {
+          "q": "disabled mais active (running) :",
+          "options": [
+            "Démarré à la main, disparaîtra au redémarrage",
+            "Impossible",
+            "Masqué",
+            "Bug"
+          ],
+          "answer": 0,
+          "explain": "Loaded répond « et demain ? », Active « et maintenant ? »."
+        },
+        {
+          "q": "active (exited) :",
+          "options": [
+            "Service en attente",
+            "Une panne",
+            "Service tué",
+            "Tâche ponctuelle terminée normalement (monter un disque, règle de pare-feu)"
+          ],
+          "answer": 3,
+          "explain": "Ce n'est pas une panne."
+        },
+        {
+          "q": "active (waiting) :",
+          "options": [
+            "Tourne mais attend un déclencheur (connexion, minuteur)",
+            "Masqué",
+            "Arrêté",
+            "Panne"
+          ],
+          "answer": 0,
+          "explain": "Ex. un socket ou un timer."
+        },
+        {
+          "q": "sshd.service sur Debian est :",
+          "options": [
+            "Inexistant",
+            "Le service principal",
+            "Un alias de ssh.service",
+            "Masqué"
+          ],
+          "answer": 2,
+          "explain": "mysql désigne mariadb de la même façon."
+        },
+        {
+          "q": "Loaded: bad-setting :",
+          "options": [
+            "Service absent",
+            "Masqué",
+            "Droits",
+            "Erreur de syntaxe dans le fichier d'unité"
+          ],
+          "answer": 3,
+          "explain": "Un réglage essentiel incompréhensible."
+        },
+        {
+          "q": "Lister ce qui démarrera au boot :",
+          "options": [
+            "systemctl boot",
+            "systemctl list-unit-files --state=enabled",
+            "systemctl --failed",
+            "systemctl list-units"
+          ],
+          "answer": 1,
+          "explain": "list-units --state=running pour ce qui tourne."
+        },
+        {
+          "q": "Main PID: 683 :",
+          "options": [
+            "La mémoire",
+            "Le port",
+            "Le numéro d'unité",
+            "L'identifiant du processus principal"
+          ],
+          "answer": 3,
+          "explain": "Dans systemctl status."
+        },
+        {
+          "q": "reload sur un service qui ne le supporte pas :",
+          "options": [
+            "Ignore",
+            "Échoue proprement",
+            "Redémarre",
+            "Plante"
+          ],
+          "answer": 1,
+          "explain": "Une bonne façon de le savoir."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Quatre questions empilées dans systemctl status :",
+          "options": [
+            "Nom, port, IP, user",
+            "Start, stop, restart, reload",
+            "Chargement, mode de démarrage, état, dernières lignes de journal",
+            "CPU, RAM, disque, réseau"
+          ],
+          "answer": 2,
+          "explain": "Savoir laquelle est en défaut fait gagner du temps."
+        },
+        {
+          "q": "Où vit le fichier d'unité de ssh sur Debian ?",
+          "options": [
+            "/lib/systemd/system/ssh.service",
+            "/usr/bin",
+            "/etc/ssh",
+            "/var/lib"
+          ],
+          "answer": 0,
+          "explain": "Visible dans la ligne Loaded."
+        },
+        {
+          "q": "enabled mais failed :",
+          "options": [
+            "Impossible",
+            "Static",
+            "Masqué",
+            "Possible : prévu au boot mais a échoué"
+          ],
+          "answer": 3,
+          "explain": "Deux questions distinctes."
+        },
+        {
+          "q": "Que gère systemd en plus des services ?",
+          "options": [
+            "Le matériel",
+            "Points de montage, sockets, tâches planifiées (timers)",
+            "Rien",
+            "Le BIOS"
+          ],
+          "answer": 1,
+          "explain": "Plus large que le gestionnaire Windows."
+        },
+        {
+          "q": "Pourquoi reload en production web ?",
+          "options": [
+            "restart coupe les connexions en cours, reload non",
+            "restart est interdit",
+            "reload est obligatoire",
+            "Plus rapide"
+          ],
+          "answer": 0,
+          "explain": "Relire la configuration sans interruption."
+        },
+        {
+          "q": "Loaded: error :",
+          "options": [
+            "Le fichier existe mais n'a pas pu être lu (droits, illisible)",
+            "Syntaxe",
+            "Masqué",
+            "Absent"
+          ],
+          "answer": 0,
+          "explain": "Différent de bad-setting."
+        },
+        {
+          "q": "Mode linked :",
+          "options": [
+            "Alias",
+            "Masqué",
+            "Le fichier d'unité est un lien symbolique vers un fichier ailleurs",
+            "Static"
+          ],
+          "answer": 2,
+          "explain": "Tableau du cours."
+        },
+        {
+          "q": "systemctl is-enabled apache2 répond :",
+          "options": [
+            "active",
+            "running",
+            "enabled / disabled / static…",
+            "PID"
+          ],
+          "answer": 2,
+          "explain": "is-active pour l'état."
+        },
+        {
+          "q": "Où lire l'explication d'une erreur de démarrage ?",
+          "options": [
+            "Dans CGroup",
+            "Dans Loaded",
+            "Dans les dernières lignes de journal en bas du status",
+            "Dans le PID"
+          ],
+          "answer": 2,
+          "explain": "C'est là qu'une erreur s'explique."
+        },
+        {
+          "q": "Vouloir enable une unité static :",
+          "options": [
+            "N'a pas de sens : c'est une brique tirée automatiquement",
+            "Masque",
+            "Fonctionne",
+            "Nécessaire"
+          ],
+          "answer": 0,
+          "explain": "Ce n'est pas un défaut."
+        }
+      ]
+    }
+  ]
+}

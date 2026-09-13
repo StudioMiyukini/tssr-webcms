@@ -1,0 +1,351 @@
+{
+  "slug": "linux-ssh",
+  "title": "SSH serveur sous Linux",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Paquet du serveur SSH sur Debian :",
+          "options": [
+            "ssh-daemon",
+            "openssh-server",
+            "ssh-server",
+            "sshd"
+          ],
+          "answer": 1,
+          "explain": "apt install openssh-server, puis systemctl enable ssh."
+        },
+        {
+          "q": "SSH, ssh, sshd :",
+          "options": [
+            "Le protocole, le client, le démon serveur",
+            "Trois fichiers",
+            "Trois ports",
+            "Identiques"
+          ],
+          "answer": 0,
+          "explain": "Le d final = daemon."
+        },
+        {
+          "q": "Fichier de configuration du serveur :",
+          "options": [
+            "~/.ssh/config",
+            "/etc/ssh/sshd_config",
+            "/etc/sshd.conf",
+            "/etc/ssh/ssh_config"
+          ],
+          "answer": 1,
+          "explain": "ssh_config configure le client — un d de différence."
+        },
+        {
+          "q": "Après modification de sshd_config :",
+          "options": [
+            "sudo systemctl restart ssh",
+            "ssh reload",
+            "Rien",
+            "reboot"
+          ],
+          "answer": 0,
+          "explain": "Puis systemctl status ssh."
+        },
+        {
+          "q": "PermitRootLogin no :",
+          "options": [
+            "Bloque tout",
+            "Interdit sudo",
+            "Interdit la connexion directe en root",
+            "Active les clés"
+          ],
+          "answer": 2,
+          "explain": "Vérifier d'abord que son compte normal fonctionne."
+        },
+        {
+          "q": "AllowUsers jean admin :",
+          "options": [
+            "Donne sudo",
+            "Bloque jean",
+            "Limite SSH aux comptes listés",
+            "Crée les comptes"
+          ],
+          "answer": 2,
+          "explain": "Réglage utile."
+        },
+        {
+          "q": "Changer le port 22 :",
+          "options": [
+            "Désactive scp",
+            "Réduit le bruit des scans, rend les vraies tentatives visibles",
+            "Est interdit",
+            "Rend inviolable"
+          ],
+          "answer": 1,
+          "explain": "Port 22320 dans l'exemple."
+        },
+        {
+          "q": "Se connecter sur un port personnalisé :",
+          "options": [
+            "ssh -p 22320 user@ip",
+            "ssh user@ip -P 22320",
+            "ssh --port",
+            "ssh user@ip:22320"
+          ],
+          "answer": 0,
+          "explain": "Le port n'est plus deviné."
+        },
+        {
+          "q": "Unité systemd sur Debian :",
+          "options": [
+            "sshd.service seulement",
+            "openssh.service",
+            "ssh.service (sshd.service en alias)",
+            "ssh-server"
+          ],
+          "answer": 2,
+          "explain": "Sur Red Hat : sshd."
+        },
+        {
+          "q": "Sur quel port le service écoute VRAIMENT :",
+          "options": [
+            "cat sshd_config",
+            "sudo ss -tlnp | grep ssh",
+            "ssh -v",
+            "ping"
+          ],
+          "answer": 1,
+          "explain": "Ou sudo sshd -T | grep -i port."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Cause n°1 d'échec après changement de port :",
+          "options": [
+            "Le clavier",
+            "Le DNS",
+            "La RAM",
+            "Le pare-feu ufw autorise 22, pas le nouveau port"
+          ],
+          "answer": 3,
+          "explain": "sudo ufw allow 22320/tcp."
+        },
+        {
+          "q": "Le service redémarre sans erreur mais écoute toujours sur 22 :",
+          "options": [
+            "Port pris",
+            "Bug",
+            "L'activation par socket : ssh.socket décide du port à la place de sshd_config",
+            "Pare-feu"
+          ],
+          "answer": 2,
+          "explain": "systemctl list-units '*ssh*' ; systemctl edit ssh.socket."
+        },
+        {
+          "q": "Sur Rocky, « Bind to port … Permission denied » alors qu'on est root :",
+          "options": [
+            "Pare-feu",
+            "SELinux interdit le port non déclaré : semanage port -a -t ssh_port_t -p tcp 22320",
+            "Disque plein",
+            "Mot de passe"
+          ],
+          "answer": 1,
+          "explain": "Une des deux étapes de plus sur Red Hat."
+        },
+        {
+          "q": "Sur Rocky, le service démarre mais personne n'arrive :",
+          "options": [
+            "DNS",
+            "firewalld bloque : firewall-cmd --add-port=22320/tcp --permanent && --reload",
+            "Clé",
+            "SELinux"
+          ],
+          "answer": 1,
+          "explain": "Actif d'office."
+        },
+        {
+          "q": "Pendant un changement de port, on garde :",
+          "options": [
+            "Un reboot",
+            "Une première session ouverte, et on teste dans une seconde",
+            "Rien",
+            "Un snapshot seulement"
+          ],
+          "answer": 1,
+          "explain": "Sinon la machine devient injoignable."
+        },
+        {
+          "q": "Choisir le nouveau port :",
+          "options": [
+            "En dessous de 1024",
+            "Au-dessus de 1024, et vérifier qu'il est libre avec ss",
+            "Au hasard",
+            "Toujours 2222"
+          ],
+          "answer": 1,
+          "explain": "Un port déjà pris fait échouer."
+        },
+        {
+          "q": "systemctl status ssh sans sudo :",
+          "options": [
+            "Montre l'état mais pas les dernières lignes de journal",
+            "Montre tout",
+            "Échoue",
+            "Redémarre"
+          ],
+          "answer": 0,
+          "explain": "Or c'est là qu'on lit le port écouté."
+        },
+        {
+          "q": "Éditer ssh_config en croyant configurer le serveur :",
+          "options": [
+            "Erreur affichée",
+            "Aucune erreur, aucun effet",
+            "Change le port",
+            "Casse le serveur"
+          ],
+          "answer": 1,
+          "explain": "La confusion qui fait perdre le plus de temps."
+        },
+        {
+          "q": "Avant PasswordAuthentication no :",
+          "options": [
+            "Redémarrer",
+            "Rien",
+            "Vérifier que les clés sont en place et que le compte normal est sudo",
+            "Changer le port"
+          ],
+          "answer": 2,
+          "explain": "Ne pas se couper l'accès."
+        },
+        {
+          "q": "Dans PuTTY / MobaXterm, le port se règle :",
+          "options": [
+            "Impossible",
+            "Dans un fichier",
+            "Dans un champ à côté de l'adresse",
+            "Par -p"
+          ],
+          "answer": 2,
+          "explain": "22320."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "SSH utilise :",
+          "options": [
+            "Aucun chiffrement",
+            "Seulement l'asymétrique",
+            "Symétrique et asymétrique, même pour une connexion par mot de passe",
+            "Seulement le symétrique"
+          ],
+          "answer": 2,
+          "explain": "Mise au point du § 3."
+        },
+        {
+          "q": "L'authentification par clé est :",
+          "options": [
+            "Interdite",
+            "Optionnelle et déconseillée",
+            "Recommandée",
+            "Réservée à root"
+          ],
+          "answer": 2,
+          "explain": "Une paire de clés : privée sur le poste, publique sur le serveur."
+        },
+        {
+          "q": "Où la clé publique va-t-elle sur le serveur ?",
+          "options": [
+            "~/.ssh/authorized_keys de l'utilisateur",
+            "known_hosts",
+            "/root",
+            "/etc/ssh/sshd_config"
+          ],
+          "answer": 0,
+          "explain": "Avec les droits que sshd exige."
+        },
+        {
+          "q": "Message « Server listening on 0.0.0.0 port 22320 » se lit :",
+          "options": [
+            "Dans /etc/hosts",
+            "Dans ufw",
+            "Dans systemctl status ssh (avec sudo)",
+            "Dans ssh_config"
+          ],
+          "answer": 2,
+          "explain": "Confirmation du port."
+        },
+        {
+          "q": "Sur Red Hat, l'alias ssh existe-t-il ?",
+          "options": [
+            "Oui",
+            "Oui en RHEL 9",
+            "Parfois",
+            "Non : l'unité s'appelle sshd.service, sans alias"
+          ],
+          "answer": 3,
+          "explain": "Cours Rocky § 6."
+        },
+        {
+          "q": "Depuis un client, se connecter au serveur 192.168.10.20 :",
+          "options": [
+            "ssh 192.168.10.20",
+            "ssh -s",
+            "ssh utilisateur@192.168.10.20",
+            "telnet"
+          ],
+          "answer": 2,
+          "explain": "Rappel des commandes client."
+        },
+        {
+          "q": "sudo sshd -T :",
+          "options": [
+            "Génère une clé",
+            "Affiche la configuration telle que lue par le serveur",
+            "Teste la connexion",
+            "Redémarre"
+          ],
+          "answer": 1,
+          "explain": "grep -i port pour le port déclaré."
+        },
+        {
+          "q": "Un port 22 laissé ouvert sur Internet :",
+          "options": [
+            "Sécurisé",
+            "Silencieux",
+            "Balayé en continu par les robots",
+            "Rare"
+          ],
+          "answer": 2,
+          "explain": "D'où l'intérêt de changer de port et d'imposer les clés."
+        },
+        {
+          "q": "PasswordAuthentication yes au départ :",
+          "options": [
+            "À laisser",
+            "Sans effet",
+            "À passer à no une fois les clés en place",
+            "Interdit"
+          ],
+          "answer": 2,
+          "explain": "Étape par étape."
+        },
+        {
+          "q": "systemctl list-units '*ssh*' sert à :",
+          "options": [
+            "Bloquer",
+            "Compter les connexions",
+            "Lister les clés",
+            "Voir ssh.service, sshd alias et ssh.socket"
+          ],
+          "answer": 3,
+          "explain": "En cas de doute sur les noms d'unités."
+        }
+      ]
+    }
+  ]
+}

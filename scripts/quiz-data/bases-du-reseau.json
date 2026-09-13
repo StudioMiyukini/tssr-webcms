@@ -1,0 +1,351 @@
+{
+  "slug": "bases-du-reseau",
+  "title": "Les bases du réseau",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "À partir de combien d'appareils reliés parle-t-on d'un réseau ?",
+          "options": [
+            "Dix",
+            "Cinq",
+            "Deux",
+            "Il faut au moins un serveur"
+          ],
+          "answer": 2,
+          "explain": "Dès que deux appareils ou plus sont connectés pour s'échanger des données, on parle de réseau — la box de la maison en est déjà un."
+        },
+        {
+          "q": "Que signifie LAN ?",
+          "options": [
+            "Large Area Network",
+            "Long Access Node",
+            "Local Area Network",
+            "Link Access Network"
+          ],
+          "answer": 2,
+          "explain": "LAN = Local Area Network : un réseau limité à un même lieu (maison, bureau, salle)."
+        },
+        {
+          "q": "Quel composant permet à un appareil de se connecter au réseau ?",
+          "options": [
+            "Le chipset",
+            "Le disque dur",
+            "L'alimentation",
+            "La carte réseau (NIC)"
+          ],
+          "answer": 3,
+          "explain": "La carte réseau (Network Interface Card) est le point d'entrée/sortie des données, via un port RJ45 ou une antenne Wi-Fi."
+        },
+        {
+          "q": "Combien de fils contient un câble RJ45 ?",
+          "options": [
+            "8 fils en 4 paires torsadées",
+            "6 fils",
+            "4 fils",
+            "2 fils"
+          ],
+          "answer": 0,
+          "explain": "Le câble Ethernet contient 8 fils en 4 paires torsadées ; le torsadage réduit les perturbations."
+        },
+        {
+          "q": "Quel équipement relie plusieurs appareils d'un même réseau local et envoie chaque message au bon destinataire ?",
+          "options": [
+            "Le modem",
+            "Le routeur",
+            "Le switch",
+            "Le pare-feu"
+          ],
+          "answer": 2,
+          "explain": "Le switch (commutateur) est la « standardiste » du réseau local : il transfère chaque trame au bon port."
+        },
+        {
+          "q": "Quel est le rôle de la box / du routeur ?",
+          "options": [
+            "Relier le réseau local à Internet et distribuer les adresses",
+            "Remplacer les câbles par du Wi-Fi",
+            "Alimenter les appareils en électricité",
+            "Stocker les fichiers partagés"
+          ],
+          "answer": 0,
+          "explain": "La box fait le lien entre le LAN et Internet (la porte d'entrée de l'immeuble) et distribue les adresses IP."
+        },
+        {
+          "q": "Quelle est l'analogie du cours pour le matériel et la logique d'un réseau ?",
+          "options": [
+            "Une usine et ses ouvriers",
+            "Un livre et son index",
+            "Les routes/carrefours et les adresses/code de la route",
+            "Un orchestre et son chef"
+          ],
+          "answer": 2,
+          "explain": "Les routes et carrefours sont le matériel (câbles, switchs) ; les adresses, le code de la route et le GPS sont la logique (IP, protocoles)."
+        },
+        {
+          "q": "Que traduit le DNS ?",
+          "options": [
+            "Un port physique en port logiciel",
+            "Un nom (google.fr) en adresse IP",
+            "Une adresse IP en adresse MAC",
+            "Un signal électrique en lumière"
+          ],
+          "answer": 1,
+          "explain": "Le DNS est l'annuaire : il traduit un nom en adresse IP, car les machines ne parlent qu'en chiffres."
+        },
+        {
+          "q": "Quel service attribue automatiquement une adresse IP à un appareil qui se connecte ?",
+          "options": [
+            "DHCP",
+            "NAT",
+            "ARP",
+            "DNS"
+          ],
+          "answer": 0,
+          "explain": "Le DHCP donne automatiquement une IP (plus masque, passerelle, DNS), comme l'hôtel qui attribue un numéro de chambre."
+        },
+        {
+          "q": "Qu'est-ce qu'un protocole ?",
+          "options": [
+            "Un ensemble de règles communes pour que les machines se comprennent",
+            "Un logiciel antivirus",
+            "Un port de la carte mère",
+            "Un type de câble"
+          ],
+          "answer": 0,
+          "explain": "Un protocole est une « langue commune » ; la base d'Internet est TCP/IP."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Quelle fibre optique est adaptée aux longues distances (plusieurs km) ?",
+          "options": [
+            "Le câble catégorie 6",
+            "La fibre multimode (MMF)",
+            "La fibre monomode (SMF)",
+            "Le câble coaxial"
+          ],
+          "answer": 2,
+          "explain": "Monomode = cœur très fin (~9 µm), un seul rayon, source laser, très longues distances. Multimode = courtes distances."
+        },
+        {
+          "q": "Quelle est la couleur de gaine habituelle d'une fibre monomode OS2 ?",
+          "options": [
+            "Jaune",
+            "Bleue",
+            "Orange",
+            "Aqua"
+          ],
+          "answer": 0,
+          "explain": "La fibre monomode (OS1/OS2) a souvent une gaine jaune ; la multimode est orange ou aqua."
+        },
+        {
+          "q": "Quels connecteurs fibre sont les plus courants ?",
+          "options": [
+            "LC et SC",
+            "USB-C et HDMI",
+            "BNC et F",
+            "RJ45 et RJ11"
+          ],
+          "answer": 0,
+          "explain": "LC (petit, le plus répandu) et SC ; la fibre se raccorde aux switchs via des modules SFP / SFP+."
+        },
+        {
+          "q": "Quelle bande Wi-Fi traverse le mieux les murs mais est la plus encombrée ?",
+          "options": [
+            "2,4 GHz",
+            "60 GHz",
+            "5 GHz",
+            "6 GHz"
+          ],
+          "answer": 0,
+          "explain": "Le 2,4 GHz a une portée plus longue et traverse bien les murs, mais il est plus lent et encombré (Bluetooth, micro-ondes)."
+        },
+        {
+          "q": "Qu'est-ce que le SSID ?",
+          "options": [
+            "Le numéro de canal radio",
+            "Le mot de passe du Wi-Fi",
+            "Le nom du réseau Wi-Fi diffusé par la borne",
+            "L'adresse IP de la borne"
+          ],
+          "answer": 2,
+          "explain": "Le SSID (Service Set IDentifier) est le nom du réseau qui apparaît dans la liste ; il peut être masqué, et une borne peut en diffuser plusieurs."
+        },
+        {
+          "q": "Quelle génération mobile offre une latence très faible pour le temps réel et les objets connectés ?",
+          "options": [
+            "3G",
+            "4G",
+            "EDGE",
+            "5G"
+          ],
+          "answer": 3,
+          "explain": "La 5G : très haut débit, latence très faible — temps réel et objets connectés."
+        },
+        {
+          "q": "Sur une box, à quoi sert le port WAN ?",
+          "options": [
+            "À brancher une imprimante",
+            "À relier la box au réseau du fournisseur d'accès",
+            "À alimenter un switch",
+            "À brancher un deuxième écran"
+          ],
+          "answer": 1,
+          "explain": "Le port WAN / Internet relie la box au FAI ; les ports LAN (souvent jaunes) servent aux appareils. Un switch n'a pas de port WAN."
+        },
+        {
+          "q": "Un voyant de port qui clignote signifie :",
+          "options": [
+            "Le débit est limité à 10 Mb/s",
+            "Des données circulent",
+            "Le port est désactivé",
+            "Le câble est défectueux"
+          ],
+          "answer": 1,
+          "explain": "Voyant fixe = lien établi ; voyant clignotant = trafic en cours."
+        },
+        {
+          "q": "Un pare-feu virtuel est :",
+          "options": [
+            "Une fonction du switch",
+            "Un antivirus",
+            "Un pare-feu logiciel exécuté dans une VM ou sur un hyperviseur",
+            "Un boîtier physique dédié"
+          ],
+          "answer": 2,
+          "explain": "Le pare-feu virtuel rend le même service qu'un boîtier, sous forme logicielle : souple et rapide à déployer, idéal en environnement virtualisé."
+        },
+        {
+          "q": "Que désigne la passerelle (gateway) dans la fiche d'identité réseau d'un PC ?",
+          "options": [
+            "Le serveur de noms",
+            "La sortie du réseau local vers les autres réseaux",
+            "La table MAC du switch",
+            "L'adresse de la machine elle-même"
+          ],
+          "answer": 1,
+          "explain": "La passerelle (souvent l'IP de la box, ex. 192.168.1.254) est la « porte du quartier » vers Internet."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Pourquoi les paires d'un câble Ethernet sont-elles torsadées ?",
+          "options": [
+            "Pour augmenter la longueur",
+            "Pour transporter l'électricité",
+            "Pour faciliter le sertissage",
+            "Pour réduire les perturbations électromagnétiques"
+          ],
+          "answer": 3,
+          "explain": "Le torsadage réduit les interférences entre paires et venant de l'extérieur."
+        },
+        {
+          "q": "Dans un datacenter, où utilise-t-on le plus la fibre optique ?",
+          "options": [
+            "Pour brancher les claviers",
+            "Au cœur de réseau, entre bâtiments et entre sites",
+            "Sur les derniers mètres jusqu'au poste",
+            "Uniquement pour le Wi-Fi"
+          ],
+          "answer": 1,
+          "explain": "La fibre sert au cœur de réseau et aux liaisons inter-sites ; le cuivre RJ45 reste pour les derniers mètres."
+        },
+        {
+          "q": "Quel diamètre de cœur a une fibre multimode ?",
+          "options": [
+            "≈ 50 ou 62,5 µm",
+            "≈ 1 mm",
+            "≈ 0,5 µm",
+            "≈ 9 µm"
+          ],
+          "answer": 0,
+          "explain": "Multimode : cœur large (50 ou 62,5 µm) où plusieurs modes rebondissent ; monomode : ≈ 9 µm."
+        },
+        {
+          "q": "Deux sens du mot « port » : lequel désigne un service (80, 443, 22) ?",
+          "options": [
+            "Le port physique RJ45",
+            "Le port WAN",
+            "Le port logiciel (numéro)",
+            "Le port SFP"
+          ],
+          "answer": 2,
+          "explain": "Un port physique est une prise ; un port logiciel est un numéro qui identifie un service — notion vue avec le pare-feu."
+        },
+        {
+          "q": "Quelle adresse de la fiche réseau est gravée dans la carte et ne change pas ?",
+          "options": [
+            "La passerelle",
+            "Le masque",
+            "L'adresse MAC",
+            "L'adresse IP"
+          ],
+          "answer": 2,
+          "explain": "La MAC est le numéro de série de la carte ; l'IP est l'adresse du moment."
+        },
+        {
+          "q": "Quelle est la fonction du masque de sous-réseau ?",
+          "options": [
+            "Indiquer quelle partie de l'IP est le réseau et quelle partie est la machine",
+            "Limiter le débit",
+            "Chiffrer les données",
+            "Cacher l'IP publique"
+          ],
+          "answer": 0,
+          "explain": "Le masque définit le « quartier » : qui est joignable directement et qui est ailleurs."
+        },
+        {
+          "q": "Combien de ports peut avoir un switch d'entreprise courant ?",
+          "options": [
+            "Un seul",
+            "5, 8, 16, 24 ou 48",
+            "Exactement 100",
+            "Toujours 4"
+          ],
+          "answer": 1,
+          "explain": "Les switchs existent en 5, 8, 16, 24 ou 48 ports, et on peut les chaîner."
+        },
+        {
+          "q": "Quelle catégorie de câble monte le plus haut en débit parmi celles citées ?",
+          "options": [
+            "Cat. 6a",
+            "Cat. 6",
+            "Cat. 5e",
+            "Toutes identiques"
+          ],
+          "answer": 0,
+          "explain": "Les catégories (5e, 6, 6a…) montent progressivement en débit et en fréquence supportée."
+        },
+        {
+          "q": "Qu'est-ce qu'un module SFP ?",
+          "options": [
+            "Un protocole de routage",
+            "Un connecteur Wi-Fi",
+            "Un module enfichable pour raccorder une fibre à un switch",
+            "Un type de RAM"
+          ],
+          "answer": 2,
+          "explain": "Les modules SFP / SFP+ s'insèrent dans le switch pour y brancher une fibre (LC le plus souvent)."
+        },
+        {
+          "q": "Sur un smartphone, comment se fait la bascule entre Wi-Fi et 4G/5G ?",
+          "options": [
+            "Manuellement, à chaque fois",
+            "Uniquement via une application",
+            "Jamais : il faut redémarrer",
+            "Automatiquement selon la couverture disponible"
+          ],
+          "answer": 3,
+          "explain": "Le Wi-Fi est local (la borne), le réseau mobile couvre de grandes zones : le téléphone bascule automatiquement."
+        }
+      ]
+    }
+  ]
+}

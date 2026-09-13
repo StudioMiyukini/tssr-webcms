@@ -1,0 +1,351 @@
+{
+  "slug": "linux-samba",
+  "title": "Samba : partager des fichiers vers Windows",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Samba implémente :",
+          "options": [
+            "Le protocole SMB/CIFS de Windows sur Linux",
+            "HTTP",
+            "FTP",
+            "NFS"
+          ],
+          "answer": 0,
+          "explain": "Un dossier Linux devient \\\\serveur\\partage."
+        },
+        {
+          "q": "Fichier de configuration :",
+          "options": [
+            "/etc/smb/samba.conf",
+            "/var/samba/conf",
+            "/etc/cifs.conf",
+            "/etc/samba/smb.conf"
+          ],
+          "answer": 3,
+          "explain": "Identique sur Debian et Rocky."
+        },
+        {
+          "q": "Unité systemd sur Debian :",
+          "options": [
+            "smbd",
+            "cifs",
+            "smb",
+            "samba"
+          ],
+          "answer": 0,
+          "explain": "smb.service (et nmb) sur Rocky."
+        },
+        {
+          "q": "Valider la syntaxe de smb.conf :",
+          "options": [
+            "smb -t",
+            "smbcheck",
+            "testparm",
+            "samba --test"
+          ],
+          "answer": 2,
+          "explain": "Avant de redémarrer smbd."
+        },
+        {
+          "q": "Directive qui indique le dossier partagé :",
+          "options": [
+            "path = /srv/partage",
+            "folder",
+            "share",
+            "root"
+          ],
+          "answer": 0,
+          "explain": "Dans la section [Partage]."
+        },
+        {
+          "q": "read only = no signifie :",
+          "options": [
+            "Écriture autorisée",
+            "Caché",
+            "Aucun accès",
+            "Lecture seule"
+          ],
+          "answer": 0,
+          "explain": "browseable = yes le rend visible."
+        },
+        {
+          "q": "valid users = jean :",
+          "options": [
+            "Bloque jean",
+            "Crée jean",
+            "Rend jean admin",
+            "Seuls les utilisateurs listés peuvent accéder"
+          ],
+          "answer": 3,
+          "explain": "Droit Samba."
+        },
+        {
+          "q": "Créer le mot de passe Samba de jean :",
+          "options": [
+            "smbpasswd -a jean",
+            "useradd jean",
+            "smb -p jean",
+            "passwd jean"
+          ],
+          "answer": 0,
+          "explain": "Puis smbpasswd -e pour activer."
+        },
+        {
+          "q": "Les mots de passe Samba :",
+          "options": [
+            "Sont ceux de Linux",
+            "N'existent pas",
+            "Sont dans AD",
+            "Sont distincts de ceux de Linux ; l'utilisateur doit exister sous Linux"
+          ],
+          "answer": 3,
+          "explain": "Double base."
+        },
+        {
+          "q": "Accéder depuis Windows :",
+          "options": [
+            "\\\\192.168.10.20\\Partage dans l'Explorateur",
+            "smb://serveur",
+            "http://serveur/Partage",
+            "ftp://serveur"
+          ],
+          "answer": 0,
+          "explain": "smbclient //ip/Partage -U jean depuis Linux."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Double filtrage Samba :",
+          "options": [
+            "Aucun",
+            "Linux seul",
+            "Samba seul",
+            "Droits Samba (valid users, read only) ET permissions Linux : le plus restrictif l'emporte"
+          ],
+          "answer": 3,
+          "explain": "Comme Partage + NTFS sous Windows."
+        },
+        {
+          "q": "Ports à ouvrir :",
+          "options": [
+            "21/20",
+            "80/443",
+            "139/445 (ufw allow samba)",
+            "22"
+          ],
+          "answer": 2,
+          "explain": "SMB."
+        },
+        {
+          "q": "Sur Rocky, partage visible mais vide :",
+          "options": [
+            "Config",
+            "Mot de passe",
+            "Port",
+            "SELinux : étiquette samba_share_t manquante (semanage fcontext + restorecon)"
+          ],
+          "answer": 3,
+          "explain": "La cause classique."
+        },
+        {
+          "q": "Sur Rocky, partager les dossiers personnels :",
+          "options": [
+            "smbpasswd",
+            "Rien",
+            "setsebool -P samba_enable_home_dirs on",
+            "chmod 777"
+          ],
+          "answer": 2,
+          "explain": "Booléen SELinux."
+        },
+        {
+          "q": "Sur Rocky, ouvrir le pare-feu :",
+          "options": [
+            "ufw allow samba",
+            "firewall-cmd --add-service=samba --permanent && --reload",
+            "Rien",
+            "iptables"
+          ],
+          "answer": 1,
+          "explain": "firewalld."
+        },
+        {
+          "q": "create mask = 0664 :",
+          "options": [
+            "VLAN",
+            "Droits des fichiers créés via le partage",
+            "Mot de passe",
+            "Masque réseau"
+          ],
+          "answer": 1,
+          "explain": "directory mask = 0775 pour les dossiers."
+        },
+        {
+          "q": "Un utilisateur Samba sans shell :",
+          "options": [
+            "useradd -M -s /usr/sbin/nologin jean",
+            "smbadd",
+            "Impossible",
+            "useradd -s /bin/bash"
+          ],
+          "answer": 0,
+          "explain": "Compte Linux sans connexion interactive."
+        },
+        {
+          "q": "Des droits différents par personne sur le partage :",
+          "options": [
+            "Les ACL, avec héritage",
+            "valid users seulement",
+            "Impossible",
+            "chmod suffit"
+          ],
+          "answer": 0,
+          "explain": "Les droits Unix ne distinguent que u/g/o."
+        },
+        {
+          "q": "Journal Samba :",
+          "options": [
+            "/var/log/samba/log.smbd",
+            "/var/log/syslog",
+            "journalctl seulement",
+            "/etc/samba/log"
+          ],
+          "answer": 0,
+          "explain": "tail -f pour le dépannage."
+        },
+        {
+          "q": "Préparer le dossier partagé (exemple du cours) :",
+          "options": [
+            "chmod 777",
+            "Rien",
+            "chown root",
+            "mkdir /srv/partage, chown nobody:nogroup, chmod 0775"
+          ],
+          "answer": 3,
+          "explain": "Les droits Unix d'abord."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Après modification de smb.conf :",
+          "options": [
+            "testparm puis systemctl restart smbd",
+            "Rien",
+            "smb reload",
+            "reboot"
+          ],
+          "answer": 0,
+          "explain": "Valider avant de redémarrer."
+        },
+        {
+          "q": "Un utilisateur listé dans valid users mais sans droit Linux w :",
+          "options": [
+            "Ne peut pas écrire : le plus restrictif l'emporte",
+            "Peut tout",
+            "Peut écrire",
+            "Est bloqué totalement"
+          ],
+          "answer": 0,
+          "explain": "Double filtrage."
+        },
+        {
+          "q": "browseable = no :",
+          "options": [
+            "Supprimé",
+            "Lecture seule",
+            "Partage caché de la liste, accessible par son chemin",
+            "Partage inaccessible"
+          ],
+          "answer": 2,
+          "explain": "Équivalent du $ Windows."
+        },
+        {
+          "q": "Accès depuis Linux en ligne de commande :",
+          "options": [
+            "ftp",
+            "mount seul",
+            "ssh",
+            "smbclient //192.168.10.20/Partage -U jean"
+          ],
+          "answer": 3,
+          "explain": "Ou montage cifs avec cifs-utils."
+        },
+        {
+          "q": "nmb.service sur Rocky sert à :",
+          "options": [
+            "Rien",
+            "La résolution de noms NetBIOS (voisinage réseau)",
+            "Le DNS",
+            "Le chiffrement"
+          ],
+          "answer": 1,
+          "explain": "En plus de smb.service."
+        },
+        {
+          "q": "Le pendant Windows de Samba pour les droits :",
+          "options": [
+            "AD",
+            "Permissions Partage & NTFS",
+            "GPO",
+            "DFS"
+          ],
+          "answer": 1,
+          "explain": "Lien du cours."
+        },
+        {
+          "q": "smbpasswd -e jean :",
+          "options": [
+            "Édite",
+            "Active le compte Samba",
+            "Exporte",
+            "Efface"
+          ],
+          "answer": 1,
+          "explain": "-a ajoute."
+        },
+        {
+          "q": "Que voit Windows dans \\\\serveur ?",
+          "options": [
+            "Tous les dossiers Linux",
+            "Le disque",
+            "Les sections de smb.conf browseable",
+            "/home"
+          ],
+          "answer": 2,
+          "explain": "Un partage = une section."
+        },
+        {
+          "q": "Le DNS ne résout pas le serveur :",
+          "options": [
+            "Impossible",
+            "Utiliser \\\\192.168.10.20\\Partage par IP",
+            "Réinstaller",
+            "Samba est cassé"
+          ],
+          "answer": 1,
+          "explain": "Le nom est une commodité."
+        },
+        {
+          "q": "Samba est utile pour :",
+          "options": [
+            "Le web",
+            "Le mail",
+            "Le VPN",
+            "Faire dialoguer un serveur Linux avec les postes Windows"
+          ],
+          "answer": 3,
+          "explain": "Objet du cours."
+        }
+      ]
+    }
+  ]
+}

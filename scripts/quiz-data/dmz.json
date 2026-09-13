@@ -1,0 +1,351 @@
+{
+  "slug": "dmz",
+  "title": "La DMZ : comprendre la zone démilitarisée",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Que signifie DMZ ?",
+          "options": [
+            "Direct Machine Zone",
+            "Data Management Zone",
+            "Dual Mode Zone",
+            "Zone démilitarisée"
+          ],
+          "answer": 3,
+          "explain": "Le terme vient des zones tampons entre deux armées : personne n'y stationne ses forces."
+        },
+        {
+          "q": "À quoi sert une DMZ ?",
+          "options": [
+            "À stocker les sauvegardes",
+            "À remplacer le pare-feu",
+            "À accélérer Internet",
+            "À isoler les services exposés du réseau interne"
+          ],
+          "answer": 3,
+          "explain": "Une zone à part, ni dedans ni dehors, pour ce qu'on expose."
+        },
+        {
+          "q": "Quelle analogie le cours utilise-t-il ?",
+          "options": [
+            "Le parking",
+            "Le coffre-fort",
+            "La cave",
+            "Le sas d'accueil d'un bâtiment"
+          ],
+          "answer": 3,
+          "explain": "Les visiteurs entrent librement, mais la porte vers les bureaux ne s'ouvre que de l'intérieur."
+        },
+        {
+          "q": "Que met-on en DMZ ?",
+          "options": [
+            "Le contrôleur de domaine",
+            "Le serveur web public, le reverse proxy, le relais mail",
+            "Le serveur de fichiers",
+            "Les postes de travail"
+          ],
+          "answer": 1,
+          "explain": "Ce que le monde doit voir."
+        },
+        {
+          "q": "Que ne met-on jamais en DMZ ?",
+          "options": [
+            "Le concentrateur VPN",
+            "Le DNS public",
+            "Le contrôleur de domaine et la base de données",
+            "Le serveur FTP d'échange"
+          ],
+          "answer": 2,
+          "explain": "Ce sont les cibles finales d'un attaquant."
+        },
+        {
+          "q": "Quelle est « la règle qui fait la DMZ » ?",
+          "options": [
+            "DMZ → LAN bloqué",
+            "DMZ → Internet ouvert",
+            "Internet → DMZ bloqué",
+            "LAN → DMZ bloqué"
+          ],
+          "answer": 0,
+          "explain": "Une DMZ dont les serveurs peuvent joindre le LAN n'est qu'un sous-réseau avec un nom rassurant."
+        },
+        {
+          "q": "Combien d'interfaces a un pare-feu « à trois pattes » ?",
+          "options": [
+            "Une",
+            "Trois : WAN, LAN, DMZ",
+            "Quatre",
+            "Deux"
+          ],
+          "answer": 1,
+          "explain": "L'architecture la plus courante, et celle des TP."
+        },
+        {
+          "q": "Internet → DMZ est autorisé :",
+          "options": [
+            "Sur tous les ports",
+            "Sur les ports publiés seulement",
+            "Sur 22 et 3389",
+            "Jamais"
+          ],
+          "answer": 1,
+          "explain": "Une redirection par service, vers une adresse et un port précis."
+        },
+        {
+          "q": "Le mouvement latéral, c'est :",
+          "options": [
+            "Un changement de VLAN",
+            "Le NAT",
+            "La sauvegarde",
+            "L'attaquant qui se déplace d'une machine compromise vers les autres"
+          ],
+          "answer": 3,
+          "explain": "La DMZ fait qu'un serveur compromis ne mène nulle part."
+        },
+        {
+          "q": "La « DMZ » d'une box grand public :",
+          "options": [
+            "Est une vraie DMZ",
+            "Renvoie tout le trafic entrant vers une machine du LAN, sans cloisonnement",
+            "Chiffre le trafic",
+            "Crée un VLAN"
+          ],
+          "answer": 1,
+          "explain": "C'est l'inverse d'une DMZ ; le mot est le même, l'objet n'a rien à voir."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Le serveur web a besoin de la base de données du LAN : que fait-on ?",
+          "options": [
+            "On met le web dans le LAN",
+            "On met la base en DMZ",
+            "Un flux nominatif DMZ → LAN : une source, une destination, un port, journalisé",
+            "On renonce"
+          ],
+          "answer": 2,
+          "explain": "Une règle étroite n'est pas une brèche ; un serveur au mauvais endroit en est une."
+        },
+        {
+          "q": "DMZ → Internet doit être :",
+          "options": [
+            "Bloqué totalement",
+            "Le strict nécessaire : DNS, mises à jour",
+            "Ouvert sur 3389",
+            "Ouvert (any)"
+          ],
+          "answer": 1,
+          "explain": "Un serveur compromis ne doit pas pouvoir « appeler chez lui »."
+        },
+        {
+          "q": "L'architecture à deux pare-feu en série :",
+          "options": [
+            "Place la DMZ entre un pare-feu externe et un interne, idéalement de marques différentes",
+            "Est réservée aux TP",
+            "Supprime la DMZ",
+            "N'existe pas"
+          ],
+          "answer": 0,
+          "explain": "Une faille dans l'un ne suffit pas."
+        },
+        {
+          "q": "Inconvénient des deux pare-feu :",
+          "options": [
+            "Aucun",
+            "Moins sûr",
+            "Coût et complexité doublés, deux jeux de règles à tenir cohérents",
+            "Pas de DMZ possible"
+          ],
+          "answer": 2,
+          "explain": "Pour les grands comptes et secteurs réglementés."
+        },
+        {
+          "q": "Un reverse proxy en DMZ :",
+          "options": [
+            "Est le seul à recevoir 80/443 et distribue vers les applications",
+            "Remplace le pare-feu",
+            "Distribue les IP",
+            "Stocke les mails"
+          ],
+          "answer": 0,
+          "explain": "Il porte le certificat et peut filtrer."
+        },
+        {
+          "q": "Un relais de messagerie en DMZ :",
+          "options": [
+            "Envoie les sauvegardes",
+            "Fait du DNS",
+            "Stocke les boîtes",
+            "Reçoit le port 25 d'Internet, filtre, puis remet au serveur interne"
+          ],
+          "answer": 3,
+          "explain": "Le serveur de messagerie reste en zone interne."
+        },
+        {
+          "q": "Un bastion, c'est :",
+          "options": [
+            "Le seul point d'où l'on administre la DMZ",
+            "Un VLAN",
+            "Un pare-feu",
+            "Un serveur web"
+          ],
+          "answer": 0,
+          "explain": "Jamais RDP ou SSH direct depuis Internet."
+        },
+        {
+          "q": "DMZ → DMZ (entre serveurs) :",
+          "options": [
+            "Toujours ouvert",
+            "Au cas par cas : le proxy vers le web oui, le web vers le relais mail non",
+            "Toujours bloqué",
+            "Sans importance"
+          ],
+          "answer": 1,
+          "explain": "Chaque machine est seule dans sa case."
+        },
+        {
+          "q": "Pourquoi séparer plusieurs DMZ ?",
+          "options": [
+            "Par obligation légale",
+            "Dès que deux services exposés n'ont pas le même niveau de confiance",
+            "Pour économiser des IP",
+            "Pour le débit"
+          ],
+          "answer": 1,
+          "explain": "Web public, échanges partenaires, accès VPN : trois zones."
+        },
+        {
+          "q": "L'architecture en étages (présentation / application / données) :",
+          "options": [
+            "Met tout en DMZ",
+            "Fait que chaque étage ne connaît que le suivant",
+            "Supprime la base",
+            "Est réservée au cloud"
+          ],
+          "answer": 1,
+          "explain": "Ce qui est exposé ne touche pas directement ce qui est précieux."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Un serveur DMZ compromis, bien cloisonné, voit :",
+          "options": [
+            "Le contrôleur de domaine",
+            "Une pièce vide : ni le LAN, ni les autres serveurs",
+            "Les sauvegardes",
+            "Tout le LAN"
+          ],
+          "answer": 1,
+          "explain": "C'est exactement le but."
+        },
+        {
+          "q": "La DMZ protège-t-elle le serveur qu'elle contient ?",
+          "options": [
+            "Oui avec le NAT",
+            "Oui s'il y a un VLAN",
+            "Oui",
+            "Non : il reste exposé et doit être durci, à jour, surveillé"
+          ],
+          "answer": 3,
+          "explain": "Elle limite ce que l'attaque peut atteindre ensuite, pas l'attaque elle-même."
+        },
+        {
+          "q": "« DMZ net → any : pass » fait de la DMZ :",
+          "options": [
+            "Une zone sûre",
+            "Un décor",
+            "Un VLAN",
+            "Une DMZ publique"
+          ],
+          "answer": 1,
+          "explain": "Elle ne vaut que par ses règles."
+        },
+        {
+          "q": "Un serveur de fichiers exposé aux partenaires devrait être :",
+          "options": [
+            "Un serveur FTP/SFTP d'échange dédié en DMZ, sans accès aux partages internes",
+            "Le serveur de fichiers interne, publié",
+            "Dans le LAN",
+            "Sur un poste"
+          ],
+          "answer": 0,
+          "explain": "Le dépôt d'échange ne touche pas les partages internes."
+        },
+        {
+          "q": "LAN → DMZ sert à :",
+          "options": [
+            "Rien",
+            "Sauvegarder Internet",
+            "L'administration et la consultation",
+            "Bloquer le web"
+          ],
+          "answer": 2,
+          "explain": "SSH/RDP depuis les postes d'admin, HTTPS pour tout le monde."
+        },
+        {
+          "q": "Pourquoi un DC en DMZ est-il une erreur grave ?",
+          "options": [
+            "Il consomme trop",
+            "Il n'a pas d'IP",
+            "Il bloque le DNS",
+            "C'est le trousseau de clés de tout le réseau"
+          ],
+          "answer": 3,
+          "explain": "Un DC compromis, c'est tout le domaine."
+        },
+        {
+          "q": "Point unique de panne d'un pare-feu à trois pattes :",
+          "options": [
+            "Le DNS",
+            "Oui : le pare-feu lui-même",
+            "Aucun",
+            "Le switch"
+          ],
+          "answer": 1,
+          "explain": "La haute disponibilité se fait par paire."
+        },
+        {
+          "q": "Un concentrateur VPN en DMZ :",
+          "options": [
+            "N'a pas de sens",
+            "Isole les nomades jusqu'à leur authentification",
+            "Remplace le pare-feu",
+            "Expose le LAN"
+          ],
+          "answer": 1,
+          "explain": "Le point d'entrée des nomades, isolé."
+        },
+        {
+          "q": "La DMZ « tient-elle toute seule » dans le temps ?",
+          "options": [
+            "Oui",
+            "Oui si documentée",
+            "Non : chaque service ajouté, chaque « juste pour tester » l'érode",
+            "Oui avec un VLAN"
+          ],
+          "answer": 2,
+          "explain": "D'où l'entretien, volet 3."
+        },
+        {
+          "q": "Le DNS public en DMZ connaît :",
+          "options": [
+            "Seulement la zone externe du domaine",
+            "Les mots de passe",
+            "Toutes les machines internes",
+            "Le plan d'adressage LAN"
+          ],
+          "answer": 0,
+          "explain": "Il répond à Internet sur le nom de l'entreprise, rien de plus."
+        }
+      ]
+    }
+  ]
+}

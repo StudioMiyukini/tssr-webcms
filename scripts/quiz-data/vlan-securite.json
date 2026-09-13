@@ -1,0 +1,351 @@
+{
+  "slug": "vlan-securite",
+  "title": "Sécuriser les VLAN",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Un switch Cisco sorti du carton :",
+          "options": [
+            "Chiffre les VLAN",
+            "N'a pas de VLAN natif",
+            "Refuse tout trunk",
+            "Accepte de négocier des trunks tout seul (DTP)"
+          ],
+          "answer": 3,
+          "explain": "C'est une des deux portes du VLAN hopping."
+        },
+        {
+          "q": "Que signifie DTP ?",
+          "options": [
+            "Data Transfer Protocol",
+            "Direct Tag Port",
+            "Dynamic Trunking Protocol",
+            "Dual Trunk Path"
+          ],
+          "answer": 2,
+          "explain": "Il négocie access ou trunk avec l'équipement d'en face."
+        },
+        {
+          "q": "Le switch spoofing consiste à :",
+          "options": [
+            "Se faire passer pour un switch en parlant DTP pour obtenir un trunk",
+            "Changer le VLAN natif",
+            "Pinguer le switch",
+            "Changer sa MAC"
+          ],
+          "answer": 0,
+          "explain": "Un trunk transporte tous les VLAN."
+        },
+        {
+          "q": "Parade au switch spoofing :",
+          "options": [
+            "shutdown",
+            "ip routing",
+            "vlan 1",
+            "switchport mode access + switchport nonegotiate"
+          ],
+          "answer": 3,
+          "explain": "Forcer le mode et couper la négociation."
+        },
+        {
+          "q": "Le double tagging exploite :",
+          "options": [
+            "Le DHCP",
+            "Le VLAN natif, qui circule sans étiquette sur le trunk",
+            "Le DNS",
+            "Le port-security"
+          ],
+          "answer": 1,
+          "explain": "Deux tags : le natif puis le VLAN visé."
+        },
+        {
+          "q": "Parade au double tagging :",
+          "options": [
+            "VLAN natif dédié sans aucun port access, identique des deux côtés",
+            "Activer DTP",
+            "Utiliser le VLAN 1",
+            "Désactiver les trunks"
+          ],
+          "answer": 0,
+          "explain": "Ex. vlan 999 NATIF-INUTILISE."
+        },
+        {
+          "q": "Le port-security limite :",
+          "options": [
+            "Combien et quelles adresses MAC un port accepte",
+            "Le débit",
+            "Les VLAN",
+            "Le PoE"
+          ],
+          "answer": 0,
+          "explain": "switchport port-security maximum, mac-address sticky, violation."
+        },
+        {
+          "q": "Mode de violation recommandé en production :",
+          "options": [
+            "ignore",
+            "restrict",
+            "shutdown",
+            "protect"
+          ],
+          "answer": 1,
+          "explain": "Jette et journalise : on sait, sans couper."
+        },
+        {
+          "q": "Un port en err-disabled :",
+          "options": [
+            "Ne se rouvre pas tout seul : shutdown puis no shutdown",
+            "Est en trunk",
+            "Est en VLAN 1",
+            "Se rouvre seul"
+          ],
+          "answer": 0,
+          "explain": "Première cause de « le port est mort »."
+        },
+        {
+          "q": "Les ports inutilisés doivent être :",
+          "options": [
+            "En trunk",
+            "En VLAN parking + shutdown",
+            "En VLAN 1",
+            "Laissés tels quels"
+          ],
+          "answer": 1,
+          "explain": "Deux gestes : le VLAN poubelle isolé, et le port éteint."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Sur un vrai lien inter-switches, on configure :",
+          "options": [
+            "switchport mode dynamic",
+            "switchport mode trunk + switchport nonegotiate",
+            "Rien",
+            "switchport mode access"
+          ],
+          "answer": 1,
+          "explain": "On déclare le trunk au lieu de le négocier."
+        },
+        {
+          "q": "Le double tagging permet :",
+          "options": [
+            "De changer le natif",
+            "De lire tout le trafic",
+            "D'envoyer dans le VLAN visé sans recevoir la réponse",
+            "Une conversation bidirectionnelle"
+          ],
+          "answer": 2,
+          "explain": "Suffisant pour un déni de service ou l'envoi de commandes."
+        },
+        {
+          "q": "Que fait switchport port-security mac-address sticky ?",
+          "options": [
+            "Apprend et mémorise les MAC vues",
+            "Bloque toutes les MAC",
+            "Chiffre la MAC",
+            "Change la MAC"
+          ],
+          "answer": 0,
+          "explain": "Évite de saisir les MAC à la main."
+        },
+        {
+          "q": "Mode de violation « protect » :",
+          "options": [
+            "Jette silencieusement les trames en trop",
+            "Alerte l'admin",
+            "Coupe le port",
+            "Jette et journalise"
+          ],
+          "answer": 0,
+          "explain": "Rarement utilisé : une attaque passe inaperçue."
+        },
+        {
+          "q": "Commandes pour la reprise automatique après violation :",
+          "options": [
+            "port-security auto",
+            "errdisable recovery cause psecure-violation + errdisable recovery interval 300",
+            "spanning-tree portfast",
+            "no shutdown auto"
+          ],
+          "answer": 1,
+          "explain": "Réactivation automatique après 5 min."
+        },
+        {
+          "q": "Pourquoi le VLAN parking en plus du shutdown ?",
+          "options": [
+            "Un collègue fera un no shutdown et oubliera le reste : le VLAN parking est le filet",
+            "C'est obligatoire",
+            "Pour le PoE",
+            "Pour le débit"
+          ],
+          "answer": 0,
+          "explain": "Même rouvert par erreur, le port ne donne accès à rien."
+        },
+        {
+          "q": "Le VLAN natif dédié doit-il figurer dans allowed vlan ?",
+          "options": [
+            "Non, il n'a pas à être autorisé",
+            "Oui avec DTP",
+            "Oui",
+            "Seulement sur un 3560"
+          ],
+          "answer": 0,
+          "explain": "allowed vlan 10,20,30 : le natif 999 n'y est pas."
+        },
+        {
+          "q": "Pourquoi ne jamais laisser de données utilisateur sur le VLAN 1 ?",
+          "options": [
+            "Il est lent",
+            "C'est la cible par défaut de tout scan",
+            "Il n'existe pas",
+            "Il est réservé au PoE"
+          ],
+          "answer": 1,
+          "explain": "Checklist n°7."
+        },
+        {
+          "q": "maximum 2 en port-security sert typiquement à :",
+          "options": [
+            "Deux switches",
+            "Deux trunks",
+            "PC + téléphone IP sur la même prise",
+            "Deux VLAN"
+          ],
+          "answer": 2,
+          "explain": "Le téléphone IP a un switch intégré."
+        },
+        {
+          "q": "Le mode de violation par défaut est :",
+          "options": [
+            "shutdown",
+            "protect",
+            "log",
+            "restrict"
+          ],
+          "answer": 0,
+          "explain": "D'où le piège du port err-disabled."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "L'idée fausse à corriger :",
+          "options": [
+            "« Mes serveurs sont sur le VLAN 30, donc isolés » — vrai tant que personne ne triche",
+            "DTP est sûr",
+            "Le trunk est inutile",
+            "Les VLAN sont lents"
+          ],
+          "answer": 0,
+          "explain": "Un VLAN est une séparation logique appliquée par le switch."
+        },
+        {
+          "q": "Dans le double tagging, que fait le premier switch ?",
+          "options": [
+            "Il jette la trame",
+            "Il retire le premier tag (natif) et transmet la trame avec le second tag sur le trunk",
+            "Il route",
+            "Il ajoute un tag"
+          ],
+          "answer": 1,
+          "explain": "Le second switch livre alors dans le VLAN visé."
+        },
+        {
+          "q": "Commande de vérification du mode d'un port :",
+          "options": [
+            "show interfaces switchport",
+            "show mac",
+            "show vlan",
+            "show ip route"
+          ],
+          "answer": 0,
+          "explain": "Affiche Administrative/Operational Mode, natif, voice VLAN…"
+        },
+        {
+          "q": "Que bloque « switchport trunk allowed vlan restreint » ?",
+          "options": [
+            "Le PoE",
+            "La propagation latérale : un VLAN absent de la liste ne franchit pas le trunk",
+            "Le DHCP",
+            "DTP"
+          ],
+          "answer": 1,
+          "explain": "Quoi qu'il arrive."
+        },
+        {
+          "q": "Contre quoi le port-security protège-t-il aussi ?",
+          "options": [
+            "Le natif",
+            "Le double tagging",
+            "Le DTP",
+            "La saturation de la table MAC (MAC flooding)"
+          ],
+          "answer": 3,
+          "explain": "Branchement sauvage et saturation."
+        },
+        {
+          "q": "Les attaques de saut de VLAN supposent :",
+          "options": [
+            "Un compte admin",
+            "Un accès physique à une prise",
+            "Un routeur",
+            "Un accès Internet"
+          ],
+          "answer": 1,
+          "explain": "D'où l'importance des ports inutilisés et du port-security."
+        },
+        {
+          "q": "Un port access forcé reçoit une trame DTP :",
+          "options": [
+            "Il devient trunk",
+            "DTP est ignoré, aucune négociation",
+            "Il s'éteint",
+            "Il change de VLAN"
+          ],
+          "answer": 1,
+          "explain": "switchport nonegotiate n'émet plus de DTP non plus."
+        },
+        {
+          "q": "La négociation automatique de trunk est :",
+          "options": [
+            "Sécurisée",
+            "Une commodité de laboratoire",
+            "Obligatoire",
+            "Une pratique de production"
+          ],
+          "answer": 1,
+          "explain": "En production, on déclare."
+        },
+        {
+          "q": "vlan 666 PARKING doit être :",
+          "options": [
+            "Isolé et sans passerelle",
+            "Autorisé sur les trunks",
+            "Routé",
+            "Le natif"
+          ],
+          "answer": 0,
+          "explain": "S'il est branché, il n'atteint rien."
+        },
+        {
+          "q": "Combien de mesures dans la checklist du cours ?",
+          "options": [
+            "5",
+            "3",
+            "10",
+            "7"
+          ],
+          "answer": 3,
+          "explain": "Access+nonegotiate, trunk+nonegotiate, natif dédié, allowed restreint, port-security, ports inutilisés, pas de données sur VLAN 1."
+        }
+      ]
+    }
+  ]
+}

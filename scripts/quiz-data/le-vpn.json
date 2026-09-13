@@ -1,0 +1,351 @@
+{
+  "slug": "le-vpn",
+  "title": "Le VPN (réseau privé virtuel)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Que crée un VPN ?",
+          "options": [
+            "Un VLAN",
+            "Un serveur DNS",
+            "Un tunnel chiffré à travers un réseau public",
+            "Un nouveau câble"
+          ],
+          "answer": 2,
+          "explain": "Les données circulent comme si les deux extrémités étaient sur le même réseau privé."
+        },
+        {
+          "q": "Les deux grands usages :",
+          "options": [
+            "Web et mail",
+            "Nomade (accès distant) et site-à-site",
+            "IPv4 et IPv6",
+            "Wi-Fi et fibre"
+          ],
+          "answer": 1,
+          "explain": "Télétravail vs relier siège et agence."
+        },
+        {
+          "q": "Que fait-on du paquet d'origine dans un tunnel ?",
+          "options": [
+            "On le route en clair",
+            "On le supprime",
+            "On le compresse",
+            "On l'encapsule dans un nouveau paquet et on chiffre son contenu"
+          ],
+          "answer": 3,
+          "explain": "Tunneling + chiffrement."
+        },
+        {
+          "q": "Protocole standard du VPN site-à-site :",
+          "options": [
+            "SSH",
+            "IPsec",
+            "PPTP",
+            "HTTP"
+          ],
+          "answer": 1,
+          "explain": "Chiffre au niveau IP, souvent IKE + ESP."
+        },
+        {
+          "q": "Quel type de VPN passe facilement les pare-feux (port 443) ?",
+          "options": [
+            "SSL/TLS (OpenVPN, SSTP)",
+            "GRE",
+            "PPTP",
+            "L2TP"
+          ],
+          "answer": 0,
+          "explain": "VPN nomade."
+        },
+        {
+          "q": "Protocole moderne, simple et rapide :",
+          "options": [
+            "WireGuard",
+            "PPTP",
+            "L2TP",
+            "Telnet"
+          ],
+          "answer": 0,
+          "explain": "De plus en plus utilisé."
+        },
+        {
+          "q": "Quel protocole est obsolète et peu sûr ?",
+          "options": [
+            "WireGuard",
+            "OpenVPN",
+            "PPTP",
+            "IPsec"
+          ],
+          "answer": 2,
+          "explain": "PPTP est à éviter."
+        },
+        {
+          "q": "Trois garanties d'un bon VPN :",
+          "options": [
+            "Wi-Fi, 4G, fibre",
+            "Confidentialité, intégrité, authentification",
+            "Vitesse, prix, simplicité",
+            "DNS, DHCP, NAT"
+          ],
+          "answer": 1,
+          "explain": "Chiffrement, non-altération, bonne extrémité."
+        },
+        {
+          "q": "Côté Windows, le rôle pour un serveur d'accès distant :",
+          "options": [
+            "RRAS",
+            "IIS",
+            "DHCP",
+            "DNS"
+          ],
+          "answer": 0,
+          "explain": "Routing and Remote Access Service."
+        },
+        {
+          "q": "Que voit un attaquant qui intercepte le trafic VPN ?",
+          "options": [
+            "Les adresses privées",
+            "Un flux illisible entre deux passerelles",
+            "Les mots de passe",
+            "Les fichiers"
+          ],
+          "answer": 1,
+          "explain": "C'est l'intérêt du chiffrement."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Où met-on en place un VPN site-à-site ?",
+          "options": [
+            "Sur les pare-feu / routeurs des deux sites",
+            "Sur le DNS",
+            "Sur chaque PC",
+            "Sur le switch"
+          ],
+          "answer": 0,
+          "explain": "Ex. tunnel IPsec entre deux routeurs."
+        },
+        {
+          "q": "L'utilisateur nomade :",
+          "options": [
+            "Lance un client VPN qui monte le tunnel avant d'accéder aux ressources",
+            "N'a rien à faire",
+            "Change son IP",
+            "Utilise Telnet"
+          ],
+          "answer": 0,
+          "explain": "Le client monte le tunnel."
+        },
+        {
+          "q": "L'authentification d'un VPN se fait par :",
+          "options": [
+            "Adresse MAC",
+            "Nom d'hôte",
+            "Clés pré-partagées ou certificats",
+            "Port"
+          ],
+          "answer": 2,
+          "explain": "On parle bien à la bonne extrémité."
+        },
+        {
+          "q": "IKE + ESP sont liés à :",
+          "options": [
+            "OpenVPN",
+            "IPsec",
+            "PPTP",
+            "WireGuard"
+          ],
+          "answer": 1,
+          "explain": "IKE négocie, ESP chiffre."
+        },
+        {
+          "q": "Côté Linux, serveur VPN nomade typique :",
+          "options": [
+            "Samba",
+            "OpenVPN ou WireGuard",
+            "RRAS",
+            "Exchange"
+          ],
+          "answer": 1,
+          "explain": "Serveur d'accès distant."
+        },
+        {
+          "q": "Un VPN site-à-site est :",
+          "options": [
+            "Permanent entre deux passerelles",
+            "Monté à la demande par un utilisateur",
+            "Uniquement Wi-Fi",
+            "Un VLAN"
+          ],
+          "answer": 0,
+          "explain": "Relie le siège et une agence en permanence."
+        },
+        {
+          "q": "L'intégrité garantit :",
+          "options": [
+            "L'anonymat",
+            "Que les données n'ont pas été altérées",
+            "Le débit",
+            "La vitesse"
+          ],
+          "answer": 1,
+          "explain": "Une des trois garanties."
+        },
+        {
+          "q": "SSH par rapport au VPN :",
+          "options": [
+            "Non chiffré",
+            "Identique",
+            "Plus lent",
+            "Un tunnel chiffré ponctuel, pas un réseau étendu"
+          ],
+          "answer": 3,
+          "explain": "Lien du cours : SSH (tunnel chiffré ponctuel)."
+        },
+        {
+          "q": "L2TP/IPsec est :",
+          "options": [
+            "Obsolète et peu sûr",
+            "Le plus moderne",
+            "Plus ancien",
+            "Réservé à Linux"
+          ],
+          "answer": 2,
+          "explain": "PPTP est obsolète ; L2TP/IPsec est plus ancien."
+        },
+        {
+          "q": "SSTP est un VPN :",
+          "options": [
+            "Telnet",
+            "WireGuard",
+            "IPsec",
+            "SSL/TLS"
+          ],
+          "answer": 3,
+          "explain": "Comme OpenVPN, passe sur 443."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Un télétravailleur doit accéder au serveur de fichiers interne :",
+          "options": [
+            "Ouvrir SMB sur Internet",
+            "FTP anonyme",
+            "RDP exposé",
+            "VPN nomade"
+          ],
+          "answer": 3,
+          "explain": "Jamais exposer les services internes."
+        },
+        {
+          "q": "Deux agences doivent partager un annuaire en permanence :",
+          "options": [
+            "VPN site-à-site IPsec entre les routeurs",
+            "VPN nomade",
+            "Wi-Fi",
+            "VLAN"
+          ],
+          "answer": 0,
+          "explain": "Deux réseaux reliés en permanence."
+        },
+        {
+          "q": "Depuis un hôtel qui ne laisse sortir que le TCP 443 :",
+          "options": [
+            "IPsec",
+            "OpenVPN/SSTP sur 443",
+            "WireGuard UDP",
+            "PPTP"
+          ],
+          "answer": 1,
+          "explain": "Les VPN SSL passent facilement les pare-feux."
+        },
+        {
+          "q": "L'adressage privé d'origine dans un tunnel :",
+          "options": [
+            "Est conservé à l'intérieur du paquet encapsulé",
+            "Devient public",
+            "Est perdu",
+            "Est traduit"
+          ],
+          "answer": 0,
+          "explain": "Le paquet d'origine est emballé tel quel."
+        },
+        {
+          "q": "À l'arrivée du tunnel, la passerelle :",
+          "options": [
+            "Déchiffre et désencapsule",
+            "Rejette",
+            "Chiffre à nouveau",
+            "Route en clair sans vérifier"
+          ],
+          "answer": 0,
+          "explain": "Puis livre le paquet d'origine."
+        },
+        {
+          "q": "Pourquoi un VPN ne dispense-t-il pas d'un pare-feu ?",
+          "options": [
+            "Il étend le réseau : ce qui entre par le tunnel doit être filtré aussi",
+            "Il est plus lent",
+            "Il n'a pas de règles",
+            "Il le remplace"
+          ],
+          "answer": 0,
+          "explain": "Voir la matrice de flux du tunnel dans le cours OPNsense."
+        },
+        {
+          "q": "Quel élément d'IPsec chiffre les données ?",
+          "options": [
+            "IKE",
+            "ESP",
+            "DNS",
+            "AH seul"
+          ],
+          "answer": 1,
+          "explain": "ESP = Encapsulating Security Payload."
+        },
+        {
+          "q": "Deux sites avec le même plan d'adressage :",
+          "options": [
+            "Ne peuvent pas se joindre à travers le tunnel",
+            "Fonctionnent avec DHCP",
+            "Se joignent via DNS",
+            "Se routent normalement"
+          ],
+          "answer": 0,
+          "explain": "Les plans doivent être différents."
+        },
+        {
+          "q": "Un VPN garantit-il l'anonymat total sur Internet ?",
+          "options": [
+            "Oui",
+            "Non : il chiffre jusqu'à l'autre extrémité, qui voit le trafic",
+            "Oui avec IPsec",
+            "Oui avec PPTP"
+          ],
+          "answer": 1,
+          "explain": "La confidentialité s'arrête à la passerelle de sortie."
+        },
+        {
+          "q": "Le VPN est traité concrètement dans :",
+          "options": [
+            "OPNsense — accès distants et détection d'intrusion",
+            "Le cours Wireshark",
+            "Le cours Linux",
+            "La messagerie"
+          ],
+          "answer": 0,
+          "explain": "WireGuard, OpenVPN et IPsec mis en œuvre."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,351 @@
+{
+  "slug": "dmz-mise-en-place",
+  "title": "Mettre en place une DMZ",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Première étape de la mise en place d'une DMZ :",
+          "options": [
+            "Écrire les règles",
+            "Installer le proxy",
+            "L'inventaire justifié des services à exposer",
+            "Créer le VLAN"
+          ],
+          "answer": 2,
+          "explain": "Chaque ligne doit avoir une justification ; un service qu'on ne sait pas justifier ne se publie pas."
+        },
+        {
+          "q": "Quel sous-réseau le cours donne-t-il à la DMZ de l'exemple ?",
+          "options": [
+            "203.0.113.0/24",
+            "192.168.20.0/24",
+            "10.0.0.0/8",
+            "192.168.10.0/24"
+          ],
+          "answer": 1,
+          "explain": "LAN en 192.168.10.0/24, DMZ en 192.168.20.0/24, passerelle .254."
+        },
+        {
+          "q": "Les serveurs de la DMZ ont des adresses :",
+          "options": [
+            "Publiques",
+            "APIPA",
+            "Fixes",
+            "DHCP"
+          ],
+          "answer": 2,
+          "explain": "Pas de DHCP sur l'interface DMZ : les règles visent des adresses."
+        },
+        {
+          "q": "Quelle adresse a le reverse proxy de l'exemple ?",
+          "options": [
+            ".254",
+            ".20",
+            ".10",
+            ".30"
+          ],
+          "answer": 1,
+          "explain": "Proxy .20, serveur web .10, relais mail .30."
+        },
+        {
+          "q": "Qui reçoit 80 et 443 depuis le WAN ?",
+          "options": [
+            "Le relais .30",
+            "Le reverse proxy .20",
+            "Le LAN",
+            "Le serveur web .10"
+          ],
+          "answer": 1,
+          "explain": "Le serveur web n'est pas publié : Internet ne connaît que le proxy."
+        },
+        {
+          "q": "La matrice de flux est :",
+          "options": [
+            "Un fichier de log",
+            "Un alias",
+            "Un outil optionnel",
+            "La documentation de la DMZ pendant toute sa vie"
+          ],
+          "answer": 3,
+          "explain": "C'est elle qu'on relit à chaque changement."
+        },
+        {
+          "q": "Que reçoit le relais mail .30 depuis Internet ?",
+          "options": [
+            "Le port 443",
+            "Le port 25",
+            "Rien",
+            "Le port 22"
+          ],
+          "answer": 1,
+          "explain": "Il relaie ensuite vers le serveur de messagerie interne sur 25, flux nominatif."
+        },
+        {
+          "q": "Combien de flux DMZ → LAN dans l'exemple ?",
+          "options": [
+            "Un seul",
+            "Aucun",
+            "Deux nominatifs : web → base (1433), relais → messagerie (25)",
+            "Tous"
+          ],
+          "answer": 2,
+          "explain": "Chacun vers une adresse, sur un port."
+        },
+        {
+          "q": "À la création, l'interface DMZ doit être :",
+          "options": [
+            "Avec l'anti-lockout",
+            "Sans DHCP et sans aucune règle",
+            "Avec un VLAN 1",
+            "Avec DHCP et règle Pass any"
+          ],
+          "answer": 1,
+          "explain": "Les serveurs pinguent leur passerelle et rien d'autre : le point de départ correct."
+        },
+        {
+          "q": "Dans un VLAN DMZ, une prise libre est :",
+          "options": [
+            "Obligatoire",
+            "Pratique",
+            "Un risque : on y branchera un jour un portable",
+            "Sans effet"
+          ],
+          "answer": 2,
+          "explain": "Aucun autre port dans ce VLAN."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Sur l'onglet DMZ, quelle règle est « celle qui fait la DMZ » ?",
+          "options": [
+            "Block DMZ net → RESEAUX_INTERNES, journalisée",
+            "Block This Firewall",
+            "Pass 80/443",
+            "Pass DNS"
+          ],
+          "answer": 0,
+          "explain": "Rien vers le LAN ni les autres zones."
+        },
+        {
+          "q": "Où placer les exceptions nominatives (web → base) ?",
+          "options": [
+            "Après le Block RESEAUX_INTERNES",
+            "Sur le WAN",
+            "Au-dessus du Block RESEAUX_INTERNES",
+            "Nulle part"
+          ],
+          "answer": 2,
+          "explain": "La première qui correspond décide."
+        },
+        {
+          "q": "Une règle Pass any placée au-dessus de la règle 6 :",
+          "options": [
+            "Est sans effet",
+            "Est refusée",
+            "Rend la 6 illisible : la DMZ voit le LAN",
+            "Bloque tout"
+          ],
+          "answer": 2,
+          "explain": "Une des deux erreurs qui annulent tout ; l'autre : un alias RESEAUX_INTERNES incomplet."
+        },
+        {
+          "q": "L'administration (SSH/RDP) vers la DMZ est autorisée depuis :",
+          "options": [
+            "La DMZ",
+            "Un alias POSTES_ADMIN seulement",
+            "Internet",
+            "LAN net"
+          ],
+          "answer": 1,
+          "explain": "Pas depuis tout le LAN."
+        },
+        {
+          "q": "Redirection de port vs reverse proxy : avantage du proxy ?",
+          "options": [
+            "Plus simple",
+            "Pas de règle nécessaire",
+            "Plusieurs sites par nom sur une IP, certificats au même endroit, filtrage applicatif",
+            "Fonctionne pour le mail"
+          ],
+          "answer": 2,
+          "explain": "La redirection reste pour le mail (25), le VPN, un service unique."
+        },
+        {
+          "q": "Combien de redirections dans l'exemple ?",
+          "options": [
+            "Trois",
+            "Deux : 443/80 vers le proxy, 25 vers le relais",
+            "Aucune",
+            "Une"
+          ],
+          "answer": 1,
+          "explain": "Chacune avec sa règle de filtrage associée sur le WAN."
+        },
+        {
+          "q": "Le split DNS fait que www.entreprise.fr vu du LAN pointe sur :",
+          "options": [
+            "127.0.0.1",
+            "203.0.113.10",
+            "Le pare-feu",
+            "192.168.20.20 directement"
+          ],
+          "answer": 3,
+          "explain": "Évite la réflexion NAT, garde le trafic interne à l'intérieur."
+        },
+        {
+          "q": "Un serveur de la DMZ doit-il être membre du domaine AD interne ?",
+          "options": [
+            "Oui pour les GPO",
+            "Oui pour le DNS",
+            "Oui",
+            "Non : il garderait des secrets du domaine en mémoire"
+          ],
+          "answer": 3,
+          "explain": "Comptes locaux, ou une forêt dédiée."
+        },
+        {
+          "q": "Le pare-feu local du serveur en DMZ :",
+          "options": [
+            "Doit être désactivé",
+            "Est une seconde couche si une règle du boîtier est trop large",
+            "Est inutile",
+            "Remplace OPNsense"
+          ],
+          "answer": 1,
+          "explain": "N'écouter que sur les ports prévus."
+        },
+        {
+          "q": "Les journaux des serveurs DMZ doivent :",
+          "options": [
+            "Être publics",
+            "Être supprimés",
+            "Partir vers le LAN (syslog) pour qu'un attaquant ne puisse pas les effacer",
+            "Rester sur le serveur"
+          ],
+          "answer": 2,
+          "explain": "Un flux sortant nominatif de plus, vers un port."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Le « réflexe fatal » cité par le cours :",
+          "options": [
+            "Oublier le DNS",
+            "Utiliser un proxy",
+            "Ouvrir 3389 ou 22 depuis Internet « pour intervenir de chez soi »",
+            "Mettre un VLAN"
+          ],
+          "answer": 2,
+          "explain": "Ces ports sont scannés en continu."
+        },
+        {
+          "q": "Trois façons acceptables d'administrer la DMZ :",
+          "options": [
+            "Aucune",
+            "Depuis le LAN, par le VPN, par un bastion",
+            "FTP, Telnet, RDP",
+            "Internet, Wi-Fi, box"
+          ],
+          "answer": 1,
+          "explain": "Jamais depuis Internet directement."
+        },
+        {
+          "q": "nmap -Pn 203.0.113.10 depuis Internet doit montrer :",
+          "options": [
+            "Tous les ports",
+            "22 et 3389",
+            "Aucun port",
+            "Trois ports : 25, 80, 443 — rien d'autre"
+          ],
+          "answer": 3,
+          "explain": "Le test qui échoue prouve que la zone fait son travail."
+        },
+        {
+          "q": "Depuis le serveur web, nc -vz 192.168.10.10 445 doit :",
+          "options": [
+            "Attendre",
+            "Ouvrir RDP",
+            "Réussir",
+            "Échouer — règle 6 en rouge dans le journal"
+          ],
+          "answer": 3,
+          "explain": "Le seul flux vers le LAN est 192.168.10.50:1433."
+        },
+        {
+          "q": "Depuis le relais .30, nc -vz 192.168.20.10 8080 doit :",
+          "options": [
+            "Être ignoré",
+            "Réussir en TCP seulement",
+            "Réussir",
+            "Échouer : un serveur de la DMZ ne voit pas l'autre"
+          ],
+          "answer": 3,
+          "explain": "Seul le proxy parle au serveur web."
+        },
+        {
+          "q": "Que garde-t-on des tests de fin de mise en place ?",
+          "options": [
+            "Le nmap seulement",
+            "Les résultats, comme référence à rejouer régulièrement",
+            "Rien",
+            "Les captures d'écran du proxy"
+          ],
+          "answer": 1,
+          "explain": "Un test qui change de résultat sans qu'on ait rien voulu changer est une alerte."
+        },
+        {
+          "q": "Un compte de service pour le flux web → base doit :",
+          "options": [
+            "Être root",
+            "Être partagé",
+            "N'avoir de droits que sur cette base, en lecture si ça suffit",
+            "Être administrateur"
+          ],
+          "answer": 2,
+          "explain": "Un compte par flux."
+        },
+        {
+          "q": "Que documente-t-on en sortant ?",
+          "options": [
+            "Le mot de passe root",
+            "Le nom du switch",
+            "Rien",
+            "Schéma, services publiés, matrice, règles justifiées, comptes d'admin, résultats des tests"
+          ],
+          "answer": 3,
+          "explain": "Sans elle, dans un an, plus personne n'osera toucher à une règle."
+        },
+        {
+          "q": "Pourquoi un sous-réseau DMZ « qui se lit d'un coup d'œil » ?",
+          "options": [
+            "Pour le DHCP",
+            "Pour l'IPv6",
+            "Pour reconnaître la zone dans les journaux",
+            "Pour le routage"
+          ],
+          "answer": 2,
+          "explain": "192.168.20.x = DMZ, 192.168.10.x = LAN."
+        },
+        {
+          "q": "L'ordre de la démarche :",
+          "options": [
+            "Règles → inventaire → tests",
+            "Proxy → règles → adressage",
+            "Tests → règles → zone",
+            "Inventaire → adressage → matrice → zone → règles → publication → durcissement → accès admin → tests"
+          ],
+          "answer": 3,
+          "explain": "On ne commence pas par les règles."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,351 @@
+{
+  "slug": "linux-disques",
+  "title": "Linux : disques, partitions et LVM",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Sous Linux, un disque devient :",
+          "options": [
+            "Un dossier : on le monte dans l'arborescence",
+            "Une lettre D:",
+            "Un fichier texte",
+            "Un lien"
+          ],
+          "answer": 0,
+          "explain": "Toute la gestion du stockage découle de cette différence."
+        },
+        {
+          "q": "Les quatre étages :",
+          "options": [
+            "sda, sdb, sdc, sdd",
+            "BIOS, noyau, shell, fichier",
+            "Disque → partition → système de fichiers → point de montage",
+            "Disque, RAID, réseau, cloud"
+          ],
+          "answer": 2,
+          "explain": "fdisk → mkfs → mount."
+        },
+        {
+          "q": "/dev/sdb vs /dev/sdb1 :",
+          "options": [
+            "sdb1 est le disque",
+            "sdb est le disque entier, sdb1 sa première partition",
+            "sdb est une partition",
+            "Identiques"
+          ],
+          "answer": 1,
+          "explain": "On partitionne sdb, on formate et on monte sdb1."
+        },
+        {
+          "q": "df vs du :",
+          "options": [
+            "df = par dossier",
+            "df = combien reste-t-il (par système de fichiers) ; du = qui occupe la place (par dossier)",
+            "Identiques",
+            "du = espace libre"
+          ],
+          "answer": 1,
+          "explain": "Question qui revient."
+        },
+        {
+          "q": "Commande pour voir disques → partitions → montages :",
+          "options": [
+            "lsblk",
+            "df",
+            "ls /dev",
+            "mount"
+          ],
+          "answer": 0,
+          "explain": "lsblk -f avec le système de fichiers et l'UUID."
+        },
+        {
+          "q": "Avant fdisk ou mkfs :",
+          "options": [
+            "Vérifier le nom du disque avec lsblk : taille et absence de montage",
+            "Redémarrer",
+            "Rien",
+            "Sauvegarder fstab"
+          ],
+          "answer": 0,
+          "explain": "Les noms sdX dépendent de l'ordre de détection."
+        },
+        {
+          "q": "Table de partitions par défaut aujourd'hui :",
+          "options": [
+            "GPT",
+            "APM",
+            "MBR",
+            "BSD"
+          ],
+          "answer": 0,
+          "explain": "Obligatoire en UEFI ; MBR = 2 To max, 4 primaires."
+        },
+        {
+          "q": "Formater en ext4 avec une étiquette :",
+          "options": [
+            "format sdb1",
+            "mkfs -l",
+            "mkfs.ext4 -L donnees /dev/sdb1",
+            "fdisk -f"
+          ],
+          "answer": 2,
+          "explain": "-L pose l'étiquette."
+        },
+        {
+          "q": "Système de fichiers par défaut de Debian :",
+          "options": [
+            "xfs",
+            "btrfs",
+            "vfat",
+            "ext4"
+          ],
+          "answer": 3,
+          "explain": "Robuste, se répare bien."
+        },
+        {
+          "q": "Un mount à la main :",
+          "options": [
+            "Ne survit pas : il faut /etc/fstab",
+            "Est permanent",
+            "Survit au redémarrage",
+            "Est interdit"
+          ],
+          "answer": 0,
+          "explain": "fstab décrit ce qui doit être monté au démarrage."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Pourquoi l'UUID dans fstab plutôt que /dev/sdb1 ?",
+          "options": [
+            "Les noms sdX changent selon la détection ; l'UUID suit le système de fichiers",
+            "Obligatoire",
+            "Plus rapide",
+            "Plus court"
+          ],
+          "answer": 0,
+          "explain": "sudo blkid /dev/sdb1 pour le récupérer."
+        },
+        {
+          "q": "nofail dans fstab :",
+          "options": [
+            "Bloque le boot",
+            "Formate",
+            "Laisse la machine démarrer si le volume est absent",
+            "Ignore les erreurs disque"
+          ],
+          "answer": 2,
+          "explain": "La ligne qui évite l'appel de nuit."
+        },
+        {
+          "q": "Tester fstab sans redémarrer :",
+          "options": [
+            "sudo mount -a",
+            "fsck",
+            "df",
+            "reboot"
+          ],
+          "answer": 0,
+          "explain": "À faire systématiquement, plus findmnt --verify."
+        },
+        {
+          "q": "Dernier champ « passe » de fstab :",
+          "options": [
+            "Le port",
+            "Le propriétaire",
+            "Le mot de passe",
+            "Ordre de vérification : 0 = aucune, 1 = la racine, 2 = les autres"
+          ],
+          "answer": 3,
+          "explain": "Colonnes dump et passe."
+        },
+        {
+          "q": "Monter sur un dossier non vide :",
+          "options": [
+            "Efface le contenu",
+            "Échoue",
+            "Fusionne",
+            "Masque le contenu tant que le montage tient"
+          ],
+          "answer": 3,
+          "explain": "Les données sont là, en dessous."
+        },
+        {
+          "q": "xfs :",
+          "options": [
+            "N'existe pas",
+            "Est FAT",
+            "Se réduit",
+            "S'agrandit à chaud mais ne se réduit pas"
+          ],
+          "answer": 3,
+          "explain": "Grands volumes, gros fichiers."
+        },
+        {
+          "q": "vfat / exfat pour des données serveur :",
+          "options": [
+            "Bien",
+            "Jamais : pas de droits Unix",
+            "Recommandé",
+            "Obligatoire"
+          ],
+          "answer": 1,
+          "explain": "Clés USB, partition EFI."
+        },
+        {
+          "q": "df -i :",
+          "options": [
+            "Les interfaces",
+            "Les inodes : l'autre façon d'être plein",
+            "Les IP",
+            "Les images"
+          ],
+          "answer": 1,
+          "explain": "Des millions de petits fichiers épuisent la table."
+        },
+        {
+          "q": "Disque « plein » alors que df montre de la place, cause n°2 :",
+          "options": [
+            "Un fichier supprimé mais encore ouvert par un processus (lsof +L1)",
+            "Le montage",
+            "Bug",
+            "GPT"
+          ],
+          "answer": 0,
+          "explain": "Redémarrer le service concerné libère la place."
+        },
+        {
+          "q": "Partitionner en non interactif :",
+          "options": [
+            "parted /dev/sdb --script mklabel gpt mkpart primaire ext4 0% 100%",
+            "mkfs",
+            "gparted",
+            "fdisk -y"
+          ],
+          "answer": 0,
+          "explain": "fdisk : g, n, w en interactif."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Pourquoi df et du divergent-ils ?",
+          "options": [
+            "Inodes",
+            "Un dossier monté par-dessus un autre cache le contenu du dessous : du ne le voit plus, df le compte",
+            "Bug",
+            "Cache"
+          ],
+          "answer": 1,
+          "explain": "La façon classique de « perdre » 20 Go."
+        },
+        {
+          "q": "fdisk /dev/sda au lieu de /dev/sdb :",
+          "options": [
+            "Crée sdb",
+            "Détruit la table de partitions du système en cours",
+            "Sans effet",
+            "Demande confirmation"
+          ],
+          "answer": 1,
+          "explain": "lsblk d'abord, toujours."
+        },
+        {
+          "q": "Ligne CIFS dans fstab :",
+          "options": [
+            "smb://srv",
+            "mount cifs",
+            "\\\\srv-win\\partage /mnt/win",
+            "//srv-win/partage /mnt/win cifs credentials=/etc/cifs.cred,nofail 0 0"
+          ],
+          "answer": 3,
+          "explain": "Fichier de credentials plutôt que mot de passe en clair."
+        },
+        {
+          "q": "x-systemd.device-timeout=10 :",
+          "options": [
+            "Ne pas attendre 90 s un volume absent",
+            "Vérifie 10 fois",
+            "Monte 10 disques",
+            "Formate en 10 s"
+          ],
+          "answer": 0,
+          "explain": "Avec nofail."
+        },
+        {
+          "q": "Après modification de fstab, systemd :",
+          "options": [
+            "Ne fait rien",
+            "Relit fstab avec systemctl daemon-reload pour fabriquer ses unités",
+            "Formate",
+            "Redémarre"
+          ],
+          "answer": 1,
+          "explain": "Étape du cours."
+        },
+        {
+          "q": "MBR est limité à :",
+          "options": [
+            "2 To et 4 partitions primaires",
+            "1 To",
+            "Illimité",
+            "10 To"
+          ],
+          "answer": 0,
+          "explain": "GPT : 128 partitions."
+        },
+        {
+          "q": "Sans nofail, un serveur CIFS éteint au démarrage :",
+          "options": [
+            "Le boot échoue et tombe en mode secours",
+            "Rien",
+            "Redémarre",
+            "Monte plus tard"
+          ],
+          "answer": 0,
+          "explain": "Sur une console à laquelle personne n'a accès."
+        },
+        {
+          "q": "Dans lsblk, vg0-root de type lvm sur sda2 est :",
+          "options": [
+            "Une partition",
+            "Un fichier",
+            "Un volume logique LVM",
+            "Un disque"
+          ],
+          "answer": 2,
+          "explain": "LVM : un étage supplémentaire."
+        },
+        {
+          "q": "Une partition sans système de fichiers :",
+          "options": [
+            "Est ext4",
+            "Est un espace inutilisable",
+            "Est utilisable",
+            "Est montée"
+          ],
+          "answer": 1,
+          "explain": "Il faut mkfs."
+        },
+        {
+          "q": "du -sh /var/* :",
+          "options": [
+            "Ce qui occupe la place, dossier par dossier",
+            "Les inodes",
+            "Espace libre",
+            "Les montages"
+          ],
+          "answer": 0,
+          "explain": "-s résumé, -h lisible."
+        }
+      ]
+    }
+  ]
+}

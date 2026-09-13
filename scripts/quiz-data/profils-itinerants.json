@@ -1,0 +1,351 @@
+{
+  "slug": "profils-itinerants",
+  "title": "Les profils itinérants (Active Directory)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Sur un poste isolé, le profil utilisateur vit dans :",
+          "options": [
+            "C:\\Users\\<nom>",
+            "C:\\Profils",
+            "C:\\Windows",
+            "\\\\SRV\\Profils$"
+          ],
+          "answer": 0,
+          "explain": "Changer de machine, c'est repartir d'un bureau vide."
+        },
+        {
+          "q": "Un profil itinérant est :",
+          "options": [
+            "Un dossier de base",
+            "Stocké seulement sur le poste",
+            "Copié sur le poste à l'ouverture et remonté à la fermeture",
+            "Un profil en lecture seule"
+          ],
+          "answer": 2,
+          "explain": "Tout transite, deux fois, à chaque session."
+        },
+        {
+          "q": "La conséquence à retenir avant tout :",
+          "options": [
+            "Il faut un VLAN",
+            "Il faut IPv6",
+            "Un gros profil traverse le réseau deux fois par session : il faut le garder petit",
+            "C'est gratuit"
+          ],
+          "answer": 2,
+          "explain": "4 Go × 20 postes à 8 h = une salle qui attend."
+        },
+        {
+          "q": "NTUSER.DAT contient :",
+          "options": [
+            "Le système",
+            "La ruche HKEY_CURRENT_USER : toutes les préférences",
+            "Les documents",
+            "Les caches"
+          ],
+          "answer": 1,
+          "explain": "Le cœur du profil."
+        },
+        {
+          "q": "AppData\\Local :",
+          "options": [
+            "Est le Bureau",
+            "Ne suit pas : caches et données propres à la machine, exclus par défaut",
+            "Suit l'utilisateur",
+            "Est NTUSER.DAT"
+          ],
+          "answer": 1,
+          "explain": "Le faire voyager multiplierait la taille par cinq."
+        },
+        {
+          "q": "AppData\\Roaming :",
+          "options": [
+            "Est le système",
+            "Suit l'utilisateur : configuration applicative destinée à suivre",
+            "Ne suit pas",
+            "Est temporaire"
+          ],
+          "answer": 1,
+          "explain": "Roaming = itinérant."
+        },
+        {
+          "q": "Chemin du profil sur le compte :",
+          "options": [
+            "\\\\SRV-FICHIERS\\Profils$\\jean.V6",
+            "\\\\SRV-FICHIERS\\Profils$\\%username%",
+            "\\\\SRV\\Profils",
+            "C:\\Users\\%username%"
+          ],
+          "answer": 1,
+          "explain": "%username%, sans le suffixe .V6 que Windows ajoute seul."
+        },
+        {
+          "q": "Suffixe pour Windows 10/11 :",
+          "options": [
+            "aucun",
+            ".V2",
+            ".V6",
+            ".V3"
+          ],
+          "answer": 2,
+          "explain": ".V2 = Vista/7, .V3/.V4 = 8/8.1."
+        },
+        {
+          "q": "Pourquoi le suffixe existe-t-il ?",
+          "options": [
+            "Pour le quota",
+            "Esthétique",
+            "Un profil écrit par Windows 11 n'est pas lisible par Windows 7 : le partager corromprait les deux",
+            "Pour le DNS"
+          ],
+          "answer": 2,
+          "explain": "Une migration depuis Windows 7 crée un profil neuf, vide."
+        },
+        {
+          "q": "Un profil obligatoire (mandatory) :",
+          "options": [
+            "Est un profil itinérant en lecture seule : rien n'est remonté",
+            "Est vide",
+            "Est chiffré",
+            "Est local"
+          ],
+          "answer": 0,
+          "explain": "NTUSER.DAT renommé en NTUSER.MAN."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Droits NTFS des Utilisateurs authentifiés sur E:\\Profils :",
+          "options": [
+            "Aucun",
+            "Lister, Créer des dossiers, Lecture — ce dossier seulement",
+            "Contrôle total partout",
+            "Modification"
+          ],
+          "answer": 1,
+          "explain": "L'utilisateur peut fabriquer son dossier, et rien d'autre."
+        },
+        {
+          "q": "Pourquoi ne pas créer le dossier de l'utilisateur à l'avance ?",
+          "options": [
+            "Gain de temps",
+            "C'est interdit",
+            "Le propriétaire serait l'admin : Windows refuse le profil et bascule en profil temporaire",
+            "Pour le quota"
+          ],
+          "answer": 2,
+          "explain": "Windows crée jean.V6 avec l'utilisateur propriétaire et contrôle total exclusif."
+        },
+        {
+          "q": "Commande PowerShell pour créer le partage :",
+          "options": [
+            "Add-Share",
+            "New-SmbShare -Name 'Profils$' -Path 'E:\\Profils' -FullAccess 'Utilisateurs authentifies'",
+            "net share",
+            "New-Share"
+          ],
+          "answer": 1,
+          "explain": "Contrôle total au niveau du partage : c'est NTFS qui filtre."
+        },
+        {
+          "q": "Cmdlet pour définir le chemin de profil d'un compte :",
+          "options": [
+            "New-ADProfile",
+            "Set-ADUser -ProfilePath",
+            "Set-Profile",
+            "Set-User -Roaming"
+          ],
+          "answer": 1,
+          "explain": "Avec Get-ADUser -SearchBase pour toute une UO."
+        },
+        {
+          "q": "La redirection de dossiers :",
+          "options": [
+            "Est un quota",
+            "Supprime le profil",
+            "Copie les dossiers",
+            "Fait vivre les dossiers lourds sur le serveur, sans copie : le poste y accède directement"
+          ],
+          "answer": 3,
+          "explain": "4 Go par session → 15 Mo."
+        },
+        {
+          "q": "Où se configure la redirection de dossiers ?",
+          "options": [
+            "Onglet Profil",
+            "Le registre",
+            "GPO : Configuration utilisateur → Stratégies → Paramètres Windows → Redirection de dossiers",
+            "FSRM"
+          ],
+          "answer": 2,
+          "explain": "Bureau, Documents, Images, Favoris vers \\\\SRV\\Perso$\\%username%."
+        },
+        {
+          "q": "Redirection et profil itinérant :",
+          "options": [
+            "S'opposent",
+            "Sont obsolètes",
+            "Sont identiques",
+            "Se complètent : la redirection pour les fichiers, le profil pour les préférences"
+          ],
+          "answer": 3,
+          "explain": "Beaucoup n'utilisent plus que la redirection."
+        },
+        {
+          "q": "Sans « Déplacer le contenu vers le nouvel emplacement » :",
+          "options": [
+            "Rien ne change",
+            "Le profil est corrompu",
+            "Les fichiers sont supprimés",
+            "Le Bureau de l'utilisateur se vide : les fichiers restent à l'ancien emplacement"
+          ],
+          "answer": 3,
+          "explain": "L'utilisateur appelle dans la minute."
+        },
+        {
+          "q": "Usage typique du profil obligatoire :",
+          "options": [
+            "Postes en libre-service, salles de formation, bornes",
+            "Les administrateurs",
+            "Les portables",
+            "Les serveurs"
+          ],
+          "answer": 0,
+          "explain": "Chaque stagiaire repart d'un environnement identique."
+        },
+        {
+          "q": "Le message « Vous avez été connecté avec un profil temporaire » signifie :",
+          "options": [
+            "Windows n'a pas pu charger le profil : tout ce qui est fait sera perdu à la fermeture",
+            "Tout va bien",
+            "Le compte a expiré",
+            "Le disque est plein"
+          ],
+          "answer": 0,
+          "explain": "Traiter tout de suite et prévenir l'utilisateur."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Cause : le dossier du profil a été créé à la main. Traitement ?",
+          "options": [
+            "Changer de serveur",
+            "Redémarrer",
+            "Rendre la propriété à l'utilisateur, ou supprimer le dossier et le laisser se recréer",
+            "Réinstaller Windows"
+          ],
+          "answer": 2,
+          "explain": "Le propriétaire n'est pas l'utilisateur."
+        },
+        {
+          "q": "Cause : profil local corrompu. Indice ?",
+          "options": [
+            "Un dossier .V6 manquant",
+            "Un disque plein",
+            "Une clé .bak dans ProfileList (registre)",
+            "Un DNS lent"
+          ],
+          "answer": 2,
+          "explain": "HKLM\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\ProfileList."
+        },
+        {
+          "q": "Cause : serveur injoignable à l'ouverture. Traitement ?",
+          "options": [
+            "Supprimer le profil",
+            "Un quota",
+            "GPO « Toujours attendre le réseau au démarrage et à l'ouverture de session »",
+            "Changer de suffixe"
+          ],
+          "answer": 2,
+          "explain": "Réseau lent au démarrage, DNS."
+        },
+        {
+          "q": "Commande pour connaître le SID de l'utilisateur :",
+          "options": [
+            "net user",
+            "whoami /user",
+            "id",
+            "getsid"
+          ],
+          "answer": 1,
+          "explain": "Utile pour retrouver l'entrée dans ProfileList."
+        },
+        {
+          "q": "Un utilisateur passe de Windows 10 à Windows 11 :",
+          "options": [
+            "Conserve son profil (même .V6)",
+            "Nouveau profil vide",
+            "Doit être recréé",
+            "Perd tout"
+          ],
+          "answer": 0,
+          "explain": "Même version de format."
+        },
+        {
+          "q": "Droits NTFS des Administrateurs et de SYSTEM sur E:\\Profils :",
+          "options": [
+            "Contrôle total, ce dossier, sous-dossiers et fichiers",
+            "Aucun",
+            "Lecture",
+            "Modification"
+          ],
+          "answer": 0,
+          "explain": "Tableau de la section 2."
+        },
+        {
+          "q": "Une application qui range dans AppData\\Local des données qui devraient suivre :",
+          "options": [
+            "Normal",
+            "Un problème de réseau",
+            "Un défaut du profil",
+            "Un défaut de l'application"
+          ],
+          "answer": 3,
+          "explain": "Local est exclu par défaut, et c'est voulu."
+        },
+        {
+          "q": "Combien de fois un profil de 4 Go transite par session ?",
+          "options": [
+            "Quatre",
+            "Une",
+            "Deux : ouverture et fermeture",
+            "Zéro"
+          ],
+          "answer": 2,
+          "explain": "Descendu puis remonté."
+        },
+        {
+          "q": "Cmdlet de vérification du chemin de profil :",
+          "options": [
+            "Show-ADUser",
+            "Get-ADUser jean -Properties ProfilePath",
+            "Test-Profile",
+            "Get-Profile jean"
+          ],
+          "answer": 1,
+          "explain": "Select-Object Name, ProfilePath."
+        },
+        {
+          "q": "Quel type de partage héberge les profils ?",
+          "options": [
+            "Un partage de service ordinaire",
+            "Un partage dédié, caché, avec des droits particuliers",
+            "Le home",
+            "Le partage SYSVOL"
+          ],
+          "answer": 1,
+          "explain": "S'en écarter produit la panne du profil temporaire."
+        }
+      ]
+    }
+  ]
+}

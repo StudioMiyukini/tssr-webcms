@@ -1,0 +1,351 @@
+{
+  "slug": "linux-apache-virtualhosts",
+  "title": "Apache : hôtes virtuels, pages par défaut et HTTPS",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Les trois discriminants d'Apache :",
+          "options": [
+            "HTTP, HTTPS, FTP",
+            "Dossier, fichier, index",
+            "Nom, mot de passe, port",
+            "L'adresse IP écoutée, le port, le nom demandé"
+          ],
+          "answer": 3,
+          "explain": "Appliqués dans cet ordre."
+        },
+        {
+          "q": "Quel en-tête permet cent sites derrière une seule IP ?",
+          "options": [
+            "Host:",
+            "Accept",
+            "Cookie",
+            "User-Agent"
+          ],
+          "answer": 0,
+          "explain": "Le navigateur envoie le nom tapé."
+        },
+        {
+          "q": "Si aucun ServerName ne correspond, Apache :",
+          "options": [
+            "Refuse",
+            "Renvoie 404",
+            "Sert le premier hôte virtuel déclaré pour cette IP et ce port",
+            "Redirige"
+          ],
+          "answer": 2,
+          "explain": "C'est ça, le site par défaut : une question d'ordre."
+        },
+        {
+          "q": "Pourquoi 000-default.conf ?",
+          "options": [
+            "Numéro de version",
+            "Hasard",
+            "Pour sortir en premier dans l'ordre alphabétique de sites-enabled",
+            "Obligatoire"
+          ],
+          "answer": 2,
+          "explain": "Lu en premier."
+        },
+        {
+          "q": "DirectoryIndex accueil.html index.html :",
+          "options": [
+            "Une redirection",
+            "Une erreur",
+            "Deux sites",
+            "La page d'ouverture : Apache prend la première trouvée"
+          ],
+          "answer": 3,
+          "explain": "Garder index.html en second est une sécurité."
+        },
+        {
+          "q": "Sans page d'index, Apache :",
+          "options": [
+            "Affiche la liste du dossier",
+            "Plante",
+            "Renvoie 404",
+            "Redirige"
+          ],
+          "answer": 0,
+          "explain": "Options -Indexes le coupe."
+        },
+        {
+          "q": "ErrorDocument 404 /erreurs/introuvable.html : le chemin part de :",
+          "options": [
+            "La racine du disque",
+            "/var/www",
+            "/etc/apache2",
+            "La racine du site (DocumentRoot)"
+          ],
+          "answer": 3,
+          "explain": "Commence par /."
+        },
+        {
+          "q": "Pour un site sur le port 8080, il faut aussi :",
+          "options": [
+            "Un certificat",
+            "Rien",
+            "Listen 8080 dans ports.conf",
+            "Un DNS"
+          ],
+          "answer": 2,
+          "explain": "Déclarer le port dans le VirtualHost ne fait pas écouter Apache."
+        },
+        {
+          "q": "Restreindre un site à 192.168.10.50 :",
+          "options": [
+            "Allow from",
+            "iptables",
+            "Require ip 192.168.10.50 dans <Directory>",
+            "Deny all"
+          ],
+          "answer": 2,
+          "explain": "Require ip 192.168.10.0/24 pour un réseau."
+        },
+        {
+          "q": "Order allow,deny sur Apache 2.4 :",
+          "options": [
+            "Obligatoire",
+            "N'est plus compris sans module de compatibilité : le service refuse de démarrer",
+            "Recommandé",
+            "Fonctionne"
+          ],
+          "answer": 1,
+          "explain": "C'est de l'Apache 2.2."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Le test qui ne trompe pas pour le site par défaut :",
+          "options": [
+            "curl -I",
+            "Taper l'IP du serveur : aucun ServerName ne peut correspondre",
+            "ping",
+            "Taper un nom"
+          ],
+          "answer": 1,
+          "explain": "Sans toucher hosts ni DNS."
+        },
+        {
+          "q": "<VirtualHost _default_:80> :",
+          "options": [
+            "Le premier",
+            "Bloque tout",
+            "N'attrape que ce qui n'a pas trouvé preneur",
+            "Est invalide"
+          ],
+          "answer": 2,
+          "explain": "Pour imposer son site par défaut."
+        },
+        {
+          "q": "Où est stocké l'ordre de lecture des sites ?",
+          "options": [
+            "sites-available",
+            "Les liens de /etc/apache2/sites-enabled/, par ordre alphabétique",
+            "ports.conf",
+            "apache2.conf"
+          ],
+          "answer": 1,
+          "explain": "ls -l sites-enabled."
+        },
+        {
+          "q": "La page d'erreur 403 dans un dossier protégé :",
+          "options": [
+            "Sans effet",
+            "Bonne idée",
+            "Recommandé",
+            "L'erreur déclencherait l'erreur : Apache affiche sa page brute"
+          ],
+          "answer": 3,
+          "explain": "La page d'erreur doit être accessible."
+        },
+        {
+          "q": "Accéder à un site sur 8080 :",
+          "options": [
+            "https://site",
+            "site:8080 sans http",
+            "http://intranet.monsite.lan:8080",
+            "http://site"
+          ],
+          "answer": 2,
+          "explain": "Le navigateur suppose 80."
+        },
+        {
+          "q": "Vérifier qu'Apache écoute sur 8080 :",
+          "options": [
+            "curl",
+            "ping",
+            "apache2 -l",
+            "sudo ss -tlnp | grep apache"
+          ],
+          "answer": 3,
+          "explain": "Ports en écoute."
+        },
+        {
+          "q": "Lier un site à une IP précise :",
+          "options": [
+            "<VirtualHost 192.168.10.31:80>",
+            "Listen IP",
+            "ServerAlias",
+            "<VirtualHost *:80>"
+          ],
+          "answer": 0,
+          "explain": "La machine doit posséder cette adresse (alias IP)."
+        },
+        {
+          "q": "Un alias IP est :",
+          "options": [
+            "Un VLAN",
+            "Un nom",
+            "Une carte de plus",
+            "Une seconde adresse sur la même carte physique"
+          ],
+          "answer": 3,
+          "explain": "Interface virtuelle."
+        },
+        {
+          "q": "ServerAlias sert à :",
+          "options": [
+            "Un port",
+            "Un dossier",
+            "Une IP",
+            "Des noms supplémentaires pour le même site"
+          ],
+          "answer": 3,
+          "explain": "Avec ServerName."
+        },
+        {
+          "q": "Options -Indexes :",
+          "options": [
+            "Interdit l'affichage de la liste d'un dossier",
+            "Active l'index",
+            "Désactive le site",
+            "Supprime index.html"
+          ],
+          "answer": 0,
+          "explain": "À poser sur tout site public."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Comment Apache choisit-il concrètement ?",
+          "options": [
+            "Par ordre alphabétique seulement",
+            "Par le nom d'abord",
+            "Au hasard",
+            "D'abord les VirtualHost écoutant sur l'IP et le port de la requête, puis le Host: parmi ceux-là"
+          ],
+          "answer": 3,
+          "explain": "Tout le reste en découle."
+        },
+        {
+          "q": "Deux sites, même IP, même port, noms différents :",
+          "options": [
+            "Deux Apache",
+            "Le cas normal : distinction par ServerName",
+            "Deux cartes",
+            "Impossible"
+          ],
+          "answer": 1,
+          "explain": "Des dizaines de sites sur une IP."
+        },
+        {
+          "q": "ErrorDocument 404 \"Cette page n'existe pas.\" :",
+          "options": [
+            "Un chemin",
+            "Invalide",
+            "Un texte directement, sans fichier",
+            "Une redirection"
+          ],
+          "answer": 2,
+          "explain": "Forme courte."
+        },
+        {
+          "q": "Pour un site en HTTPS, il faut :",
+          "options": [
+            "Rien",
+            "Un alias",
+            "Un certificat, le module ssl, un VirtualHost *:443",
+            "Un port 8080"
+          ],
+          "answer": 2,
+          "explain": "Section HTTPS du cours."
+        },
+        {
+          "q": "Le premier VirtualHost d'un fichier lu en premier devient :",
+          "options": [
+            "Un alias",
+            "Le site par défaut",
+            "Le dernier",
+            "Interdit"
+          ],
+          "answer": 1,
+          "explain": "Question d'ordre de lecture."
+        },
+        {
+          "q": "Beaucoup de tutoriels montrent encore Allow from :",
+          "options": [
+            "Correct",
+            "Mieux",
+            "Syntaxe 2.2 : sur Debian 12 utiliser Require",
+            "Identique"
+          ],
+          "answer": 2,
+          "explain": "Piège fréquent."
+        },
+        {
+          "q": "Un site restreint à un réseau :",
+          "options": [
+            "Require ip 192.168.10.0/24",
+            "Allow 192.168.10.0",
+            "ufw",
+            "Deny"
+          ],
+          "answer": 0,
+          "explain": "Dans <Directory>."
+        },
+        {
+          "q": "Sur Rocky, activer un site :",
+          "options": [
+            "a2ensite",
+            "httpd enable",
+            "Déposer le .conf dans /etc/httpd/conf.d/",
+            "systemctl"
+          ],
+          "answer": 2,
+          "explain": "Pas de sites-enabled."
+        },
+        {
+          "q": "ls -l /etc/apache2/sites-enabled/ montre :",
+          "options": [
+            "Des fichiers",
+            "Rien",
+            "Des dossiers",
+            "Des liens symboliques vers sites-available"
+          ],
+          "answer": 3,
+          "explain": "a2ensite crée le lien."
+        },
+        {
+          "q": "Le cours suivant renvoie aux TP :",
+          "options": [
+            "SSH",
+            "Recherche préalable et hôtes virtuels (corrigés)",
+            "DNS",
+            "Samba"
+          ],
+          "answer": 1,
+          "explain": "TP Apache."
+        }
+      ]
+    }
+  ]
+}

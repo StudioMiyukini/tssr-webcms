@@ -1,0 +1,351 @@
+{
+  "slug": "linux-paquets-essentiels",
+  "title": "Les paquets essentiels",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Après une Debian « tout décoché », que manque-t-il ?",
+          "options": [
+            "Le shell",
+            "sudo, SSH, tree et les outils de diagnostic",
+            "Le noyau",
+            "apt"
+          ],
+          "answer": 1,
+          "explain": "La machine est réellement nue."
+        },
+        {
+          "q": "Vérifier si tree est installé :",
+          "options": [
+            "apt install tree",
+            "tree --version",
+            "dpkg -l | grep tree",
+            "which apt"
+          ],
+          "answer": 2,
+          "explain": "Ou dpkg -s tree, apt list --installed."
+        },
+        {
+          "q": "Trois paquets à installer en premier :",
+          "options": [
+            "vim, git, htop",
+            "sudo et openssh-server (avec apt update d'abord)",
+            "tree, less",
+            "apache2, samba"
+          ],
+          "answer": 1,
+          "explain": "Depuis la console de l'hyperviseur, en su -."
+        },
+        {
+          "q": "Pourquoi Debian n'installe-t-elle pas sudo dans le TP ?",
+          "options": [
+            "sudo est obsolète",
+            "On a donné un mot de passe à root : Debian ne met personne dans le groupe sudo",
+            "sudo est payant",
+            "Bug"
+          ],
+          "answer": 1,
+          "explain": "usermod -aG sudo IDENTIFIANT, puis se reconnecter."
+        },
+        {
+          "q": "Commande pour activer et démarrer SSH :",
+          "options": [
+            "apt start ssh",
+            "service ssh on",
+            "systemctl enable --now ssh",
+            "ssh start"
+          ],
+          "answer": 2,
+          "explain": "enable = au démarrage, --now = tout de suite."
+        },
+        {
+          "q": "tree -L 2 :",
+          "options": [
+            "Deux niveaux de profondeur",
+            "Deux fichiers",
+            "Deux dossiers",
+            "Deux tailles"
+          ],
+          "answer": 0,
+          "explain": "-d dossiers seulement, -h tailles, -a cachés."
+        },
+        {
+          "q": "bash-completion apporte :",
+          "options": [
+            "Un shell",
+            "Un éditeur",
+            "Des couleurs",
+            "La Tab qui complète options et arguments"
+          ],
+          "answer": 3,
+          "explain": "Demande une reconnexion pour s'activer."
+        },
+        {
+          "q": "tmux sert à :",
+          "options": [
+            "Éditer",
+            "Télécharger",
+            "Surveiller",
+            "Garder une session ouverte malgré une coupure SSH"
+          ],
+          "answer": 3,
+          "explain": "tmux attach pour y revenir."
+        },
+        {
+          "q": "Paquet fournissant dig et nslookup :",
+          "options": [
+            "dns-tools",
+            "dnsutils",
+            "resolv",
+            "bind"
+          ],
+          "answer": 1,
+          "explain": "Interroger le DNS."
+        },
+        {
+          "q": "htop montre :",
+          "options": [
+            "Les journaux",
+            "Processus, CPU et mémoire en couleurs",
+            "Les disques",
+            "Le réseau"
+          ],
+          "answer": 1,
+          "explain": "Le top qu'on garde."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "nc -zv srv 445 :",
+          "options": [
+            "Pingue",
+            "Teste un port précis",
+            "Scanne tout",
+            "Télécharge"
+          ],
+          "answer": 1,
+          "explain": "Un ping qui passe ne dit rien du service."
+        },
+        {
+          "q": "mtr par rapport à traceroute :",
+          "options": [
+            "Plus lent",
+            "Sans réseau",
+            "Traceroute continu : révèle les pertes intermittentes",
+            "Identique"
+          ],
+          "answer": 2,
+          "explain": "mtr-tiny."
+        },
+        {
+          "q": "tcpdump -i eth0 port 53 :",
+          "options": [
+            "Résout un nom",
+            "Montre ce qui part vraiment sur le fil pour le DNS",
+            "Configure eth0",
+            "Bloque le DNS"
+          ],
+          "answer": 1,
+          "explain": "L'arbitre des désaccords."
+        },
+        {
+          "q": "net-tools :",
+          "options": [
+            "À connaître, pas à installer : ip et ss remplacent ifconfig/netstat",
+            "À installer d'office",
+            "Obligatoire",
+            "Fournit ip"
+          ],
+          "answer": 0,
+          "explain": "Retarderait l'apprentissage des commandes actuelles."
+        },
+        {
+          "q": "ncdu :",
+          "options": [
+            "Montre où passe la place disque, en navigation interactive",
+            "Copie",
+            "Surveille le CPU",
+            "Compte les processus"
+          ],
+          "answer": 0,
+          "explain": "Trouve en trente secondes ce qu'un du cherche en dix minutes."
+        },
+        {
+          "q": "lsof +L1 :",
+          "options": [
+            "Liste les ports",
+            "Fichiers supprimés mais encore ouverts",
+            "Les fichiers verrouillés",
+            "Les liens"
+          ],
+          "answer": 1,
+          "explain": "La réponse à « périphérique occupé » / disque plein."
+        },
+        {
+          "q": "smartctl -H /dev/sda :",
+          "options": [
+            "Partitionne",
+            "Monte",
+            "Formate",
+            "Dit si le disque est en train de mourir"
+          ],
+          "answer": 3,
+          "explain": "smartmontools."
+        },
+        {
+          "q": "rsync :",
+          "options": [
+            "Copie tout à chaque fois",
+            "Copie en ne transférant que les différences, en préservant droits et ACL",
+            "Compresse",
+            "Monte un partage"
+          ],
+          "answer": 1,
+          "explain": "La base de toute sauvegarde."
+        },
+        {
+          "q": "cifs-utils :",
+          "options": [
+            "Un IDS",
+            "Monter un partage Windows/SMB",
+            "Un éditeur",
+            "Un pare-feu"
+          ],
+          "answer": 1,
+          "explain": "Le pont vers l'infrastructure Microsoft."
+        },
+        {
+          "q": "shellcheck :",
+          "options": [
+            "Compile",
+            "Exécute les scripts",
+            "Chiffre",
+            "Analyse les scripts Bash et trouve les fautes"
+          ],
+          "answer": 3,
+          "explain": "Variables non protégées, comparaisons douteuses."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "« command not found » : quel paquet fournit la commande ?",
+          "options": [
+            "apt-file search bin/nom (après apt-file update)",
+            "which",
+            "type",
+            "dpkg -S"
+          ],
+          "answer": 0,
+          "explain": "dpkg -S fait l'inverse : à quel paquet appartient ce fichier."
+        },
+        {
+          "q": "Sur Rocky, htop et tree demandent :",
+          "options": [
+            "Rien",
+            "Un .deb",
+            "apt",
+            "dnf install epel-release d'abord"
+          ],
+          "answer": 3,
+          "explain": "La moitié de ces paquets n'est pas dans le dépôt de base."
+        },
+        {
+          "q": "Sur un serveur de production, la « ligne unique » :",
+          "options": [
+            "Ne se colle pas : chaque paquet est du code à maintenir, tcpdump/nmap servent aussi l'attaquant",
+            "Est obligatoire",
+            "Est plus sûre",
+            "Se colle telle quelle"
+          ],
+          "answer": 0,
+          "explain": "On installe ce dont on a besoin."
+        },
+        {
+          "q": "unzip est nécessaire car :",
+          "options": [
+            "gzip manque",
+            "tar n'ouvre pas les .zip",
+            "zip est interdit",
+            "tar est absent"
+          ],
+          "answer": 1,
+          "explain": "Ouvrir une archive .zip."
+        },
+        {
+          "q": "sysstat apporte :",
+          "options": [
+            "iostat, sar : l'historique des performances",
+            "lsof",
+            "tmux",
+            "htop"
+          ],
+          "answer": 0,
+          "explain": "Utile quand la panne est passée."
+        },
+        {
+          "q": "curl -I https://site :",
+          "options": [
+            "Teste le service web et affiche les en-têtes",
+            "Télécharge tout",
+            "Ouvre un navigateur",
+            "Bloque le site"
+          ],
+          "answer": 0,
+          "explain": "wget -c pour reprendre un téléchargement."
+        },
+        {
+          "q": "git sur un serveur sert à :",
+          "options": [
+            "Compiler",
+            "Versionner ses scripts et configurations",
+            "Sauvegarder les disques",
+            "Router"
+          ],
+          "answer": 1,
+          "explain": "Un script sur le bureau d'un serveur n'a pas d'historique."
+        },
+        {
+          "q": "vim par rapport à nano :",
+          "options": [
+            "L'éditeur qu'on retrouve sur tous les serveurs ; nano suffit pour débuter",
+            "Identiques",
+            "Inexistant",
+            "Plus simple"
+          ],
+          "answer": 0,
+          "explain": "Y compris sur les serveurs des autres."
+        },
+        {
+          "q": "Un paquet qu'on ne sait pas justifier :",
+          "options": [
+            "N'a rien à faire sur un serveur",
+            "Est utile",
+            "S'installe quand même",
+            "Est gratuit"
+          ],
+          "answer": 0,
+          "explain": "Principe du cours."
+        },
+        {
+          "q": "Tant qu'openssh-server manque :",
+          "options": [
+            "Rien ne change",
+            "On travaille dans la console de l'hyperviseur, sans copier-coller confortable",
+            "Le réseau est coupé",
+            "sudo manque"
+          ],
+          "answer": 1,
+          "explain": "D'où sa place en premier."
+        }
+      ]
+    }
+  ]
+}

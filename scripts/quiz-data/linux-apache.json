@@ -1,0 +1,351 @@
+{
+  "slug": "linux-apache",
+  "title": "Apache : héberger un site web sous Linux",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Paquet Apache sur Debian :",
+          "options": [
+            "httpd",
+            "apache",
+            "www",
+            "apache2"
+          ],
+          "answer": 3,
+          "explain": "httpd sur Rocky/RHEL."
+        },
+        {
+          "q": "Racine web par défaut :",
+          "options": [
+            "/srv/www",
+            "/etc/apache2",
+            "/var/www/html",
+            "/home/www"
+          ],
+          "answer": 2,
+          "explain": "La page « Apache2 Debian Default Page »."
+        },
+        {
+          "q": "Utilisateur sous lequel tourne Apache (Debian) :",
+          "options": [
+            "www-data",
+            "nobody",
+            "apache",
+            "root"
+          ],
+          "answer": 0,
+          "explain": "apache sur Rocky ; équivalent d'IIS_IUSRS."
+        },
+        {
+          "q": "Où déclarer un hôte virtuel ?",
+          "options": [
+            "/etc/apache2/sites-available/",
+            "/var/www",
+            "/etc/hosts",
+            "/etc/apache2/sites-enabled/"
+          ],
+          "answer": 0,
+          "explain": "Puis a2ensite crée le lien dans sites-enabled."
+        },
+        {
+          "q": "Activer un site :",
+          "options": [
+            "systemctl enable monsite",
+            "a2enmod",
+            "a2ensite monsite.conf",
+            "apache2 enable"
+          ],
+          "answer": 2,
+          "explain": "a2dissite pour désactiver."
+        },
+        {
+          "q": "Vérifier la syntaxe avant de recharger :",
+          "options": [
+            "testparm",
+            "apache2ctl configtest",
+            "apache2 -t",
+            "systemctl check"
+          ],
+          "answer": 1,
+          "explain": "Puis systemctl reload apache2."
+        },
+        {
+          "q": "Directive qui indique le dossier du site :",
+          "options": [
+            "ServerName",
+            "DocumentRoot",
+            "Listen",
+            "ErrorLog"
+          ],
+          "answer": 1,
+          "explain": "DocumentRoot /var/www/monsite."
+        },
+        {
+          "q": "Directive qui indique le nom du site :",
+          "options": [
+            "DocumentRoot",
+            "Require",
+            "CustomLog",
+            "ServerName"
+          ],
+          "answer": 3,
+          "explain": "www.monsite.lan."
+        },
+        {
+          "q": "Pourquoi chown -R www-data:www-data /var/www/monsite ?",
+          "options": [
+            "Pour le port",
+            "Pour le DNS",
+            "Les fichiers doivent être lisibles par l'utilisateur d'Apache",
+            "Par style"
+          ],
+          "answer": 2,
+          "explain": "Sinon 403."
+        },
+        {
+          "q": "Ouvrir le pare-feu pour le web :",
+          "options": [
+            "ufw enable",
+            "sudo ufw allow 80/tcp",
+            "iptables -F",
+            "ufw allow ssh"
+          ],
+          "answer": 1,
+          "explain": "firewall-cmd --add-service=http sur Rocky."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Sur Rocky, a2ensite :",
+          "options": [
+            "N'existe pas : tout .conf dans /etc/httpd/conf.d/ est actif",
+            "Est httpd-ensite",
+            "Est un alias",
+            "Existe"
+          ],
+          "answer": 0,
+          "explain": "Pas de sites-available/sites-enabled."
+        },
+        {
+          "q": "Tester le serveur en local :",
+          "options": [
+            "curl http://localhost/",
+            "cat index.html",
+            "ss",
+            "ping localhost"
+          ],
+          "answer": 0,
+          "explain": "Réponse du serveur."
+        },
+        {
+          "q": "Apache écoute-t-il sur 80 ?",
+          "options": [
+            "sudo ss -tlnp | grep :80",
+            "apache2 -p",
+            "ping 80",
+            "ip a"
+          ],
+          "answer": 0,
+          "explain": "Ports en écoute."
+        },
+        {
+          "q": "Pour joindre www.monsite.lan :",
+          "options": [
+            "Un certificat",
+            "Un VLAN",
+            "Rien",
+            "Un enregistrement DNS A vers l'IP du serveur, ou le fichier hosts du client"
+          ],
+          "answer": 3,
+          "explain": "Sinon tester par l'IP."
+        },
+        {
+          "q": "Désactiver le site par défaut :",
+          "options": [
+            "a2dissite 000-default.conf",
+            "a2ensite off",
+            "rm 000-default",
+            "systemctl stop default"
+          ],
+          "answer": 0,
+          "explain": "Optionnel."
+        },
+        {
+          "q": "Journal d'erreurs d'un site :",
+          "options": [
+            "/var/log/syslog",
+            "journalctl seulement",
+            "/var/www/log",
+            "${APACHE_LOG_DIR}/monsite-error.log"
+          ],
+          "answer": 3,
+          "explain": "ErrorLog dans le VirtualHost."
+        },
+        {
+          "q": "reload vs restart pour Apache :",
+          "options": [
+            "Identiques",
+            "restart est mieux",
+            "reload redémarre",
+            "reload relit la conf sans couper les connexions"
+          ],
+          "answer": 3,
+          "explain": "Après a2ensite."
+        },
+        {
+          "q": "Le pendant d'Apache côté Microsoft :",
+          "options": [
+            "Hyper-V",
+            "AD",
+            "IIS",
+            "Exchange"
+          ],
+          "answer": 2,
+          "explain": "Lien du cours."
+        },
+        {
+          "q": "Configuration Apache sur Rocky :",
+          "options": [
+            "/opt/httpd",
+            "/etc/httpd/",
+            "/etc/apache2/",
+            "/etc/www/"
+          ],
+          "answer": 1,
+          "explain": "Utilisateur apache."
+        },
+        {
+          "q": "Déposer une page avec sudo :",
+          "options": [
+            "sudo echo >",
+            "echo \"<h1>Mon site</h1>\" | sudo tee /var/www/monsite/index.html",
+            "cat >>",
+            "echo > fichier"
+          ],
+          "answer": 1,
+          "explain": "La redirection > n'hérite pas de sudo, tee si."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Un site répond par IP mais pas par nom :",
+          "options": [
+            "Droits",
+            "Apache",
+            "DNS ou hosts",
+            "Pare-feu"
+          ],
+          "answer": 2,
+          "explain": "La résolution manque."
+        },
+        {
+          "q": "403 Forbidden sur son site :",
+          "options": [
+            "DNS",
+            "Pare-feu",
+            "Droits : www-data ne peut pas lire les fichiers",
+            "Port"
+          ],
+          "answer": 2,
+          "explain": "chown / chmod."
+        },
+        {
+          "q": "Le site ne répond pas du tout depuis un autre poste :",
+          "options": [
+            "Fichier index",
+            "DNS",
+            "VirtualHost",
+            "Pare-feu : port 80 fermé"
+          ],
+          "answer": 3,
+          "explain": "curl localhost marche, pas depuis l'extérieur."
+        },
+        {
+          "q": "Plusieurs sites sur une machine grâce :",
+          "options": [
+            "À plusieurs Apache",
+            "Au DNS seul",
+            "À plusieurs disques",
+            "Aux hôtes virtuels"
+          ],
+          "answer": 3,
+          "explain": "Un fichier par site."
+        },
+        {
+          "q": "CustomLog … combined :",
+          "options": [
+            "Journal d'accès au format combiné",
+            "Erreurs",
+            "Chiffrement",
+            "Config"
+          ],
+          "answer": 0,
+          "explain": "Requêtes reçues."
+        },
+        {
+          "q": "Sur Rocky, sans firewall-cmd --add-service=http :",
+          "options": [
+            "Le site ne répond à personne",
+            "Tout marche",
+            "Apache ne démarre pas",
+            "DNS cassé"
+          ],
+          "answer": 0,
+          "explain": "firewalld actif d'office."
+        },
+        {
+          "q": "Ordre correct pour un nouveau site :",
+          "options": [
+            "a2ensite, reload, écrire",
+            "Créer le .conf, a2ensite, configtest, reload",
+            "reload, a2ensite, configtest",
+            "configtest, écrire, reload"
+          ],
+          "answer": 1,
+          "explain": "configtest avant reload."
+        },
+        {
+          "q": "<VirtualHost *:80> signifie :",
+          "options": [
+            "Port 443",
+            "Une IP précise",
+            "Toutes les IP, port 80",
+            "Tous les ports"
+          ],
+          "answer": 2,
+          "explain": "* = toute adresse du serveur."
+        },
+        {
+          "q": "Pour aller plus loin (plusieurs sites, HTTPS), le cours renvoie à :",
+          "options": [
+            "DNS",
+            "Samba",
+            "IIS",
+            "Apache : hôtes virtuels, pages par défaut et HTTPS"
+          ],
+          "answer": 3,
+          "explain": "Et aux corrigés des TP."
+        },
+        {
+          "q": "systemctl enable apache2 sert à :",
+          "options": [
+            "Tester",
+            "Démarrer maintenant",
+            "Recharger",
+            "Démarrer au boot"
+          ],
+          "answer": 3,
+          "explain": "Voir le cours systemd."
+        }
+      ]
+    }
+  ]
+}

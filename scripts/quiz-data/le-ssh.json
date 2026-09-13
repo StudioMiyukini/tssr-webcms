@@ -1,0 +1,351 @@
+{
+  "slug": "le-ssh",
+  "title": "SSH (Secure Shell)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Quel port utilise SSH par défaut ?",
+          "options": [
+            "22",
+            "443",
+            "23",
+            "21"
+          ],
+          "answer": 0,
+          "explain": "22 ; Telnet (23) faisait la même chose en clair."
+        },
+        {
+          "q": "SSH remplace :",
+          "options": [
+            "FTP",
+            "HTTP",
+            "Telnet",
+            "RDP"
+          ],
+          "answer": 2,
+          "explain": "Telnet transmettait mots de passe et commandes en clair."
+        },
+        {
+          "q": "Le service SSH côté serveur Linux s'appelle :",
+          "options": [
+            "telnetd",
+            "sshc",
+            "sshd",
+            "openssh-client"
+          ],
+          "answer": 2,
+          "explain": "sshd, configuré dans /etc/ssh/sshd_config."
+        },
+        {
+          "q": "Commande pour se connecter à 192.168.10.10 avec le compte admin :",
+          "options": [
+            "ssh admin@192.168.10.10",
+            "ssh -u admin 192.168.10.10",
+            "connect admin 192.168.10.10",
+            "ssh 192.168.10.10 admin"
+          ],
+          "answer": 0,
+          "explain": "ssh utilisateur@hôte ; autre syntaxe : ssh -l admin hôte."
+        },
+        {
+          "q": "Quelle clé ne doit JAMAIS être partagée ?",
+          "options": [
+            "id_rsa",
+            "id_rsa.pub",
+            "authorized_keys",
+            "known_hosts"
+          ],
+          "answer": 0,
+          "explain": "id_rsa est la clé privée."
+        },
+        {
+          "q": "Où dépose-t-on la clé publique sur le serveur ?",
+          "options": [
+            "authorized_keys",
+            "sshd_config",
+            "id_rsa",
+            "known_hosts"
+          ],
+          "answer": 0,
+          "explain": "La liste des clés publiques autorisées."
+        },
+        {
+          "q": "À quoi sert known_hosts ?",
+          "options": [
+            "Aux mots de passe",
+            "Aux empreintes des serveurs déjà visités (détecte l'usurpation)",
+            "Aux ports",
+            "Aux clés privées"
+          ],
+          "answer": 1,
+          "explain": "Côté client."
+        },
+        {
+          "q": "Commande pour générer une paire de clés :",
+          "options": [
+            "keygen ssh",
+            "ssh-keygen -t rsa -b 4096",
+            "ssh -i",
+            "ssh-copy-id"
+          ],
+          "answer": 1,
+          "explain": "Une fois sur son poste."
+        },
+        {
+          "q": "Commande pour copier sa clé publique sur un serveur :",
+          "options": [
+            "ssh-copy-id utilisateur@hôte",
+            "ssh-keygen -c",
+            "scp id_rsa",
+            "ssh-add"
+          ],
+          "answer": 0,
+          "explain": "L'ajoute à authorized_keys."
+        },
+        {
+          "q": "Commande pour se connecter sur le port 2222 :",
+          "options": [
+            "ssh --port 2222",
+            "ssh -P 2222 user@hôte",
+            "ssh -p 2222 user@hôte",
+            "ssh user@hôte:2222"
+          ],
+          "answer": 2,
+          "explain": "-p minuscule pour ssh (majuscule pour scp)."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Copier fichier.txt vers /tmp du serveur :",
+          "options": [
+            "cp fichier.txt user@hôte",
+            "scp fichier.txt user@hôte:/tmp/",
+            "ssh fichier.txt user@hôte",
+            "sftp fichier.txt"
+          ],
+          "answer": 1,
+          "explain": "scp = copie via SSH."
+        },
+        {
+          "q": "Copier un dossier entier avec scp :",
+          "options": [
+            "scp -r dossier/ user@hôte:/chemin/",
+            "scp -a",
+            "scp --all",
+            "scp -d"
+          ],
+          "answer": 0,
+          "explain": "-r = récursif."
+        },
+        {
+          "q": "Session de transfert interactive :",
+          "options": [
+            "ftp",
+            "ssh -t",
+            "scp",
+            "sftp user@hôte (put, get, ls, cd)"
+          ],
+          "answer": 3,
+          "explain": "sftp passe par SSH."
+        },
+        {
+          "q": "Réglage sshd_config pour interdire root :",
+          "options": [
+            "RootLogin off",
+            "DenyRoot yes",
+            "NoRoot",
+            "PermitRootLogin no"
+          ],
+          "answer": 3,
+          "explain": "Utiliser un compte + sudo."
+        },
+        {
+          "q": "Réglage pour forcer les clés :",
+          "options": [
+            "UseKeys",
+            "KeysOnly yes",
+            "PasswordAuthentication no",
+            "AuthKeys"
+          ],
+          "answer": 2,
+          "explain": "Plus de mot de passe accepté."
+        },
+        {
+          "q": "Après modification de sshd_config :",
+          "options": [
+            "ssh reload",
+            "systemctl restart ssh",
+            "reboot",
+            "Rien"
+          ],
+          "answer": 1,
+          "explain": "systemctl status ssh pour vérifier."
+        },
+        {
+          "q": "Mode verbeux pour déboguer :",
+          "options": [
+            "ssh -v user@hôte",
+            "ssh --debug",
+            "ssh -d",
+            "ssh -x"
+          ],
+          "answer": 0,
+          "explain": "Affiche le détail de la connexion."
+        },
+        {
+          "q": "Sur Cisco, générer les clés RSA :",
+          "options": [
+            "generate rsa",
+            "ip ssh key",
+            "ssh keygen",
+            "crypto key generate rsa"
+          ],
+          "answer": 3,
+          "explain": "Après hostname et ip domain-name."
+        },
+        {
+          "q": "Sur Cisco, n'autoriser que SSH sur les VTY :",
+          "options": [
+            "transport input telnet",
+            "transport input ssh",
+            "ssh only",
+            "line ssh"
+          ],
+          "answer": 1,
+          "explain": "Interdit Telnet."
+        },
+        {
+          "q": "Forcer la version 2 sur Cisco :",
+          "options": [
+            "crypto ssh 2",
+            "ip ssh version 2",
+            "ssh version two",
+            "ssh v2"
+          ],
+          "answer": 1,
+          "explain": "La v1 est moins sûre."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Utiliser une clé privée précise :",
+          "options": [
+            "ssh -i ~/.ssh/ma_cle user@hôte",
+            "ssh --key",
+            "ssh -k",
+            "ssh -c"
+          ],
+          "answer": 0,
+          "explain": "-i = identity file."
+        },
+        {
+          "q": "Pourquoi vérifier l'empreinte à la première connexion ?",
+          "options": [
+            "Pour se protéger d'une usurpation du serveur",
+            "C'est décoratif",
+            "Pour le mot de passe",
+            "Pour la vitesse"
+          ],
+          "answer": 0,
+          "explain": "L'empreinte est ensuite mémorisée dans known_hosts."
+        },
+        {
+          "q": "Que vérifie le serveur lors d'une authentification par clé ?",
+          "options": [
+            "L'adresse MAC",
+            "Que le client possède la clé privée correspondant à la clé publique déposée",
+            "Le mot de passe",
+            "Le nom d'hôte"
+          ],
+          "answer": 1,
+          "explain": "Pas de mot de passe à retaper."
+        },
+        {
+          "q": "Le modèle de SSH :",
+          "options": [
+            "Broadcast",
+            "Client / serveur",
+            "Multicast",
+            "Pair à pair"
+          ],
+          "answer": 1,
+          "explain": "Un serveur écoute, un client se connecte."
+        },
+        {
+          "q": "Vérifier que SSH est actif sur un équipement Cisco :",
+          "options": [
+            "show ip ssh",
+            "show line",
+            "show crypto",
+            "show ssh status"
+          ],
+          "answer": 0,
+          "explain": "Version et paramètres."
+        },
+        {
+          "q": "Syntaxe utilisée sur Cisco pour se connecter :",
+          "options": [
+            "ssh 192.168.10.254 -u admin",
+            "telnet",
+            "ssh admin@192.168.10.254",
+            "ssh -l admin 192.168.10.254"
+          ],
+          "answer": 3,
+          "explain": "-l = login."
+        },
+        {
+          "q": "Copier un fichier du serveur vers le dossier courant :",
+          "options": [
+            "scp . user@hôte:/chemin/f.txt",
+            "get f.txt",
+            "scp user@hôte:/chemin/f.txt .",
+            "scp -r . f.txt"
+          ],
+          "answer": 2,
+          "explain": "Le . = dossier courant."
+        },
+        {
+          "q": "Quatre bonnes pratiques : laquelle n'en est PAS une ?",
+          "options": [
+            "Désactiver Telnet",
+            "Vérifier l'empreinte",
+            "Préférer les clés",
+            "Autoriser root en direct"
+          ],
+          "answer": 3,
+          "explain": "On interdit root et on utilise un compte + sudo."
+        },
+        {
+          "q": "Où se trouvent les fichiers de clés côté client ?",
+          "options": [
+            "/var/ssh",
+            "/root",
+            "/etc/ssh",
+            "~/.ssh"
+          ],
+          "answer": 3,
+          "explain": "id_rsa, id_rsa.pub, known_hosts."
+        },
+        {
+          "q": "Un port SSH personnalisé (ex. 2222) :",
+          "options": [
+            "Réduit le bruit des balayages, la sécurité reste les clés",
+            "Sécurise totalement",
+            "Désactive scp",
+            "Est interdit"
+          ],
+          "answer": 0,
+          "explain": "Cohérent avec le TP « Sécuriser SSH : port et clés »."
+        }
+      ]
+    }
+  ]
+}

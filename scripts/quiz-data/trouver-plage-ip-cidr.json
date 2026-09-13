@@ -1,0 +1,351 @@
+{
+  "slug": "trouver-plage-ip-cidr",
+  "title": "Trouver une plage d’IP (IP + CIDR)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Première étape de la procédure du cours :",
+          "options": [
+            "Chercher le broadcast",
+            "Convertir l'IP en binaire",
+            "Écrire le masque du /CIDR et repérer l'octet intéressant",
+            "Calculer les hôtes"
+          ],
+          "answer": 2,
+          "explain": "On part du masque : l'octet intéressant est le seul qui n'est ni 255 ni 0."
+        },
+        {
+          "q": "Masque de /26 ?",
+          "options": [
+            "255.255.255.0",
+            "255.255.255.224",
+            "255.255.255.128",
+            "255.255.255.192"
+          ],
+          "answer": 3,
+          "explain": "/26 → 192 dans le 4ᵉ octet."
+        },
+        {
+          "q": "Nombre magique pour 172.16.20.130/26 ?",
+          "options": [
+            "32",
+            "64",
+            "128",
+            "192"
+          ],
+          "answer": 1,
+          "explain": "256 − 192 = 64 → blocs 0, 64, 128, 192."
+        },
+        {
+          "q": "Adresse réseau de 172.16.20.130/26 ?",
+          "options": [
+            "172.16.20.64",
+            "172.16.20.128",
+            "172.16.20.0",
+            "172.16.20.130"
+          ],
+          "answer": 1,
+          "explain": "Multiple de 64 ≤ 130 = 128."
+        },
+        {
+          "q": "Broadcast de 172.16.20.130/26 ?",
+          "options": [
+            "172.16.20.159",
+            "172.16.20.192",
+            "172.16.20.191",
+            "172.16.20.255"
+          ],
+          "answer": 2,
+          "explain": "128 + 64 − 1 = 191."
+        },
+        {
+          "q": "Plage utilisable de 172.16.20.130/26 ?",
+          "options": [
+            ".129 → .191",
+            ".128 → .190",
+            ".129 → .190",
+            ".128 → .191"
+          ],
+          "answer": 2,
+          "explain": "Réseau + 1 → broadcast − 1."
+        },
+        {
+          "q": "Nombre d'hôtes de 172.16.20.130/26 ?",
+          "options": [
+            "60",
+            "62",
+            "64",
+            "63"
+          ],
+          "answer": 1,
+          "explain": "2^(32−26) − 2 = 62."
+        },
+        {
+          "q": "L'adresse réseau et le broadcast sont :",
+          "options": [
+            "Non attribuables à une machine",
+            "Réservées au DNS",
+            "Réservées à la passerelle",
+            "Attribuables à un serveur"
+          ],
+          "answer": 0,
+          "explain": "C'est pourquoi on retire 2 au nombre d'adresses."
+        },
+        {
+          "q": "Pour un /24 pile, quel est le bloc ?",
+          "options": [
+            "1",
+            "256 (tout le 4ᵉ octet)",
+            "64",
+            "128"
+          ],
+          "answer": 1,
+          "explain": "L'octet intéressant vaut 0 → nombre magique 256."
+        },
+        {
+          "q": "À droite de l'octet intéressant, pour l'adresse réseau on met :",
+          "options": [
+            "L'octet de l'IP",
+            "Le magic",
+            "0",
+            "255"
+          ],
+          "answer": 2,
+          "explain": "0 pour le réseau, 255 pour le broadcast, et à gauche on recopie l'IP."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Adresse réseau de 192.168.5.77/27 ?",
+          "options": [
+            "192.168.5.32",
+            "192.168.5.96",
+            "192.168.5.0",
+            "192.168.5.64"
+          ],
+          "answer": 3,
+          "explain": "/27 → magic 32 ; 77 ∈ [64–95]."
+        },
+        {
+          "q": "Broadcast de 192.168.5.77/27 ?",
+          "options": [
+            "192.168.5.95",
+            "192.168.5.127",
+            "192.168.5.94",
+            "192.168.5.96"
+          ],
+          "answer": 0,
+          "explain": "64 + 32 − 1 = 95."
+        },
+        {
+          "q": "Hôtes d'un /27 ?",
+          "options": [
+            "14",
+            "30",
+            "32",
+            "62"
+          ],
+          "answer": 1,
+          "explain": "2⁵ − 2 = 30."
+        },
+        {
+          "q": "Adresse réseau de 10.1.1.250/28 ?",
+          "options": [
+            "10.1.1.240",
+            "10.1.1.224",
+            "10.1.1.0",
+            "10.1.1.248"
+          ],
+          "answer": 0,
+          "explain": "/28 → magic 16 ; 250 ∈ [240–255]."
+        },
+        {
+          "q": "Dernière adresse utilisable de 10.1.1.250/28 ?",
+          "options": [
+            "10.1.1.253",
+            "10.1.1.254",
+            "10.1.1.249",
+            "10.1.1.255"
+          ],
+          "answer": 1,
+          "explain": "Broadcast .255 → dernier hôte .254."
+        },
+        {
+          "q": "Nombre magique d'un /29 ?",
+          "options": [
+            "8",
+            "4",
+            "16",
+            "248"
+          ],
+          "answer": 0,
+          "explain": "256 − 248 = 8."
+        },
+        {
+          "q": "Adresse réseau de 192.168.0.13/29 ?",
+          "options": [
+            "192.168.0.12",
+            "192.168.0.8",
+            "192.168.0.16",
+            "192.168.0.0"
+          ],
+          "answer": 1,
+          "explain": "Blocs de 8 : 13 ∈ [8–15]."
+        },
+        {
+          "q": "Combien d'adresses (brut) dans un /30 ?",
+          "options": [
+            "1",
+            "4",
+            "8",
+            "2"
+          ],
+          "answer": 1,
+          "explain": "4 adresses, dont 2 hôtes."
+        },
+        {
+          "q": "Première adresse utilisable de 172.16.8.0/22 ?",
+          "options": [
+            "172.16.9.1",
+            "172.16.8.0",
+            "172.16.8.1",
+            "172.16.0.1"
+          ],
+          "answer": 2,
+          "explain": "/22 → magic 4 sur le 3ᵉ octet ; 8 est un multiple de 4 → réseau 172.16.8.0, premier hôte .8.1."
+        },
+        {
+          "q": "Broadcast de 172.16.8.0/22 ?",
+          "options": [
+            "172.16.8.255",
+            "172.16.12.255",
+            "172.16.11.255",
+            "172.16.9.255"
+          ],
+          "answer": 2,
+          "explain": "3ᵉ octet : 8 + 4 − 1 = 11 ; 4ᵉ octet 255."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Adresse réseau de 10.200.45.17/20 ?",
+          "options": [
+            "10.200.0.0",
+            "10.200.40.0",
+            "10.200.45.0",
+            "10.200.32.0"
+          ],
+          "answer": 3,
+          "explain": "/20 → magic 16 sur le 3ᵉ octet ; 45 ∈ [32–47]."
+        },
+        {
+          "q": "Broadcast de 10.200.45.17/20 ?",
+          "options": [
+            "10.200.63.255",
+            "10.200.45.255",
+            "10.200.47.255",
+            "10.200.48.255"
+          ],
+          "answer": 2,
+          "explain": "32 + 16 − 1 = 47."
+        },
+        {
+          "q": "Hôtes d'un /20 ?",
+          "options": [
+            "1 022",
+            "4 094",
+            "2 046",
+            "8 190"
+          ],
+          "answer": 1,
+          "explain": "2^12 − 2 = 4 094."
+        },
+        {
+          "q": "172.16.130.5/17 : adresse réseau ?",
+          "options": [
+            "172.16.128.0",
+            "172.16.64.0",
+            "172.16.0.0",
+            "172.16.130.0"
+          ],
+          "answer": 0,
+          "explain": "/17 → magic 128 ; 130 ∈ [128–255]."
+        },
+        {
+          "q": "Les deux IP 192.168.1.60/26 et 192.168.1.70/26 sont-elles dans le même sous-réseau ?",
+          "options": [
+            "Oui car même /26",
+            "Non : .60 ∈ [0–63], .70 ∈ [64–127]",
+            "Oui",
+            "Impossible à savoir"
+          ],
+          "answer": 1,
+          "explain": "Blocs de 64 : elles tombent dans deux blocs différents."
+        },
+        {
+          "q": "Quel piège du cours concerne le nombre d'hôtes ?",
+          "options": [
+            "Compter le masque",
+            "Oublier le DNS",
+            "Confondre hôtes (−2) et taille brute du bloc",
+            "Ajouter 2"
+          ],
+          "answer": 2,
+          "explain": "Le bloc /26 fait 64 adresses mais 62 hôtes."
+        },
+        {
+          "q": "Combien d'hôtes utilisables dans un /23 ?",
+          "options": [
+            "1 022",
+            "254",
+            "510",
+            "512"
+          ],
+          "answer": 2,
+          "explain": "2⁹ − 2 = 510."
+        },
+        {
+          "q": "203.0.113.200/25 : plage utilisable ?",
+          "options": [
+            ".1 → .126",
+            ".201 → .254",
+            ".128 → .255",
+            ".129 → .254"
+          ],
+          "answer": 3,
+          "explain": "Réseau .128, broadcast .255 → hôtes .129 → .254."
+        },
+        {
+          "q": "Un /30 relie deux routeurs : adresses des interfaces pour 10.0.0.4/30 ?",
+          "options": [
+            ".4 et .5",
+            ".5 et .6",
+            ".6 et .7",
+            ".4 et .7"
+          ],
+          "answer": 1,
+          "explain": "Réseau .4, broadcast .7, hôtes .5 et .6."
+        },
+        {
+          "q": "Le nombre magique s'applique :",
+          "options": [
+            "Sur le premier octet",
+            "Sur tous les octets",
+            "Uniquement sur l'octet intéressant",
+            "Sur le CIDR"
+          ],
+          "answer": 2,
+          "explain": "À gauche on recopie l'IP, à droite 0 ou 255."
+        }
+      ]
+    }
+  ]
+}

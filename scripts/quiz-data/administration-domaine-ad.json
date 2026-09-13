@@ -1,0 +1,351 @@
+{
+  "slug": "administration-domaine-ad",
+  "title": "Administration d’un domaine AD (FSMO, SYSVOL, approbations, délégation)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Que signifie FSMO ?",
+          "options": [
+            "File System Master Owner",
+            "Flexible Single Master Operations",
+            "Fast Single Master Operations",
+            "Forest Schema Master Object"
+          ],
+          "answer": 1,
+          "explain": "Des fonctions uniques tenues par un seul serveur."
+        },
+        {
+          "q": "Combien de rôles FSMO existent ?",
+          "options": [
+            "5 : 2 forêt + 3 domaine",
+            "7",
+            "3",
+            "2"
+          ],
+          "answer": 0,
+          "explain": "Schéma, attribution de noms (forêt) ; RID, PDC, infrastructure (domaine)."
+        },
+        {
+          "q": "AD est par défaut :",
+          "options": [
+            "Centralisé sur un seul DC",
+            "En lecture seule",
+            "Mono-maître",
+            "Multi-maître : chaque DC peut écrire"
+          ],
+          "answer": 3,
+          "explain": "Sauf pour les opérations sensibles confiées aux FSMO."
+        },
+        {
+          "q": "Rôle qui seul peut modifier le schéma :",
+          "options": [
+            "PDC Emulator",
+            "RID Master",
+            "Infrastructure Master",
+            "Schema Master"
+          ],
+          "answer": 3,
+          "explain": "Niveau forêt."
+        },
+        {
+          "q": "Rôle qui contrôle l'ajout/suppression de domaines dans la forêt :",
+          "options": [
+            "PDC Emulator",
+            "Schema Master",
+            "RID Master",
+            "Domain Naming Master"
+          ],
+          "answer": 3,
+          "explain": "Niveau forêt."
+        },
+        {
+          "q": "Rôle qui distribue des blocs de RID pour fabriquer des SID uniques :",
+          "options": [
+            "GC",
+            "PDC Emulator",
+            "RID Master",
+            "Infrastructure Master"
+          ],
+          "answer": 2,
+          "explain": "Niveau domaine."
+        },
+        {
+          "q": "Rôle référence pour mots de passe, verrouillages et heure :",
+          "options": [
+            "Schema Master",
+            "PDC Emulator",
+            "RID Master",
+            "Infrastructure Master"
+          ],
+          "answer": 1,
+          "explain": "Niveau domaine."
+        },
+        {
+          "q": "Commande pour voir qui détient les FSMO :",
+          "options": [
+            "gpresult",
+            "show fsmo",
+            "netdom query fsmo",
+            "dcdiag /fsmo"
+          ],
+          "answer": 2,
+          "explain": "netdom query fsmo."
+        },
+        {
+          "q": "SYSVOL contient principalement :",
+          "options": [
+            "Les GPO (fichiers) et les scripts de connexion",
+            "Les mots de passe",
+            "La base NTDS",
+            "Les profils"
+          ],
+          "answer": 0,
+          "explain": "C:\\Windows\\SYSVOL, répliqué entre DC."
+        },
+        {
+          "q": "Une relation d'approbation permet :",
+          "options": [
+            "De répliquer SYSVOL",
+            "Aux utilisateurs d'un domaine d'accéder aux ressources d'un autre",
+            "De changer de schéma",
+            "De créer des UO"
+          ],
+          "answer": 1,
+          "explain": "Lien de confiance entre domaines ou forêts."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Transfert vs saisie d'un rôle FSMO :",
+          "options": [
+            "Saisie = propre",
+            "Identiques",
+            "Transfert = forcé",
+            "Transfert quand le DC source est disponible ; saisie (seize) quand il est définitivement perdu"
+          ],
+          "answer": 3,
+          "explain": "Ne saisir que si l'ancien DC ne reviendra jamais."
+        },
+        {
+          "q": "Approbation transitive :",
+          "options": [
+            "Si A approuve B et B approuve C, A approuve C",
+            "Un seul sens",
+            "A approuve B seulement",
+            "Interdite"
+          ],
+          "answer": 0,
+          "explain": "Définition de la transitivité."
+        },
+        {
+          "q": "Approbations au sein d'une même forêt :",
+          "options": [
+            "Unidirectionnelles",
+            "Automatiques, bidirectionnelles et transitives (parent-enfant, arbre-racine)",
+            "Inexistantes",
+            "Manuelles"
+          ],
+          "answer": 1,
+          "explain": "Tous les domaines de la forêt se font confiance."
+        },
+        {
+          "q": "Approbation externe :",
+          "options": [
+            "Automatique",
+            "Non transitive, entre deux domaines de forêts différentes",
+            "Transitive",
+            "Réservée à Linux"
+          ],
+          "answer": 1,
+          "explain": "Manuelle, uni ou bidirectionnelle."
+        },
+        {
+          "q": "Approbation de raccourci (shortcut) :",
+          "options": [
+            "Relie deux forêts",
+            "Est automatique",
+            "Accélère l'authentification entre deux domaines d'une grande forêt",
+            "Est non transitive"
+          ],
+          "answer": 2,
+          "explain": "Manuelle, transitive."
+        },
+        {
+          "q": "Prérequis incontournable à une approbation entre forêts :",
+          "options": [
+            "Même schéma",
+            "La résolution DNS entre les deux côtés (redirecteur conditionnel)",
+            "Même mot de passe admin",
+            "Même site"
+          ],
+          "answer": 1,
+          "explain": "Sinon l'approbation échoue."
+        },
+        {
+          "q": "Console pour créer une approbation :",
+          "options": [
+            "dsa.msc",
+            "dnsmgmt.msc",
+            "gpmc.msc",
+            "domain.msc (Domaines et approbations AD)"
+          ],
+          "answer": 3,
+          "explain": "Ou netdom trust … /add."
+        },
+        {
+          "q": "L'authentification sélective :",
+          "options": [
+            "Autorise explicitement, ressource par ressource, via « Autorisé à s'authentifier »",
+            "Désactive Kerberos",
+            "Autorise tout le monde",
+            "Est le défaut"
+          ],
+          "answer": 0,
+          "explain": "Plus sûr en inter-entreprises."
+        },
+        {
+          "q": "La délégation de contrôle :",
+          "options": [
+            "Crée des GPO",
+            "Accorde des droits précis sur une portion de l'annuaire (une UO) sans être admin du domaine",
+            "Donne les droits d'admin du domaine",
+            "Réplique SYSVOL"
+          ],
+          "answer": 1,
+          "explain": "Principe du moindre privilège."
+        },
+        {
+          "q": "On délègue de préférence à :",
+          "options": [
+            "Tout le domaine",
+            "Un groupe, au niveau d'une UO, pour des tâches précises",
+            "Un ordinateur",
+            "Une personne"
+          ],
+          "answer": 1,
+          "explain": "Plus simple à maintenir."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Que fait le SID filtering ?",
+          "options": [
+            "Crée des RID",
+            "Chiffre les SID",
+            "Neutralise les élévations de privilège par SIDHistory falsifié",
+            "Supprime les SID"
+          ],
+          "answer": 2,
+          "explain": "Actif par défaut sur les approbations externes et de forêt."
+        },
+        {
+          "q": "Port du catalogue global :",
+          "options": [
+            "636",
+            "389",
+            "88",
+            "3268"
+          ],
+          "answer": 3,
+          "explain": "Recherche dans toute la forêt, authentification via UPN."
+        },
+        {
+          "q": "La réplication AD synchronise :",
+          "options": [
+            "Seulement les GPO",
+            "Les fichiers utilisateurs",
+            "Les profils",
+            "NTDS.dit (annuaire) et SYSVOL (GPO, scripts)"
+          ],
+          "answer": 3,
+          "explain": "Multi-maître, cohérence et tolérance de panne."
+        },
+        {
+          "q": "Un site AD représente :",
+          "options": [
+            "Une forêt",
+            "Un domaine",
+            "La topologie physique : des sous-réseaux bien connectés (un lieu)",
+            "Une UO"
+          ],
+          "answer": 2,
+          "explain": "Indépendant de la structure logique."
+        },
+        {
+          "q": "Exemple de délégation du cours :",
+          "options": [
+            "Support-N1 réinitialise les mots de passe de l'UO Toulouse seulement",
+            "Support-N1 modifie le schéma",
+            "Support-N1 devient Admin du domaine",
+            "Support-N1 crée des forêts"
+          ],
+          "answer": 0,
+          "explain": "Assistant « Déléguer le contrôle » sur l'UO."
+        },
+        {
+          "q": "Sans SYSVOL sain et répliqué :",
+          "options": [
+            "Le DNS tombe",
+            "Les RID manquent",
+            "Rien ne change",
+            "Les GPO ne s'appliquent plus correctement"
+          ],
+          "answer": 3,
+          "explain": "SYSVOL porte les fichiers des GPO."
+        },
+        {
+          "q": "Approbation de royaume (realm) :",
+          "options": [
+            "Automatique",
+            "Entre deux forêts Windows",
+            "Réservée au cloud",
+            "Interopérabilité Kerberos avec du non-Windows (Linux/MIT)"
+          ],
+          "answer": 3,
+          "explain": "Manuelle, transitivité au choix."
+        },
+        {
+          "q": "Commande pour vérifier une approbation :",
+          "options": [
+            "gpupdate /trust",
+            "dcdiag /trust",
+            "netdom trust domA /Domain:domB /verify",
+            "nltest /fsmo"
+          ],
+          "answer": 2,
+          "explain": "/add pour la créer."
+        },
+        {
+          "q": "Le Maître d'infrastructure :",
+          "options": [
+            "Met à jour les références vers des objets d'autres domaines",
+            "Modifie le schéma",
+            "Gère l'heure",
+            "Distribue les RID"
+          ],
+          "answer": 0,
+          "explain": "Niveau domaine."
+        },
+        {
+          "q": "Pourquoi les FSMO existent-ils ?",
+          "options": [
+            "Pour le DNS",
+            "Pour la vitesse",
+            "Par tradition",
+            "Certaines opérations créeraient des conflits si faites partout en même temps"
+          ],
+          "answer": 3,
+          "explain": "Un seul serveur les tient."
+        }
+      ]
+    }
+  ]
+}

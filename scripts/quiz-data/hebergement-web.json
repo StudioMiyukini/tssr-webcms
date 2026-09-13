@@ -1,0 +1,351 @@
+{
+  "slug": "hebergement-web",
+  "title": "L’hébergement web (DNS + IIS)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Les trois briques pour héberger un site :",
+          "options": [
+            "Un serveur web (IIS), un service de noms (DNS), un réseau",
+            "Un PC, un écran, un clavier",
+            "Un routeur, un switch, un câble",
+            "Un domaine, une forêt, une UO"
+          ],
+          "answer": 0,
+          "explain": "Serveur, résolution de noms, et le réseau qui relie."
+        },
+        {
+          "q": "Adresse du serveur DNS de la plateforme :",
+          "options": [
+            "192.168.10.101",
+            "192.168.10.12",
+            "192.168.10.1",
+            "192.168.10.11"
+          ],
+          "answer": 3,
+          "explain": "SRV-DNS 192.168.10.11, SRV-IIS .12, client .101."
+        },
+        {
+          "q": "Pourquoi un réseau isolé (commutateur privé/interne) ?",
+          "options": [
+            "C'est obligatoire",
+            "Pour Internet",
+            "Pour la vitesse",
+            "Aucun risque pour le réseau réel, on joue soi-même le DNS"
+          ],
+          "answer": 3,
+          "explain": "Tous les tests se font depuis le client."
+        },
+        {
+          "q": "Deux étapes quand le client tape un nom :",
+          "options": [
+            "DHCP puis DNS",
+            "Résoudre le nom en IP (DNS), puis demander la page (IIS)",
+            "Ping puis tracert",
+            "IIS puis DNS"
+          ],
+          "answer": 1,
+          "explain": "Vue d'ensemble du cours."
+        },
+        {
+          "q": "Dans numerique.adrar, le SLD est :",
+          "options": [
+            "numerique",
+            ".",
+            "adrar",
+            "www"
+          ],
+          "answer": 0,
+          "explain": "Second Level Domain ; TLD = adrar."
+        },
+        {
+          "q": "IIS signifie :",
+          "options": [
+            "Integrated Internet System",
+            "Internet Information Services",
+            "Internal IP Service",
+            "Internet Index Server"
+          ],
+          "answer": 1,
+          "explain": "Le serveur web de Windows."
+        },
+        {
+          "q": "Dossier par défaut d'IIS :",
+          "options": [
+            "C:\\inetpub",
+            "C:\\www",
+            "C:\\sites",
+            "C:\\web"
+          ],
+          "answer": 0,
+          "explain": "Ex. C:\\inetpub\\intranet pour un site."
+        },
+        {
+          "q": "Enregistrement à créer pour www → 192.168.10.12 :",
+          "options": [
+            "CNAME",
+            "A",
+            "MX",
+            "NS"
+          ],
+          "answer": 1,
+          "explain": "Hôte A dans la zone directe."
+        },
+        {
+          "q": "Commande pour vérifier la résolution depuis le client :",
+          "options": [
+            "tracert",
+            "ipconfig",
+            "ping",
+            "nslookup www.numerique.adrar"
+          ],
+          "answer": 3,
+          "explain": "Doit renvoyer l'IP du serveur web."
+        },
+        {
+          "q": "Document par défaut servi par IIS :",
+          "options": [
+            "start.txt",
+            "index.html / index.htm / default.htm",
+            "page.doc",
+            "home.php"
+          ],
+          "answer": 1,
+          "explain": "Liste configurable dans IIS."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Comment installer le rôle DNS ?",
+          "options": [
+            "Gestionnaire de serveur → Gérer → Ajouter des rôles et fonctionnalités → Serveur DNS",
+            "regedit",
+            "Panneau de configuration",
+            "PowerShell uniquement"
+          ],
+          "answer": 0,
+          "explain": "L'outil DNS apparaît ensuite dans Outils."
+        },
+        {
+          "q": "Zone directe vs inversée :",
+          "options": [
+            "Directe = nom → IP ; inversée = IP → nom",
+            "Identiques",
+            "Inversée = mail",
+            "Directe = IP → nom"
+          ],
+          "answer": 0,
+          "explain": "On crée la zone directe du domaine."
+        },
+        {
+          "q": "Le binding d'un site IIS combine :",
+          "options": [
+            "Dossier et fichier",
+            "Nom et mot de passe",
+            "DNS et DHCP",
+            "IP + port + nom d'hôte"
+          ],
+          "answer": 3,
+          "explain": "Pour distinguer plusieurs sites."
+        },
+        {
+          "q": "Méthode la plus courante pour plusieurs sites sur une même IP et un même port :",
+          "options": [
+            "Impossible",
+            "Par nom d'hôte (host header)",
+            "Par IP",
+            "Par port"
+          ],
+          "answer": 1,
+          "explain": "Ex. intranet.numerique.adrar sur le port 80."
+        },
+        {
+          "q": "Un site sur le port 8080 s'ouvre avec :",
+          "options": [
+            "http://intranetport.web.lan:8080",
+            "ftp://site",
+            "https://site",
+            "http://site"
+          ],
+          "answer": 0,
+          "explain": "Le port doit être précisé dans l'URL."
+        },
+        {
+          "q": "Distinguer par IP nécessite :",
+          "options": [
+            "Une carte ou adresse IP supplémentaire",
+            "Rien",
+            "Un port différent",
+            "Un second serveur"
+          ],
+          "answer": 0,
+          "explain": "Ex. 192.168.10.200 sur une 2ᵉ carte."
+        },
+        {
+          "q": "Le FTP sous Windows est :",
+          "options": [
+            "Un sous-rôle d'IIS",
+            "Un rôle à part",
+            "Absent",
+            "Un logiciel tiers"
+          ],
+          "answer": 0,
+          "explain": "On crée un site FTP dans IIS."
+        },
+        {
+          "q": "Commande Hyper-V pour copier un fichier de l'hôte vers la VM :",
+          "options": [
+            "scp",
+            "Copy-Item",
+            "robocopy",
+            "Copy-VMFile"
+          ],
+          "answer": 3,
+          "explain": "-SourcePath, -DestinationPath, -FileSource Host."
+        },
+        {
+          "q": "Ordre des tests depuis le client :",
+          "options": [
+            "Web seulement",
+            "Réseau (ping), nom (nslookup), web (navigateur)",
+            "Nom, web, réseau",
+            "Web, nom, réseau"
+          ],
+          "answer": 1,
+          "explain": "Du bas vers le haut."
+        },
+        {
+          "q": "Le ping échoue (délai dépassé) :",
+          "options": [
+            "Pare-feu Windows bloque l'ICMP",
+            "DNS",
+            "Port 8080",
+            "IIS arrêté"
+          ],
+          "answer": 0,
+          "explain": "Autoriser l'ICMP."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "nslookup échoue :",
+          "options": [
+            "IIS",
+            "Port",
+            "Pare-feu",
+            "DNS du client ≠ 192.168.10.11 ou enregistrement A manquant"
+          ],
+          "answer": 3,
+          "explain": "Vérifier la configuration du client et la zone."
+        },
+        {
+          "q": "Avant de créer son site dans IIS :",
+          "options": [
+            "Installer FTP",
+            "Supprimer C:\\inetpub",
+            "Redémarrer",
+            "Arrêter le site par défaut"
+          ],
+          "answer": 3,
+          "explain": "Un site par défaut est déjà présent."
+        },
+        {
+          "q": "Un nom d'hôte vide dans un enregistrement A désigne :",
+          "options": [
+            "Le serveur DNS",
+            "Le domaine seul",
+            "www",
+            "La racine"
+          ],
+          "answer": 1,
+          "explain": "numerique.adrar sans hôte."
+        },
+        {
+          "q": "Un FQDN se termine toujours par :",
+          "options": [
+            "Un slash",
+            ".com",
+            "Un point (la racine), invisible au quotidien",
+            "Un port"
+          ],
+          "answer": 2,
+          "explain": "www.numerique.adrar."
+        },
+        {
+          "q": "Que fait un instantané (snapshot) de VM ?",
+          "options": [
+            "Fige un état de la VM pour y revenir",
+            "Redémarre",
+            "Copie un fichier",
+            "Sauvegarde le DNS"
+          ],
+          "answer": 0,
+          "explain": "Astuce du cours avant d'aller plus loin."
+        },
+        {
+          "q": "Pour le TP FTP, l'authentification est :",
+          "options": [
+            "Kerberos",
+            "Refusée",
+            "Certificat",
+            "Anonyme autorisée, sans SSL"
+          ],
+          "answer": 3,
+          "explain": "Droits NTFS en lecture seule pour tous."
+        },
+        {
+          "q": "Type d'hébergement où l'on possède un serveur physique entier :",
+          "options": [
+            "Mutualisé",
+            "Dédié",
+            "VPS",
+            "Cloud"
+          ],
+          "answer": 1,
+          "explain": "Performance et contrôle maximum."
+        },
+        {
+          "q": "Le champ « Chemin physique » d'un site IIS :",
+          "options": [
+            "Le DNS",
+            "L'URL",
+            "Le dossier des ressources (ex. C:\\inetpub\\intranet)",
+            "Le port"
+          ],
+          "answer": 2,
+          "explain": "Où sont stockées les pages."
+        },
+        {
+          "q": "Client de test du TP :",
+          "options": [
+            "Windows 11 en 192.168.10.101",
+            "Linux",
+            "Windows Server 2019",
+            "Un smartphone"
+          ],
+          "answer": 0,
+          "explain": "CLIENT-W."
+        },
+        {
+          "q": "Le registrar du .fr est accrédité par :",
+          "options": [
+            "RIPE",
+            "ICANN",
+            "AFNIC",
+            "IANA"
+          ],
+          "answer": 2,
+          "explain": "ICANN à l'international."
+        }
+      ]
+    }
+  ]
+}

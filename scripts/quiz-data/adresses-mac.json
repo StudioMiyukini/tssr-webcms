@@ -1,0 +1,351 @@
+{
+  "slug": "adresses-mac",
+  "title": "Les adresses MAC",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Que signifie MAC dans « adresse MAC » ?",
+          "options": [
+            "Media Access Control",
+            "Memory Allocation Control",
+            "Main Address Card",
+            "Machine Access Code"
+          ],
+          "answer": 0,
+          "explain": "Media Access Control : l'identifiant unique gravé dans la carte réseau."
+        },
+        {
+          "q": "Sur combien de bits est codée une adresse MAC ?",
+          "options": [
+            "48",
+            "64",
+            "128",
+            "32"
+          ],
+          "answer": 0,
+          "explain": "48 bits, écrits en 6 octets hexadécimaux séparés par « : »."
+        },
+        {
+          "q": "Quel format est une adresse MAC valide ?",
+          "options": [
+            "A1-B2-C3",
+            "2001:db8::1",
+            "A1:B2:C3:D4:E5:F6",
+            "192.168.1.10"
+          ],
+          "answer": 2,
+          "explain": "6 octets hexadécimaux (00 à FF) séparés par des deux-points (ou des tirets sous Windows)."
+        },
+        {
+          "q": "Où est gravée l'adresse MAC ?",
+          "options": [
+            "Dans la carte réseau, à la fabrication",
+            "Dans la box",
+            "Dans le système d'exploitation",
+            "Dans le serveur DHCP"
+          ],
+          "answer": 0,
+          "explain": "Elle est gravée dans la carte réseau et suit l'appareil partout."
+        },
+        {
+          "q": "Quelle analogie le cours donne-t-il à la MAC ?",
+          "options": [
+            "Le numéro de téléphone",
+            "La plaque d'immatriculation / le numéro de série",
+            "L'adresse postale",
+            "Le code postal"
+          ],
+          "answer": 1,
+          "explain": "La MAC dit « qui tu es » (identité fixe) ; l'IP dit « où tu es »."
+        },
+        {
+          "q": "Que représentent les 3 premiers octets d'une MAC ?",
+          "options": [
+            "Le VLAN",
+            "L'adresse IP",
+            "Le numéro de série",
+            "L'OUI, identifiant du fabricant"
+          ],
+          "answer": 3,
+          "explain": "L'OUI (Organizationally Unique Identifier) identifie le fabricant (Intel, Realtek, Apple…)."
+        },
+        {
+          "q": "Que représentent les 3 derniers octets ?",
+          "options": [
+            "Le fabricant",
+            "Le pays",
+            "Un numéro unique attribué par le fabricant",
+            "Le type de carte"
+          ],
+          "answer": 2,
+          "explain": "Fabricant + numéro = une adresse unique au monde."
+        },
+        {
+          "q": "À quelle couche OSI appartient l'adresse MAC ?",
+          "options": [
+            "Couche 3 — Réseau",
+            "Couche 1 — Physique",
+            "Couche 4 — Transport",
+            "Couche 2 — Liaison"
+          ],
+          "answer": 3,
+          "explain": "MAC = couche 2 (liaison) ; IP = couche 3 (réseau)."
+        },
+        {
+          "q": "Quel équipement utilise principalement les adresses MAC ?",
+          "options": [
+            "Le switch",
+            "Le serveur DNS",
+            "Le routeur",
+            "Le pare-feu applicatif"
+          ],
+          "answer": 0,
+          "explain": "Le switch apprend les MAC et les mémorise dans sa table MAC pour livrer chaque trame au bon port."
+        },
+        {
+          "q": "Quelle commande Windows affiche l'« Adresse physique » ?",
+          "options": [
+            "tracert",
+            "ip link",
+            "ping",
+            "ipconfig /all"
+          ],
+          "answer": 3,
+          "explain": "ipconfig /all (ou getmac) sous Windows ; ip link sous Linux."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Quel protocole traduit une IP en adresse MAC sur le réseau local ?",
+          "options": [
+            "NAT",
+            "DNS",
+            "ARP",
+            "DHCP"
+          ],
+          "answer": 2,
+          "explain": "ARP demande « qui a cette IP ? » et reçoit la MAC en réponse."
+        },
+        {
+          "q": "Quelle est la portée d'une adresse MAC ?",
+          "options": [
+            "Mondiale",
+            "Le pays",
+            "Le fournisseur d'accès",
+            "Locale (le réseau local)"
+          ],
+          "answer": 3,
+          "explain": "La MAC sert sur le réseau local ; au-delà, c'est l'IP (routeur)."
+        },
+        {
+          "q": "Le filtrage MAC sur un Wi-Fi est :",
+          "options": [
+            "Une sécurité infaillible",
+            "Pratique mais contournable par usurpation (spoofing)",
+            "Réservé aux entreprises",
+            "Interdit"
+          ],
+          "answer": 1,
+          "explain": "La MAC peut être usurpée (MAC spoofing) : ce n'est pas une vraie sécurité."
+        },
+        {
+          "q": "Que contient la table MAC d'un switch ?",
+          "options": [
+            "Les noms de domaine",
+            "Les mots de passe",
+            "Les IP des machines",
+            "L'association « telle MAC est sur tel port »"
+          ],
+          "answer": 3,
+          "explain": "Le switch apprend la MAC source de chaque trame et note le port d'arrivée."
+        },
+        {
+          "q": "Combien d'octets hexadécimaux dans une MAC ?",
+          "options": [
+            "4",
+            "12",
+            "6",
+            "8"
+          ],
+          "answer": 2,
+          "explain": "6 octets = 48 bits."
+        },
+        {
+          "q": "Quelle valeur maximale peut prendre un octet d'une MAC ?",
+          "options": [
+            "255 (FF)",
+            "127",
+            "FFFF",
+            "99"
+          ],
+          "answer": 0,
+          "explain": "Chaque octet va de 00 à FF (0 à 255)."
+        },
+        {
+          "q": "Laquelle est vraie ?",
+          "options": [
+            "L'IP est gravée dans la carte",
+            "Les deux sont identiques",
+            "La MAC change à chaque réseau",
+            "La MAC est fixe, l'IP peut changer"
+          ],
+          "answer": 3,
+          "explain": "La MAC est l'identité permanente, l'IP l'adresse du moment."
+        },
+        {
+          "q": "Comment retrouver la marque d'un appareil à partir de sa MAC ?",
+          "options": [
+            "Par son OUI (3 premiers octets)",
+            "Par ses 3 derniers octets",
+            "Impossible",
+            "Par son IP"
+          ],
+          "answer": 0,
+          "explain": "L'OUI est attribué à chaque fabricant."
+        },
+        {
+          "q": "Sous Linux, quelle commande affiche la MAC ?",
+          "options": [
+            "getmac",
+            "ipconfig",
+            "arp -d",
+            "ip link"
+          ],
+          "answer": 3,
+          "explain": "ip link (ou ifconfig) montre l'adresse matérielle."
+        },
+        {
+          "q": "Quel équipement utilise l'adresse IP plutôt que la MAC pour acheminer ?",
+          "options": [
+            "Le hub",
+            "La carte réseau",
+            "Le switch",
+            "Le routeur"
+          ],
+          "answer": 3,
+          "explain": "Le routeur travaille en couche 3 (IP) ; le switch en couche 2 (MAC)."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Un PC veut joindre 192.168.1.20 sur son LAN : que fait-il d'abord ?",
+          "options": [
+            "Une requête ARP pour obtenir la MAC de 192.168.1.20",
+            "Un ping vers la passerelle",
+            "Rien, il envoie directement",
+            "Une requête DNS"
+          ],
+          "answer": 0,
+          "explain": "Sur le réseau local, la trame doit porter la MAC du destinataire : ARP fait la traduction."
+        },
+        {
+          "q": "Deux cartes réseau peuvent-elles avoir la même MAC ?",
+          "options": [
+            "Oui, c'est fréquent",
+            "En principe non : fabricant + numéro unique",
+            "Oui si même réseau",
+            "Oui si même fabricant"
+          ],
+          "answer": 1,
+          "explain": "L'OUI et le numéro de série rendent chaque MAC unique au monde (hors usurpation)."
+        },
+        {
+          "q": "Combien de bits représente chaque chiffre hexadécimal d'une MAC ?",
+          "options": [
+            "8",
+            "16",
+            "4",
+            "2"
+          ],
+          "answer": 2,
+          "explain": "Un chiffre hexa = 4 bits ; deux chiffres = un octet."
+        },
+        {
+          "q": "Quel élément d'une trame Ethernet le switch lit-il pour décider du port de sortie ?",
+          "options": [
+            "Le nom DNS",
+            "La MAC de destination",
+            "Le port TCP",
+            "L'IP de destination"
+          ],
+          "answer": 1,
+          "explain": "Le switch commute sur la MAC de destination grâce à sa table MAC."
+        },
+        {
+          "q": "Que fait un switch si la MAC de destination est inconnue de sa table ?",
+          "options": [
+            "Il demande au routeur",
+            "Il l'envoie sur tous les ports sauf celui d'origine",
+            "Il jette la trame",
+            "Il l'envoie au DNS"
+          ],
+          "answer": 1,
+          "explain": "Il inonde (flood) la trame, puis apprend le port de la réponse."
+        },
+        {
+          "q": "Quand un paquet traverse un routeur vers un autre réseau, l'adresse MAC de destination :",
+          "options": [
+            "Reste celle du PC final",
+            "Disparaît",
+            "Devient l'IP publique",
+            "Devient celle du routeur (prochain saut)"
+          ],
+          "answer": 3,
+          "explain": "La MAC change à chaque saut (couche 2 locale) ; l'IP de destination reste la même."
+        },
+        {
+          "q": "Le MAC spoofing consiste à :",
+          "options": [
+            "Chiffrer la MAC",
+            "Convertir la MAC en IP",
+            "Supprimer la MAC",
+            "Changer logiciellement la MAC annoncée par sa carte"
+          ],
+          "answer": 3,
+          "explain": "C'est pourquoi le filtrage MAC n'est pas une vraie sécurité."
+        },
+        {
+          "q": "Quelle commande Windows affiche uniquement les MAC des cartes ?",
+          "options": [
+            "nslookup",
+            "arp -a",
+            "ipconfig",
+            "getmac"
+          ],
+          "answer": 3,
+          "explain": "getmac liste les adresses physiques ; ipconfig /all les montre aussi avec le reste."
+        },
+        {
+          "q": "Quelle affirmation compare correctement MAC et IP ?",
+          "options": [
+            "MAC : logique et mondiale ; IP : gravée et locale",
+            "Les deux sont gravées",
+            "Les deux sont logiques",
+            "MAC : gravée et locale ; IP : logique et mondiale"
+          ],
+          "answer": 3,
+          "explain": "Tableau du cours : MAC = couche 2, fixe, locale, switch ; IP = couche 3, logique, mondiale, routeur."
+        },
+        {
+          "q": "Quelle est l'adresse MAC de diffusion (broadcast) ?",
+          "options": [
+            "AA:AA:AA:AA:AA:AA",
+            "FF:FF:FF:FF:FF:FF",
+            "00:00:00:00:00:00",
+            "01:00:5E:00:00:00"
+          ],
+          "answer": 1,
+          "explain": "FF:FF:FF:FF:FF:FF s'adresse à toutes les cartes du réseau local — c'est celle qu'utilise la requête ARP."
+        }
+      ]
+    }
+  ]
+}

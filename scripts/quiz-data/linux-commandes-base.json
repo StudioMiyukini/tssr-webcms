@@ -1,0 +1,351 @@
+{
+  "slug": "linux-commandes-base",
+  "title": "Commandes de base Linux / Bash",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Dans ls -lh /var/log, que sont -lh ?",
+          "options": [
+            "Les options",
+            "L'argument",
+            "La commande",
+            "Le chemin"
+          ],
+          "answer": 0,
+          "explain": "Commande · options · argument. Les options courtes se cumulent."
+        },
+        {
+          "q": "Commande pour savoir où l'on est :",
+          "options": [
+            "pwd",
+            "ls",
+            "cd",
+            "whoami"
+          ],
+          "answer": 0,
+          "explain": "whoami = qui je suis."
+        },
+        {
+          "q": "Commande pour voir ses adresses IP :",
+          "options": [
+            "ifconfig -all",
+            "ipconfig",
+            "ip a",
+            "net ip"
+          ],
+          "answer": 2,
+          "explain": "ip r pour la route par défaut."
+        },
+        {
+          "q": "cd .. va :",
+          "options": [
+            "À la racine",
+            "À la maison",
+            "Au dossier parent",
+            "Au précédent"
+          ],
+          "answer": 2,
+          "explain": "cd - revient au précédent, cd ~ à la maison."
+        },
+        {
+          "q": "Un chemin absolu :",
+          "options": [
+            "Ne commence jamais par /",
+            "Dépend du dossier courant",
+            "Commence par / et part de la racine",
+            "Est un raccourci"
+          ],
+          "answer": 2,
+          "explain": "Un chemin relatif ne commence jamais par un slash."
+        },
+        {
+          "q": "ls -la affiche :",
+          "options": [
+            "Les plus récents",
+            "Les plus gros",
+            "Le format long, y compris les fichiers cachés",
+            "Les dossiers seulement"
+          ],
+          "answer": 2,
+          "explain": "-lt = récents en premier, -lS = gros en premier."
+        },
+        {
+          "q": "Que remplace * ?",
+          "options": [
+            "Un caractère",
+            "N'importe quoi : rien, un ou cinquante caractères",
+            "Un espace",
+            "Un chiffre"
+          ],
+          "answer": 1,
+          "explain": "? remplace exactement un caractère."
+        },
+        {
+          "q": "mv sert à :",
+          "options": [
+            "Créer",
+            "Déplacer OU renommer",
+            "Copier",
+            "Supprimer"
+          ],
+          "answer": 1,
+          "explain": "C'est la même commande."
+        },
+        {
+          "q": "mkdir -p /srv/appli/conf :",
+          "options": [
+            "Supprime",
+            "Crée un fichier",
+            "Crée aussi les parents manquants",
+            "Échoue si /srv/appli manque"
+          ],
+          "answer": 2,
+          "explain": "-p = parents."
+        },
+        {
+          "q": "Pour éditer un fichier simplement :",
+          "options": [
+            "nano (Ctrl-O enregistre, Ctrl-X quitte)",
+            "cat",
+            "head",
+            "less"
+          ],
+          "answer": 0,
+          "explain": "less pour naviguer, cat pour afficher."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Pourquoi find /etc -name *.conf échoue-t-il sans guillemets ?",
+          "options": [
+            "find n'accepte pas *",
+            "Il faut sudo",
+            "Bug de find",
+            "Le shell remplace le motif par les fichiers du dossier courant avant que find ne le voie"
+          ],
+          "answer": 3,
+          "explain": "C'est le shell qui remplace, avant la commande."
+        },
+        {
+          "q": "Avant un rm avec joker :",
+          "options": [
+            "Rien",
+            "Faire le même ls pour voir ce qui va disparaître",
+            "Utiliser sudo",
+            "Redémarrer"
+          ],
+          "answer": 1,
+          "explain": "Il n'y a pas de corbeille."
+        },
+        {
+          "q": "rm -rf /srv /appli (avec un espace) :",
+          "options": [
+            "Ne fait rien",
+            "Supprime /srv/appli",
+            "Échoue",
+            "Supprime /srv ET /appli"
+          ],
+          "answer": 3,
+          "explain": "Se méfier de l'espace de trop."
+        },
+        {
+          "q": "tail -F plutôt que -f sur un journal :",
+          "options": [
+            "-f est mieux",
+            "-F est plus lent",
+            "Identiques",
+            "-F rouvre le fichier après rotation ; -f se fige sur l'ancien"
+          ],
+          "answer": 3,
+          "explain": "À prendre sur /var/log."
+        },
+        {
+          "q": "Dans less, chercher un mot :",
+          "options": [
+            "s mot",
+            "/mot",
+            "Ctrl-F",
+            "?mot seulement"
+          ],
+          "answer": 1,
+          "explain": "q quitte, G va à la fin."
+        },
+        {
+          "q": "tp?.c correspond à :",
+          "options": [
+            "tp200.c",
+            "tp1.c",
+            "tpab.c",
+            "tp.c"
+          ],
+          "answer": 1,
+          "explain": "? = exactement un caractère."
+        },
+        {
+          "q": "ln -s /srv/appli/v2 /opt/appli crée :",
+          "options": [
+            "Un lien symbolique /opt/appli → /srv/appli/v2 (CIBLE puis LIEN)",
+            "Une copie",
+            "Un fichier vide",
+            "Un dossier"
+          ],
+          "answer": 0,
+          "explain": "ln -s CIBLE LIEN."
+        },
+        {
+          "q": "rmdir :",
+          "options": [
+            "Crée un dossier",
+            "Ne marche que si le dossier est vide",
+            "Supprime tout",
+            "Supprime récursivement"
+          ],
+          "answer": 1,
+          "explain": "rm -r pour un dossier plein."
+        },
+        {
+          "q": "cp -a :",
+          "options": [
+            "Archive",
+            "Copie sans droits",
+            "Copie en gardant droits, dates et liens",
+            "Ajoute"
+          ],
+          "answer": 2,
+          "explain": "-a = archive."
+        },
+        {
+          "q": "Dans un script, on utilise des chemins :",
+          "options": [
+            "Courts",
+            "Sans slash",
+            "Absolus, car le relatif dépend du dossier de lancement",
+            "Relatifs"
+          ],
+          "answer": 2,
+          "explain": "La moitié des scripts qui marchent à la main échouent en cron."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "On est dans /home/toto, le fichier est doc/test ; on tape /doc/test :",
+          "options": [
+            "Ça va dans ~",
+            "Ça crée /doc",
+            "Erreur : le slash de début envoie à la racine, /doc n'existe pas",
+            "Ça marche"
+          ],
+          "answer": 2,
+          "explain": "L'erreur classique du slash de trop."
+        },
+        {
+          "q": "type ls répond :",
+          "options": [
+            "Le manuel",
+            "Le chemin seulement",
+            "La version",
+            "Si ls est un binaire, un alias ou une fonction"
+          ],
+          "answer": 3,
+          "explain": "which donne le chemin."
+        },
+        {
+          "q": "Dans l'invite jean@srv:/var/log$ :",
+          "options": [
+            "/var/log est le dossier courant",
+            "srv est le dossier",
+            "/var/log est l'hôte",
+            "$ est root"
+          ],
+          "answer": 0,
+          "explain": "Un ~ signifie « ma maison »."
+        },
+        {
+          "q": "cd ../marie depuis /home/jean va :",
+          "options": [
+            "/marie",
+            "/home/marie",
+            "Erreur",
+            "/home/jean/marie"
+          ],
+          "answer": 1,
+          "explain": "Le dossier voisin."
+        },
+        {
+          "q": "tree -L 2 -d :",
+          "options": [
+            "Les dossiers seulement, sur deux niveaux",
+            "Tout l'arbre",
+            "Les fichiers cachés",
+            "Les tailles"
+          ],
+          "answer": 0,
+          "explain": "Sans -L, tree / déverse des milliers de lignes."
+        },
+        {
+          "q": "fichier.{txt,md} correspond à :",
+          "options": [
+            "Un seul fichier",
+            "fichier.txtmd",
+            "Rien",
+            "fichier.txt et fichier.md"
+          ],
+          "answer": 3,
+          "explain": "Plusieurs mots au choix."
+        },
+        {
+          "q": "wc -l :",
+          "options": [
+            "Compte les caractères",
+            "Compte les lignes",
+            "Affiche la largeur",
+            "Compte les mots"
+          ],
+          "answer": 1,
+          "explain": "l = lines."
+        },
+        {
+          "q": "man ls : quitter avec :",
+          "options": [
+            "Ctrl-C",
+            "exit",
+            "q",
+            "Échap"
+          ],
+          "answer": 2,
+          "explain": "/ pour chercher."
+        },
+        {
+          "q": "uptime affiche :",
+          "options": [
+            "Les utilisateurs",
+            "L'heure",
+            "Depuis quand la machine tourne et sa charge",
+            "Le noyau"
+          ],
+          "answer": 2,
+          "explain": "date pour l'heure, à vérifier avant de lire des journaux."
+        },
+        {
+          "q": "-r et -R sur certaines commandes :",
+          "options": [
+            "Identiques",
+            "Ne font pas la même chose : Linux distingue les majuscules",
+            "-R n'existe pas",
+            "-r est récursif partout"
+          ],
+          "answer": 1,
+          "explain": "Même pour les options."
+        }
+      ]
+    }
+  ]
+}

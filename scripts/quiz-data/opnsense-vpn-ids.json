@@ -1,0 +1,351 @@
+{
+  "slug": "opnsense-vpn-ids",
+  "title": "OPNsense : accès distants et détection d’intrusion",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Quels sont les deux besoins qu'on confond en VPN ?",
+          "options": [
+            "Le NAT et le filtrage",
+            "IPv4 et IPv6",
+            "L'accès nomade (une personne) et la liaison de sites (deux pare-feu)",
+            "Chiffrer et compresser"
+          ],
+          "answer": 2,
+          "explain": "Un compte ou une clé par personne, contre des réseaux annoncés de part et d'autre."
+        },
+        {
+          "q": "Quel protocole VPN le cours recommande-t-il pour commencer ?",
+          "options": [
+            "WireGuard",
+            "PPTP",
+            "IPsec",
+            "OpenVPN"
+          ],
+          "answer": 0,
+          "explain": "Simple (une paire de clés par pair), excellente performance."
+        },
+        {
+          "q": "Sur quel port écoute WireGuard par défaut ?",
+          "options": [
+            "443 TCP",
+            "500 UDP",
+            "1194 UDP",
+            "51820 UDP"
+          ],
+          "answer": 3,
+          "explain": "UDP seul — d'où la difficulté sur les réseaux qui filtrent l'UDP."
+        },
+        {
+          "q": "Quel protocole sait passer en TCP 443, donc partout ?",
+          "options": [
+            "L2TP",
+            "OpenVPN",
+            "WireGuard",
+            "IPsec"
+          ],
+          "answer": 1,
+          "explain": "Utile depuis un hôtel qui ne laisse sortir que le TCP 443."
+        },
+        {
+          "q": "Quel protocole est le standard entre équipements de marques différentes ?",
+          "options": [
+            "OpenVPN",
+            "IPsec",
+            "SSH",
+            "WireGuard"
+          ],
+          "answer": 1,
+          "explain": "Complexe, mais imposé par l'équipement d'en face."
+        },
+        {
+          "q": "Qu'est-ce que la Tunnel address 10.10.10.1/24 ?",
+          "options": [
+            "Le DNS",
+            "Un réseau à part qui n'existe que dans le tunnel",
+            "L'adresse WAN",
+            "L'adresse du LAN"
+          ],
+          "answer": 1,
+          "explain": "L'adresse du pare-feu dans le tunnel."
+        },
+        {
+          "q": "Que transmet-on d'un pair WireGuard ?",
+          "options": [
+            "Son mot de passe",
+            "Son certificat",
+            "Sa clé privée",
+            "Seulement sa clé publique"
+          ],
+          "answer": 3,
+          "explain": "La clé privée ne quitte jamais la machine."
+        },
+        {
+          "q": "Que fait Suricata ?",
+          "options": [
+            "Compare le trafic à des signatures d'attaques connues",
+            "Du DHCP",
+            "Des sauvegardes",
+            "Du NAT"
+          ],
+          "answer": 0,
+          "explain": "Services › Intrusion Detection."
+        },
+        {
+          "q": "IDS signifie :",
+          "options": [
+            "Route",
+            "Chiffre",
+            "Signale, laisse passer",
+            "Signale et bloque"
+          ],
+          "answer": 2,
+          "explain": "IPS = prévention : signale et bloque."
+        },
+        {
+          "q": "Par quel mode commencer avec Suricata ?",
+          "options": [
+            "Désactivé",
+            "IDS quelques semaines, puis IPS jeu de règles par jeu de règles",
+            "IPS tout de suite",
+            "Les deux"
+          ],
+          "answer": 1,
+          "explain": "Un faux positif en IPS coupe un service légitime."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Pourquoi Allowed IPs d'un pair est-il en /32 ?",
+          "options": [
+            "Pour l'IPv6",
+            "Pour la vitesse",
+            "Par défaut",
+            "C'est l'anti-usurpation : un pair ne peut pas prendre l'adresse d'un autre"
+          ],
+          "answer": 3,
+          "explain": "Le /32 compte."
+        },
+        {
+          "q": "Trois choses à faire après avoir créé l'instance et les pairs :",
+          "options": [
+            "Rien",
+            "Ouvrir le port sur le WAN, assigner l'interface, écrire les règles du tunnel",
+            "Redémarrer",
+            "Créer un VLAN"
+          ],
+          "answer": 1,
+          "explain": "Ce sont elles qu'on oublie : par défaut rien ne passe."
+        },
+        {
+          "q": "AllowedIPs = 0.0.0.0/0 côté client signifie :",
+          "options": [
+            "Pas de tunnel",
+            "Tunnel complet : tout passe par le tunnel, navigation comprise",
+            "Tunnel partagé",
+            "Uniquement le LAN"
+          ],
+          "answer": 1,
+          "explain": "192.168.10.0/24 = split tunnel ; 0.0.0.0/0 = full tunnel. C'est une décision."
+        },
+        {
+          "q": "Pour OpenVPN, que faut-il créer d'abord ?",
+          "options": [
+            "Un Host Override",
+            "Une autorité de certification interne (System › Trust)",
+            "Un VLAN",
+            "Un alias"
+          ],
+          "answer": 1,
+          "explain": "Puis un certificat serveur et un par utilisateur."
+        },
+        {
+          "q": "Pourquoi un certificat par personne ?",
+          "options": [
+            "Pour pouvoir révoquer l'accès d'une seule personne",
+            "Pour l'IPv6",
+            "C'est moins cher",
+            "Pour la vitesse"
+          ],
+          "answer": 0,
+          "explain": "Un certificat partagé est un mot de passe partagé."
+        },
+        {
+          "q": "Deux sites en 192.168.1.0/24 tous les deux :",
+          "options": [
+            "Fonctionnent en IPv6",
+            "Ont besoin de NAT 1:1",
+            "Ne peuvent pas se router l'un vers l'autre",
+            "Se routent normalement"
+          ],
+          "answer": 2,
+          "explain": "Les deux plans d'adressage doivent être différents."
+        },
+        {
+          "q": "Dans quelle zone doit déboucher un nomade ?",
+          "options": [
+            "Le LAN, comme un poste du bureau",
+            "La DMZ",
+            "Une zone à part, avec sa propre matrice de flux",
+            "Le WAN"
+          ],
+          "answer": 2,
+          "explain": "Un portable revenu d'un hôtel n'a pas le niveau de confiance d'un poste du bureau."
+        },
+        {
+          "q": "Sur quelle interface l'IDS est-il le plus utile ?",
+          "options": [
+            "Le tunnel uniquement",
+            "Le WAN",
+            "Le LAN : on voit les vraies adresses internes",
+            "Aucune"
+          ],
+          "answer": 2,
+          "explain": "Sur le WAN on voit surtout le bruit de fond d'Internet."
+        },
+        {
+          "q": "Que ne voit pas Suricata ?",
+          "options": [
+            "Le DNS",
+            "Le contenu du trafic chiffré (TLS)",
+            "Le nom du site demandé",
+            "Les métadonnées"
+          ],
+          "answer": 1,
+          "explain": "Il travaille sur ce qui reste en clair : SNI, DNS, protocoles non chiffrés."
+        },
+        {
+          "q": "Un jeu de règles figé :",
+          "options": [
+            "Ne détecte plus rien de récent au bout de quelques mois",
+            "Se met à jour seul",
+            "Bloque tout",
+            "Reste efficace"
+          ],
+          "answer": 0,
+          "explain": "On laisse les jeux se mettre à jour automatiquement."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Le tunnel monte mais rien ne passe : première vérification ?",
+          "options": [
+            "Le thème",
+            "Le WAN",
+            "L'interface du tunnel est-elle assignée et a-t-elle des règles ?",
+            "Le DNS"
+          ],
+          "answer": 2,
+          "explain": "Puis AllowedIPs, puis la route de retour de la machine cible."
+        },
+        {
+          "q": "« Le VPN marche mais on ne peut rien faire » s'explique souvent par :",
+          "options": [
+            "La machine cible n'a pas de route de retour (OPNsense n'est pas sa passerelle)",
+            "Un certificat expiré",
+            "Le port 443",
+            "Un VLAN"
+          ],
+          "answer": 0,
+          "explain": "Ce point explique la moitié des cas."
+        },
+        {
+          "q": "Quel est le seul indicateur fiable qu'un tunnel WireGuard vit ?",
+          "options": [
+            "Le journal DHCP",
+            "La dernière poignée de main (handshake) de chaque pair",
+            "Le voyant du port",
+            "Le ping du WAN"
+          ],
+          "answer": 1,
+          "explain": "Visible sur la page du service."
+        },
+        {
+          "q": "tracert 192.168.10.20 depuis le nomade : premier saut attendu ?",
+          "options": [
+            "8.8.8.8",
+            "192.168.10.20",
+            "10.10.10.1 — le pare-feu dans le tunnel",
+            "La box de l'hôtel"
+          ],
+          "answer": 2,
+          "explain": "Preuve que le trafic passe bien par le tunnel."
+        },
+        {
+          "q": "Relier deux sites fait :",
+          "options": [
+            "Un réseau plus grand, pas plus sûr : les règles du tunnel doivent limiter",
+            "Un réseau de confiance",
+            "Un VLAN",
+            "Une DMZ"
+          ],
+          "answer": 0,
+          "explain": "Un incident sur B devient un incident sur A si tout est ouvert."
+        },
+        {
+          "q": "Le mode IPS demande sur une VM :",
+          "options": [
+            "Plus de RAM seulement",
+            "Un VLAN",
+            "Une carte réseau compatible avec l'accélération employée",
+            "Rien de spécial"
+          ],
+          "answer": 2,
+          "explain": "Tous les types de carte ne conviennent pas."
+        },
+        {
+          "q": "Quelle règle WAN pour WireGuard ?",
+          "options": [
+            "Pass any",
+            "Pass UDP vers WAN address port 51820",
+            "Block UDP",
+            "Pass TCP 443"
+          ],
+          "answer": 1,
+          "explain": "Sans elle, le tunnel n'est même pas contacté."
+        },
+        {
+          "q": "Que produit le greffon d'export client OpenVPN ?",
+          "options": [
+            "Une clé WireGuard",
+            "Un fichier de configuration prêt à importer, certificat inclus",
+            "Un VLAN",
+            "Une règle"
+          ],
+          "answer": 1,
+          "explain": "Il évite de distribuer les certificats à la main."
+        },
+        {
+          "q": "Allowed IPs du pair B pour relier le site B (192.168.50.0/24) :",
+          "options": [
+            "192.168.10.0/24",
+            "10.10.20.2/32 et 192.168.50.0/24",
+            "10.10.20.0/24",
+            "0.0.0.0/0"
+          ],
+          "answer": 1,
+          "explain": "L'adresse du pair dans le tunnel plus le réseau qu'il annonce."
+        },
+        {
+          "q": "Un IDS remplace-t-il antivirus, sauvegardes et segmentation ?",
+          "options": [
+            "Non : il complète, il ne remplace pas",
+            "Seulement la segmentation",
+            "Oui",
+            "Oui en mode IPS"
+          ],
+          "answer": 0,
+          "explain": "La segmentation et des règles justes protègent davantage qu'une couche d'analyse sur un réseau plat."
+        }
+      ]
+    }
+  ]
+}

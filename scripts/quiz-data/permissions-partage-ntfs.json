@@ -1,0 +1,351 @@
+{
+  "slug": "permissions-partage-ntfs",
+  "title": "Les permissions : Partage & NTFS",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Les droits de partage s'appliquent :",
+          "options": [
+            "En local seulement",
+            "Jamais",
+            "Toujours",
+            "Uniquement en accès réseau (\\\\serveur\\partage)"
+          ],
+          "answer": 3,
+          "explain": "Le NTFS s'applique toujours, en local et en réseau."
+        },
+        {
+          "q": "Les droits NTFS se règlent dans :",
+          "options": [
+            "Le registre",
+            "gpmc.msc",
+            "L'onglet Sécurité",
+            "L'onglet Partage"
+          ],
+          "answer": 2,
+          "explain": "Sur chaque dossier/fichier."
+        },
+        {
+          "q": "Combien de niveaux de droits de partage ?",
+          "options": [
+            "10",
+            "3 : Lecture, Modification, Contrôle total",
+            "1",
+            "5"
+          ],
+          "answer": 1,
+          "explain": "Granularité grossière."
+        },
+        {
+          "q": "En accès réseau, quel droit s'applique ?",
+          "options": [
+            "Le plus permissif",
+            "Le partage seul",
+            "Le plus restrictif entre partage et NTFS",
+            "Le NTFS seul"
+          ],
+          "answer": 2,
+          "explain": "Règle 1 : min(partage, NTFS)."
+        },
+        {
+          "q": "Un « Refuser » face à un « Autoriser » :",
+          "options": [
+            "Égalité",
+            "Autoriser gagne",
+            "Refuser l'emporte toujours",
+            "Ça dépend de l'heure"
+          ],
+          "answer": 2,
+          "explain": "Règle 2."
+        },
+        {
+          "q": "En local (ou bureau à distance), quel droit compte ?",
+          "options": [
+            "Aucun",
+            "Les deux",
+            "Le partage",
+            "Seul le NTFS"
+          ],
+          "answer": 3,
+          "explain": "Le partage ne s'applique pas en local."
+        },
+        {
+          "q": "Partage en Modification et NTFS en Lecture → l'utilisateur peut :",
+          "options": [
+            "Tout faire",
+            "Rien",
+            "Seulement lire",
+            "Modifier"
+          ],
+          "answer": 2,
+          "explain": "Le plus restrictif gagne."
+        },
+        {
+          "q": "Le droit NTFS LX (Lecture et exécution) permet :",
+          "options": [
+            "D'écrire",
+            "De lire et traverser les dossiers parents",
+            "De gérer les permissions",
+            "De supprimer"
+          ],
+          "answer": 1,
+          "explain": "Indispensable sur les dossiers du chemin."
+        },
+        {
+          "q": "L'héritage existe :",
+          "options": [
+            "Pour les deux",
+            "Pour aucun",
+            "Pour le partage",
+            "Pour le NTFS : un dossier hérite des droits du parent"
+          ],
+          "answer": 3,
+          "explain": "Le partage se pose par point de partage."
+        },
+        {
+          "q": "On applique les droits à :",
+          "options": [
+            "Tout le monde",
+            "Des ordinateurs",
+            "Des utilisateurs isolés",
+            "Des groupes, jamais à des utilisateurs isolés"
+          ],
+          "answer": 3,
+          "explain": "Prérequis du cours (AGDLP)."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "La bonne pratique du cours :",
+          "options": [
+            "Tout en partage",
+            "Un partage par dossier",
+            "Un seul partage large à la racine + toute la sécurité en NTFS sur des groupes",
+            "Pas de NTFS"
+          ],
+          "answer": 2,
+          "explain": "Un seul jeu de droits à maintenir."
+        },
+        {
+          "q": "Sur le partage racine, on met :",
+          "options": [
+            "Administrateurs seulement",
+            "Le groupe de tous les utilisateurs en Modification, et on retire « Tout le monde »",
+            "Personne",
+            "Tout le monde en Contrôle total"
+          ],
+          "answer": 1,
+          "explain": "Ex. G_Toutes_Formations en Modification."
+        },
+        {
+          "q": "Pour poser des droits précis sur une branche :",
+          "options": [
+            "Redémarrer",
+            "Créer un partage",
+            "Supprimer le dossier",
+            "Désactiver l'héritage et convertir les autorisations héritées en explicites"
+          ],
+          "answer": 3,
+          "explain": "Puis retirer les groupes génériques."
+        },
+        {
+          "q": "Groupes génériques à retirer après conversion :",
+          "options": [
+            "« Utilisateurs » et « Utilisateurs authentifiés »",
+            "Administrateurs",
+            "SYSTEM",
+            "Tous"
+          ],
+          "answer": 0,
+          "explain": "Pour ne laisser QUE les groupes voulus."
+        },
+        {
+          "q": "Sans LX sur un dossier parent :",
+          "options": [
+            "Rien ne change",
+            "L'accès est plus rapide",
+            "L'accès au sous-dossier échoue",
+            "Le partage tombe"
+          ],
+          "answer": 2,
+          "explain": "Il faut traverser tous les parents."
+        },
+        {
+          "q": "Le droit NTFS M (Modification) permet :",
+          "options": [
+            "Lire seulement",
+            "Changer le propriétaire",
+            "Gérer les permissions",
+            "Lecture/écriture/exécution + supprimer"
+          ],
+          "answer": 3,
+          "explain": "CT ajoute permissions et propriété."
+        },
+        {
+          "q": "Faut-il partager chaque dossier ?",
+          "options": [
+            "Oui pour la sécurité",
+            "Oui",
+            "Non : un seul partage racine rend l'arborescence accessible",
+            "Seulement les sous-dossiers"
+          ],
+          "answer": 2,
+          "explain": "Multiplier les partages complique sans bénéfice."
+        },
+        {
+          "q": "Tester depuis le client :",
+          "options": [
+            "Sur le serveur",
+            "Explorateur → \\\\NomDuServeur avec un compte du domaine, plusieurs utilisateurs",
+            "Par ping",
+            "Avec l'admin seulement"
+          ],
+          "answer": 1,
+          "explain": "Vérifier que ça correspond aux droits décidés."
+        },
+        {
+          "q": "Pour ne pas retaper \\\\serveur :",
+          "options": [
+            "Connecter un lecteur réseau, ou le déployer par GPO / script",
+            "Copier le dossier",
+            "Raccourci bureau",
+            "Utiliser FTP"
+          ],
+          "answer": 0,
+          "explain": "Ce PC → Connecter un lecteur réseau."
+        },
+        {
+          "q": "Le partage utilise le protocole :",
+          "options": [
+            "NFS uniquement",
+            "SMB",
+            "HTTP",
+            "FTP"
+          ],
+          "answer": 1,
+          "explain": "Server Message Block."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Trois comptes qui doivent rester quand on coupe l'héritage :",
+          "options": [
+            "Le propriétaire seul",
+            "Aucun",
+            "Administrateurs, SYSTEM, Utilisateurs authentifiés (LX sur ce dossier)",
+            "Tout le monde, Invités, Utilisateurs"
+          ],
+          "answer": 2,
+          "explain": "Sinon plus personne ne reprend la main, la sauvegarde perd l'accès, personne ne traverse."
+        },
+        {
+          "q": "SID des Administrateurs :",
+          "options": [
+            "S-1-5-11",
+            "S-1-1-0",
+            "S-1-5-32-544",
+            "S-1-5-18"
+          ],
+          "answer": 2,
+          "explain": "SYSTEM = S-1-5-18, Utilisateurs authentifiés = S-1-5-11."
+        },
+        {
+          "q": "Pourquoi désigner les comptes par leur SID ?",
+          "options": [
+            "Le nom change selon la langue de Windows ; le SID est le même partout",
+            "Obligatoire",
+            "C'est plus court",
+            "Pour le chiffrement"
+          ],
+          "answer": 0,
+          "explain": "« Administrateurs » = « Administrators » en anglais."
+        },
+        {
+          "q": "« Supprimer » les autorisations héritées au lieu de « Convertir » :",
+          "options": [
+            "Laisse un dossier sans aucune autorisation : plus personne n'entre",
+            "Est plus propre",
+            "Ne change rien",
+            "Est recommandé"
+          ],
+          "answer": 0,
+          "explain": "Toujours convertir."
+        },
+        {
+          "q": "Sans SYSTEM en Contrôle total :",
+          "options": [
+            "Le partage tombe",
+            "Rien",
+            "Le DNS échoue",
+            "Sauvegarde, indexation et antivirus perdent l'accès, silencieusement"
+          ],
+          "answer": 3,
+          "explain": "Ces services tournent sous SYSTEM."
+        },
+        {
+          "q": "Le partage « ouvre la porte », le NTFS :",
+          "options": [
+            "Ferme le serveur",
+            "Ne sert à rien",
+            "Chiffre",
+            "Décide qui accède à quoi"
+          ],
+          "answer": 3,
+          "explain": "Vrai contrôle."
+        },
+        {
+          "q": "Droit NTFS LE :",
+          "options": [
+            "Lecture et écriture : lire + créer/écrire",
+            "Lecture seule",
+            "Exécution",
+            "Contrôle total"
+          ],
+          "answer": 0,
+          "explain": "Abréviations du TP."
+        },
+        {
+          "q": "Un droit de partage peut-il être « Refuser » ?",
+          "options": [
+            "Oui",
+            "Seulement en NTFS",
+            "Jamais",
+            "Non"
+          ],
+          "answer": 0,
+          "explain": "Possible dans les deux systèmes ; Refuser l'emporte."
+        },
+        {
+          "q": "La stratégie recommandée pour les groupes :",
+          "options": [
+            "Un groupe par utilisateur",
+            "Aucun groupe",
+            "Tout le monde",
+            "AGDLP"
+          ],
+          "answer": 3,
+          "explain": "Voir vocabulaire AD."
+        },
+        {
+          "q": "Quelle erreur « immobilise une salle » ?",
+          "options": [
+            "Couper l'héritage en ne gardant que le groupe qui doit accéder",
+            "Un lecteur K:",
+            "Un ping",
+            "Trop de partages"
+          ],
+          "answer": 0,
+          "explain": "Le socle (Administrateurs, SYSTEM, Utilisateurs authentifiés) doit rester."
+        }
+      ]
+    }
+  ]
+}

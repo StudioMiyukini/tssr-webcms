@@ -1,0 +1,351 @@
+{
+  "slug": "linux-reseau",
+  "title": "Linux : configuration réseau",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Les trois couches du réseau Linux :",
+          "options": [
+            "Câble, switch, routeur",
+            "eth0, lo, wlan0",
+            "IP, MAC, port",
+            "L'adresse, la route, la résolution de noms"
+          ],
+          "answer": 3,
+          "explain": "Une panne appartient toujours à l'une des trois."
+        },
+        {
+          "q": "Voir ses adresses :",
+          "options": [
+            "ipconfig",
+            "netstat",
+            "ip a",
+            "ifconfig"
+          ],
+          "answer": 2,
+          "explain": "ip -br a pour une ligne par interface."
+        },
+        {
+          "q": "Voir la table de routage :",
+          "options": [
+            "route print",
+            "ss",
+            "ip a",
+            "ip r"
+          ],
+          "answer": 3,
+          "explain": "La passerelle = ligne default via …"
+        },
+        {
+          "q": "Pas de ligne default dans ip r :",
+          "options": [
+            "Pas d'Internet : la machine ne joint que son propre réseau",
+            "DNS cassé",
+            "Câble débranché",
+            "Tout va bien"
+          ],
+          "answer": 0,
+          "explain": "Le ping du voisin marche, on croit que tout va bien."
+        },
+        {
+          "q": "ss -tulpn :",
+          "options": [
+            "La route",
+            "Les adresses",
+            "Le DNS",
+            "Ports en écoute et qui les écoute"
+          ],
+          "answer": 3,
+          "explain": "Remplace netstat."
+        },
+        {
+          "q": "ifconfig et netstat :",
+          "options": [
+            "Appartiennent à net-tools, absent des Debian récentes : ip et ss les remplacent",
+            "Sont installés",
+            "Sont plus récents",
+            "Sont obligatoires"
+          ],
+          "answer": 0,
+          "explain": "Ce n'est pas une panne."
+        },
+        {
+          "q": "Fichier de configuration réseau sur Debian :",
+          "options": [
+            "/etc/netplan",
+            "/etc/network/interfaces",
+            "nmcli",
+            "/etc/sysconfig/network"
+          ],
+          "answer": 1,
+          "explain": "Sur Rocky : NetworkManager (nmcli/nmtui)."
+        },
+        {
+          "q": "iface ens18 inet static signifie :",
+          "options": [
+            "DHCP",
+            "Boucle locale",
+            "IPv6",
+            "Adresse fixe écrite dans le fichier, IPv4"
+          ],
+          "answer": 3,
+          "explain": "inet = IPv4, inet6 = IPv6."
+        },
+        {
+          "q": "Le mot-clé auto ens18 :",
+          "options": [
+            "Configure automatiquement",
+            "Éteint",
+            "Active le DHCP",
+            "Monte l'interface au démarrage"
+          ],
+          "answer": 3,
+          "explain": "Sans lui : plus d'adresse après redémarrage."
+        },
+        {
+          "q": "Appliquer la configuration :",
+          "options": [
+            "reboot obligatoire",
+            "source interfaces",
+            "systemctl restart networking, ou ifdown/ifup ens18",
+            "ip apply"
+          ],
+          "answer": 2,
+          "explain": "Vérifier avec ip a show ens18 avant de fermer la session."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "ens18, enp0s3 :",
+          "options": [
+            "Des noms prévisibles décrivant l'emplacement matériel (bus PCI, slot)",
+            "Des VLAN",
+            "Des ponts",
+            "Des noms aléatoires"
+          ],
+          "answer": 0,
+          "explain": "Stable au rebranchement, contrairement à eth0."
+        },
+        {
+          "q": "La faute la plus fréquente du TP :",
+          "options": [
+            "Oublier lo",
+            "Configurer eth0 sur une machine qui a ens18",
+            "Oublier le masque",
+            "Mettre deux passerelles"
+          ],
+          "answer": 1,
+          "explain": "Vérifier le nom avec ip -br a."
+        },
+        {
+          "q": "Redémarrer le réseau par SSH avec une config fausse :",
+          "options": [
+            "Redémarre",
+            "La session tombe, la machine est injoignable : il faut la console",
+            "Sans risque",
+            "Impossible"
+          ],
+          "answer": 1,
+          "explain": "Prendre un filet : at now + 5 minutes ou tmux."
+        },
+        {
+          "q": "allow-hotplug :",
+          "options": [
+            "Jamais",
+            "Quand le noyau détecte la carte (branchement à chaud)",
+            "En DHCP",
+            "Au démarrage"
+          ],
+          "answer": 1,
+          "explain": "Portable ou carte amovible ; auto pour un serveur."
+        },
+        {
+          "q": "La méthode loopback :",
+          "options": [
+            "Pour les VLAN",
+            "Pour le DHCP",
+            "Pour ens18",
+            "Réservée à lo : ne jamais la retirer"
+          ],
+          "answer": 3,
+          "explain": "Beaucoup de services en dépendent."
+        },
+        {
+          "q": "La méthode manual :",
+          "options": [
+            "Configuration à la main",
+            "Static",
+            "Interface montée sans adresse : ponts, VLAN, agrégation",
+            "DHCP"
+          ],
+          "answer": 2,
+          "explain": "Tableau des méthodes."
+        },
+        {
+          "q": "address 192.168.10.20/24 :",
+          "options": [
+            "Sans masque",
+            "Adresse et masque en une ligne (forme moderne)",
+            "Passerelle",
+            "IPv6"
+          ],
+          "answer": 1,
+          "explain": "netmask 255.255.255.0 est l'ancienne écriture."
+        },
+        {
+          "q": "Combien de gateway par machine ?",
+          "options": [
+            "Illimité",
+            "Une par interface",
+            "Deux",
+            "Une seule pour toute la machine"
+          ],
+          "answer": 3,
+          "explain": "La route par défaut."
+        },
+        {
+          "q": "ip neigh :",
+          "options": [
+            "Les routes",
+            "La table ARP : qui répond sur le lien local",
+            "Les ports",
+            "Les voisins DNS"
+          ],
+          "answer": 1,
+          "explain": "Utile pour le diagnostic couche 2."
+        },
+        {
+          "q": "Symptôme d'un auto oublié :",
+          "options": [
+            "Pas d'adresse tout de suite",
+            "Route absente",
+            "ifup marche, mais plus d'adresse après redémarrage",
+            "DNS cassé"
+          ],
+          "answer": 2,
+          "explain": "Le pendant réseau de start sans enable."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "ip -br a montre « ens18 DOWN » :",
+          "options": [
+            "DNS",
+            "Route",
+            "Lien inactif : câble, VM ou interface éteinte",
+            "Adresse manquante"
+          ],
+          "answer": 2,
+          "explain": "UP = lien actif."
+        },
+        {
+          "q": "Filet avant un restart réseau distant :",
+          "options": [
+            "Rien",
+            "echo \"ip a add 192.168.10.20/24 dev ens18\" | at now + 5 minutes",
+            "shutdown",
+            "reboot"
+          ],
+          "answer": 1,
+          "explain": "Ou une session tmux."
+        },
+        {
+          "q": "Où se déclare le DNS dans interfaces ?",
+          "options": [
+            "gateway",
+            "resolv",
+            "nameserver",
+            "dns-nameservers 192.168.10.11 1.1.1.1"
+          ],
+          "answer": 3,
+          "explain": "Avec dns-search pour le domaine."
+        },
+        {
+          "q": "Sur Rocky, la configuration permanente passe par :",
+          "options": [
+            "netplan",
+            "NetworkManager (nmtui, nmcli)",
+            "ifconfig",
+            "/etc/network/interfaces"
+          ],
+          "answer": 1,
+          "explain": "ip a, ip r, /etc/hosts et resolv.conf se comportent pareil."
+        },
+        {
+          "q": "Tester séparément les trois couches :",
+          "options": [
+            "Un seul ping",
+            "traceroute seul",
+            "ping IP locale (adresse), ping 1.1.1.1 (route), ping nom (résolution)",
+            "Impossible"
+          ],
+          "answer": 2,
+          "explain": "On isole la couche en défaut."
+        },
+        {
+          "q": "La strophe iface :",
+          "options": [
+            "Un commentaire",
+            "Un mot-clé puis ses options indentées en dessous",
+            "Un script",
+            "Une seule ligne"
+          ],
+          "answer": 1,
+          "explain": "Grammaire du fichier."
+        },
+        {
+          "q": "Ni auto ni allow-hotplug :",
+          "options": [
+            "Déclarée mais jamais montée seule : ifup à la main",
+            "DHCP",
+            "Erreur",
+            "Montée au boot"
+          ],
+          "answer": 0,
+          "explain": "Tableau du cours."
+        },
+        {
+          "q": "Commande pour vérifier une interface précise :",
+          "options": [
+            "show ens18",
+            "ifconfig ens18",
+            "ip ens18",
+            "ip a show ens18"
+          ],
+          "answer": 3,
+          "explain": "Avant de fermer la session."
+        },
+        {
+          "q": "Pourquoi ip r est la deuxième commande à taper ?",
+          "options": [
+            "Pour le DNS",
+            "Habitude",
+            "Sans route par défaut, la machine ne sort pas de son réseau",
+            "Pour les ports"
+          ],
+          "answer": 2,
+          "explain": "Après ip a."
+        },
+        {
+          "q": "Le nom eth0 posait problème car :",
+          "options": [
+            "IPv6",
+            "Trop court",
+            "Il pouvait changer d'une carte à l'autre au redémarrage",
+            "Interdit"
+          ],
+          "answer": 2,
+          "explain": "D'où les noms prévisibles."
+        }
+      ]
+    }
+  ]
+}

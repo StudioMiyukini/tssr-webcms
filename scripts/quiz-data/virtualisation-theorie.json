@@ -1,0 +1,351 @@
+{
+  "slug": "virtualisation-theorie",
+  "title": "La virtualisation : théorie & concepts",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "La virtualisation consiste à :",
+          "options": [
+            "Supprimer le matériel",
+            "Créer des versions logicielles de ressources matérielles (serveur, poste, réseau, disque)",
+            "Chiffrer les disques",
+            "Acheter plus de serveurs"
+          ],
+          "answer": 1,
+          "explain": "On découpe et on partage le matériel."
+        },
+        {
+          "q": "L'analogie du cours :",
+          "options": [
+            "Un immeuble d'appartements : le bâtiment = serveur physique, les logements = VM, le syndic = hyperviseur",
+            "Un jardin",
+            "Une voiture",
+            "Une usine"
+          ],
+          "answer": 0,
+          "explain": "Un seul immeuble, plein de locataires séparés."
+        },
+        {
+          "q": "La couche logicielle entre le matériel et les systèmes :",
+          "options": [
+            "Le BIOS",
+            "Le pilote",
+            "L'hyperviseur",
+            "Le noyau"
+          ],
+          "answer": 2,
+          "explain": "Il découpe et distribue les ressources."
+        },
+        {
+          "q": "Deux bénéfices fondamentaux :",
+          "options": [
+            "Chiffrement et compression",
+            "Vitesse et prix",
+            "Wi-Fi et fibre",
+            "Mutualisation et isolation"
+          ],
+          "answer": 3,
+          "explain": "Un gros serveur fait tourner plusieurs systèmes étanches."
+        },
+        {
+          "q": "Hyperviseur de type 1 :",
+          "options": [
+            "Posé directement sur le matériel (bare-metal) : ESXi, Hyper-V, Proxmox",
+            "Installé sur un OS existant",
+            "Un conteneur",
+            "Un émulateur"
+          ],
+          "answer": 0,
+          "explain": "Le plus performant, pour les serveurs."
+        },
+        {
+          "q": "Hyperviseur de type 2 :",
+          "options": [
+            "Bare-metal",
+            "Un switch",
+            "Un logiciel installé sur un OS existant : VirtualBox, VMware Workstation",
+            "Un SAN"
+          ],
+          "answer": 2,
+          "explain": "Idéal pour s'entraîner."
+        },
+        {
+          "q": "VDI signifie :",
+          "options": [
+            "Virtual Data Interface",
+            "Virtual Desktop Infrastructure : les bureaux tournent sur le serveur",
+            "Virtual Disk Image",
+            "Video Display Integration"
+          ],
+          "answer": 1,
+          "explain": "Chacun s'y connecte depuis un poste léger."
+        },
+        {
+          "q": "Un conteneur (Docker) :",
+          "options": [
+            "Embarque seulement l'application et partage le noyau de l'hôte",
+            "Est un disque",
+            "Est un switch",
+            "Est une VM complète"
+          ],
+          "answer": 0,
+          "explain": "Démarrage en secondes."
+        },
+        {
+          "q": "Format de disque virtuel récent sous Hyper-V :",
+          "options": [
+            "VMDK",
+            "VHD",
+            "ISO",
+            "VHDX (jusqu'à 64 To)"
+          ],
+          "answer": 3,
+          "explain": "VHD = ancien, max 2 To."
+        },
+        {
+          "q": "Un snapshot est :",
+          "options": [
+            "Un clone",
+            "Une « photo » de la VM à un instant T pour revenir en arrière",
+            "Une sauvegarde indépendante",
+            "Un disque"
+          ],
+          "answer": 1,
+          "explain": "Avant une opération à risque."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Commutateur virtuel Externe :",
+          "options": [
+            "Isolé",
+            "VM ↔ VM, VM ↔ hôte, VM ↔ LAN/Internet : adossé à une carte physique",
+            "VM entre elles seulement",
+            "Sans réseau"
+          ],
+          "answer": 1,
+          "explain": "Production : les VM sont sur le réseau réel."
+        },
+        {
+          "q": "Commutateur virtuel Interne :",
+          "options": [
+            "VM et hôte communiquent, coupés du réseau extérieur",
+            "Accès Internet",
+            "Externe",
+            "VM entre elles seulement"
+          ],
+          "answer": 0,
+          "explain": "Pas de LAN."
+        },
+        {
+          "q": "Commutateur virtuel Privé :",
+          "options": [
+            "Avec Internet",
+            "Avec le LAN",
+            "Labo 100 % isolé : les VM ne parlent qu'entre elles",
+            "Avec l'hôte"
+          ],
+          "answer": 2,
+          "explain": "Ni hôte, ni LAN."
+        },
+        {
+          "q": "Combien de commutateurs externes peut-on créer ?",
+          "options": [
+            "Un seul",
+            "Illimité",
+            "Deux",
+            "Autant que de cartes réseau physiques"
+          ],
+          "answer": 3,
+          "explain": "Chacun « prend » une NIC."
+        },
+        {
+          "q": "Un snapshot ne doit pas vivre plus de :",
+          "options": [
+            "~72 h",
+            "Illimité",
+            "1 heure",
+            "1 an"
+          ],
+          "answer": 0,
+          "explain": "Il grossit et consomme tout le disque ; pas plus de 2 ou 3 à la suite."
+        },
+        {
+          "q": "Snapshot vs backup :",
+          "options": [
+            "Le backup est un snapshot",
+            "Le snapshot est lié à la VM et son hôte ; le backup est une copie indépendante stockée ailleurs",
+            "Identiques",
+            "Le snapshot est mieux"
+          ],
+          "answer": 1,
+          "explain": "Si le serveur meurt, le snapshot meurt avec."
+        },
+        {
+          "q": "RAM dynamique :",
+          "options": [
+            "Fixe",
+            "Désactivée",
+            "Ajustée au besoin entre un mini et un maxi",
+            "Illimitée"
+          ],
+          "answer": 2,
+          "explain": "Mutualise mieux la RAM entre VM."
+        },
+        {
+          "q": "Scalabilité verticale :",
+          "options": [
+            "Augmenter la puissance d'une machine (vCPU, vRAM)",
+            "Ajouter des machines",
+            "Réduire",
+            "Cloner"
+          ],
+          "answer": 0,
+          "explain": "Horizontale = ajouter des machines."
+        },
+        {
+          "q": "Le stockage partagé (SAN/NAS) permet :",
+          "options": [
+            "Rien de plus",
+            "Plus de RAM",
+            "La migration à chaud et les clusters",
+            "Des VLAN"
+          ],
+          "answer": 2,
+          "explain": "Plusieurs serveurs accèdent aux mêmes VM."
+        },
+        {
+          "q": "Paravirtualisation :",
+          "options": [
+            "Un conteneur",
+            "L'OS invité coopère avec des pilotes spéciaux : plus performant",
+            "L'OS invité ignore qu'il est virtualisé",
+            "Un émulateur"
+          ],
+          "answer": 1,
+          "explain": "Complète = l'OS ne sait pas."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Inconvénient majeur de la virtualisation :",
+          "options": [
+            "Trop lent",
+            "Panne physique = toutes les VM tombent → cluster",
+            "Pas de disque",
+            "Pas de réseau"
+          ],
+          "answer": 1,
+          "explain": "On répond par un cluster de serveurs."
+        },
+        {
+          "q": "Hyper-V sous Windows 10/11 :",
+          "options": [
+            "Est un conteneur",
+            "Se comporte comme un type 2 mais Windows passe derrière l'hyperviseur",
+            "N'existe pas",
+            "Est un pur type 2"
+          ],
+          "answer": 1,
+          "explain": "En entreprise, type 1 sur Windows Server."
+        },
+        {
+          "q": "Disque virtuel dynamique :",
+          "options": [
+            "Fixe",
+            "Grandit au besoin",
+            "Partagé",
+            "Réservé d'avance"
+          ],
+          "answer": 1,
+          "explain": "Fixe = taille réservée d'avance."
+        },
+        {
+          "q": "SDN signifie :",
+          "options": [
+            "Secure Data Network",
+            "Server DNS",
+            "Storage Disk Node",
+            "Software-Defined Networking : le réseau piloté par configuration"
+          ],
+          "answer": 3,
+          "explain": "Virtualisation du réseau."
+        },
+        {
+          "q": "Virtualisation applicative :",
+          "options": [
+            "Un serveur virtuel",
+            "Un disque",
+            "Un VLAN",
+            "Une application encapsulée qui tourne isolée sans installation classique (App-V)"
+          ],
+          "answer": 3,
+          "explain": "Applications « portables »."
+        },
+        {
+          "q": "Quand prend-on un snapshot en exam comme en réel ?",
+          "options": [
+            "Après un an",
+            "Jamais",
+            "Avant d'installer l'OS",
+            "Après l'installation de l'OS, avant de configurer"
+          ],
+          "answer": 3,
+          "explain": "Et avant une mise à jour / correctif CVE."
+        },
+        {
+          "q": "vNIC :",
+          "options": [
+            "Un CPU",
+            "Une carte réseau virtuelle reliée à un commutateur virtuel",
+            "Un snapshot",
+            "Un disque"
+          ],
+          "answer": 1,
+          "explain": "Ressource virtuelle de la VM."
+        },
+        {
+          "q": "Avantage : déploiement rapide grâce à :",
+          "options": [
+            "Aux modèles et clones",
+            "Aux câbles",
+            "Au BIOS",
+            "Au RAID"
+          ],
+          "answer": 0,
+          "explain": "Une VM se duplique."
+        },
+        {
+          "q": "Trop de VM sur une seule machine :",
+          "options": [
+            "Performances impactées",
+            "Plus de sécurité",
+            "Plus de RAM",
+            "Aucun effet"
+          ],
+          "answer": 0,
+          "explain": "Inconvénient listé."
+        },
+        {
+          "q": "vSAN, SAN, NAS relèvent de :",
+          "options": [
+            "Les conteneurs",
+            "La virtualisation du réseau",
+            "La virtualisation du stockage : des pools présentés comme un seul espace",
+            "Le VDI"
+          ],
+          "answer": 2,
+          "explain": "Indépendamment du matériel sous-jacent."
+        }
+      ]
+    }
+  ]
+}

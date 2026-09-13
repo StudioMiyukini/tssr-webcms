@@ -1,0 +1,351 @@
+{
+  "slug": "segmentation-sous-reseaux",
+  "title": "La segmentation de sous-réseaux (subnetting)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Qu'est-ce que le subnetting ?",
+          "options": [
+            "Attribuer des IP automatiquement",
+            "Chiffrer les échanges",
+            "Relier deux réseaux distants",
+            "Découper un grand réseau en plusieurs sous-réseaux plus petits"
+          ],
+          "answer": 3,
+          "explain": "On agrandit le masque en empruntant des bits à la partie machine pour créer une partie sous-réseau."
+        },
+        {
+          "q": "Quels bits emprunte-t-on pour créer des sous-réseaux ?",
+          "options": [
+            "Des bits du broadcast",
+            "Des bits de la partie réseau",
+            "Des bits de la partie machine",
+            "Des bits du DNS"
+          ],
+          "answer": 2,
+          "explain": "Le CIDR augmente : les bits pris à la partie « machine » deviennent la partie « sous-réseau »."
+        },
+        {
+          "q": "Que signifie FLSM ?",
+          "options": [
+            "Des sous-réseaux tous de même taille",
+            "Des sous-réseaux de tailles variables",
+            "Un protocole de routage",
+            "Un masque fixe de /24"
+          ],
+          "answer": 0,
+          "explain": "FLSM = Fixed Length : on part d'un nombre de sous-réseaux voulu, tous identiques."
+        },
+        {
+          "q": "Que signifie VLSM ?",
+          "options": [
+            "Very Large Subnet Mask",
+            "Un masque toujours /30",
+            "Variable Length Subnet Mask : des sous-réseaux de tailles différentes",
+            "Virtual LAN Subnet Mode"
+          ],
+          "answer": 2,
+          "explain": "VLSM taille chaque sous-réseau au plus juste selon son nombre d'hôtes."
+        },
+        {
+          "q": "Pour 5 sous-réseaux, combien de bits faut-il ajouter au CIDR ?",
+          "options": [
+            "4",
+            "5",
+            "2",
+            "3"
+          ],
+          "answer": 3,
+          "explain": "2ⁿ ≥ 5 → 2³ = 8 → 3 bits."
+        },
+        {
+          "q": "Nouveau CIDR pour 5 sous-réseaux depuis un /24 ?",
+          "options": [
+            "/25",
+            "/27",
+            "/26",
+            "/28"
+          ],
+          "answer": 1,
+          "explain": "24 + 3 = /27 (255.255.255.224)."
+        },
+        {
+          "q": "Quel est le « pas » entre deux sous-réseaux /27 ?",
+          "options": [
+            "64",
+            "32",
+            "16",
+            "128"
+          ],
+          "answer": 1,
+          "explain": "Le dernier bit à 1 du masque 11100000 vaut 32."
+        },
+        {
+          "q": "Combien d'hôtes utilisables dans chaque /27 ?",
+          "options": [
+            "30",
+            "31",
+            "32",
+            "28"
+          ],
+          "answer": 0,
+          "explain": "32 adresses − IDSR − broadcast = 30."
+        },
+        {
+          "q": "Trois objectifs de la segmentation cités par le cours :",
+          "options": [
+            "Router, commuter, filtrer",
+            "Accélérer, chiffrer, compresser",
+            "Cloisonner, organiser, limiter le gaspillage d'adresses",
+            "Sauvegarder, restaurer, archiver"
+          ],
+          "answer": 2,
+          "explain": "Sécurité/isolation, organisation (par service ou étage) et économie d'adresses."
+        },
+        {
+          "q": "Formule du nombre d'hôtes utilisables :",
+          "options": [
+            "2^CIDR",
+            "256 − CIDR",
+            "32 − CIDR",
+            "2^(32 − CIDR) − 2"
+          ],
+          "answer": 3,
+          "explain": "On retire toujours l'IDSR et le broadcast."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "En VLSM, que faut-il ajouter au nombre d'hôtes avant de chercher la puissance de 2 ?",
+          "options": [
+            "+10 de marge",
+            "Rien",
+            "+1",
+            "+2 (réseau et broadcast)"
+          ],
+          "answer": 3,
+          "explain": "L'IDSR et le broadcast ne sont pas attribuables : hôtes + 2."
+        },
+        {
+          "q": "Sous-réseau pour 64 hôtes : quel CIDR ?",
+          "options": [
+            "/25",
+            "/26",
+            "/27",
+            "/24"
+          ],
+          "answer": 0,
+          "explain": "64 + 2 = 66 → 2⁷ = 128 ≥ 66 → CIDR = 32 − 7 = /25."
+        },
+        {
+          "q": "Sous-réseau pour 36 hôtes : quel CIDR ?",
+          "options": [
+            "/27",
+            "/26",
+            "/28",
+            "/25"
+          ],
+          "answer": 1,
+          "explain": "36 + 2 = 38 → 2⁶ = 64 → /26."
+        },
+        {
+          "q": "Sous-réseau pour 5 hôtes : quel CIDR ?",
+          "options": [
+            "/27",
+            "/29",
+            "/30",
+            "/28"
+          ],
+          "answer": 1,
+          "explain": "5 + 2 = 7 → 2³ = 8 → /29 (6 hôtes)."
+        },
+        {
+          "q": "Dans quel ordre traite-t-on les sous-réseaux en VLSM ?",
+          "options": [
+            "Du plus petit au plus gros",
+            "Peu importe",
+            "Du plus gros au plus petit nombre d'hôtes",
+            "Par ordre alphabétique"
+          ],
+          "answer": 2,
+          "explain": "Le plus gros d'abord, sinon les blocs ne s'alignent pas et on gaspille de l'espace."
+        },
+        {
+          "q": "SR2 (64 hôtes) placé en premier depuis 192.168.10.0 : son broadcast ?",
+          "options": [
+            "192.168.10.128",
+            "192.168.10.127",
+            "192.168.10.63",
+            "192.168.10.255"
+          ],
+          "answer": 1,
+          "explain": "/25 → bloc .0 à .127, broadcast .127."
+        },
+        {
+          "q": "Après SR2 (/25) et SR3 (/26), à quelle adresse commence SR1 (/29) ?",
+          "options": [
+            "192.168.10.128",
+            "192.168.10.192",
+            "192.168.10.224",
+            "192.168.10.200"
+          ],
+          "answer": 1,
+          "explain": "SR3 occupe .128 à .191 → SR1 commence à .192 (broadcast .199)."
+        },
+        {
+          "q": "Combien d'adresses restent libres après ce découpage VLSM du /24 ?",
+          "options": [
+            ".200 → .255",
+            ".128 → .255",
+            ".192 → .255",
+            "Aucune"
+          ],
+          "answer": 0,
+          "explain": "On a consommé .0 → .199 ; il reste .200 → .255."
+        },
+        {
+          "q": "Pourquoi le FLSM ne peut-il pas loger 64, 36 et 5 hôtes dans un /24 ?",
+          "options": [
+            "Parce que 3 est impair",
+            "Parce qu'il faudrait un /25 pour tous, soit 3 × 128 > 256 adresses",
+            "Parce que le FLSM interdit les /25",
+            "Parce que 5 hôtes est trop peu"
+          ],
+          "answer": 1,
+          "explain": "En FLSM, tous prennent la taille du plus gros : 3 blocs de 128 ne tiennent pas dans 256."
+        },
+        {
+          "q": "Le « pas » d'un sous-réseau se lit :",
+          "options": [
+            "Sur l'IP de départ",
+            "Sur le premier bit du masque",
+            "Sur le dernier bit à 1 du masque",
+            "Sur le CIDR"
+          ],
+          "answer": 2,
+          "explain": "La valeur décimale du dernier bit à 1 = l'écart entre deux sous-réseaux."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Combien de sous-réseaux /28 peut-on créer dans un /24 ?",
+          "options": [
+            "8",
+            "32",
+            "4",
+            "16"
+          ],
+          "answer": 3,
+          "explain": "4 bits empruntés → 2⁴ = 16 sous-réseaux de 16 adresses."
+        },
+        {
+          "q": "Pour 20 sous-réseaux depuis un /24, quel CIDR ?",
+          "options": [
+            "/30",
+            "/28",
+            "/27",
+            "/29"
+          ],
+          "answer": 3,
+          "explain": "2ⁿ ≥ 20 → 2⁵ = 32 → /29 (mais seulement 6 hôtes chacun)."
+        },
+        {
+          "q": "Un sous-réseau pour 100 hôtes demande :",
+          "options": [
+            "/26",
+            "/24",
+            "/25",
+            "/27"
+          ],
+          "answer": 2,
+          "explain": "100 + 2 = 102 → 2⁷ = 128 → /25 (126 hôtes)."
+        },
+        {
+          "q": "IDSR du 3ᵉ sous-réseau /27 de 192.168.10.0/24 ?",
+          "options": [
+            "192.168.10.32",
+            "192.168.10.64",
+            "192.168.10.128",
+            "192.168.10.96"
+          ],
+          "answer": 1,
+          "explain": "Pas de 32 : SR1 .0, SR2 .32, SR3 .64."
+        },
+        {
+          "q": "Plage utilisable du sous-réseau 192.168.10.96/27 ?",
+          "options": [
+            ".96 → .127",
+            ".97 → .126",
+            ".96 → .126",
+            ".97 → .127"
+          ],
+          "answer": 1,
+          "explain": "IDSR .96, broadcast .127, hôtes .97 → .126."
+        },
+        {
+          "q": "Quel masque pour un /26 ?",
+          "options": [
+            "255.255.255.224",
+            "255.255.255.128",
+            "255.255.255.240",
+            "255.255.255.192"
+          ],
+          "answer": 3,
+          "explain": "/26 = 255.255.255.192."
+        },
+        {
+          "q": "Deux sous-réseaux de 2 hôtes chacun (liens routeurs) consomment au minimum :",
+          "options": [
+            "1 × /28",
+            "2 × /29 = 16 adresses",
+            "2 × /31",
+            "2 × /30 = 8 adresses"
+          ],
+          "answer": 3,
+          "explain": "2 + 2 = 4 → 2² → /30 : 4 adresses chacun."
+        },
+        {
+          "q": "Avantage principal du VLSM sur le FLSM :",
+          "options": [
+            "Plus rapide sur le réseau",
+            "Pas besoin de masque",
+            "Plus simple à calculer",
+            "Moins de gaspillage d'adresses"
+          ],
+          "answer": 3,
+          "explain": "Chaque sous-réseau est taillé au plus juste."
+        },
+        {
+          "q": "Combien d'hôtes utilisables dans un /30 ?",
+          "options": [
+            "2",
+            "4",
+            "3",
+            "1"
+          ],
+          "answer": 0,
+          "explain": "2² − 2 = 2."
+        },
+        {
+          "q": "Depuis 10.0.0.0/16, on veut 4 sous-réseaux égaux : quel CIDR ?",
+          "options": [
+            "/20",
+            "/17",
+            "/18",
+            "/24"
+          ],
+          "answer": 2,
+          "explain": "2² = 4 → 16 + 2 = /18, chacun 16 382 hôtes."
+        }
+      ]
+    }
+  ]
+}

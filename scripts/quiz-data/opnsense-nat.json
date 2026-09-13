@@ -1,0 +1,351 @@
+{
+  "slug": "opnsense-nat",
+  "title": "OPNsense : le NAT et les redirections de port",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Quels sont les trois onglets de Firewall › NAT ?",
+          "options": [
+            "Pass, Block, Reject",
+            "LAN, WAN, DMZ",
+            "Outbound, Port Forward, One-to-One",
+            "Inbound, Outbound, Static"
+          ],
+          "answer": 2,
+          "explain": "Sortant, redirection de port et 1:1 : trois besoins différents."
+        },
+        {
+          "q": "Le NAT sortant (Outbound) sert à :",
+          "options": [
+            "Exposer un serveur interne",
+            "Créer des VLAN",
+            "Bloquer les bogons",
+            "Faire sortir le réseau privé derrière l'adresse publique"
+          ],
+          "answer": 3,
+          "explain": "Actif par défaut en mode Automatic : c'est du PAT."
+        },
+        {
+          "q": "La redirection de port (Port Forward) sert à :",
+          "options": [
+            "Assigner une interface",
+            "Exposer un service d'un serveur interne depuis Internet",
+            "Chiffrer le trafic",
+            "Sortir sur Internet"
+          ],
+          "answer": 1,
+          "explain": "Internet → interne : le web d'un serveur, rien d'autre."
+        },
+        {
+          "q": "Quel mode de NAT sortant est actif par défaut ?",
+          "options": [
+            "Manual",
+            "Automatic",
+            "Disabled",
+            "Hybrid"
+          ],
+          "answer": 1,
+          "explain": "OPNsense génère seul les règles : tout réseau local qui sort par le WAN prend l'adresse du WAN."
+        },
+        {
+          "q": "Quel mode garde les règles automatiques tout en permettant d'en ajouter ?",
+          "options": [
+            "Automatic",
+            "Hybrid",
+            "Manual",
+            "Disabled"
+          ],
+          "answer": 1,
+          "explain": "Hybrid : les règles automatiques plus les tiennes, qui passent avant."
+        },
+        {
+          "q": "Dans une redirection, que choisir en Destination ?",
+          "options": [
+            "192.168.20.10",
+            "LAN address",
+            "any",
+            "WAN address"
+          ],
+          "answer": 3,
+          "explain": "Un renvoi dynamique qui survit à un changement d'adresse publique."
+        },
+        {
+          "q": "Que renseigne-t-on en Redirect target IP ?",
+          "options": [
+            "La passerelle",
+            "Le serveur interne, ex. 192.168.20.10",
+            "L'adresse publique",
+            "Le DNS"
+          ],
+          "answer": 1,
+          "explain": "La destination réelle après traduction."
+        },
+        {
+          "q": "Quel choix de Filter rule association est recommandé ?",
+          "options": [
+            "None",
+            "Pass",
+            "Add unassociated filter rule",
+            "Add associated filter rule"
+          ],
+          "answer": 3,
+          "explain": "OPNsense écrit et maintient la règle de filtrage correcte."
+        },
+        {
+          "q": "Un alias de type Port(s) contient :",
+          "options": [
+            "Des pays",
+            "Des adresses",
+            "Des ports, ex. PORTS_WEB = 80, 443",
+            "Des réseaux"
+          ],
+          "answer": 2,
+          "explain": "Host(s), Network(s), Port(s), URL Table, GeoIP."
+        },
+        {
+          "q": "Pourquoi utiliser des alias ?",
+          "options": [
+            "Pour ne jamais écrire deux fois la même adresse et rendre les règles modifiables",
+            "Pour l'IPv6",
+            "Pour chiffrer",
+            "Pour accélérer le pare-feu"
+          ],
+          "answer": 0,
+          "explain": "Un serveur change d'adresse : on corrige l'alias une fois."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Le NAT passe AVANT ou APRÈS le filtrage ?",
+          "options": [
+            "Après",
+            "Avant : la règle de filtrage voit la destination déjà réécrite",
+            "Ça dépend du protocole",
+            "En même temps"
+          ],
+          "answer": 1,
+          "explain": "La règle WAN doit viser l'adresse interne, pas WAN address."
+        },
+        {
+          "q": "Une règle de filtrage écrite sur WAN address pour une redirection :",
+          "options": [
+            "Fonctionne",
+            "Est convertie automatiquement",
+            "Ne correspond jamais : le paquet tombe dans le refus implicite",
+            "Bloque tout"
+          ],
+          "answer": 2,
+          "explain": "C'est le point qui fait chercher des heures."
+        },
+        {
+          "q": "Que fait le choix « Pass » de Filter rule association ?",
+          "options": [
+            "La redirection laisse passer d'elle-même, sans règle visible dans la liste",
+            "Crée un alias",
+            "Crée une règle liée",
+            "Bloque le trafic"
+          ],
+          "answer": 0,
+          "explain": "Pratique, mais plus personne ne voit ce trafic à la relecture."
+        },
+        {
+          "q": "Comment restreindre une redirection à quelques utilisateurs connus ?",
+          "options": [
+            "Désactiver le NAT sortant",
+            "Utiliser le 1:1",
+            "Changer le port",
+            "Renseigner le champ Source avec un alias de leurs adresses"
+          ],
+          "answer": 3,
+          "explain": "Le service disparaît pour tous les autres, robots compris."
+        },
+        {
+          "q": "Publier le SSH sur un port haut plutôt que 22 :",
+          "options": [
+            "Est interdit",
+            "Sécurise totalement",
+            "Réduit le bruit des balayages, sans être de la sécurité",
+            "Coupe le NAT"
+          ],
+          "answer": 2,
+          "explain": "La sécurité reste la clé et la restriction de source."
+        },
+        {
+          "q": "Que suppose le NAT 1:1 ?",
+          "options": [
+            "Plusieurs adresses publiques, déclarées en Virtual IPs",
+            "Un VLAN",
+            "Un seul serveur",
+            "Le mode Manual"
+          ],
+          "answer": 0,
+          "explain": "Interfaces › Virtual IPs, type IP Alias, sinon le pare-feu ne répond pas pour cette adresse."
+        },
+        {
+          "q": "Le NAT 1:1 remplace-t-il les règles de filtrage ?",
+          "options": [
+            "Oui",
+            "Non : il traduit, il n'autorise pas",
+            "Seulement en Hybrid",
+            "Seulement pour TCP"
+          ],
+          "answer": 1,
+          "explain": "Sans règle sur le WAN, rien n'entre — heureusement."
+        },
+        {
+          "q": "Passer le NAT sortant en Manual sans écrire de règles :",
+          "options": [
+            "Active le 1:1",
+            "Ne change rien",
+            "Coupe Internet pour tout le monde",
+            "Bloque le WAN"
+          ],
+          "answer": 2,
+          "explain": "Le comportement automatique est effacé ; préférer Hybrid."
+        },
+        {
+          "q": "À quoi sert « Static port » dans le NAT sortant ?",
+          "options": [
+            "À bloquer les ports",
+            "À activer l'IPv6",
+            "À conserver le port source, nécessaire pour IPsec, SIP, quelques jeux",
+            "À fixer le port publié"
+          ],
+          "answer": 2,
+          "explain": "À éviter partout ailleurs : deux machines ne peuvent plus utiliser le même port."
+        },
+        {
+          "q": "Quel alias contient une liste téléchargée périodiquement ?",
+          "options": [
+            "GeoIP",
+            "URL Table",
+            "Network(s)",
+            "Host(s)"
+          ],
+          "answer": 1,
+          "explain": "Ex. des listes d'adresses malveillantes tenues à jour ailleurs."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Le site publié répond depuis Internet mais pas depuis le LAN : c'est…",
+          "options": [
+            "Le piège de la réflexion NAT : le poste résout vers l'adresse publique",
+            "Un bogon",
+            "Un problème de DHCP",
+            "Le mode Manual"
+          ],
+          "answer": 0,
+          "explain": "Le paquet entre et devrait ressortir par la même zone."
+        },
+        {
+          "q": "Quelle est la bonne solution au problème du client interne ?",
+          "options": [
+            "Le NAT 1:1",
+            "Activer la réflexion NAT",
+            "Un VLAN",
+            "Le DNS partagé (split DNS) : le DNS interne répond l'adresse interne"
+          ],
+          "answer": 3,
+          "explain": "Il supprime le problème au lieu de le contourner ; trafic direct, journaux serveur exploitables."
+        },
+        {
+          "q": "Où se configure la réflexion NAT ?",
+          "options": [
+            "Interfaces › WAN",
+            "System › Trust",
+            "Firewall › Settings › Advanced",
+            "Services › Unbound DNS"
+          ],
+          "answer": 2,
+          "explain": "Recommandée seulement pour le dépannage ou quand on ne tient pas le DNS."
+        },
+        {
+          "q": "Où se configure le DNS partagé ?",
+          "options": [
+            "Services › Unbound DNS › Overrides",
+            "Firewall › NAT",
+            "Interfaces › Virtual IPs",
+            "System › Settings"
+          ],
+          "answer": 0,
+          "explain": "Un Host Override : www.miyukini.fr → 192.168.20.10."
+        },
+        {
+          "q": "Depuis où doit-on tester une redirection ?",
+          "options": [
+            "Depuis le pare-feu",
+            "Depuis le LAN",
+            "Depuis l'extérieur (partage de connexion mobile)",
+            "Depuis la DMZ"
+          ],
+          "answer": 2,
+          "explain": "Sinon c'est la réflexion qu'on teste sans le savoir."
+        },
+        {
+          "q": "Un refus immédiat sur Test-NetConnection ip.publique -Port 443 vient plutôt :",
+          "options": [
+            "Du pare-feu",
+            "Du serveur",
+            "Du câble",
+            "Du DNS"
+          ],
+          "answer": 0,
+          "explain": "Une attente puis un échec vient plutôt du serveur ou de son pare-feu local."
+        },
+        {
+          "q": "Où voit-on la traduction ligne par ligne ?",
+          "options": [
+            "Services › DHCP",
+            "Firewall › Aliases",
+            "Firewall › Diagnostics › States",
+            "System › Backups"
+          ],
+          "answer": 2,
+          "explain": "La table des états montre chaque traduction."
+        },
+        {
+          "q": "Quel protocole choisir pour publier HTTPS ?",
+          "options": [
+            "ICMP",
+            "TCP seulement",
+            "TCP/UDP",
+            "UDP"
+          ],
+          "answer": 1,
+          "explain": "On n'ouvre que ce qui sert."
+        },
+        {
+          "q": "Que fait « Add unassociated filter rule » ?",
+          "options": [
+            "Crée un alias",
+            "Crée une règle liée qui suit les modifications",
+            "Crée la règle une fois puis la laisse vivre sa vie",
+            "Ne crée rien"
+          ],
+          "answer": 2,
+          "explain": "Utile pour ensuite la restreindre à certaines sources."
+        },
+        {
+          "q": "Un alias GeoIP permet :",
+          "options": [
+            "De créer des VLAN",
+            "De chiffrer",
+            "De fixer l'heure",
+            "De restreindre un accès à un pays"
+          ],
+          "answer": 3,
+          "explain": "Type GeoIP = des pays."
+        }
+      ]
+    }
+  ]
+}

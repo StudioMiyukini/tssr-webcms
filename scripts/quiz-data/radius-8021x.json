@@ -1,0 +1,351 @@
+{
+  "slug": "radius-8021x",
+  "title": "RADIUS & 802.1X : contrôler l’accès au réseau",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Que fait 802.1X ?",
+          "options": [
+            "Impose une authentification avant d'ouvrir le port du switch",
+            "Route les paquets",
+            "Crée des VLAN",
+            "Chiffre le Wi-Fi"
+          ],
+          "answer": 0,
+          "explain": "Brancher un câble ne suffit plus."
+        },
+        {
+          "q": "Que signifie AAA ?",
+          "options": [
+            "Authentication, Authorization, Accounting",
+            "Access, Address, Audit",
+            "Allow, Alert, Archive",
+            "Admin, Agent, Application"
+          ],
+          "answer": 0,
+          "explain": "Qui es-tu, à quoi as-tu droit, traçabilité."
+        },
+        {
+          "q": "RADIUS est :",
+          "options": [
+            "Un pare-feu",
+            "Le protocole standard qui porte le AAA",
+            "Un VLAN",
+            "Un switch"
+          ],
+          "answer": 1,
+          "explain": "Remote Authentication Dial-In User Service."
+        },
+        {
+          "q": "Le rôle serveur RADIUS sous Windows s'appelle :",
+          "options": [
+            "NPS (Network Policy Server)",
+            "RRAS",
+            "IIS",
+            "DHCP"
+          ],
+          "answer": 0,
+          "explain": "Il s'appuie sur les comptes AD."
+        },
+        {
+          "q": "Le supplicant est :",
+          "options": [
+            "L'annuaire",
+            "Le poste qui veut se connecter",
+            "Le serveur RADIUS",
+            "Le switch"
+          ],
+          "answer": 1,
+          "explain": "Logiciel 802.1X côté client."
+        },
+        {
+          "q": "L'authenticator est :",
+          "options": [
+            "AD",
+            "Le switch ou le point d'accès Wi-Fi qui bloque le port et relaie",
+            "Le poste",
+            "NPS"
+          ],
+          "answer": 1,
+          "explain": "Il ne valide pas lui-même."
+        },
+        {
+          "q": "Le serveur d'authentification :",
+          "options": [
+            "Le switch",
+            "Le RADIUS (NPS) qui répond accepté / refusé",
+            "Le DNS",
+            "Le poste"
+          ],
+          "answer": 1,
+          "explain": "Access-Accept ou Access-Reject."
+        },
+        {
+          "q": "Avant authentification, le switch laisse passer :",
+          "options": [
+            "Le web",
+            "Uniquement l'authentification (EAP)",
+            "Tout",
+            "Le DHCP"
+          ],
+          "answer": 1,
+          "explain": "Le port est bloqué pour le reste."
+        },
+        {
+          "q": "Authorization répond à :",
+          "options": [
+            "Quand t'es-tu connecté ?",
+            "À quoi as-tu droit ? (VLAN, ressources)",
+            "Où es-tu ?",
+            "Qui es-tu ?"
+          ],
+          "answer": 1,
+          "explain": "Le deuxième A."
+        },
+        {
+          "q": "Accounting sert à :",
+          "options": [
+            "Router",
+            "Facturer",
+            "Chiffrer",
+            "La traçabilité : qui, quand, combien de temps"
+          ],
+          "answer": 3,
+          "explain": "Le troisième A."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Après un Access-Accept, le switch peut :",
+          "options": [
+            "Redémarrer",
+            "Bloquer le port",
+            "Changer la MAC",
+            "Ouvrir le port et placer le poste dans le bon VLAN (VLAN dynamique)"
+          ],
+          "answer": 3,
+          "explain": "Attribution dynamique de VLAN."
+        },
+        {
+          "q": "Un visiteur avec un PC non géré :",
+          "options": [
+            "Reçoit un certificat",
+            "Est accepté",
+            "Devient admin",
+            "Est refusé ou placé dans un VLAN invité restreint"
+          ],
+          "answer": 3,
+          "explain": "La base du NAC."
+        },
+        {
+          "q": "NAC signifie :",
+          "options": [
+            "New Access Card",
+            "Node Auth Check",
+            "Contrôle d'accès réseau (Network Access Control)",
+            "Network Address Control"
+          ],
+          "answer": 2,
+          "explain": "802.1X + RADIUS en sont la base."
+        },
+        {
+          "q": "Où RADIUS vérifie-t-il les identifiants ?",
+          "options": [
+            "Dans le DNS",
+            "Dans Active Directory (généralement)",
+            "Dans le poste",
+            "Dans le switch"
+          ],
+          "answer": 1,
+          "explain": "NPS s'appuie sur les comptes AD."
+        },
+        {
+          "q": "Un poste de l'entreprise s'authentifie par :",
+          "options": [
+            "Un compte AD ou un certificat",
+            "Son nom",
+            "Sa MAC seulement",
+            "Son IP"
+          ],
+          "answer": 0,
+          "explain": "Puis est placé dans son VLAN métier."
+        },
+        {
+          "q": "Le protocole d'authentification transporté avant l'ouverture du port :",
+          "options": [
+            "HTTP",
+            "FTP",
+            "ICMP",
+            "EAP"
+          ],
+          "answer": 3,
+          "explain": "Extensible Authentication Protocol."
+        },
+        {
+          "q": "802.1X s'applique :",
+          "options": [
+            "Au Wi-Fi seulement",
+            "Au filaire seulement",
+            "Aux VPN",
+            "Au filaire et au Wi-Fi"
+          ],
+          "answer": 3,
+          "explain": "L'authenticator peut être un point d'accès."
+        },
+        {
+          "q": "Sans 802.1X, qui accède au réseau ?",
+          "options": [
+            "Les admins",
+            "Les serveurs",
+            "Personne",
+            "Quiconque branche un câble ou connaît la clé Wi-Fi"
+          ],
+          "answer": 3,
+          "explain": "C'est le problème résolu."
+        },
+        {
+          "q": "Combien de rôles définit 802.1X ?",
+          "options": [
+            "Trois",
+            "Quatre",
+            "Deux",
+            "Un"
+          ],
+          "answer": 0,
+          "explain": "Supplicant, authenticator, serveur d'authentification."
+        },
+        {
+          "q": "Le switch relaie les identifiants vers :",
+          "options": [
+            "Internet",
+            "Le DNS",
+            "Le DHCP",
+            "Le serveur RADIUS"
+          ],
+          "answer": 3,
+          "explain": "Il ne les vérifie pas lui-même."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "802.1X + VLAN dynamique permet :",
+          "options": [
+            "De supprimer les VLAN",
+            "De câbler moins",
+            "De placer chaque poste dans son VLAN selon son identité, quel que soit le port",
+            "De chiffrer"
+          ],
+          "answer": 2,
+          "explain": "L'authorization décide du VLAN."
+        },
+        {
+          "q": "Que renvoie RADIUS en cas d'échec ?",
+          "options": [
+            "Rien",
+            "Access-Reject",
+            "Access-Wait",
+            "Access-Accept"
+          ],
+          "answer": 1,
+          "explain": "Le port reste fermé."
+        },
+        {
+          "q": "Le filtrage MAC comparé à 802.1X :",
+          "options": [
+            "Contournable par usurpation ; 802.1X authentifie réellement",
+            "Plus sûr",
+            "Identique",
+            "Équivalent"
+          ],
+          "answer": 0,
+          "explain": "Cours Adresses MAC : la MAC se spoofe."
+        },
+        {
+          "q": "Lien entre RADIUS et la sécurité des VLAN :",
+          "options": [
+            "Il les remplace",
+            "Il complète port-security et les VLAN par une authentification d'identité",
+            "Il les supprime",
+            "Aucun"
+          ],
+          "answer": 1,
+          "explain": "Différentes couches de contrôle d'accès."
+        },
+        {
+          "q": "Quel élément un certificat machine permet-il ?",
+          "options": [
+            "Router",
+            "Créer un VLAN",
+            "Authentifier l'appareil sans mot de passe utilisateur",
+            "Chiffrer le DNS"
+          ],
+          "answer": 2,
+          "explain": "Compte AD ou certificat."
+        },
+        {
+          "q": "L'authenticator a-t-il besoin de connaître les mots de passe ?",
+          "options": [
+            "Oui pour le Wi-Fi",
+            "Non : il relaie au RADIUS",
+            "Oui",
+            "Oui en filaire"
+          ],
+          "answer": 1,
+          "explain": "Séparation des rôles."
+        },
+        {
+          "q": "Un port 802.1X avant authentification laisse passer le DHCP ?",
+          "options": [
+            "Toujours",
+            "Oui pour les invités",
+            "Non : seulement EAP",
+            "Oui"
+          ],
+          "answer": 2,
+          "explain": "Le port est bloqué sauf authentification."
+        },
+        {
+          "q": "NPS s'installe comme :",
+          "options": [
+            "Un plugin switch",
+            "Un service Linux",
+            "Une application cliente",
+            "Un rôle Windows Server"
+          ],
+          "answer": 3,
+          "explain": "Rôle serveur RADIUS de Windows."
+        },
+        {
+          "q": "Accounting permet de savoir :",
+          "options": [
+            "Le débit",
+            "Qui s'est connecté, quand, combien de temps",
+            "Le VLAN natif",
+            "Le MX"
+          ],
+          "answer": 1,
+          "explain": "Traçabilité."
+        },
+        {
+          "q": "802.1X est lié à quels cours du site ?",
+          "options": [
+            "Les VLAN, Active Directory, le switch, le VPN",
+            "RAID et hardware",
+            "Messagerie et DNS",
+            "Linux et Apache"
+          ],
+          "answer": 0,
+          "explain": "Liens du cours."
+        }
+      ]
+    }
+  ]
+}

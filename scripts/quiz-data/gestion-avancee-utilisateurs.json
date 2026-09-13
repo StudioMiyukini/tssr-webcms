@@ -1,0 +1,351 @@
+{
+  "slug": "gestion-avancee-utilisateurs",
+  "title": "Gestion avancée des utilisateurs & serveur de fichiers",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Où règle-t-on les horaires d'accès d'un compte ?",
+          "options": [
+            "Propriétés du compte → onglet Compte → Horaires d'accès",
+            "Le pare-feu",
+            "gpmc.msc",
+            "Le registre"
+          ],
+          "answer": 0,
+          "explain": "Dans Utilisateurs et ordinateurs Active Directory."
+        },
+        {
+          "q": "Une plage horaire bloque :",
+          "options": [
+            "La session en cours",
+            "Les fichiers",
+            "Le réseau",
+            "L'ouverture de session"
+          ],
+          "answer": 3,
+          "explain": "Une session déjà ouverte n'est pas fermée automatiquement (sauf stratégie dédiée)."
+        },
+        {
+          "q": "Un profil itinérant stocke :",
+          "options": [
+            "Les mots de passe",
+            "Les GPO",
+            "Les dossiers personnels (Documents, Bureau…) sur le serveur",
+            "Le système"
+          ],
+          "answer": 2,
+          "explain": "L'utilisateur retrouve ses fichiers sur n'importe quel poste."
+        },
+        {
+          "q": "Chemin du profil à saisir :",
+          "options": [
+            "C:\\profils\\jean",
+            "\\\\srvad\\profils$\\%username%",
+            "profils$",
+            "\\\\srvad\\jean"
+          ],
+          "answer": 1,
+          "explain": "Toujours un chemin réseau, avec la variable %username%."
+        },
+        {
+          "q": "Un partage terminé par $ est :",
+          "options": [
+            "Public",
+            "Lecture seule",
+            "Chiffré",
+            "Caché"
+          ],
+          "answer": 3,
+          "explain": "Ex. profils$, home$."
+        },
+        {
+          "q": "Le dossier de base (home) fournit :",
+          "options": [
+            "Un quota",
+            "Un script",
+            "Un lecteur réseau personnel avec une lettre dans « Ce PC »",
+            "Un profil"
+          ],
+          "answer": 2,
+          "explain": "Onglet Profil → Dossier de base → Connecter."
+        },
+        {
+          "q": "Commande pour monter un lecteur dans un script de session :",
+          "options": [
+            "map X:",
+            "mount X:",
+            "New-Drive X:",
+            "net use X: \\\\srvad\\Partage\\Administration"
+          ],
+          "answer": 3,
+          "explain": "Script .bat avec net use."
+        },
+        {
+          "q": "Où placer le script d'ouverture de session ?",
+          "options": [
+            "C:\\Windows\\SYSVOL\\sysvol\\votre.domaine\\scripts",
+            "C:\\Users",
+            "C:\\scripts",
+            "Le bureau"
+          ],
+          "answer": 0,
+          "explain": "SYSVOL est partagé et accessible en lecture sur le réseau."
+        },
+        {
+          "q": "Dans l'onglet Profil, pour le script on saisit :",
+          "options": [
+            "Uniquement le nom du script",
+            "Le nom du partage",
+            "Le chemin complet",
+            "L'IP du serveur"
+          ],
+          "answer": 0,
+          "explain": "Le dossier est réservé aux scripts."
+        },
+        {
+          "q": "Expiration de compte :",
+          "options": [
+            "Rend le compte inutilisable après la date, réactivable en repoussant la date",
+            "Change le mot de passe",
+            "Supprime le compte",
+            "Ferme la session"
+          ],
+          "answer": 0,
+          "explain": "Pour stagiaires et prestataires."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Un avertissement « profil temporaire » à la connexion signifie :",
+          "options": [
+            "Le profil itinérant ne fonctionne pas",
+            "Le compte a expiré",
+            "Le quota est atteint",
+            "Tout va bien"
+          ],
+          "answer": 0,
+          "explain": "Vérification du cours."
+        },
+        {
+          "q": "Suffixe du dossier de profil pour Windows 10 :",
+          "options": [
+            ".V1",
+            "aucun",
+            ".V6",
+            ".V2"
+          ],
+          "answer": 2,
+          "explain": ".V2 pour Windows 7 : deux OS différents ne partagent pas le même dossier."
+        },
+        {
+          "q": "Pourquoi un chemin réseau et pas C:\\profils ?",
+          "options": [
+            "Obligation légale",
+            "Pour le quota",
+            "Plus rapide",
+            "C'est l'adresse que le client contacte pour charger le profil"
+          ],
+          "answer": 3,
+          "explain": "Le client ne voit pas le disque du serveur."
+        },
+        {
+          "q": "Appliquer un profil à tout un groupe :",
+          "options": [
+            "Impossible",
+            "Une GPO seulement",
+            "Sélectionner plusieurs utilisateurs et saisir le chemin avec %username%",
+            "Un script"
+          ],
+          "answer": 2,
+          "explain": "Chacun obtient son sous-dossier."
+        },
+        {
+          "q": "ABE (énumération basée sur l'accès) :",
+          "options": [
+            "Crée des partages",
+            "Masque les dossiers sur lesquels l'utilisateur n'a aucun droit",
+            "Chiffre les dossiers",
+            "Supprime les dossiers"
+          ],
+          "answer": 1,
+          "explain": "Évite la tentation de « fouiner »."
+        },
+        {
+          "q": "Où activer l'ABE ?",
+          "options": [
+            "Gestionnaire de serveur → Services de fichiers → Propriétés du partage → Paramètres",
+            "Onglet Partage",
+            "gpmc.msc",
+            "Le registre"
+          ],
+          "answer": 0,
+          "explain": "Elle n'est PAS dans l'onglet Partage."
+        },
+        {
+          "q": "Un dossier reste visible malgré l'ABE :",
+          "options": [
+            "Les droits NTFS sont trop permissifs",
+            "Bug",
+            "Le partage est caché",
+            "Le quota est dépassé"
+          ],
+          "answer": 0,
+          "explain": "ABE repose sur le NTFS."
+        },
+        {
+          "q": "Les quotas nécessitent le rôle :",
+          "options": [
+            "IIS",
+            "DFS",
+            "Gestionnaire de ressources du serveur de fichiers (FSRM)",
+            "DHCP"
+          ],
+          "answer": 2,
+          "explain": "Sous Services de fichiers et de stockage."
+        },
+        {
+          "q": "Quota inconditionnel (hard) :",
+          "options": [
+            "Sert aux alertes",
+            "Limite stricte : impossible d'écrire au-delà",
+            "N'existe pas",
+            "Peut être dépassé"
+          ],
+          "answer": 1,
+          "explain": "Le conditionnel (soft) sert au suivi sans bloquer."
+        },
+        {
+          "q": "Aujourd'hui, pour déployer des lecteurs réseau, on préfère :",
+          "options": [
+            "Le script de session",
+            "Le dossier de base",
+            "La GPO (préférences)",
+            "net use à la main"
+          ],
+          "answer": 2,
+          "explain": "Plus souple et centralisé."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Droit de partage sur profils$ pour le groupe des formateurs :",
+          "options": [
+            "Lecture",
+            "Aucun",
+            "Modification",
+            "Contrôle total"
+          ],
+          "answer": 2,
+          "explain": "Windows crée ensuite le dossier au nom de l'utilisateur."
+        },
+        {
+          "q": "Pour administrer le serveur à distance :",
+          "options": [
+            "SMB",
+            "FTP",
+            "Telnet",
+            "Activer le Bureau à distance (RDP)"
+          ],
+          "answer": 3,
+          "explain": "Voir l'astuce dédiée."
+        },
+        {
+          "q": "Test rapide d'expiration :",
+          "options": [
+            "Changer le mot de passe",
+            "Redémarrer",
+            "Créer un compte, régler l'expiration à hier, tenter la connexion → refusée",
+            "Supprimer le compte"
+          ],
+          "answer": 2,
+          "explain": "Test du cours."
+        },
+        {
+          "q": "FSRM propose aussi :",
+          "options": [
+            "Des profils",
+            "Des VLAN",
+            "Des seuils de notification et des filtres de fichiers",
+            "Des GPO"
+          ],
+          "answer": 2,
+          "explain": "Au-delà des quotas."
+        },
+        {
+          "q": "Exemple de quotas du cours :",
+          "options": [
+            "100 Mo sur « Partage », 10 Mo personnalisé sur « home$ »",
+            "1 Go sur tout",
+            "Aucun",
+            "10 Go"
+          ],
+          "answer": 0,
+          "explain": "Attention à sélectionner le bon dossier."
+        },
+        {
+          "q": "Étape 1 avant de créer le script :",
+          "options": [
+            "Tester la commande net use dans l'invite du client, puis déconnecter",
+            "Redémarrer",
+            "Le placer dans SYSVOL",
+            "Créer le partage"
+          ],
+          "answer": 0,
+          "explain": "On valide que la commande marche."
+        },
+        {
+          "q": "Pourquoi renommer .txt → .bat ?",
+          "options": [
+            "Pour la couleur",
+            "Pour que Windows exécute le script",
+            "Pour le cacher",
+            "Pour le quota"
+          ],
+          "answer": 1,
+          "explain": "Afficher les extensions de fichier au besoin."
+        },
+        {
+          "q": "Un utilisateur mobile (formateur) bénéficie surtout :",
+          "options": [
+            "D'une plage horaire",
+            "D'un profil itinérant",
+            "D'un quota",
+            "D'une expiration"
+          ],
+          "answer": 1,
+          "explain": "Ses fichiers le suivent sur tous les postes."
+        },
+        {
+          "q": "Un quota conditionnel :",
+          "options": [
+            "Bloque l'écriture",
+            "Peut être dépassé, sert au suivi et aux alertes (rapport, e-mail)",
+            "Supprime les fichiers",
+            "N'est pas configurable"
+          ],
+          "answer": 1,
+          "explain": "Soft quota."
+        },
+        {
+          "q": "Home et profil itinérant utilisent tous deux :",
+          "options": [
+            "Une GPO",
+            "Un VLAN",
+            "Le registre",
+            "Un partage caché et la variable %username%"
+          ],
+          "answer": 3,
+          "explain": "home$ et profils$."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,351 @@
+{
+  "slug": "vocabulaire-active-directory",
+  "title": "Vocabulaire Active Directory (AD)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Que signifie AD DS ?",
+          "options": [
+            "Active Disk Service",
+            "Active Directory Data Storage",
+            "Advanced Domain System",
+            "Active Directory Domain Services"
+          ],
+          "answer": 3,
+          "explain": "Le rôle Windows Server qui fournit l'annuaire et transforme un serveur en contrôleur de domaine."
+        },
+        {
+          "q": "Un rôle Windows Server est :",
+          "options": [
+            "La fonction principale qu'un serveur assure pour le réseau",
+            "Un utilisateur",
+            "Un pilote",
+            "Un composant de support"
+          ],
+          "answer": 0,
+          "explain": "Le métier principal du serveur (AD DS, DNS, DHCP, IIS…)."
+        },
+        {
+          "q": "Une fonctionnalité est :",
+          "options": [
+            "Un composant complémentaire qui soutient des capacités (.NET, Sauvegarde, BitLocker…)",
+            "Le métier du serveur",
+            "Un objet AD",
+            "Un domaine"
+          ],
+          "answer": 0,
+          "explain": "Le rôle = la mission ; la fonctionnalité = l'outil de support."
+        },
+        {
+          "q": "Structure logique d'AD, du plus grand au plus petit :",
+          "options": [
+            "UO → forêt → domaine",
+            "Domaine → forêt → UO",
+            "Objet → UO → domaine → forêt",
+            "Forêt → arbres de domaines → domaine → UO → objets"
+          ],
+          "answer": 3,
+          "explain": "Comme des poupées russes."
+        },
+        {
+          "q": "Pourquoi AD a-t-il besoin du DNS ?",
+          "options": [
+            "Pour le NAT",
+            "Pour le mail",
+            "Pour les GPO seulement",
+            "Les clients localisent les contrôleurs de domaine par des enregistrements SRV"
+          ],
+          "answer": 3,
+          "explain": "Sans DNS : pas d'ouverture de session, pas de réplication."
+        },
+        {
+          "q": "Un groupe de travail (workgroup) est :",
+          "options": [
+            "Un domaine",
+            "Décentralisé : chaque PC gère ses comptes locaux",
+            "Centralisé",
+            "Une forêt"
+          ],
+          "answer": 1,
+          "explain": "Ingérable au-delà de quelques postes ; l'opposé du domaine."
+        },
+        {
+          "q": "Un domaine est identifié par :",
+          "options": [
+            "Une adresse MAC",
+            "Un SID uniquement",
+            "Un nom DNS (ex. entreprise.local)",
+            "Un port"
+          ],
+          "answer": 2,
+          "explain": "Regroupement logique d'objets partageant annuaire, politique et authentification."
+        },
+        {
+          "q": "Un contrôleur de domaine (DC) :",
+          "options": [
+            "Héberge AD DS, stocke une copie de l'annuaire, authentifie",
+            "Est un poste client",
+            "Est un switch",
+            "Est un pare-feu"
+          ],
+          "answer": 0,
+          "explain": "On en déploie souvent plusieurs pour la tolérance de panne."
+        },
+        {
+          "q": "La forêt est :",
+          "options": [
+            "Une UO",
+            "Un site",
+            "Un domaine",
+            "Le conteneur de plus haut niveau, limite de sécurité ultime"
+          ],
+          "answer": 3,
+          "explain": "Schéma, configuration et catalogue global communs."
+        },
+        {
+          "q": "Protocole standard pour interroger l'annuaire :",
+          "options": [
+            "HTTP",
+            "LDAP (389 / 636 LDAPS)",
+            "SMB",
+            "FTP"
+          ],
+          "answer": 1,
+          "explain": "La « langue » pour lire et écrire dans AD."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Domaine parent entreprise.local et enfant paris.entreprise.local forment :",
+          "options": [
+            "Un arbre, avec approbations automatiques",
+            "Une UO",
+            "Une forêt",
+            "Un site"
+          ],
+          "answer": 0,
+          "explain": "Espace de noms contigu."
+        },
+        {
+          "q": "Le niveau fonctionnel :",
+          "options": [
+            "La taille du disque",
+            "La « version » de fonctionnement d'AD, qui fixe la version minimale des DC",
+            "Le nombre d'utilisateurs",
+            "Le nombre de DC"
+          ],
+          "answer": 1,
+          "explain": "Il active ou non certaines fonctionnalités."
+        },
+        {
+          "q": "Le niveau fonctionnel de la forêt :",
+          "options": [
+            "Ne peut pas être plus élevé que le plus bas des niveaux de domaine",
+            "Peut dépasser celui des domaines",
+            "Est indépendant",
+            "N'existe pas"
+          ],
+          "answer": 0,
+          "explain": "Il faut retirer les vieux DC avant de monter."
+        },
+        {
+          "q": "Élever le niveau fonctionnel est :",
+          "options": [
+            "Réversible",
+            "Automatique",
+            "Généralement irréversible",
+            "Interdit"
+          ],
+          "answer": 2,
+          "explain": "On ne redescend pas."
+        },
+        {
+          "q": "Le catalogue global (GC) contient :",
+          "options": [
+            "Une copie partielle (attributs les plus utilisés) de tous les objets de la forêt",
+            "Les mots de passe",
+            "Les GPO",
+            "Tous les attributs de tous les objets"
+          ],
+          "answer": 0,
+          "explain": "Accélère les recherches inter-domaines, port 3268."
+        },
+        {
+          "q": "Protocole d'authentification par défaut d'AD :",
+          "options": [
+            "NTLM",
+            "Kerberos",
+            "LDAP",
+            "RADIUS"
+          ],
+          "answer": 1,
+          "explain": "Tickets : le mot de passe ne circule pas à chaque accès."
+        },
+        {
+          "q": "Que signifie KDC ?",
+          "options": [
+            "Kernel Data Cache",
+            "Key Distribution Center",
+            "Key Domain Certificate",
+            "Kerberos Domain Controller"
+          ],
+          "answer": 1,
+          "explain": "Hébergé par chaque DC : AS + TGS."
+        },
+        {
+          "q": "Le TGT est :",
+          "options": [
+            "Un mot de passe",
+            "Le ticket initial obtenu à l'ouverture de session (Ticket Granting Ticket)",
+            "Un groupe",
+            "Une UO"
+          ],
+          "answer": 1,
+          "explain": "Le cœur du système Kerberos."
+        },
+        {
+          "q": "Un service de rôle est :",
+          "options": [
+            "Un rôle entier",
+            "Un site",
+            "Une GPO",
+            "Une sous-partie d'un rôle activable séparément (ex. Espaces de noms DFS)"
+          ],
+          "answer": 3,
+          "explain": "On n'installe que ce dont on a besoin."
+        },
+        {
+          "q": "Port LDAPS :",
+          "options": [
+            "636",
+            "389",
+            "3268",
+            "88"
+          ],
+          "answer": 0,
+          "explain": "389 en clair, 636 chiffré."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Deux parties du KDC :",
+          "options": [
+            "UO et OU",
+            "LDAP et Kerberos",
+            "AS et TGS",
+            "DC et GC"
+          ],
+          "answer": 2,
+          "explain": "Service d'authentification et service d'émission de tickets."
+        },
+        {
+          "q": "À quoi sert un domaine ?",
+          "options": [
+            "À remplacer le DNS",
+            "À multiplier les comptes",
+            "À router",
+            "Centraliser comptes, authentification unique, GPO, administration, partages cohérents"
+          ],
+          "answer": 3,
+          "explain": "Un compte pour tous les postes."
+        },
+        {
+          "q": "Pour passer la forêt au niveau Windows Server 2016 :",
+          "options": [
+            "Rien",
+            "Il faut réinstaller",
+            "Un DC 2016 suffit",
+            "Tous les DC de tous les domaines doivent être au moins en 2016"
+          ],
+          "answer": 3,
+          "explain": "Un vieux DC ne saurait pas gérer les fonctions modernes."
+        },
+        {
+          "q": "Pourquoi plusieurs DC ?",
+          "options": [
+            "Tolérance de panne et répartition de l'authentification",
+            "Obligatoire",
+            "Pour le DNS",
+            "Pour plus d'UO"
+          ],
+          "answer": 0,
+          "explain": "Chaque DC a une copie de la base."
+        },
+        {
+          "q": "Les enregistrements DNS qui localisent les DC sont de type :",
+          "options": [
+            "SRV",
+            "MX",
+            "TXT",
+            "A"
+          ],
+          "answer": 0,
+          "explain": "_ldap, _kerberos…"
+        },
+        {
+          "q": "Que partagent les domaines d'une forêt ?",
+          "options": [
+            "Rien",
+            "Les UO",
+            "Schéma, configuration, catalogue global",
+            "Les mots de passe"
+          ],
+          "answer": 2,
+          "explain": "Définition de la forêt."
+        },
+        {
+          "q": "Le schéma définit :",
+          "options": [
+            "Les classes et attributs des objets de l'annuaire",
+            "Le plan réseau",
+            "Les sites",
+            "Les GPO"
+          ],
+          "answer": 0,
+          "explain": "Modifiable seulement par le maître de schéma."
+        },
+        {
+          "q": "Une UO (unité d'organisation) contient :",
+          "options": [
+            "Des domaines",
+            "Des objets : utilisateurs, ordinateurs, groupes (et d'autres UO)",
+            "Des forêts",
+            "Des sites"
+          ],
+          "answer": 1,
+          "explain": "Le conteneur où l'on lie les GPO et délègue."
+        },
+        {
+          "q": "Kerberos : le mot de passe circule-t-il à chaque accès ?",
+          "options": [
+            "Non : on prouve son identité une fois puis on présente des tickets",
+            "Seulement en LDAP",
+            "Oui",
+            "Oui chiffré"
+          ],
+          "answer": 0,
+          "explain": "Principe du ticket."
+        },
+        {
+          "q": "Un exemple de fonctionnalité (pas un rôle) :",
+          "options": [
+            "AD DS",
+            "Sauvegarde Windows Server",
+            "IIS",
+            "DNS"
+          ],
+          "answer": 1,
+          "explain": ".NET, BitLocker, clustering de basculement sont des fonctionnalités."
+        }
+      ]
+    }
+  ]
+}

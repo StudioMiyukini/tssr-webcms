@@ -1,0 +1,351 @@
+{
+  "slug": "linux-cron-logs",
+  "title": "Linux : planification (cron) & journaux",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Éditer sa table cron :",
+          "options": [
+            "nano /etc/cron",
+            "crontab -e",
+            "cronedit",
+            "cron -e"
+          ],
+          "answer": 1,
+          "explain": "crontab -l pour lister."
+        },
+        {
+          "q": "Combien de champs de temps dans une ligne cron ?",
+          "options": [
+            "3",
+            "5",
+            "7",
+            "6"
+          ],
+          "answer": 1,
+          "explain": "minute, heure, jour du mois, mois, jour de la semaine."
+        },
+        {
+          "q": "Ordre des champs :",
+          "options": [
+            "minute heure jour-du-mois mois jour-de-la-semaine",
+            "mois jour heure minute sem",
+            "heure minute jour mois jour-sem",
+            "jour mois heure minute"
+          ],
+          "answer": 0,
+          "explain": "* = « chaque »."
+        },
+        {
+          "q": "0 2 * * * :",
+          "options": [
+            "Le 2 du mois",
+            "Le mardi",
+            "Tous les jours à 2h00",
+            "Toutes les 2 min"
+          ],
+          "answer": 2,
+          "explain": "minute 0, heure 2."
+        },
+        {
+          "q": "*/15 * * * * :",
+          "options": [
+            "Le 15 du mois",
+            "15 fois par jour",
+            "À 15h",
+            "Toutes les 15 minutes"
+          ],
+          "answer": 3,
+          "explain": "*/n = tous les n."
+        },
+        {
+          "q": "0 8 * * 1 :",
+          "options": [
+            "Chaque lundi à 8h00",
+            "Tous les jours à 8h01",
+            "Janvier à 8h",
+            "Le 1er du mois à 8h"
+          ],
+          "answer": 0,
+          "explain": "Jour de la semaine 1 = lundi ; 0 et 7 = dimanche."
+        },
+        {
+          "q": "30 3 1 * * :",
+          "options": [
+            "Chaque lundi",
+            "Le 30 à 3h",
+            "Le 1er de chaque mois à 3h30",
+            "Tous les jours à 1h30"
+          ],
+          "answer": 2,
+          "explain": "Jour du mois = 1."
+        },
+        {
+          "q": "@reboot :",
+          "options": [
+            "Chaque heure",
+            "Chaque jour",
+            "Redémarre",
+            "Exécute la commande au démarrage"
+          ],
+          "answer": 3,
+          "explain": "@daily pour chaque jour."
+        },
+        {
+          "q": "Tâche ponctuelle (une seule fois) :",
+          "options": [
+            "cron",
+            "at (ex. echo \"reboot\" | at 23:00)",
+            "sleep",
+            "systemctl"
+          ],
+          "answer": 1,
+          "explain": "Alternative moderne : les timers systemd."
+        },
+        {
+          "q": "Journal d'un service précis :",
+          "options": [
+            "dmesg",
+            "journalctl -u ssh",
+            "tail -f /var/log",
+            "cat /var/log/ssh"
+          ],
+          "answer": 1,
+          "explain": "-f pour suivre en direct."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "journalctl -b :",
+          "options": [
+            "Depuis le dernier démarrage",
+            "Le boot loader",
+            "Les erreurs",
+            "En arrière-plan"
+          ],
+          "answer": 0,
+          "explain": "-b = boot."
+        },
+        {
+          "q": "journalctl -p err :",
+          "options": [
+            "Les erreurs de ssh",
+            "Seulement les erreurs (priorité)",
+            "Le dernier",
+            "Tout"
+          ],
+          "answer": 1,
+          "explain": "-p = priority."
+        },
+        {
+          "q": "journalctl -xe :",
+          "options": [
+            "Efface",
+            "Exécute",
+            "Fin du journal + explications (debug)",
+            "Exporte"
+          ],
+          "answer": 2,
+          "explain": "Utile après un échec de service."
+        },
+        {
+          "q": "Journal général sur Debian :",
+          "options": [
+            "/var/log/messages",
+            "/var/log/syslog",
+            "/var/log/all",
+            "/var/log/kern"
+          ],
+          "answer": 1,
+          "explain": "/var/log/messages sur Red Hat."
+        },
+        {
+          "q": "Où voir les tentatives de connexion et sudo ?",
+          "options": [
+            "/var/log/auth.log",
+            "/var/log/syslog",
+            "/var/log/apache2",
+            "/var/log/cron"
+          ],
+          "answer": 0,
+          "explain": "grep \"Failed\" /var/log/auth.log."
+        },
+        {
+          "q": "Tâches à l'échelle système :",
+          "options": [
+            "crontab -e seulement",
+            "~/.cron",
+            "/etc/cron.d/, /etc/cron.daily/…",
+            "/root/cron"
+          ],
+          "answer": 2,
+          "explain": "Fichiers système."
+        },
+        {
+          "q": "journalctl --since \"10:00\" --until \"11:00\" :",
+          "options": [
+            "Rien",
+            "Erreur",
+            "Les entrées entre 10h et 11h",
+            "Tout depuis 10h"
+          ],
+          "answer": 2,
+          "explain": "Filtre temporel."
+        },
+        {
+          "q": "La rotation des journaux (logrotate) :",
+          "options": [
+            "Chiffre",
+            "Fait tourner le disque",
+            "Archive et purge les vieux journaux pour ne pas saturer le disque",
+            "Supprime tout"
+          ],
+          "answer": 2,
+          "explain": "Automatique."
+        },
+        {
+          "q": "Lister les timers systemd :",
+          "options": [
+            "timers",
+            "at -l",
+            "crontab -l",
+            "systemctl list-timers"
+          ],
+          "answer": 3,
+          "explain": "L'alternative moderne à cron."
+        },
+        {
+          "q": "Suivre un service en direct :",
+          "options": [
+            "tail service",
+            "systemctl watch",
+            "cat journal",
+            "journalctl -u service -f"
+          ],
+          "answer": 3,
+          "explain": "Comme tail -f."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Ligne cron pour une sauvegarde le dimanche à 23h :",
+          "options": [
+            "23 0 * * 7 seulement",
+            "0 23 0 * *",
+            "0 23 * * 0",
+            "* 23 * * 0"
+          ],
+          "answer": 2,
+          "explain": "0 ou 7 = dimanche."
+        },
+        {
+          "q": "Ligne pour toutes les heures à la minute 5 :",
+          "options": [
+            "0 5 * * *",
+            "* 5 * * *",
+            "*/5 * * * *",
+            "5 * * * *"
+          ],
+          "answer": 3,
+          "explain": "minute = 5, heure = chaque."
+        },
+        {
+          "q": "Un script marche à la main mais pas en cron :",
+          "options": [
+            "cron est cassé",
+            "Trop de champs",
+            "Souvent des chemins relatifs ou un PATH différent : utiliser des chemins absolus",
+            "Mauvaise heure"
+          ],
+          "answer": 2,
+          "explain": "Voir Scripts Bash."
+        },
+        {
+          "q": "Journaux d'Apache :",
+          "options": [
+            "/var/log/syslog",
+            "/var/log/apache2/",
+            "/etc/apache2/log",
+            "journalctl seulement"
+          ],
+          "answer": 1,
+          "explain": "Un dossier par service."
+        },
+        {
+          "q": "Sur systemd, les journaux sont :",
+          "options": [
+            "Éparpillés",
+            "Supprimés",
+            "Centralisés et interrogeables avec journalctl",
+            "Dans /tmp"
+          ],
+          "answer": 2,
+          "explain": "Les fichiers /var/log restent en parallèle."
+        },
+        {
+          "q": "0 8 * * 1-5 :",
+          "options": [
+            "Le 1er au 5",
+            "8 fois",
+            "Du lundi au vendredi à 8h",
+            "Lundi seulement"
+          ],
+          "answer": 2,
+          "explain": "Plage de jours de la semaine."
+        },
+        {
+          "q": "Voir ses tâches cron sans les éditer :",
+          "options": [
+            "crontab -v",
+            "cat cron",
+            "crontab -e",
+            "crontab -l"
+          ],
+          "answer": 3,
+          "explain": "-l = list."
+        },
+        {
+          "q": "Le premier réflexe avant de lire un journal :",
+          "options": [
+            "Le vider",
+            "Le copier",
+            "Vérifier l'heure de la machine (date)",
+            "Le compresser"
+          ],
+          "answer": 2,
+          "explain": "Des horodatages faux rendent le journal inutile."
+        },
+        {
+          "q": "grep \"Failed\" /var/log/auth.log montre :",
+          "options": [
+            "Les redémarrages",
+            "Les échecs de connexion",
+            "Les succès",
+            "Les sudo"
+          ],
+          "answer": 1,
+          "explain": "Tentatives de force brute visibles ici."
+        },
+        {
+          "q": "@daily /opt/backup.sh équivaut à :",
+          "options": [
+            "0 0 * * *",
+            "0 0 1 * *",
+            "* * * * *",
+            "0 * * * *"
+          ],
+          "answer": 0,
+          "explain": "Chaque jour à minuit."
+        }
+      ]
+    }
+  ]
+}

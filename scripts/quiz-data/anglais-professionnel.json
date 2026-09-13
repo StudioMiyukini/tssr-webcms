@@ -1,0 +1,351 @@
+{
+  "slug": "anglais-professionnel",
+  "title": "L’anglais professionnel en informatique",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Niveau CECRL visé en compréhension de l'écrit :",
+          "options": [
+            "B2",
+            "A1",
+            "B1",
+            "A2"
+          ],
+          "answer": 2,
+          "explain": "Comprendre un document technique est la priorité."
+        },
+        {
+          "q": "Niveau visé à l'oral et à l'écrit (expression) :",
+          "options": [
+            "B1",
+            "A2",
+            "C1",
+            "A1"
+          ],
+          "answer": 1,
+          "explain": "Des échanges simples mais corrects."
+        },
+        {
+          "q": "Score TOEIC correspondant à B1 :",
+          "options": [
+            "550–784",
+            "785–944",
+            "225–549",
+            "945–990"
+          ],
+          "answer": 0,
+          "explain": "Seuil — autonome."
+        },
+        {
+          "q": "CECRL signifie :",
+          "options": [
+            "Cadre Européen Commun de Référence pour les Langues",
+            "Certificat Européen",
+            "Code des Langues",
+            "Certification TOEIC"
+          ],
+          "answer": 0,
+          "explain": "Niveaux A1 à C2."
+        },
+        {
+          "q": "La compétence REAC :",
+          "options": [
+            "Utiliser l'anglais dans son activité professionnelle en informatique",
+            "Enseigner",
+            "Parler couramment",
+            "Traduire des romans"
+          ],
+          "answer": 0,
+          "explain": "Évaluée à l'écrit et à l'oral."
+        },
+        {
+          "q": "Savoir épeler et transmettre des chiffres sert :",
+          "options": [
+            "Aux mails",
+            "À rien",
+            "Au téléphone avec un support ou un fournisseur",
+            "À la veille"
+          ],
+          "answer": 2,
+          "explain": "Noms, adresses, e-mails, mots de passe."
+        },
+        {
+          "q": "Les outils de traduction (DeepL…) :",
+          "options": [
+            "Remplacent la compréhension",
+            "Sont interdits",
+            "Aident, mais ont des limites : ils ne remplacent pas la compréhension",
+            "Sont parfaits"
+          ],
+          "answer": 2,
+          "explain": "Reconnaître leurs limites."
+        },
+        {
+          "q": "Épreuve écrite : forme F :",
+          "options": [
+            "Traduire",
+            "Écrire un e-mail en anglais à partir d'informations en français",
+            "Oral",
+            "QCM"
+          ],
+          "answer": 1,
+          "explain": "Une des formes les plus fréquentes."
+        },
+        {
+          "q": "Épreuve orale :",
+          "options": [
+            "Un examen de grammaire",
+            "Une dictée",
+            "Un QCM",
+            "Une présentation"
+          ],
+          "answer": 3,
+          "explain": "Se présenter, présenter son entreprise / stage."
+        },
+        {
+          "q": "« Tech Watch » signifie :",
+          "options": [
+            "Support technique",
+            "Dépannage",
+            "Veille technologique",
+            "Montre connectée"
+          ],
+          "answer": 2,
+          "explain": "En groupes dans le module."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Vocabulaire",
+      "questions": [
+        {
+          "q": "« Troubleshooting » :",
+          "options": [
+            "La mise à jour",
+            "Tir sportif",
+            "Le dépannage / la résolution de problèmes",
+            "La sauvegarde"
+          ],
+          "answer": 2,
+          "explain": "Thème du module : dépanner et dialoguer avec le support."
+        },
+        {
+          "q": "« Motherboard » :",
+          "options": [
+            "Disque dur",
+            "Carte graphique",
+            "Alimentation",
+            "Carte mère"
+          ],
+          "answer": 3,
+          "explain": "Hardware."
+        },
+        {
+          "q": "« Power supply » :",
+          "options": [
+            "Écran",
+            "Processeur",
+            "Mémoire",
+            "Alimentation"
+          ],
+          "answer": 3,
+          "explain": "PSU."
+        },
+        {
+          "q": "« Gateway » :",
+          "options": [
+            "Le DNS",
+            "Le câble",
+            "Le switch",
+            "La passerelle"
+          ],
+          "answer": 3,
+          "explain": "Network."
+        },
+        {
+          "q": "« Subnet mask » :",
+          "options": [
+            "Nom d'hôte",
+            "Adresse MAC",
+            "Passerelle",
+            "Masque de sous-réseau"
+          ],
+          "answer": 3,
+          "explain": "Network."
+        },
+        {
+          "q": "« To reboot » :",
+          "options": [
+            "Sauvegarder",
+            "Installer",
+            "Supprimer",
+            "Redémarrer"
+          ],
+          "answer": 3,
+          "explain": "Forme verbale courante."
+        },
+        {
+          "q": "« Backup » :",
+          "options": [
+            "Retour",
+            "Mise à jour",
+            "Sauvegarde",
+            "Panne"
+          ],
+          "answer": 2,
+          "explain": "To back up = sauvegarder."
+        },
+        {
+          "q": "« Firewall » :",
+          "options": [
+            "Mur",
+            "Proxy",
+            "Pare-feu",
+            "Antivirus"
+          ],
+          "answer": 2,
+          "explain": "Security."
+        },
+        {
+          "q": "« Patch » / « update » :",
+          "options": [
+            "Compte",
+            "Câble",
+            "Panne",
+            "Correctif / mise à jour"
+          ],
+          "answer": 3,
+          "explain": "Security & software."
+        },
+        {
+          "q": "« Username » et « password » :",
+          "options": [
+            "Adresse et port",
+            "Fichier et dossier",
+            "Identifiant et mot de passe",
+            "Nom et prénom"
+          ],
+          "answer": 2,
+          "explain": "Login basics."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Situations professionnelles",
+      "questions": [
+        {
+          "q": "Épeler « @ » à l'oral :",
+          "options": [
+            "\"hash\"",
+            "\"arobase\"",
+            "\"dot\"",
+            "\"at\""
+          ],
+          "answer": 3,
+          "explain": "# = hash, . = dot, / = slash."
+        },
+        {
+          "q": "Comment dire « le serveur ne répond pas » ?",
+          "options": [
+            "The server is not responding / is down",
+            "The server is off line-up",
+            "The server is sleeping",
+            "The server is out"
+          ],
+          "answer": 0,
+          "explain": "Troubleshooting."
+        },
+        {
+          "q": "Formule polie pour demander de l'aide :",
+          "options": [
+            "I want help",
+            "Give me help",
+            "Help now",
+            "Could you please help me with…?"
+          ],
+          "answer": 3,
+          "explain": "Politesse."
+        },
+        {
+          "q": "Dans un e-mail, la formule finale courante :",
+          "options": [
+            "See ya",
+            "Bye",
+            "Love",
+            "Best regards / Kind regards"
+          ],
+          "answer": 3,
+          "explain": "E-mails professionnels."
+        },
+        {
+          "q": "« I can't log in » signifie :",
+          "options": [
+            "Je ne peux pas me déconnecter",
+            "Je n'arrive pas à me connecter (ouvrir une session)",
+            "Je ne trouve pas le log",
+            "Je ne peux pas installer"
+          ],
+          "answer": 1,
+          "explain": "Log in ≠ log out."
+        },
+        {
+          "q": "« Please find attached… » :",
+          "options": [
+            "Merci d'attendre",
+            "Cherchez",
+            "Veuillez trouver ci-joint",
+            "Veuillez attacher"
+          ],
+          "answer": 2,
+          "explain": "Pièce jointe."
+        },
+        {
+          "q": "Adapter sa communication signifie :",
+          "options": [
+            "Parler plus fort",
+            "Traduire mot à mot",
+            "Ajuster ton, vocabulaire et détail selon l'interlocuteur (collègue, client, support)",
+            "Utiliser le jargon"
+          ],
+          "answer": 2,
+          "explain": "Savoir-faire relationnel."
+        },
+        {
+          "q": "Forme d'épreuve C :",
+          "options": [
+            "Présentation",
+            "Écrire un e-mail",
+            "Lire un document en anglais et répondre à un QCM",
+            "Traduire"
+          ],
+          "answer": 2,
+          "explain": "En anglais ou en français."
+        },
+        {
+          "q": "Le plus rentable à maîtriser selon le cours :",
+          "options": [
+            "La lecture (A, B, C) et le format e-mail (F)",
+            "La poésie",
+            "La grammaire avancée",
+            "L'accent"
+          ],
+          "answer": 0,
+          "explain": "Ce qui revient le plus souvent."
+        },
+        {
+          "q": "« Could you spell your name, please? » signifie :",
+          "options": [
+            "Pouvez-vous changer de nom",
+            "Pouvez-vous écrire votre nom",
+            "Pouvez-vous épeler votre nom",
+            "Pouvez-vous crier votre nom"
+          ],
+          "answer": 2,
+          "explain": "Alphabet et symboles."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,351 @@
+{
+  "slug": "calcul-ip-masque",
+  "title": "Calcul d’IP & masque de sous-réseau",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Comment calcule-t-on le nombre magique ?",
+          "options": [
+            "256 − l'octet intéressant du masque",
+            "255 − l'octet de l'IP",
+            "Le CIDR × 2",
+            "L'octet du masque ÷ 2"
+          ],
+          "answer": 0,
+          "explain": "Nombre magique = 256 − octet du masque : c'est la taille des blocs de sous-réseaux."
+        },
+        {
+          "q": "Quel est l'octet « intéressant » d'un masque ?",
+          "options": [
+            "Toujours le 4ᵉ",
+            "Le premier",
+            "Le seul qui n'est ni 0 ni 255",
+            "Celui de l'IP"
+          ],
+          "answer": 2,
+          "explain": "L'octet à cheval entre réseau et machine, ni 0 ni 255."
+        },
+        {
+          "q": "Quel masque correspond à /26 ?",
+          "options": [
+            "255.255.255.128",
+            "255.255.255.192",
+            "255.255.255.224",
+            "255.255.255.240"
+          ],
+          "answer": 1,
+          "explain": "/26 = 2 bits dans le 4ᵉ octet → 192."
+        },
+        {
+          "q": "Nombre magique de /26 ?",
+          "options": [
+            "192",
+            "128",
+            "64",
+            "32"
+          ],
+          "answer": 2,
+          "explain": "256 − 192 = 64 : blocs 0, 64, 128, 192."
+        },
+        {
+          "q": "Adresse réseau (idSR) de 192.168.10.42 /26 ?",
+          "options": [
+            "192.168.10.32",
+            "192.168.10.42",
+            "192.168.10.64",
+            "192.168.10.0"
+          ],
+          "answer": 3,
+          "explain": "42 est dans le bloc [0–63] → idSR = 192.168.10.0."
+        },
+        {
+          "q": "Broadcast de 192.168.10.42 /26 ?",
+          "options": [
+            "192.168.10.62",
+            "192.168.10.255",
+            "192.168.10.64",
+            "192.168.10.63"
+          ],
+          "answer": 3,
+          "explain": "idSR + magic − 1 = 0 + 64 − 1 = 63."
+        },
+        {
+          "q": "Combien d'hôtes utilisables dans un /26 ?",
+          "options": [
+            "62",
+            "64",
+            "63",
+            "60"
+          ],
+          "answer": 0,
+          "explain": "2⁶ − 2 = 62 (on retire réseau et broadcast)."
+        },
+        {
+          "q": "Formule du nombre d'hôtes utilisables :",
+          "options": [
+            "2^(bits machine) − 2",
+            "256 − CIDR",
+            "CIDR − 2",
+            "2^(bits réseau)"
+          ],
+          "answer": 0,
+          "explain": "Hôtes = 2^(32 − CIDR) − 2."
+        },
+        {
+          "q": "Que vaut le nombre magique quand l'octet du masque est 0 (ex. /24) ?",
+          "options": [
+            "1",
+            "0",
+            "255",
+            "256"
+          ],
+          "answer": 3,
+          "explain": "256 − 0 = 256 : tout l'octet forme un seul bloc."
+        },
+        {
+          "q": "Combien d'hôtes dans un /24 ?",
+          "options": [
+            "254",
+            "128",
+            "256",
+            "255"
+          ],
+          "answer": 0,
+          "explain": "256 adresses − 2 = 254."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "idSR de 10.0.5.137 /27 ?",
+          "options": [
+            "10.0.5.137",
+            "10.0.5.0",
+            "10.0.5.96",
+            "10.0.5.128"
+          ],
+          "answer": 3,
+          "explain": "/27 → magic 32, blocs 0·32·64·96·128 ; 137 ∈ [128–159] → 10.0.5.128."
+        },
+        {
+          "q": "Broadcast de 10.0.5.137 /27 ?",
+          "options": [
+            "10.0.5.255",
+            "10.0.5.191",
+            "10.0.5.160",
+            "10.0.5.159"
+          ],
+          "answer": 3,
+          "explain": "128 + 32 − 1 = 159."
+        },
+        {
+          "q": "Plage utilisable de 10.0.5.137 /27 ?",
+          "options": [
+            ".128 → .158",
+            ".128 → .159",
+            ".129 → .158",
+            ".129 → .159"
+          ],
+          "answer": 2,
+          "explain": "Réseau +1 à broadcast −1 : .129 → .158 (30 hôtes)."
+        },
+        {
+          "q": "Masque de /27 ?",
+          "options": [
+            "255.255.255.248",
+            "255.255.255.240",
+            "255.255.255.192",
+            "255.255.255.224"
+          ],
+          "answer": 3,
+          "explain": "/27 = 3 bits → 224."
+        },
+        {
+          "q": "Nombre magique de /28 ?",
+          "options": [
+            "8",
+            "32",
+            "16",
+            "240"
+          ],
+          "answer": 2,
+          "explain": "256 − 240 = 16."
+        },
+        {
+          "q": "Combien d'hôtes dans un /29 ?",
+          "options": [
+            "6",
+            "2",
+            "8",
+            "4"
+          ],
+          "answer": 0,
+          "explain": "2³ − 2 = 6."
+        },
+        {
+          "q": "Quel CIDR donne exactement 2 hôtes utilisables (liaison point à point) ?",
+          "options": [
+            "/30",
+            "/29",
+            "/31",
+            "/32"
+          ],
+          "answer": 0,
+          "explain": "/30 : 4 adresses, 2 hôtes — le classique des liens entre routeurs."
+        },
+        {
+          "q": "idSR de 192.168.1.200 /25 ?",
+          "options": [
+            "192.168.1.192",
+            "192.168.1.0",
+            "192.168.1.200",
+            "192.168.1.128"
+          ],
+          "answer": 3,
+          "explain": "/25 → magic 128, blocs 0 et 128 ; 200 ∈ [128–255] → .128."
+        },
+        {
+          "q": "Broadcast de 192.168.1.200 /25 ?",
+          "options": [
+            "192.168.1.255",
+            "192.168.1.254",
+            "192.168.1.128",
+            "192.168.1.127"
+          ],
+          "answer": 0,
+          "explain": "128 + 128 − 1 = 255."
+        },
+        {
+          "q": "L'astuce de contrôle du cours : broadcast − idSR + 1 doit valoir…",
+          "options": [
+            "Le nombre d'hôtes",
+            "Le CIDR",
+            "Le nombre magique",
+            "255"
+          ],
+          "answer": 2,
+          "explain": "Si le résultat n'est pas le magic, on s'est trompé de bloc."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "idSR de 172.16.70.5 /19 ?",
+          "options": [
+            "172.16.32.0",
+            "172.16.64.0",
+            "172.16.70.0",
+            "172.16.0.0"
+          ],
+          "answer": 1,
+          "explain": "/19 → magic 32 sur le 3ᵉ octet ; 70 ∈ [64–95] → 172.16.64.0."
+        },
+        {
+          "q": "Broadcast de 172.16.70.5 /19 ?",
+          "options": [
+            "172.16.95.255",
+            "172.16.96.0",
+            "172.16.64.255",
+            "172.16.70.255"
+          ],
+          "answer": 0,
+          "explain": "3ᵉ octet : 64 + 32 − 1 = 95 ; 4ᵉ octet à 255."
+        },
+        {
+          "q": "Combien d'hôtes dans un /19 ?",
+          "options": [
+            "8 190",
+            "2 046",
+            "16 382",
+            "4 094"
+          ],
+          "answer": 0,
+          "explain": "2^13 − 2 = 8 190."
+        },
+        {
+          "q": "Masque de /21 ?",
+          "options": [
+            "255.255.248.0",
+            "255.255.240.0",
+            "255.255.224.0",
+            "255.255.252.0"
+          ],
+          "answer": 0,
+          "explain": "/21 = 16 + 5 bits → 248 dans le 3ᵉ octet."
+        },
+        {
+          "q": "Quand la coupure quitte le 4ᵉ octet, que devient le 4ᵉ octet de l'idSR ?",
+          "options": [
+            "Il est recopié",
+            "Il passe à 255",
+            "Il vaut le magic",
+            "Il passe à 0"
+          ],
+          "answer": 3,
+          "explain": "À gauche de l'octet intéressant on recopie, à droite : 0 pour le réseau, 255 pour le broadcast."
+        },
+        {
+          "q": "idSR de 192.168.100.77 /28 ?",
+          "options": [
+            "192.168.100.64",
+            "192.168.100.0",
+            "192.168.100.80",
+            "192.168.100.72"
+          ],
+          "answer": 0,
+          "explain": "/28 → magic 16 ; 77 ∈ [64–79] → .64."
+        },
+        {
+          "q": "Dernière adresse utilisable de 192.168.100.77 /28 ?",
+          "options": [
+            ".78",
+            ".95",
+            ".80",
+            ".79"
+          ],
+          "answer": 0,
+          "explain": "Broadcast = 64 + 16 − 1 = 79 → dernier hôte .78."
+        },
+        {
+          "q": "Combien d'hôtes dans un /22 ?",
+          "options": [
+            "1 022",
+            "254",
+            "2 046",
+            "510"
+          ],
+          "answer": 0,
+          "explain": "2^10 − 2 = 1 022."
+        },
+        {
+          "q": "Un /23 couvre combien d'adresses au total ?",
+          "options": [
+            "1 024",
+            "256",
+            "128",
+            "512"
+          ],
+          "answer": 3,
+          "explain": "2^9 = 512 adresses, 510 hôtes."
+        },
+        {
+          "q": "idSR de 10.10.130.9 /17 ?",
+          "options": [
+            "10.10.128.0",
+            "10.10.0.0",
+            "10.10.130.0",
+            "10.10.64.0"
+          ],
+          "answer": 0,
+          "explain": "/17 → magic 128 sur le 3ᵉ octet ; 130 ∈ [128–255] → 10.10.128.0."
+        }
+      ]
+    }
+  ]
+}

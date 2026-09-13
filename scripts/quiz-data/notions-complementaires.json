@@ -1,0 +1,351 @@
+{
+  "slug": "notions-complementaires",
+  "title": "Notions clés (lexique illustré)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Que permet le NAT ?",
+          "options": [
+            "De chiffrer le trafic",
+            "D'alimenter une caméra",
+            "De faire sortir plusieurs appareils privés derrière une seule IP publique",
+            "De traduire les noms en IP"
+          ],
+          "answer": 2,
+          "explain": "Le routeur note qui a demandé quoi et renvoie chaque réponse au bon appareil — le standard téléphonique de l'entreprise."
+        },
+        {
+          "q": "Qu'est-ce qu'un VPN ?",
+          "options": [
+            "Un switch virtuel",
+            "Un antivirus",
+            "Un serveur de fichiers",
+            "Un tunnel chiffré à travers Internet reliant deux sites ou un télétravailleur"
+          ],
+          "answer": 3,
+          "explain": "Le VPN relie à distance comme si l'on était sur le même réseau local, en toute confidentialité."
+        },
+        {
+          "q": "Qu'est-ce qu'une DMZ ?",
+          "options": [
+            "Un protocole de routage",
+            "Un type de câble",
+            "Un réseau Wi-Fi invité",
+            "Une zone tampon entre Internet et le réseau interne pour les serveurs exposés"
+          ],
+          "answer": 3,
+          "explain": "Si un pirate compromet la DMZ, il n'atteint pas le réseau interne — le sas d'accueil d'un bâtiment."
+        },
+        {
+          "q": "Que fait un VLAN ?",
+          "options": [
+            "Il découpe un même switch en plusieurs réseaux logiques isolés",
+            "Il attribue des IP",
+            "Il augmente le débit",
+            "Il remplace le routeur"
+          ],
+          "answer": 0,
+          "explain": "Des cloisons amovibles dans un open-space, sans tirer de nouveaux câbles."
+        },
+        {
+          "q": "Que signifie PoE ?",
+          "options": [
+            "Port over Ethernet",
+            "Point of Entry",
+            "Power over Ethernet : l'électricité passe dans le câble RJ45",
+            "Protocol of Exchange"
+          ],
+          "answer": 2,
+          "explain": "Alimente une borne Wi-Fi ou une caméra sans prise électrique à côté."
+        },
+        {
+          "q": "Que fait le DNS ?",
+          "options": [
+            "Attribue les IP",
+            "Filtre les sites",
+            "Priorise le trafic",
+            "Traduit les noms en adresses IP"
+          ],
+          "answer": 3,
+          "explain": "L'annuaire téléphonique : un nom → un numéro."
+        },
+        {
+          "q": "Que fournit le DHCP en plus de l'adresse IP ?",
+          "options": [
+            "L'adresse MAC",
+            "Le mot de passe Wi-Fi",
+            "Le certificat",
+            "Le masque, la passerelle et le DNS"
+          ],
+          "answer": 3,
+          "explain": "Le DHCP donne toute la configuration réseau automatiquement."
+        },
+        {
+          "q": "Que fait ARP ?",
+          "options": [
+            "Route entre réseaux",
+            "Traduit IP → MAC sur le réseau local",
+            "Traduit nom → IP",
+            "Chiffre le trafic"
+          ],
+          "answer": 1,
+          "explain": "« Qui a l'IP 192.168.1.20 ? → c'est moi, voici ma MAC »."
+        },
+        {
+          "q": "Qu'est-ce qu'un proxy ?",
+          "options": [
+            "Un intermédiaire entre les postes et Internet qui relaie, filtre et met en cache",
+            "Un onduleur",
+            "Un serveur DHCP",
+            "Un pare-feu matériel"
+          ],
+          "answer": 0,
+          "explain": "Le majordome qui va chercher les pages et filtre les visiteurs."
+        },
+        {
+          "q": "Que fait la QoS ?",
+          "options": [
+            "Priorise certains trafics (voix, visio) quand le réseau est chargé",
+            "Compresse les fichiers",
+            "Chiffre les données",
+            "Détecte les virus"
+          ],
+          "answer": 0,
+          "explain": "La voie réservée aux ambulances dans les embouteillages."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Quelle notion est l'analogie du « standard téléphonique d'entreprise » ?",
+          "options": [
+            "DMZ",
+            "QoS",
+            "VPN",
+            "NAT"
+          ],
+          "answer": 3,
+          "explain": "Un seul numéro public, plein de postes internes = NAT."
+        },
+        {
+          "q": "Quelle notion est l'analogie du « sas d'accueil » ?",
+          "options": [
+            "DMZ",
+            "Proxy",
+            "VLAN",
+            "DHCP"
+          ],
+          "answer": 0,
+          "explain": "La DMZ est séparée des bureaux (le réseau interne)."
+        },
+        {
+          "q": "Quelle notion est l'analogie des « cloisons amovibles » ?",
+          "options": [
+            "ARP",
+            "PoE",
+            "NAT",
+            "VLAN"
+          ],
+          "answer": 3,
+          "explain": "Le VLAN cloisonne logiquement un switch."
+        },
+        {
+          "q": "Quelle notion est l'analogie du « tunnel opaque sous l'autoroute » ?",
+          "options": [
+            "Proxy",
+            "DNS",
+            "VPN",
+            "QoS"
+          ],
+          "answer": 2,
+          "explain": "Le VPN est un tunnel chiffré sur une infrastructure publique."
+        },
+        {
+          "q": "Où place-t-on typiquement un serveur web public ?",
+          "options": [
+            "Sur le poste de l'admin",
+            "Dans un VLAN voix",
+            "Dans le LAN",
+            "En DMZ"
+          ],
+          "answer": 3,
+          "explain": "Les serveurs exposés (web, mail) vont dans la DMZ."
+        },
+        {
+          "q": "Quel appareil bénéficie typiquement du PoE ?",
+          "options": [
+            "Un écran",
+            "Un serveur de base de données",
+            "Une borne Wi-Fi ou une caméra IP",
+            "Une imprimante laser"
+          ],
+          "answer": 2,
+          "explain": "Les petits équipements loin d'une prise électrique."
+        },
+        {
+          "q": "Quel trafic la QoS priorise-t-elle en général ?",
+          "options": [
+            "Les mises à jour",
+            "La voix et la visio",
+            "Les sauvegardes nocturnes",
+            "Les téléchargements"
+          ],
+          "answer": 1,
+          "explain": "Les flux temps réel souffrent des délais ; les téléchargements attendent."
+        },
+        {
+          "q": "Un proxy peut :",
+          "options": [
+            "Bloquer des sites et mettre des pages en cache",
+            "Attribuer des IP",
+            "Créer des VLAN",
+            "Remplacer le DNS"
+          ],
+          "answer": 0,
+          "explain": "Filtrage et cache sont ses deux usages classiques."
+        },
+        {
+          "q": "Sans DNS, que devrait-on taper dans le navigateur ?",
+          "options": [
+            "Le nom du site en majuscules",
+            "Rien ne marche",
+            "L'adresse IP du serveur",
+            "L'adresse MAC"
+          ],
+          "answer": 2,
+          "explain": "Les machines ne se parlent qu'en chiffres."
+        },
+        {
+          "q": "Le NAT est réalisé par :",
+          "options": [
+            "Le serveur DNS",
+            "Le switch",
+            "La carte réseau",
+            "Le routeur / la box"
+          ],
+          "answer": 3,
+          "explain": "C'est le routeur qui traduit les adresses en sortie."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Un télétravailleur doit accéder au serveur de fichiers du bureau : quelle notion ?",
+          "options": [
+            "VLAN",
+            "DMZ",
+            "VPN",
+            "PoE"
+          ],
+          "answer": 2,
+          "explain": "Le VPN le place virtuellement sur le réseau du bureau."
+        },
+        {
+          "q": "La compta et la production doivent être isolées sur le même switch :",
+          "options": [
+            "VLAN",
+            "QoS",
+            "NAT",
+            "Proxy"
+          ],
+          "answer": 0,
+          "explain": "Deux VLAN = deux réseaux logiques isolés."
+        },
+        {
+          "q": "La visio saccade quand quelqu'un télécharge :",
+          "options": [
+            "Changer le DNS",
+            "Activer le NAT",
+            "Activer la QoS",
+            "Créer une DMZ"
+          ],
+          "answer": 2,
+          "explain": "La QoS priorise la visio sur le téléchargement."
+        },
+        {
+          "q": "Un poste affiche 169.254.x.y : quel service est probablement en panne ?",
+          "options": [
+            "DHCP",
+            "NAT",
+            "ARP",
+            "DNS"
+          ],
+          "answer": 0,
+          "explain": "Sans réponse DHCP, le poste s'auto-attribue une adresse APIPA."
+        },
+        {
+          "q": "Les sites sont bloqués selon leur catégorie dans l'entreprise : quel intermédiaire ?",
+          "options": [
+            "Un serveur DHCP",
+            "Un VLAN",
+            "Une DMZ",
+            "Un proxy"
+          ],
+          "answer": 3,
+          "explain": "Le proxy filtre les requêtes web."
+        },
+        {
+          "q": "Un site web fonctionne par IP mais pas par nom :",
+          "options": [
+            "Problème d'ARP",
+            "Problème de VLAN",
+            "Problème de DNS",
+            "Problème de PoE"
+          ],
+          "answer": 2,
+          "explain": "La résolution de nom échoue ; l'IP directe passe."
+        },
+        {
+          "q": "Un PC ne trouve pas la MAC de sa passerelle : quel protocole est en cause ?",
+          "options": [
+            "DNS",
+            "ARP",
+            "DHCP",
+            "NAT"
+          ],
+          "answer": 1,
+          "explain": "ARP fait le lien IP → MAC sur le réseau local."
+        },
+        {
+          "q": "Combien d'IP publiques faut-il pour 50 postes derrière un NAT ?",
+          "options": [
+            "Une seule",
+            "50",
+            "Au moins 10",
+            "25"
+          ],
+          "answer": 0,
+          "explain": "Tous sortent derrière l'unique IP publique."
+        },
+        {
+          "q": "Une caméra IP installée au plafond sans prise électrique : quelle solution ?",
+          "options": [
+            "Un proxy",
+            "Un switch PoE",
+            "Un VPN",
+            "Une DMZ"
+          ],
+          "answer": 1,
+          "explain": "Le PoE apporte données et courant par le RJ45."
+        },
+        {
+          "q": "Pourquoi placer les serveurs exposés en DMZ plutôt que dans le LAN ?",
+          "options": [
+            "Pour éviter le DNS",
+            "Pour économiser des IP",
+            "Pour qu'une compromission n'atteigne pas le réseau interne",
+            "Pour le débit"
+          ],
+          "answer": 2,
+          "explain": "La DMZ est une zone tampon : cloisonnement."
+        }
+      ]
+    }
+  ]
+}
