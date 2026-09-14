@@ -108,3 +108,27 @@ Aucune page ne traite de l'IA (diagnostic assisté, analyse de journaux, évalua
 | **Total** | **13** | **3** | **9** | **1** |
 
 Le socle technique (réseau, Windows/AD, Linux, virtualisation Hyper-V, pare-feu) est au-dessus du niveau attendu. Ce qui manque est presque entièrement ce que le millésime 2026 a ajouté : l'IA, le cloud/hybride, la continuité formalisée, la supervision outillée, et la dimension « métier » du support (ITIL, collaboratif, accessibilité, sobriété).
+
+---
+
+## Suivi — réalisé le 14/09/2026
+
+Les 39 cours du plan P1→P3 sont publiés, les pages survolées garnies et les mentions périmées corrigées (scripts `scripts/ia.py`, `hybride.py`, `powershell.py`, `examen.py`, `continuite.py`, `supervision.py`, `poste.py`, `support.py`, `reseau_complements.py`, socle `scripts/_cours.py`). L'index des cours passe de 89 à 128 cours dans 11 catégories.
+
+| Chantier | Pages | Placement |
+|---|---|---|
+| IA (CP1, CP8) | `ia-technicien`, `ia-encadrer`, `ia-scripts` | Catégorie neuve **Intelligence artificielle** |
+| Identité hybride, cloud (CP5, CP6, CP7) | `entra-id`, `mfa-acces-conditionnel`, `cycle-vie-compte`, `zero-trust-iam`, `pki-adcs`, `cloud-premiers-pas`, `datacenter` | Catégorie neuve **Cloud & identité hybride** |
+| Virtualisation (CP6) | `docker-30-minutes`, `proxmox-multi-hotes` | Software › Virtualisation |
+| Scripts Windows (CP8) | `scripts-powershell`, `planificateur-taches-windows` | Software › Administration Windows |
+| Le titre et ses épreuves | `examen-tssr-2026`, `parcours-reac`, `presenter-sa-production`, `incident-devant-le-jury`, `organiser-sa-veille`, `compte-rendu-intervention` | Catégorie neuve **Le titre TSSR** |
+| Continuité (CP9) | `pra-pca`, `sauvegarde-vm-hyperv`, `sauvegarde-linux`, `sauvegarde-bases-donnees` | Maintenance › Continuité & sauvegardes (neuf) |
+| MAJ & supervision (CP10) | `supervision` (réécrit, 4 → 16 Ko), `installer-zabbix`, `gerer-mises-a-jour`, `gestion-vulnerabilites` | Maintenance › Supervision & mises à jour (neuf) |
+| Déploiement (CP2) | `deployer-image-windows`, `microsoft-365-teams`, `maintenance-materielle-niveau-1` | Software › Déploiement & poste de travail (neuf) |
+| Environnement de travail | `accessibilite-windows`, `ergonomie-tms`, `deee-sobriete` | Maintenance › Environnement de travail & responsabilité (neuf) |
+| Support (CP3) | `itil-support`, `prise-en-main-distance`, `sensibiliser-utilisateurs` (+ renvoi dans `le-ticketing`) | Maintenance › Méthode & support |
+| Compléments réseau (CP4) | `ospf` (Cisco › Routeurs), `wifi-entreprise` (Réseau › Équipements), `proxy-squid` (Réseau › Sécurité & accès distant) | |
+
+Corrections : section « Les épreuves TSSR » de `anglais-professionnel` réécrite selon le RE V03 (question en anglais au questionnaire, plus d'oral en anglais) ; `supervision` et `quiz-supervision` ne parlent plus de « CCP2 » ; badge du glossaire `RNCP 37682` → `RNCP 42463` (client rebuildé).
+
+Reste optionnel : des quiz `scripts/quiz-data/<slug>.json` pour les 39 nouveaux cours (puis `npx tsx scripts/seed-activites-local.ts`).

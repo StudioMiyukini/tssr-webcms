@@ -101,7 +101,7 @@ export function Glossary() {
   return (
     <div className="gloss">
       <header className="gloss-head">
-        <span className="gloss-badge">RNCP 37682</span>
+        <span className="gloss-badge">RNCP 42463</span>
         <h1 className="gloss-h1">Glossaire TSSR</h1>
         <p className="gloss-sub">Index de recherche des notions — Technicien Supérieur Systèmes &amp; Réseaux</p>
         <div className="gloss-stats">

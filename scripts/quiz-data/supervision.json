@@ -291,15 +291,15 @@
           "explain": "Disponibilité."
         },
         {
-          "q": "CCP2 TSSR concerne :",
+          "q": "Dans le référentiel 2026, la supervision relève de quel CCP ?",
           "options": [
-            "L'exploitation : supervision, sauvegarde, incidents",
-            "L'anglais",
-            "Le hardware",
-            "Le réseau seul"
+            "CCP 3 — Maintenir en conditions opérationnelles l'infrastructure",
+            "CCP 1 — Assurer le support aux utilisateurs",
+            "CCP 2 — Exploiter les éléments de l'infrastructure",
+            "D'aucun : elle n'est pas évaluée"
           ],
           "answer": 0,
-          "explain": "Compétence clé de l'exploitation."
+          "explain": "Depuis le REAC 2026 (trois CCP), « mettre à jour et superviser les éléments de l'infrastructure » est la compétence 10, dans le CCP 3."
         },
         {
           "q": "Une sonde active trop fréquente :",
