@@ -444,12 +444,39 @@ function scriptVerif(p: Params): string {
   return v.join('\n');
 }
 
+/** Le script pret a coller dans un terminal : il s'enregistre dans /root puis se lance. */
+export function pourConsole(sec: Section): string {
+  if (sec.id === 'verif' || sec.fichier.endsWith('.ps1')) return sec.code;
+  const cible = `/root/${sec.id}.sh`;
+  return `cat > ${cible} <<'FIN_SCRIPT_TSSR'\n${sec.code}\nFIN_SCRIPT_TSSR\nsudo bash ${cible}`;
+}
+
+// Tout le corps dans une fonction, appelee seulement si le script est un fichier : colle tel quel
+// dans un terminal, il ne fait que definir la fonction et dire comment s'en servir — au lieu
+// d'appliquer `set -e` au shell interactif et de le fermer au premier `exit`.
+function enFichier(code: string, cible: string): string {
+  const lignes = code.split('\n');
+  const debut = lignes.findIndex(l => l.startsWith('set -euo pipefail'));
+  return [
+    ...lignes.slice(0, debut),
+    'principal() {',
+    ...lignes.slice(debut),
+    '}',
+    'if [ -f "${0:-}" ] && [ "$(basename "$0")" != bash ]; then',
+    '    principal "$@"',
+    'else',
+    `    echo "Ce script se lance depuis un fichier, pas colle dans le terminal :  sudo bash ${cible}"`,
+    '    echo "Sur la page, le bouton « Pour la console » copie une version qui s\'enregistre et se lance toute seule."',
+    'fi',
+  ].join('\n');
+}
+
 export function genererScripts(p: Params): Section[] {
   const hoteWeb = nomHote(p.vmWeb), hoteBdd = nomHote(p.vmBdd);
   return [
     { id: 'hote', titre: p.hv === 'hyperv' ? '① Sur l’hôte Hyper-V — cloner les deux VM' : '① Sur l’hôte Proxmox — cloner les deux VM', code: scriptHote(p), fichier: p.hv === 'hyperv' ? 'clone-web-bdd.ps1' : 'clone-web-bdd.sh' },
-    { id: 'bdd', titre: `② Dans ${p.vmBdd} — MariaDB`, code: scriptBdd(p), fichier: `bdd-${hoteBdd}.sh` },
-    { id: 'web', titre: `③ Dans ${p.vmWeb} — nginx + Node.js + page de test`, code: scriptWeb(p), fichier: `web-${hoteWeb}.sh` },
+    { id: 'bdd', titre: `② Dans ${p.vmBdd} — MariaDB`, code: enFichier(scriptBdd(p), '/root/bdd.sh'), fichier: `bdd-${hoteBdd}.sh` },
+    { id: 'web', titre: `③ Dans ${p.vmWeb} — nginx + Node.js + page de test`, code: enFichier(scriptWeb(p), '/root/web.sh'), fichier: `web-${hoteWeb}.sh` },
     { id: 'verif', titre: '④ Vérifier', code: scriptVerif(p), fichier: 'verif.txt' },
   ];
 }

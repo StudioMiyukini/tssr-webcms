@@ -13,7 +13,7 @@
  * de production, et la page le dit.
  */
 import { memo, useDeferredValue, useMemo, useRef, useState } from 'react';
-import { MDP, genererScripts, nomHote, type Hyperviseur } from '@/lib/web-db-scripts';
+import { MDP, genererScripts, nomHote, pourConsole, type Hyperviseur } from '@/lib/web-db-scripts';
 
 const champ: React.CSSProperties = { width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface)', color: 'var(--text)', fontSize: 14, boxSizing: 'border-box' };
 const mono: React.CSSProperties = { fontFamily: "ui-monospace,'Space Mono',SFMono-Regular,Menlo,Consolas,monospace" };
@@ -335,7 +335,12 @@ export function WebDbConfigurator() {
               {sec.id !== 'verif' && (
                 <button type="button" onClick={() => telecharger(sec.code, sec.fichier)} style={{ ...bouton, borderColor: 'var(--border)', color: 'var(--text)' }} title={`Télécharger ${sec.fichier}`}>💾 {sec.fichier.replace(/^.*\./, '.')}</button>
               )}
-              <button type="button" onClick={() => copier(sec.id, sec.code)} style={{ ...bouton, background: copie === sec.id ? 'var(--accent)' : 'transparent', color: copie === sec.id ? '#fff' : 'var(--accent)' }}>
+              {(sec.id === 'bdd' || sec.id === 'web') && (
+                <button type="button" onClick={() => copier('console-' + sec.id, pourConsole(sec))} style={{ ...bouton, background: copie === 'console-' + sec.id ? 'var(--accent)' : 'transparent', color: copie === 'console-' + sec.id ? '#fff' : 'var(--accent)' }} title="Copie le script enveloppé dans un cat > /root/….sh <<'FIN' … FIN suivi de sudo bash : à coller tel quel dans le terminal de la VM">
+                  {copie === 'console-' + sec.id ? '✓ Copié' : '🖥️ Pour la console'}
+                </button>
+              )}
+              <button type="button" onClick={() => copier(sec.id, sec.code)} style={{ ...bouton, background: copie === sec.id ? 'var(--accent)' : 'transparent', color: copie === sec.id ? '#fff' : 'var(--accent)' }} title="Le script seul, à enregistrer dans un fichier">
                 {copie === sec.id ? '✓ Copié' : copie === 'sel-' + sec.id ? 'Sélectionné — Ctrl+C' : 'Copier'}
               </button>
             </div>
