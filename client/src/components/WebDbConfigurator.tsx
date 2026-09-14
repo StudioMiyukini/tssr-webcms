@@ -12,7 +12,7 @@
  * « Azerty77 », partout — c'est une convention de formation, pas une pratique
  * de production, et la page le dit.
  */
-import { useMemo, useState } from 'react';
+import { memo, useDeferredValue, useMemo, useRef, useState } from 'react';
 import { MDP, genererScripts, nomHote, type Hyperviseur } from '@/lib/web-db-scripts';
 
 const champ: React.CSSProperties = { width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface)', color: 'var(--text)', fontSize: 14, boxSizing: 'border-box' };
@@ -24,6 +24,13 @@ const rangee: React.CSSProperties = { display: 'grid', gridTemplateColumns: 'rep
 const bouton: React.CSSProperties = { padding: '6px 14px', border: '1px solid var(--accent)', borderRadius: 8, background: 'transparent', color: 'var(--accent)', fontWeight: 600, cursor: 'pointer', fontSize: 13, whiteSpace: 'nowrap' };
 const pre: React.CSSProperties = { ...mono, background: 'var(--surface-2)', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 14px', overflowX: 'auto', fontSize: 12.5, lineHeight: 1.55, margin: 0, whiteSpace: 'pre' };
 
+const CIDRS = [16, 22, 23, 24, 25, 26, 27, 28];
+
+// Un bloc de script ne se re-rend que si son texte change (les quatre font 40 Ko).
+const Bloc = memo(function Bloc({ code, refPre }: { code: string; refPre: (el: HTMLPreElement | null) => void }) {
+  return <pre ref={refPre} style={pre} tabIndex={0}><code>{code}</code></pre>;
+});
+
 const lsGet = (k: string, d: string) => { try { return localStorage.getItem(k) || d; } catch { return d; } };
 const lsSet = (k: string, v: string) => { try { localStorage.setItem(k, v); } catch { /* indisponible */ } };
 
@@ -34,6 +41,7 @@ const reseauDe = (ip: string, cidr: number) => {
   const masque = cidr === 0 ? 0 : (0xffffffff << (32 - cidr)) >>> 0;
   return (n & masque) >>> 0;
 };
+const reseauTexte = (ip: string, cidr: number) => { const n = reseauDe(ip, cidr); return [24, 16, 8, 0].map(s => (n >>> s) & 255).join('.'); };
 const passerelleDe = (ip: string) => { const m = ip.match(/^(\d+\.\d+\.\d+)\.\d+$/); return m ? `${m[1]}.254` : ''; };
 const masqueDe = (cidr: number) => { const m = cidr === 0 ? 0 : (0xffffffff << (32 - cidr)) >>> 0; return [24, 16, 8, 0].map(s => (m >>> s) & 255).join('.'); };
 
@@ -61,11 +69,14 @@ export function WebDbConfigurator() {
   const [vcpu, setVcpu] = useState('2');
   const [ram, setRam] = useState('2');
   // --- Réseau ---
-  const [ipWeb, setIpWeb] = useState('192.168.10.21');
-  const [ipBdd, setIpBdd] = useState('192.168.10.22');
-  const [cidr, setCidr] = useState('24');
-  const [gw, setGw] = useState('');
-  const [dns, setDns] = useState('192.168.10.254');
+  const [ipWeb, setIpWeb] = useState('192.168.30.5');
+  const [cidrWeb, setCidrWeb] = useState('24');
+  const [gwWebSaisi, setGwWeb] = useState('');
+  const [dnsWebSaisi, setDnsWeb] = useState('');
+  const [ipBdd, setIpBdd] = useState('192.168.20.5');
+  const [cidrBdd, setCidrBdd] = useState('24');
+  const [gwBddSaisi, setGwBdd] = useState('');
+  const [dnsBddSaisi, setDnsBdd] = useState('');
   const [iface, setIface] = useState('');
   // --- Application ---
   const [bdd, setBdd] = useState('appdb');
@@ -76,34 +87,54 @@ export function WebDbConfigurator() {
 
   const persist = (k: string, v: string, set: (v: string) => void) => { set(v); lsSet(k, v); };
 
-  const cidrN = Number(cidr) || 24;
-  const passerelle = gw || passerelleDe(ipWeb);
+  // Passerelle : .254 du sous-reseau de la VM sauf saisie ; DNS : la passerelle sauf saisie.
+  const gwWeb = gwWebSaisi || passerelleDe(ipWeb);
+  const gwBdd = gwBddSaisi || passerelleDe(ipBdd);
+  const dnsWeb = dnsWebSaisi || gwWeb;
+  const dnsBdd = dnsBddSaisi || gwBdd;
+  const memeReseau = ipValide(ipWeb) && ipValide(ipBdd) && cidrWeb === cidrBdd && reseauDe(ipWeb, Number(cidrWeb)) === reseauDe(ipBdd, Number(cidrBdd));
   const hoteWeb = nomHote(vmWeb);
   const hoteBdd = nomHote(vmBdd);
 
   // Les fautes que la syntaxe ne signale pas : c'est là qu'on perd une heure.
   const soucis = useMemo(() => {
     const s: string[] = [];
-    for (const [nom, ip] of [['web', ipWeb], ['base', ipBdd], ['passerelle', passerelle], ['DNS', dns]] as const) {
-      if (!ipValide(ip)) s.push(`L'adresse ${nom} « ${ip} » n'est pas une adresse IPv4.`);
+    const vms = [['web', ipWeb, cidrWeb, gwWeb, dnsWeb], ['base', ipBdd, cidrBdd, gwBdd, dnsBdd]] as const;
+    for (const [nom, ip, cidr, gw, dns] of vms) {
+      if (!ipValide(ip)) { s.push(`L'adresse de la VM ${nom} « ${ip} » n'est pas une adresse IPv4.`); continue; }
+      if (!ipValide(gw)) s.push(`La passerelle de la VM ${nom} « ${gw} » n'est pas une adresse IPv4.`);
+      else if (reseauDe(ip, Number(cidr)) !== reseauDe(gw, Number(cidr))) s.push(`VM ${nom} : la passerelle ${gw} est hors de son sous-réseau ${ip}/${cidr} — pas de sortie, ni vers l'autre VM ni vers Internet.`);
+      else if (gw === ip) s.push(`VM ${nom} : la passerelle est l'adresse de la VM elle-même.`);
+      if (!ipValide(dns)) s.push(`Le DNS de la VM ${nom} « ${dns} » n'est pas une adresse IPv4.`);
     }
-    if (ipValide(ipWeb) && ipValide(ipBdd)) {
-      if (ipWeb === ipBdd) s.push('Les deux VM ont la même adresse : la seconde à démarrer sera injoignable.');
-      else if (reseauDe(ipWeb, cidrN) !== reseauDe(ipBdd, cidrN)) s.push(`Les deux VM ne sont pas dans le même sous-réseau (/${cidr}) : le moteur ne joindra la base qu'à travers un routeur.`);
-    }
-    if (ipValide(ipWeb) && ipValide(passerelle) && reseauDe(ipWeb, cidrN) !== reseauDe(passerelle, cidrN)) s.push('La passerelle est hors du sous-réseau des VM : pas de sortie (apt et npm échoueront).');
+    if (ipValide(ipWeb) && ipValide(ipBdd) && ipWeb === ipBdd) s.push('Les deux VM ont la même adresse.');
     if (vmWeb.trim() === vmBdd.trim()) s.push('Les deux VM portent le même nom.');
     if (hv === 'proxmox' && idWeb === idBdd) s.push('Les deux VM Proxmox ont le même identifiant.');
     if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(bdd)) s.push('Le nom de la base : lettres, chiffres et _ seulement.');
     if (!/^[A-Za-z_][A-Za-z0-9_]{0,31}$/.test(utilisateur)) s.push('Le nom d’utilisateur MariaDB : lettres, chiffres et _ (32 caractères max).');
     return s;
-  }, [ipWeb, ipBdd, passerelle, dns, cidr, cidrN, vmWeb, vmBdd, hv, idWeb, idBdd, bdd, utilisateur]);
+  }, [ipWeb, cidrWeb, gwWeb, dnsWeb, ipBdd, cidrBdd, gwBdd, dnsBdd, vmWeb, vmBdd, hv, idWeb, idBdd, bdd, utilisateur]);
 
-  const sections = useMemo(() => genererScripts({ hv, master, masterId, exportPath, vhdDir, sw, copierFichiers, vmWeb, vmBdd, idWeb, idBdd, vcpu, ram, ipWeb, ipBdd, cidr, passerelle, dns, iface, bdd, utilisateur, nodeSource, mdpSysteme }),
-    [hv, master, masterId, exportPath, vhdDir, sw, copierFichiers, vmWeb, vmBdd, idWeb, idBdd, vcpu, ram, ipWeb, ipBdd, cidr, passerelle, dns, iface, bdd, utilisateur, nodeSource, mdpSysteme]);
+  // Les quatre scripts (40 Ko de texte) se regenerent a chaque frappe : en valeur differee, la saisie reste fluide.
+  const params = useDeferredValue(useMemo(() => ({ hv, master, masterId, exportPath, vhdDir, sw, copierFichiers, vmWeb, vmBdd, idWeb, idBdd, vcpu, ram, ipWeb, cidrWeb, gwWeb, dnsWeb, ipBdd, cidrBdd, gwBdd, dnsBdd, iface, bdd, utilisateur, nodeSource, mdpSysteme }),
+    [hv, master, masterId, exportPath, vhdDir, sw, copierFichiers, vmWeb, vmBdd, idWeb, idBdd, vcpu, ram, ipWeb, cidrWeb, gwWeb, dnsWeb, ipBdd, cidrBdd, gwBdd, dnsBdd, iface, bdd, utilisateur, nodeSource, mdpSysteme]));
+  const sections = useMemo(() => genererScripts(params), [params]);
 
-  const copier = (id: string, texte: string) => {
-    navigator.clipboard?.writeText(texte).then(() => { setCopie(id); setTimeout(() => setCopie(''), 1600); }).catch(() => { /* le texte reste sélectionnable */ });
+  const pres = useRef<Record<string, HTMLPreElement | null>>({});
+  const copier = async (id: string, texte: string) => {
+    const fini = () => { setCopie(id); setTimeout(() => setCopie(''), 1600); };
+    try { await navigator.clipboard.writeText(texte); fini(); return; } catch { /* API refusee : on passe par la selection */ }
+    const ta = document.createElement('textarea');
+    ta.value = texte; ta.setAttribute('readonly', ''); ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch { ok = false; }
+    ta.remove();
+    if (ok) { fini(); return; }
+    // Dernier recours : selectionner le bloc, l'utilisateur fait Ctrl+C.
+    const pre = pres.current[id];
+    if (pre) { const r = document.createRange(); r.selectNodeContents(pre); const sel = window.getSelection(); sel?.removeAllRanges(); sel?.addRange(r); }
+    setCopie('sel-' + id); setTimeout(() => setCopie(''), 2500);
   };
   const telecharger = (texte: string, nom: string) => {
     // BOM pour PowerShell (accents dans les commentaires) ; jamais de BOM ni de CRLF dans un script bash.
@@ -179,7 +210,21 @@ export function WebDbConfigurator() {
           <div style={{ ...rangee, marginTop: 10 }}>
             <div>
               <label style={etiquette}>Adresse IP</label>
-              <input style={{ ...champ, ...mono }} value={ipWeb} onChange={e => setIpWeb(e.target.value)} />
+              <input style={{ ...champ, ...mono }} value={ipWeb} onChange={e => setIpWeb(e.target.value.trim())} />
+            </div>
+            <div>
+              <label style={etiquette}>Masque</label>
+              <select style={champ} value={cidrWeb} onChange={e => setCidrWeb(e.target.value)}>
+                {CIDRS.map(c => <option key={c} value={String(c)}>/{c} — {masqueDe(c)}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={etiquette}>Passerelle {!gwWebSaisi && <span className="meta" style={{ fontWeight: 400 }}>(auto .254)</span>}</label>
+              <input style={{ ...champ, ...mono }} value={gwWeb} onChange={e => setGwWeb(e.target.value.trim())} />
+            </div>
+            <div>
+              <label style={etiquette}>DNS {!dnsWebSaisi && <span className="meta" style={{ fontWeight: 400 }}>(= passerelle)</span>}</label>
+              <input style={{ ...champ, ...mono }} value={dnsWeb} onChange={e => setDnsWeb(e.target.value.trim())} />
             </div>
             {hv === 'proxmox' && (
               <div>
@@ -188,7 +233,7 @@ export function WebDbConfigurator() {
               </div>
             )}
           </div>
-          <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>Nom d’hôte Linux : <code>{hoteWeb}</code></div>
+          <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>Nom d’hôte Linux : <code>{hoteWeb}</code> · réseau <code>{ipValide(ipWeb) ? reseauTexte(ipWeb, Number(cidrWeb)) : '?'}/{cidrWeb}</code></div>
         </div>
         {/* VM base */}
         <div style={groupe}>
@@ -198,7 +243,21 @@ export function WebDbConfigurator() {
           <div style={{ ...rangee, marginTop: 10 }}>
             <div>
               <label style={etiquette}>Adresse IP</label>
-              <input style={{ ...champ, ...mono }} value={ipBdd} onChange={e => setIpBdd(e.target.value)} />
+              <input style={{ ...champ, ...mono }} value={ipBdd} onChange={e => setIpBdd(e.target.value.trim())} />
+            </div>
+            <div>
+              <label style={etiquette}>Masque</label>
+              <select style={champ} value={cidrBdd} onChange={e => setCidrBdd(e.target.value)}>
+                {CIDRS.map(c => <option key={c} value={String(c)}>/{c} — {masqueDe(c)}</option>)}
+              </select>
+            </div>
+            <div>
+              <label style={etiquette}>Passerelle {!gwBddSaisi && <span className="meta" style={{ fontWeight: 400 }}>(auto .254)</span>}</label>
+              <input style={{ ...champ, ...mono }} value={gwBdd} onChange={e => setGwBdd(e.target.value.trim())} />
+            </div>
+            <div>
+              <label style={etiquette}>DNS {!dnsBddSaisi && <span className="meta" style={{ fontWeight: 400 }}>(= passerelle)</span>}</label>
+              <input style={{ ...champ, ...mono }} value={dnsBdd} onChange={e => setDnsBdd(e.target.value.trim())} />
             </div>
             {hv === 'proxmox' && (
               <div>
@@ -207,33 +266,27 @@ export function WebDbConfigurator() {
               </div>
             )}
           </div>
-          <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>Nom d’hôte Linux : <code>{hoteBdd}</code></div>
+          <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>Nom d’hôte Linux : <code>{hoteBdd}</code> · réseau <code>{ipValide(ipBdd) ? reseauTexte(ipBdd, Number(cidrBdd)) : '?'}/{cidrBdd}</code></div>
         </div>
       </div>
 
-      {/* Réseau commun */}
+      {/* Entre les deux VM */}
       <div style={groupe}>
-        <div style={legende}>🌐 Réseau (commun aux deux VM)</div>
+        <div style={legende}>🔀 Entre les deux VM</div>
         <div style={rangee}>
           <div>
-            <label style={etiquette}>Masque (CIDR)</label>
-            <select style={champ} value={cidr} onChange={e => setCidr(e.target.value)}>
-              {[16, 22, 23, 24, 25, 26, 27, 28].map(c => <option key={c} value={String(c)}>/{c} — {masqueDe(c)}</option>)}
-            </select>
-          </div>
-          <div>
-            <label style={etiquette}>Passerelle {!gw && <span className="meta" style={{ fontWeight: 400 }}>(auto .254)</span>}</label>
-            <input style={{ ...champ, ...mono }} value={passerelle} onChange={e => setGw(e.target.value)} />
-          </div>
-          <div>
-            <label style={etiquette}>DNS</label>
-            <input style={{ ...champ, ...mono }} value={dns} onChange={e => setDns(e.target.value)} />
-          </div>
-          <div>
-            <label style={etiquette}>Carte réseau {!iface && <span className="meta" style={{ fontWeight: 400 }}>(auto-détectée)</span>}</label>
+            <label style={etiquette}>Carte réseau (dans les VM) {!iface && <span className="meta" style={{ fontWeight: 400 }}>(auto-détectée)</span>}</label>
             <input style={{ ...champ, ...mono }} value={iface} onChange={e => setIface(e.target.value.trim())} placeholder="eth0" />
           </div>
         </div>
+        {memeReseau ? (
+          <div className="meta" style={{ fontSize: 12, marginTop: 8 }}>Les deux VM sont dans le même sous-réseau : le moteur joint la base directement, sans routeur.</div>
+        ) : (
+          <aside className="pb-note pb-note-blue" style={{ marginTop: 10, marginBottom: 0 }}>
+            <p className="pb-note-title">🔀 Deux réseaux différents : le flux passe par le routeur</p>
+            <p>Le moteur <code>{ipWeb}</code> joindra la base <code>{ipBdd}</code> <strong>via sa passerelle {gwWeb}</strong>. Le routeur ou pare-feu entre les deux (OPNsense, routeur Cisco…) doit <strong>router les deux sous-réseaux et laisser passer TCP 3306 de {ipWeb} vers {ipBdd}</strong> (et ICMP pour les tests). MariaDB, lui, n’acceptera <code>{utilisateur}</code> que depuis {ipWeb} — la règle est écrite pour ça.</p>
+          </aside>
+        )}
       </div>
 
       {/* Application */}
@@ -283,11 +336,11 @@ export function WebDbConfigurator() {
                 <button type="button" onClick={() => telecharger(sec.code, sec.fichier)} style={{ ...bouton, borderColor: 'var(--border)', color: 'var(--text)' }} title={`Télécharger ${sec.fichier}`}>💾 {sec.fichier.replace(/^.*\./, '.')}</button>
               )}
               <button type="button" onClick={() => copier(sec.id, sec.code)} style={{ ...bouton, background: copie === sec.id ? 'var(--accent)' : 'transparent', color: copie === sec.id ? '#fff' : 'var(--accent)' }}>
-                {copie === sec.id ? '✓ Copié' : 'Copier'}
+                {copie === sec.id ? '✓ Copié' : copie === 'sel-' + sec.id ? 'Sélectionné — Ctrl+C' : 'Copier'}
               </button>
             </div>
           </div>
-          <pre style={pre}><code>{sec.code}</code></pre>
+          <Bloc code={sec.code} refPre={el => { pres.current[sec.id] = el; }} />
         </div>
       ))}
     </div>

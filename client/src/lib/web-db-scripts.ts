@@ -35,16 +35,23 @@ export type Params = {
   vcpu: string;
   ram: string;
   ipWeb: string;
+  cidrWeb: string;
+  gwWeb: string;
+  dnsWeb: string;
   ipBdd: string;
-  cidr: string;
-  passerelle: string;
-  dns: string;
+  cidrBdd: string;
+  gwBdd: string;
+  dnsBdd: string;
   iface: string;
   bdd: string;
   utilisateur: string;
   nodeSource: boolean;
   mdpSysteme: boolean;
 };
+
+export type Reseau = { ip: string; cidr: string; gw: string; dns: string };
+export const reseauWeb = (p: Params): Reseau => ({ ip: p.ipWeb, cidr: p.cidrWeb, gw: p.gwWeb, dns: p.dnsWeb });
+export const reseauBdd = (p: Params): Reseau => ({ ip: p.ipBdd, cidr: p.cidrBdd, gw: p.gwBdd, dns: p.dnsBdd });
 
 export type Section = { id: 'hote' | 'bdd' | 'web' | 'verif'; titre: string; code: string; fichier: string };
 
@@ -104,17 +111,18 @@ function identite(p: Params, nom: string): string[] {
   return r;
 }
 
-function reseau(p: Params, ip: string): string[] {
+function reseau(p: Params, n: Reseau): string[] {
+  const { ip, cidr, gw, dns } = n;
   const r: string[] = [];
   r.push('reseau() {');
   // Premiere carte qui n'est pas lo ; le suffixe @ifNN (interfaces virtuelles) n'appartient pas au nom.
   r.push(`    IFACE=\${IFACE:-${p.iface || "$(ip -o link show | awk -F': ' '$2!=\"lo\"{print $2; exit}' | cut -d@ -f1)"}}`);
-  r.push(`    etape "Adresse fixe ${ip}/${p.cidr} sur $IFACE (passerelle ${p.passerelle}, DNS ${p.dns})"`);
+  r.push(`    etape "Adresse fixe ${ip}/${cidr} sur $IFACE (passerelle ${gw}, DNS ${dns})"`);
   r.push('    if systemctl is-active --quiet NetworkManager 2>/dev/null; then');
   r.push('        # --- NetworkManager (installation avec bureau) ---');
   r.push('        CON=$(nmcli -g NAME,DEVICE connection show --active 2>/dev/null | awk -F: -v d="$IFACE" \'$2==d{print $1; exit}\')');
   r.push('        [ -n "$CON" ] || { nmcli connection add type ethernet ifname "$IFACE" con-name "$IFACE" >/dev/null; CON=$IFACE; }');
-  r.push(`        nmcli connection modify "$CON" ipv4.method manual ipv4.addresses "${ip}/${p.cidr}" ipv4.gateway "${p.passerelle}" ipv4.dns "${p.dns}" ipv6.method ignore`);
+  r.push(`        nmcli connection modify "$CON" ipv4.method manual ipv4.addresses "${ip}/${cidr}" ipv4.gateway "${gw}" ipv4.dns "${dns}" ipv6.method ignore`);
   r.push('        nmcli connection up "$CON" >/dev/null');
   r.push('    elif command -v ifup >/dev/null && [ -f /etc/network/interfaces ]; then');
   r.push('        # --- ifupdown (installation Debian par defaut) ---');
@@ -128,24 +136,24 @@ function reseau(p: Params, ip: string): string[] {
   r.push('');
   r.push('auto $IFACE');
   r.push('iface $IFACE inet static');
-  r.push(`    address ${ip}/${p.cidr}`);
-  r.push(`    gateway ${p.passerelle}`);
-  r.push(`    dns-nameservers ${p.dns}`);
+  r.push(`    address ${ip}/${cidr}`);
+  r.push(`    gateway ${gw}`);
+  r.push(`    dns-nameservers ${dns}`);
   r.push('EOF');
   r.push('        ifdown --force "$IFACE" 2>/dev/null || true');
   r.push('        pkill -f "dhclient.*$IFACE" 2>/dev/null || true');
   r.push('        ip addr flush dev "$IFACE"; ip route flush dev "$IFACE" 2>/dev/null || true');
   r.push('        ifup "$IFACE"');
-  r.push(`        if systemctl is-active --quiet systemd-resolved 2>/dev/null; then resolvectl dns "$IFACE" ${p.dns}; else [ -L /etc/resolv.conf ] && rm -f /etc/resolv.conf; printf 'nameserver ${p.dns}\\n' > /etc/resolv.conf; fi`);
+  r.push(`        if systemctl is-active --quiet systemd-resolved 2>/dev/null; then resolvectl dns "$IFACE" ${dns}; else [ -L /etc/resolv.conf ] && rm -f /etc/resolv.conf; printf 'nameserver ${dns}\\n' > /etc/resolv.conf; fi`);
   r.push('    elif systemctl is-active --quiet systemd-networkd 2>/dev/null; then');
   r.push('        # --- systemd-networkd (images cloud) ---');
   r.push('        cat > "/etc/systemd/network/10-$IFACE.network" <<EOF');
   r.push('[Match]');
   r.push('Name=$IFACE');
   r.push('[Network]');
-  r.push(`Address=${ip}/${p.cidr}`);
-  r.push(`Gateway=${p.passerelle}`);
-  r.push(`DNS=${p.dns}`);
+  r.push(`Address=${ip}/${cidr}`);
+  r.push(`Gateway=${gw}`);
+  r.push(`DNS=${dns}`);
   r.push('EOF');
   r.push('        rm -f /etc/systemd/network/*dhcp* 2>/dev/null || true');
   r.push('        networkctl reload && networkctl reconfigure "$IFACE"');
@@ -154,7 +162,7 @@ function reseau(p: Params, ip: string): string[] {
   r.push('    fi');
   r.push('    sleep 2');
   r.push(`    ip -4 addr show "$IFACE" | grep -q " ${ip}/" && echo "IP ${ip} appliquee sur $IFACE" || { echo "ERREUR: ${ip} n'est pas sur $IFACE"; ip -4 addr show "$IFACE"; exit 1; }`);
-  r.push(`    ping -c 2 -W 2 ${p.passerelle} >/dev/null 2>&1 && echo "Passerelle ${p.passerelle} joignable" || echo "AVERTISSEMENT: passerelle ${p.passerelle} injoignable"`);
+  r.push(`    ping -c 2 -W 2 ${gw} >/dev/null 2>&1 && echo "Passerelle ${gw} joignable" || echo "AVERTISSEMENT: passerelle ${gw} injoignable"`);
   r.push('}');
   return r;
 }
@@ -183,6 +191,7 @@ function scriptHote(p: Params): string {
     h.push('# ============================================================');
     h.push(`#  Clonage Hyper-V : ${p.master}  ->  ${p.vmWeb} (nginx + Node)  et  ${p.vmBdd} (MariaDB)`);
     h.push(`#  ${p.vcpu} vCPU - ${p.ram} Go RAM - commutateur ${p.sw}`);
+    h.push(`#  ${p.vmWeb} : ${p.ipWeb}/${p.cidrWeb} via ${p.gwWeb}   |   ${p.vmBdd} : ${p.ipBdd}/${p.cidrBdd} via ${p.gwBdd}`);
     h.push("#  A executer SUR L'HOTE Hyper-V (PowerShell admin)");
     h.push('# ============================================================');
     h.push(`$Source  = '${p.master}'`);
@@ -237,6 +246,7 @@ function scriptHote(p: Params): string {
     h.push('# ============================================================');
     h.push(`#  Clonage Proxmox VE : ${p.master} (VMID ${p.masterId})  ->  ${hoteWeb} (${p.idWeb})  et  ${hoteBdd} (${p.idBdd})`);
     h.push(`#  ${p.vcpu} vCPU - ${p.ram} Go RAM - pont ${p.sw}`);
+    h.push(`#  ${hoteWeb} : ${p.ipWeb}/${p.cidrWeb} via ${p.gwWeb}   |   ${hoteBdd} : ${p.ipBdd}/${p.cidrBdd} via ${p.gwBdd}`);
     h.push("#  A executer SUR L'HOTE Proxmox (shell root). Les noms de VM Proxmox sont des noms DNS : pas d'underscore.");
     h.push('# ============================================================');
     h.push('set -e');
@@ -258,7 +268,7 @@ function scriptBdd(p: Params): string {
   const b: string[] = [
     ...entete(`VM base de donnees : ${p.vmBdd} (${p.ipBdd}) - MariaDB`, p.vmBdd),
     ...identite(p, hoteBdd),
-    ...reseau(p, p.ipBdd),
+    ...reseau(p, reseauBdd(p)),
     '',
     'identite',
     ...sequenceReseau('mariadb-server'),
@@ -308,7 +318,7 @@ function scriptWeb(p: Params): string {
   const w: string[] = [
     ...entete(`VM web : ${p.vmWeb} (${p.ipWeb}) - nginx + Node.js, reliee a ${hoteBdd} (${p.ipBdd})`, p.vmWeb),
     ...identite(p, hoteWeb),
-    ...reseau(p, p.ipWeb),
+    ...reseau(p, reseauWeb(p)),
     '',
     'identite',
     ...sequenceReseau('nginx nodejs npm'),
@@ -386,6 +396,12 @@ function scriptWeb(p: Params): string {
   w.push('');
   w.push(...finReseau());
   w.push('');
+  w.push(`etape "Verification : le flux vers la base (${p.ipBdd}:3306), puis l'application"`);
+  w.push(`if timeout 3 bash -c 'exec 3<>/dev/tcp/${p.ipBdd}/3306' 2>/dev/null; then echo "Port 3306 de ${p.ipBdd} joignable"; else`);
+  w.push(`    echo "AVERTISSEMENT: ${p.ipBdd}:3306 injoignable depuis cette VM."`);
+  w.push(`    if ! command -v ping >/dev/null; then echo " -> (ping absent : apt install iputils-ping pour affiner)"; elif ping -c 1 -W 2 ${p.ipBdd} >/dev/null 2>&1; then echo " -> la VM base repond au ping mais pas sur 3306 : MariaDB n'ecoute pas (script base joue ?) ou pare-feu local";`);
+  w.push(`    else echo " -> la VM base ne repond meme pas au ping : VM eteinte, ou routage/pare-feu entre ${p.ipWeb} et ${p.ipBdd} (deux reseaux differents ? il faut une regle qui laisse passer TCP 3306 de ${p.ipWeb} vers ${p.ipBdd})"; fi`);
+  w.push('fi');
   w.push('etape "Verification : l\'application, puis la base a travers elle"');
   w.push('for i in 1 2 3 4 5; do sleep 2; systemctl is-active --quiet app && break; done');
   w.push("systemctl is-active --quiet app || { echo \"ERREUR: le service app ne demarre pas :\"; journalctl -u app -n 20 --no-pager; exit 1; }");
@@ -409,7 +425,7 @@ function scriptWeb(p: Params): string {
 
 function scriptVerif(p: Params): string {
   const v: string[] = [];
-  v.push('# Depuis un poste du meme reseau (Windows ou Linux)');
+  v.push('# Depuis un poste (Windows ou Linux) qui route vers les deux reseaux');
   v.push(`ping ${p.ipWeb}`);
   v.push(`ping ${p.ipBdd}`);
   v.push(`curl http://${p.ipWeb}/api/sante        # {"affichage":"ok","base":"ok", ...}`);
@@ -419,6 +435,9 @@ function scriptVerif(p: Params): string {
   v.push(`mysql -h ${p.ipBdd} -u ${p.utilisateur} -p'${MDP}' ${p.bdd} -e 'SELECT * FROM messages;'   # apt install mariadb-client si absent`);
   v.push('journalctl -u app -n 30                 # si la page dit "base : erreur"');
   v.push('tail -f /var/log/config-vm.log          # si le script a ete lance en SSH (il tourne detache)');
+  v.push('');
+  v.push(`# Depuis la VM web : le flux vers la base passe-t-il ? (si les VM sont dans deux reseaux, le routeur/pare-feu doit laisser TCP 3306 de ${p.ipWeb} vers ${p.ipBdd})`);
+  v.push(`ping ${p.ipBdd} ; timeout 3 bash -c 'exec 3<>/dev/tcp/${p.ipBdd}/3306' && echo "3306 ouvert" || echo "3306 bloque"`);
   v.push('');
   v.push('# Depuis la VM base : qui est connecte, et depuis ou');
   v.push(`mysql -u root -p'${MDP}' -e 'SHOW PROCESSLIST;'`);

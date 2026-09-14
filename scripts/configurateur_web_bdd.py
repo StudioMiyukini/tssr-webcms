@@ -19,7 +19,7 @@ TITRE = 'Configurateur — duo web + base de données'
 CONTENU = '\n'.join([
     hero('Outil · Linux / Virtualisation', TITRE,
          'Deux VM Debian clonées depuis ton master : un moteur nginx + Node.js et une base MariaDB, '
-         'en IP fixe, reliées automatiquement, avec une page qui prouve que tout fonctionne.'),
+         'chacune en IP fixe dans son réseau, reliées automatiquement, avec une page qui prouve que tout fonctionne.'),
     STYLE,
     '<p>C’est le montage le plus courant d’une application d’entreprise : un <strong>serveur web</strong> '
     'devant, une <strong>base de données</strong> derrière, sur deux machines séparées. L’outil génère les '
@@ -39,7 +39,7 @@ CONTENU = '\n'.join([
     '<h2>Avant de lancer</h2>',
     bullets('Le <strong>master</strong> est un Debian 12 installé, à jour, éteint. Le script reconnaît le gestionnaire réseau en place — <code>ifupdown</code> (installation par défaut), NetworkManager (avec bureau) ou systemd-networkd (images cloud) — et ne remplace que sa configuration. Sur Hyper-V, le paquet <code>hyperv-daemons</code> dans le master permet à ① de déposer les scripts sans réseau.',
             'Les VM ont besoin d’<strong>Internet pendant l’installation</strong> (<code>apt</code>, <code>npm</code>). Le script s’adapte : si le réseau courant du clone sort déjà, il installe d’abord et adresse à la fin ; sinon il applique l’IP fixe d’abord. Sans Internet dans les deux cas, il s’arrête avec un message clair avant d’avoir rien cassé.',
-            'Les deux adresses sont dans le <strong>même sous-réseau</strong> ; l’outil le vérifie et refuse une passerelle hors réseau.',
+            'Chaque VM a <strong>son réseau</strong> : adresse, masque, passerelle (par défaut le .254 de son sous-réseau) et DNS (par défaut la passerelle). Deux sous-réseaux différents — par exemple le moteur en <code>192.168.30.5</code> et la base en <code>192.168.20.5</code> — sont le cas normal d’une architecture segmentée : le flux passe alors par le routeur ou le pare-feu, qui doit <strong>router les deux réseaux et autoriser TCP 3306 du moteur vers la base</strong>. L’outil le rappelle et le script web teste ce flux avant l’application.',
             'On joue ② <strong>avant</strong> ③ : le script web teste la connexion à la base à la fin, et dit précisément ce qui manque sinon.',
             'Depuis la <strong>console</strong> de la VM : <code>sudo bash /root/bdd.sh</code>, puis <code>sudo bash /root/web.sh</code>. En <strong>SSH</strong>, le changement d’adresse couperait la session : le script le détecte, continue en arrière-plan et journalise dans <code>/var/log/config-vm.log</code> ; on se reconnecte sur la nouvelle adresse et on suit avec <code>tail -f</code>.',
             'Variables acceptées : <code>SANS_RESEAU=1 sudo bash …</code> pour ne pas toucher au réseau (VM déjà adressée), <code>IFACE=ens33</code> pour forcer la carte. Les scripts se rejouent sans dommage.',
@@ -60,7 +60,7 @@ CONTENU = '\n'.join([
 
     '<h2>Quand la page est rouge</h2>',
     tab(['Erreur affichée', 'Cause', 'Vérification'], [
-        ['<code>ETIMEDOUT</code>, <code>EHOSTUNREACH</code>', 'La VM base n’est pas joignable : éteinte, mauvaise IP, pas le même réseau', '<code>ping</code> depuis la VM web ; <code>ip a</code> sur la base'],
+        ['<code>ETIMEDOUT</code>, <code>EHOSTUNREACH</code>', 'La VM base n’est pas joignable : éteinte, mauvaise IP, ou — dans deux réseaux — routage absent / règle de pare-feu manquante entre les deux', '<code>ping</code> depuis la VM web ; <code>ip route</code> (la passerelle est-elle là ?) ; sur OPNsense, une règle qui laisse passer TCP 3306 du réseau web vers l’IP de la base'],
         ['<code>ECONNREFUSED</code>', 'MariaDB n’écoute pas sur le réseau', '<code>ss -tlnp | grep 3306</code> sur la base : <code>127.0.0.1:3306</code> = bind-address non modifié'],
         ['<code>ER_HOST_NOT_PRIVILEGED</code>, <code>ER_ACCESS_DENIED_ERROR</code>', 'L’utilisateur n’est pas autorisé depuis cette adresse : l’IP du web a changé, ou ② a été généré avec une autre valeur', '<code>SELECT User, Host FROM mysql.user</code> sur la base ; regénérer et rejouer ②'],
         ['<code>ER_BAD_DB_ERROR</code>', 'La base n’existe pas', '<code>SHOW DATABASES</code> ; ② a-t-il été joué ?'],
