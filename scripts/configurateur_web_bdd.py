@@ -37,11 +37,13 @@ CONTENU = '\n'.join([
     '<div data-block="web-db-configurator"></div>',
 
     '<h2>Avant de lancer</h2>',
-    bullets('Le <strong>master</strong> est un Debian 12 installé, à jour, éteint, avec <code>ifupdown</code> (le réseau par défaut de Debian) et <code>sudo</code>. Sur Hyper-V, le paquet <code>hyperv-daemons</code> dans le master permet à ① de déposer les scripts sans réseau.',
-            'Les VM ont besoin d’<strong>Internet pendant l’installation</strong> (<code>apt</code>, <code>npm</code>) : la passerelle indiquée doit sortir — un commutateur externe, ou un OPNsense de labo sur le réseau privé (<a href="/pages/tp-opnsense-installation">TP OPNsense</a>).',
+    bullets('Le <strong>master</strong> est un Debian 12 installé, à jour, éteint. Le script reconnaît le gestionnaire réseau en place — <code>ifupdown</code> (installation par défaut), NetworkManager (avec bureau) ou systemd-networkd (images cloud) — et ne remplace que sa configuration. Sur Hyper-V, le paquet <code>hyperv-daemons</code> dans le master permet à ① de déposer les scripts sans réseau.',
+            'Les VM ont besoin d’<strong>Internet pendant l’installation</strong> (<code>apt</code>, <code>npm</code>). Le script s’adapte : si le réseau courant du clone sort déjà, il installe d’abord et adresse à la fin ; sinon il applique l’IP fixe d’abord. Sans Internet dans les deux cas, il s’arrête avec un message clair avant d’avoir rien cassé.',
             'Les deux adresses sont dans le <strong>même sous-réseau</strong> ; l’outil le vérifie et refuse une passerelle hors réseau.',
-            'On joue ② <strong>avant</strong> ③ : le script web teste la connexion à la base à la fin, et s’arrête si elle échoue.',
-            'Depuis la <strong>console</strong> de la VM (ou SSH en sachant que l’IP change en cours de script) : <code>sudo bash /root/bdd.sh</code>, puis <code>sudo bash /root/web.sh</code>.'),
+            'On joue ② <strong>avant</strong> ③ : le script web teste la connexion à la base à la fin, et dit précisément ce qui manque sinon.',
+            'Depuis la <strong>console</strong> de la VM : <code>sudo bash /root/bdd.sh</code>, puis <code>sudo bash /root/web.sh</code>. En <strong>SSH</strong>, le changement d’adresse couperait la session : le script le détecte, continue en arrière-plan et journalise dans <code>/var/log/config-vm.log</code> ; on se reconnecte sur la nouvelle adresse et on suit avec <code>tail -f</code>.',
+            'Variables acceptées : <code>SANS_RESEAU=1 sudo bash …</code> pour ne pas toucher au réseau (VM déjà adressée), <code>IFACE=ens33</code> pour forcer la carte. Les scripts se rejouent sans dommage.',
+            'Chaque clone reçoit un <strong>machine-id</strong> et des <strong>clés SSH</strong> neufs : deux clones identiques sur ce point posent des problèmes de DHCP et d’avertissements SSH.'),
     note('yellow', '⚠️ Convention de labo, pas de production',
          'Un seul mot de passe partout, connu de tous, c’est ce qui permet à une promotion de se '
          'dépanner mutuellement — et exactement ce qu’on ne fait pas en entreprise : voir '
@@ -60,9 +62,10 @@ CONTENU = '\n'.join([
     tab(['Erreur affichée', 'Cause', 'Vérification'], [
         ['<code>ETIMEDOUT</code>, <code>EHOSTUNREACH</code>', 'La VM base n’est pas joignable : éteinte, mauvaise IP, pas le même réseau', '<code>ping</code> depuis la VM web ; <code>ip a</code> sur la base'],
         ['<code>ECONNREFUSED</code>', 'MariaDB n’écoute pas sur le réseau', '<code>ss -tlnp | grep 3306</code> sur la base : <code>127.0.0.1:3306</code> = bind-address non modifié'],
-        ['<code>ER_ACCESS_DENIED_ERROR</code>', 'L’utilisateur n’est pas autorisé depuis cette adresse (l’IP du web a changé, ou ② a été joué avec une autre valeur)', '<code>SELECT User, Host FROM mysql.user</code> sur la base'],
-        ['<code>ER_BAD_DB_ERROR</code>', 'La base n’existe pas', '<code>SHOW DATABASES</code>'],
+        ['<code>ER_HOST_NOT_PRIVILEGED</code>, <code>ER_ACCESS_DENIED_ERROR</code>', 'L’utilisateur n’est pas autorisé depuis cette adresse : l’IP du web a changé, ou ② a été généré avec une autre valeur', '<code>SELECT User, Host FROM mysql.user</code> sur la base ; regénérer et rejouer ②'],
+        ['<code>ER_BAD_DB_ERROR</code>', 'La base n’existe pas', '<code>SHOW DATABASES</code> ; ② a-t-il été joué ?'],
         ['Page 502 de nginx', 'Node ne tourne pas', '<code>systemctl status app</code>, <code>journalctl -u app -n 30</code> (souvent : <code>npm install</code> sans Internet)'],
+        ['« deb.debian.org injoignable »', 'Le script s’est arrêté avant d’installer : pas de sortie Internet', 'Passerelle, DNS, commutateur ; <code>ping 1.1.1.1</code> puis <code>ping deb.debian.org</code>'],
     ]),
 
     note('green', '🔗 Les cours qui expliquent ce qu’il génère',

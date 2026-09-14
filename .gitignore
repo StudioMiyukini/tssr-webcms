@@ -19,3 +19,4 @@ export/
 cms.sqlite.bak*
 __pycache__/
 *.avant.html
+.smoke-webdb/
