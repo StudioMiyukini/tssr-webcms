@@ -209,7 +209,7 @@ export function BastionConfigurator() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '0 0 6px', gap: 8, flexWrap: 'wrap' }}>
             <div style={{ fontWeight: 700, fontSize: 14 }}>📜 {sec.titre}</div>
             <div style={{ display: 'flex', gap: 8 }}>
-              {sec.id !== 'verif' && sec.id !== 'posteNix' && (
+              {sec.id !== 'verif' && (
                 <button type="button" onClick={() => telecharger(sec.code, sec.fichier)} style={{ ...bouton, borderColor: 'var(--border)', color: 'var(--text)' }} title={`Télécharger ${sec.fichier}`}>💾 {sec.fichier.replace(/^.*\./, '.')}</button>
               )}
               {(sec.id === 'bastion' || sec.id === 'cibles') && (

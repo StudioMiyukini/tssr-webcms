@@ -408,17 +408,49 @@ function scriptPoste(p: ParamsBastion): string {
   return w.join('\n');
 }
 
+// Linux / macOS : le meme travail que le PowerShell, en bash.
 function scriptPosteNix(p: ParamsBastion): string {
-  const cibles = listeCibles(p.cibles);
   const admins = listeAdmins(p.admins);
+  const cibles = listeCibles(p.cibles);
   const login = admins[0]?.login || 'admin';
-  const r: string[] = [];
-  r.push('# Linux / macOS : a ajouter dans ~/.ssh/config (chmod 600). La cle : ssh-keygen -t ed25519 ; donner ~/.ssh/id_ed25519.pub au configurateur.');
-  r.push(configSsh(p));
-  r.push('');
-  r.push('# Utiliser :  ssh bastion' + (cibles[0] ? `   ;   ssh ${cibles[0].nom}   ;   scp fichier ${cibles[0].nom}:/tmp/` : ''));
-  if (cibles[0]) r.push(`# Sans fichier config :  ssh -J ${login}@${p.ip}:${p.port || '22'} ${login}@${cibles[0].ip}`);
-  return r.join('\n');
+  const port = p.port || '22';
+  const w: string[] = [];
+  w.push('#!/usr/bin/env bash');
+  w.push(`# Poste de l'administrateur (Linux, macOS, WSL, Git Bash) : cle SSH, ~/.ssh/config avec ProxyJump vers ${p.ip}, test.`);
+  w.push('# A lancer avec ton compte (pas root) :  bash poste-bastion.sh   - rejouable, le bloc de config est remplace.');
+  w.push('set -euo pipefail');
+  w.push(`LOGIN='${login}'`);
+  w.push('SSH_DIR="$HOME/.ssh"; CLE="$SSH_DIR/id_ed25519"; CONFIG="$SSH_DIR/config"');
+  w.push('command -v ssh >/dev/null || { echo "Client ssh absent : apt install openssh-client (Debian/Ubuntu), dnf install openssh-clients (Fedora)"; exit 1; }');
+  w.push('mkdir -p "$SSH_DIR" && chmod 700 "$SSH_DIR"');
+  w.push('');
+  w.push("# --- 1. La cle de l'administrateur (une fois ; la privee ne quitte jamais ce poste) ---");
+  w.push('if [ ! -f "$CLE" ]; then');
+  w.push('    echo "Generation de la cle ed25519 (choisis une phrase de passe, ou Entree pour aucune)..."');
+  w.push('    ssh-keygen -t ed25519 -C "$LOGIN@$(hostname)" -f "$CLE"');
+  w.push('fi');
+  w.push('echo; echo "Cle publique a coller dans le configurateur, champ Administrateurs, sur la ligne de $LOGIN :"');
+  w.push('echo "$LOGIN $(cat "$CLE.pub")"; echo');
+  w.push('');
+  w.push("# --- 2. ~/.ssh/config : le bloc bastion, remplace s'il existe deja ---");
+  w.push('touch "$CONFIG"; chmod 600 "$CONFIG"');
+  w.push("# suppression de l'ancien bloc (entre les deux marqueurs), puis ajout du nouveau");
+  w.push("awk '/^# --- Bastion TSSR \\(genere\\) ---$/{saut=1} !saut{print} /^# --- fin bastion TSSR ---$/{saut=0}' \"$CONFIG\" > \"$CONFIG.tmp\" && mv \"$CONFIG.tmp\" \"$CONFIG\"");
+  w.push("cat >> \"$CONFIG\" <<'EOF'");
+  w.push('');
+  w.push(configSsh(p));
+  w.push('EOF');
+  w.push('chmod 600 "$CONFIG"');
+  w.push('echo "Config ecrite : $CONFIG"');
+  w.push('');
+  w.push('# --- 3. Test (apres avoir donne la cle publique au configurateur et joue le script 2 sur le bastion) ---');
+  w.push('echo "Test du bastion :  ssh bastion hostname"');
+  w.push('ssh -o ConnectTimeout=8 -o BatchMode=yes bastion hostname || echo "Pas encore : la cle est-elle sur le bastion ? le script 2 a-t-il ete joue ? (ssh -v bastion pour le detail)"');
+  if (cibles[0]) {
+    w.push(`echo "Puis, a travers lui :  ssh ${cibles[0].nom} hostname   (et scp fichier ${cibles[0].nom}:/tmp/)"`);
+    w.push(`echo "Sans fichier config :  ssh -J $LOGIN@${p.ip}:${port} $LOGIN@${cibles[0].ip}"`);
+  }
+  return w.join('\n');
 }
 
 function scriptVerif(p: ParamsBastion): string {
@@ -451,7 +483,7 @@ export function genererScriptsBastion(p: ParamsBastion): SectionBastion[] {
     { id: 'bastion', titre: `② Dans ${p.vm} — le bastion`, code: enFichier(scriptBastion(p), '~/bastion.sh'), fichier: `bastion-${hote}.sh` },
     { id: 'cibles', titre: '③ Sur chaque serveur — n’accepter SSH que depuis le bastion', code: enFichier(scriptCibles(p), '~/derriere-bastion.sh'), fichier: 'derriere-bastion.sh' },
     { id: 'poste', titre: '④ Sur le poste de l’administrateur (Windows) — PowerShell : clé, config, test', code: scriptPoste(p), fichier: 'poste-bastion.ps1' },
-    { id: 'posteNix', titre: '④ bis — Linux / macOS : ~/.ssh/config', code: scriptPosteNix(p), fichier: 'ssh-config.txt' },
+    { id: 'posteNix', titre: '④ bis — Linux / macOS / WSL : bash — clé, config, test', code: scriptPosteNix(p), fichier: 'poste-bastion.sh' },
     { id: 'verif', titre: '⑤ Vérifier', code: scriptVerif(p), fichier: 'verif.txt' },
   ];
 }
