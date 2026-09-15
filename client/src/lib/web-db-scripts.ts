@@ -83,6 +83,8 @@ function entete(titre: string, nomVm: string): string[] {
     'fi',
     '',
     'etape() { echo; echo "==== $*"; }',
+    '# Un miroir qui repond mal une fois ne doit pas faire echouer toute la mise en service : trois essais.',
+    'apt_essais() { local i; for i in 1 2 3; do "$@" && return 0; echo "apt : echec, nouvel essai dans 10 s ($i/3)"; sleep 10; done; return 1; }',
     'internet_ok() { timeout 5 bash -c \'exec 3<>/dev/tcp/deb.debian.org/80\' 2>/dev/null; }',
   ];
 }
@@ -274,7 +276,7 @@ function scriptBdd(p: Params): string {
     ...sequenceReseau('mariadb-server'),
     '',
     'etape "Installation de MariaDB"',
-    'apt-get update -q && apt-get install -y -q mariadb-server',
+    'apt_essais apt-get update -q && apt_essais apt-get install -y -q mariadb-server',
     'systemctl enable --now mariadb',
     '',
     "etape \"MariaDB ecoute sur le reseau (par defaut : 127.0.0.1 seulement)\"",
@@ -324,13 +326,13 @@ function scriptWeb(p: Params): string {
     ...sequenceReseau('nginx nodejs npm'),
     '',
     'etape "Installation de nginx, Node.js, npm"',
-    'apt-get update -q && apt-get install -y -q nginx curl ca-certificates',
+    'apt_essais apt-get update -q && apt_essais apt-get install -y -q nginx curl ca-certificates',
   ];
   if (p.nodeSource) {
     w.push('curl -fsSL https://deb.nodesource.com/setup_22.x | bash -    # Node.js 22 LTS (NodeSource)');
-    w.push('apt-get install -y -q nodejs');
+    w.push('apt_essais apt-get install -y -q nodejs');
   } else {
-    w.push('apt-get install -y -q nodejs npm                             # Node.js des depots Debian (18 sur Debian 12)');
+    w.push('apt_essais apt-get install -y -q nodejs npm                             # Node.js des depots Debian (18 sur Debian 12)');
   }
   w.push('node -v && npm -v');
   w.push('');
