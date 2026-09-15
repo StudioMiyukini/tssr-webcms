@@ -37,6 +37,17 @@ CONTENU = '\n'.join([
 
     '<div data-block="web-db-configurator"></div>',
 
+    '<h2>Option : GLPI sur la VM web</h2>',
+    '<p>Cocher <strong>Installer GLPI ici</strong> sur la VM 1 ajoute au script ③ l’installation de PHP-FPM et de la '
+    '<strong>dernière version de GLPI</strong> (téléchargée depuis GitHub, installée par sa ligne de commande '
+    '<code>bin/console db:install</code>, sans assistant web), sur une base <code>glpi</code> créée par le script ② sur la '
+    'VM base — avec l’utilisateur <code>glpi</code> autorisé depuis l’IP du web seulement, et les <strong>tables de fuseaux '
+    'horaires</strong> que GLPI exige. GLPI répond sur <code>http://&lt;IP web&gt;:8080/</code> (le port 80 reste à la page '
+    'de test) et sur le port 80 sous le nom <code>glpi.&lt;domaine&gt;</code> si le DNS interne le connaît. Comptes par '
+    'défaut <code>glpi/glpi</code>, <code>tech/tech</code>, <code>normal/normal</code>, <code>post-only/postonly</code> : '
+    'GLPI demande de les changer, c’est la première chose à faire. Le cours : <a href="/pages/le-ticketing">Le ticketing</a>, '
+    '<a href="/pages/itil-support">ITIL pour le support</a>.</p>',
+
     '<h2>Option : la messagerie en DMZ</h2>',
     '<p>En cochant <strong>VM 3 — messagerie en DMZ</strong>, l’outil ajoute un troisième clone : '
     '<strong>Postfix</strong> (SMTP, port 25 entre serveurs et 587 authentifié pour les clients), '

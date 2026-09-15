@@ -93,6 +93,7 @@ export function WebDbConfigurator() {
   const [dnsMailSaisi, setDnsMail] = useState('');
   const [domaineMail, setDomaineMail] = useState('entreprise.lan');
   const [boites, setBoites] = useState('alice, bob');
+  const [glpi, setGlpi] = useState(false);
   const [copie, setCopie] = useState('');
 
   const persist = (k: string, v: string, set: (v: string) => void) => { set(v); lsSet(k, v); };
@@ -136,8 +137,8 @@ export function WebDbConfigurator() {
   }, [ipWeb, cidrWeb, gwWeb, dnsWeb, ipBdd, cidrBdd, gwBdd, dnsBdd, vmWeb, vmBdd, hv, idWeb, idBdd, bdd, utilisateur, mail, ipMail, cidrMail, gwMail, dnsMail, domaineMail, boites, idMail]);
 
   // Les quatre scripts (40 Ko de texte) se regenerent a chaque frappe : en valeur differee, la saisie reste fluide.
-  const params = useDeferredValue(useMemo(() => ({ hv, master, masterId, exportPath, vhdDir, sw, copierFichiers, vmWeb, vmBdd, idWeb, idBdd, vcpu, ram, ipWeb, cidrWeb, gwWeb, dnsWeb, ipBdd, cidrBdd, gwBdd, dnsBdd, iface, bdd, utilisateur, nodeSource, mdpSysteme, mail, vmMail, idMail, ipMail, cidrMail, gwMail, dnsMail, domaineMail, boites }),
-    [hv, master, masterId, exportPath, vhdDir, sw, copierFichiers, vmWeb, vmBdd, idWeb, idBdd, vcpu, ram, ipWeb, cidrWeb, gwWeb, dnsWeb, ipBdd, cidrBdd, gwBdd, dnsBdd, iface, bdd, utilisateur, nodeSource, mdpSysteme, mail, vmMail, idMail, ipMail, cidrMail, gwMail, dnsMail, domaineMail, boites]));
+  const params = useDeferredValue(useMemo(() => ({ hv, master, masterId, exportPath, vhdDir, sw, copierFichiers, vmWeb, vmBdd, idWeb, idBdd, vcpu, ram, ipWeb, cidrWeb, gwWeb, dnsWeb, ipBdd, cidrBdd, gwBdd, dnsBdd, iface, bdd, utilisateur, nodeSource, mdpSysteme, mail, vmMail, idMail, ipMail, cidrMail, gwMail, dnsMail, domaineMail, boites, glpi }),
+    [hv, master, masterId, exportPath, vhdDir, sw, copierFichiers, vmWeb, vmBdd, idWeb, idBdd, vcpu, ram, ipWeb, cidrWeb, gwWeb, dnsWeb, ipBdd, cidrBdd, gwBdd, dnsBdd, iface, bdd, utilisateur, nodeSource, mdpSysteme, mail, vmMail, idMail, ipMail, cidrMail, gwMail, dnsMail, domaineMail, boites, glpi]));
   const sections = useMemo(() => genererScripts(params), [params]);
 
   const pres = useRef<Record<string, HTMLPreElement | null>>({});
@@ -254,6 +255,11 @@ export function WebDbConfigurator() {
             )}
           </div>
           <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>Nom d’hôte Linux : <code>{hoteWeb}</code> · réseau <code>{ipValide(ipWeb) ? reseauTexte(ipWeb, Number(cidrWeb)) : '?'}/{cidrWeb}</code></div>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, cursor: 'pointer', marginTop: 10 }}>
+            <input type="checkbox" checked={glpi} onChange={e => setGlpi(e.target.checked)} />
+            🎫 Installer <strong>GLPI</strong> ici (PHP + nginx), base <code>glpi</code> sur la VM base
+          </label>
+          {glpi && <div className="meta" style={{ fontSize: 11.5, marginTop: 6 }}>Dernière version depuis GitHub, installée par sa console (pas d’assistant web) sur <code>glpi@{ipBdd}</code>. Servi sur <code>http://{ipWeb}:8080/</code> (le port 80 garde la page de test) et sur le port 80 sous le nom <code>glpi.{mail ? domaineMail : 'entreprise.lan'}</code>. Comptes par défaut <code>glpi/glpi</code>, <code>tech/tech</code>… à changer à la première connexion. Le script base charge les fuseaux horaires que GLPI réclame.</div>}
         </div>
         {/* VM base */}
         <div style={groupe}>

@@ -57,6 +57,8 @@ export type Params = {
   dnsMail: string;
   domaineMail: string;
   boites: string;          // « alice, bob » : une boite par nom, @domaineMail
+  // GLPI sur la VM web (optionnel), base glpi sur la VM base.
+  glpi: boolean;
 };
 
 export type Reseau = { ip: string; cidr: string; gw: string; dns: string };
@@ -299,6 +301,13 @@ function scriptBdd(p: Params): string {
     "grep -q '^bind-address' \"$CNF\" && sed -i 's/^bind-address\\s*=.*/bind-address = 0.0.0.0/' \"$CNF\" || printf '[mysqld]\\nbind-address = 0.0.0.0\\n' >> \"$CNF\"",
     'systemctl restart mariadb',
     '',
+    ...(p.glpi ? [
+      'etape "Fuseaux horaires dans MariaDB (GLPI en a besoin)"',
+      'TZ2SQL=$(command -v mariadb-tzinfo-to-sql || command -v mysql_tzinfo_to_sql)',
+      'MYSQL0=$(command -v mariadb || command -v mysql)',
+      `"$TZ2SQL" /usr/share/zoneinfo 2>/dev/null | { "$MYSQL0" mysql 2>/dev/null || "$MYSQL0" -u root -p'${MDP}' mysql; } || echo "AVERTISSEMENT: fuseaux horaires non charges (GLPI le signalera, sans bloquer)"`,
+      '',
+    ] : []),
     `etape "Compte root, base ${p.bdd}, utilisateur ${p.utilisateur} autorise depuis ${p.ipWeb} seulement"`,
     // Premier passage : root entre par le socket ; rejeu apres un ancien script : par le mot de passe.
     "# Debian 13 (MariaDB 11) n'installe plus la commande mysql : le client s'appelle mariadb.",
@@ -317,6 +326,7 @@ function scriptBdd(p: Params): string {
     'CREATE TABLE IF NOT EXISTS messages (id INT AUTO_INCREMENT PRIMARY KEY, texte VARCHAR(200) NOT NULL UNIQUE, cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP);',
     `INSERT IGNORE INTO messages (texte) VALUES ('Bonjour depuis ${hoteBdd} (${p.ipBdd})'), ('La connexion moteur -> base fonctionne');`,
     ...(p.mail ? sqlMessagerie(p) : []),
+    ...(p.glpi ? sqlGlpi(p) : []),
     'FLUSH PRIVILEGES;',
     'SQL',
     '',
@@ -328,6 +338,7 @@ function scriptBdd(p: Params): string {
     'etape "Verification"',
     `"$MYSQL" -u root -p'${MDP}' -e "SELECT User, Host FROM mysql.user WHERE User='${p.utilisateur}'; SELECT COUNT(*) AS lignes FROM \\\`${p.bdd}\\\`.messages;"`,
     "ss -tlnp | grep -q '0.0.0.0:3306' && echo \"MariaDB ecoute sur 3306\" || { echo \"ERREUR: MariaDB n'ecoute pas sur le reseau\"; ss -tlnp | grep 3306 || true; exit 1; }",
+    ...(p.glpi ? [`"$MYSQL" -u root -p'${MDP}' -e "SELECT User, Host FROM mysql.user WHERE User='glpi'; SELECT COUNT(*) AS fuseaux FROM mysql.time_zone_name;"`] : []),
     ...(p.mail ? [`"$MYSQL" -u root -p'${MDP}' -e "SELECT email FROM maildb.virtual_users; SELECT User, Host FROM mysql.user WHERE User IN ('mailuser','roundcube');"`] : []),
     `echo "VM base prete : ${hoteBdd} (${p.ipBdd}). Joue maintenant le script web sur ${p.vmWeb}${p.mail ? `, puis le script messagerie sur ${p.vmMail}` : ''}."`,
   ];
@@ -363,6 +374,18 @@ function sqlMessagerie(p: Params): string[] {
   q.push(`ALTER USER 'roundcube'@'${p.ipMail}' IDENTIFIED BY '${MDP}';`);
   q.push(`GRANT ALL PRIVILEGES ON roundcube.* TO 'roundcube'@'${p.ipMail}';`);
   return q;
+}
+
+// GLPI : sa base, un compte depuis la VM web, et les fuseaux horaires (GLPI les lit dans mysql.time_zone_name).
+function sqlGlpi(p: Params): string[] {
+  return [
+    '-- ---- GLPI (sur la VM web) ----',
+    'CREATE DATABASE IF NOT EXISTS glpi CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;',
+    `CREATE USER IF NOT EXISTS 'glpi'@'${p.ipWeb}' IDENTIFIED BY '${MDP}';`,
+    `ALTER USER 'glpi'@'${p.ipWeb}' IDENTIFIED BY '${MDP}';`,
+    `GRANT ALL PRIVILEGES ON glpi.* TO 'glpi'@'${p.ipWeb}';`,
+    `GRANT SELECT ON mysql.time_zone_name TO 'glpi'@'${p.ipWeb}';`,
+  ];
 }
 
 // ---------------------------------------------------------------- messagerie --
@@ -585,6 +608,63 @@ function scriptMail(p: Params): string {
   return m.join('\n');
 }
 
+// GLPI sur la VM web : PHP-FPM + nginx, code dans /var/www/glpi, base sur la VM base, installation par la console GLPI.
+// Servi sur le port 8080 (le port 80 reste a l'application de test) et, sur le port 80, sous le nom glpi.<domaine>.
+function blocGlpi(p: Params): string[] {
+  const d = p.mail ? p.domaineMail : 'entreprise.lan';
+  const w: string[] = [];
+  w.push('');
+  w.push(`etape "GLPI : PHP, telechargement de la derniere version, installation sur la base glpi de ${p.ipBdd}"`);
+  w.push('apt_essais apt-get install -y -q php-fpm php-mysql php-gd php-intl php-curl php-xml php-mbstring php-zip php-bz2 php-ldap php-apcu php-bcmath jq');
+  w.push('PHPV=$(php -r \'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;\')');
+  w.push('# Reglages PHP exiges par GLPI');
+  w.push("sed -i 's/^;\\?session.cookie_httponly\\s*=.*/session.cookie_httponly = On/; s/^;\\?session.cookie_samesite\\s*=.*/session.cookie_samesite = Lax/; s/^upload_max_filesize\\s*=.*/upload_max_filesize = 20M/; s/^post_max_size\\s*=.*/post_max_size = 20M/; s/^memory_limit\\s*=.*/memory_limit = 256M/' /etc/php/$PHPV/fpm/php.ini");
+  w.push('systemctl enable --now php$PHPV-fpm && systemctl restart php$PHPV-fpm');
+  w.push('if [ ! -f /var/www/glpi/bin/console ]; then');
+  w.push('    URL=$(curl -fsSL https://api.github.com/repos/glpi-project/glpi/releases/latest | jq -r \'.assets[] | select(.name | test("^glpi-[0-9.]+\\\\.tgz$")) | .browser_download_url\')');
+  w.push('    [ -n "$URL" ] || { echo "ERREUR: impossible de trouver l\'archive GLPI sur GitHub (Internet ? api.github.com joignable ?)"; exit 1; }');
+  w.push('    echo "Telechargement : $URL"');
+  w.push('    curl -fL -o /tmp/glpi.tgz "$URL" && install -d /var/www && tar -xzf /tmp/glpi.tgz -C /var/www && rm -f /tmp/glpi.tgz');
+  w.push('fi');
+  w.push('chown -R www-data:www-data /var/www/glpi');
+  w.push('cd /var/www/glpi');
+  w.push('# Installation par la ligne de commande (pas d\'assistant web), idempotente : deja installe = on passe');
+  w.push(`if ! runuser -u www-data -- php bin/console db:check_schema_integrity >/dev/null 2>&1 && ! runuser -u www-data -- php bin/console glpi:database:check_schema_integrity >/dev/null 2>&1 && [ ! -f config/config_db.php ]; then`);
+  w.push(`    runuser -u www-data -- php bin/console db:install --db-host=${p.ipBdd} --db-port=3306 --db-name=glpi --db-user=glpi --db-password='${MDP}' --default-language=fr_FR --no-interaction --force \\`);
+  w.push(`        || { echo "ERREUR: installation GLPI refusee (base glpi sur ${p.ipBdd} ? compte glpi@${p.ipWeb} ? script base rejoue avec GLPI coche ?)"; exit 1; }`);
+  w.push('fi');
+  w.push('runuser -u www-data -- php bin/console db:enable_timezones --no-interaction >/dev/null 2>&1 || true');
+  w.push("[ -f install/install.php ] && mv install/install.php install/install.php.desactive || true   # GLPI le demande apres installation");
+  w.push('# nginx : GLPI sur 8080 (acces par IP) et sur 80 sous le nom glpi.' + d);
+  w.push("SOCK=$(ls /run/php/php*-fpm.sock | head -1)");
+  w.push("cat > /etc/nginx/sites-available/glpi <<'EOF'");
+  w.push('server {');
+  w.push('    listen 8080 default_server;');
+  w.push('    listen 80;');
+  w.push(`    server_name glpi.${d};`);
+  w.push('    root /var/www/glpi/public;');
+  w.push('    index index.php;');
+  w.push('    client_max_body_size 20M;');
+  w.push('    location / {');
+  w.push('        try_files \$uri /index.php\$is_args\$args;');
+  w.push('    }');
+  w.push('    location ~ ^/index\\.php {');
+  w.push('        fastcgi_pass unix:SOCK_PHP;');
+  w.push('        fastcgi_split_path_info ^(.+\\.php)(/.*)\$;');
+  w.push('        include fastcgi_params;');
+  w.push('        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;');
+  w.push('        fastcgi_param PATH_INFO \$fastcgi_path_info;');
+  w.push('    }');
+  w.push('}');
+  w.push('EOF');
+  w.push('sed -i "s#SOCK_PHP#$SOCK#" /etc/nginx/sites-available/glpi');
+  w.push('ln -sf /etc/nginx/sites-available/glpi /etc/nginx/sites-enabled/glpi');
+  w.push('nginx -t && systemctl reload nginx');
+  w.push("CODE=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/ || echo 000)");
+  w.push(`case "$CODE" in 200|302) echo "GLPI repond : http://${p.ipWeb}:8080/ (comptes par defaut glpi/glpi, tech/tech, normal/normal, post-only/postonly - a changer)";; *) echo "ERREUR: GLPI repond $CODE : tail /var/log/nginx/error.log ; tail /var/www/glpi/files/_log/php-errors.log"; exit 1;; esac`);
+  return w;
+}
+
 // Reseau d'une VM en notation CIDR (adresse reseau/masque), pour mynetworks.
 function reseauCidr(ip: string, cidr: string): string {
   const c = Number(cidr) || 24;
@@ -602,7 +682,7 @@ function scriptWeb(p: Params): string {
     ...reseau(p, reseauWeb(p)),
     '',
     'identite',
-    ...sequenceReseau('nginx nodejs npm'),
+    ...sequenceReseau(p.glpi ? 'nginx nodejs npm php-fpm php-mysql' : 'nginx nodejs npm'),
     '',
     'etape "Installation de nginx, Node.js, npm"',
     'apt_essais apt-get update -q && apt_essais apt-get install -y -q nginx curl ca-certificates',
@@ -676,7 +756,8 @@ function scriptWeb(p: Params): string {
   w.push('EOF');
   w.push('ln -sf /etc/nginx/sites-available/app /etc/nginx/sites-enabled/app && rm -f /etc/nginx/sites-enabled/default');
   w.push('nginx -t && systemctl enable --now nginx && systemctl reload nginx');
-  w.push('if command -v ufw >/dev/null; then ufw allow 80/tcp; ufw allow 22/tcp; ufw --force enable; fi');
+  if (p.glpi) w.push(...blocGlpi(p));
+  w.push(`if command -v ufw >/dev/null; then ufw allow 80/tcp; ${p.glpi ? 'ufw allow 8080/tcp; ' : ''}ufw allow 22/tcp; ufw --force enable; fi`);
   w.push('');
   w.push(`etape "Verification : le flux vers la base (${p.ipBdd}:3306), puis l'application"`);
   w.push(`if timeout 3 bash -c 'exec 3<>/dev/tcp/${p.ipBdd}/3306' 2>/dev/null; then echo "Port 3306 de ${p.ipBdd} joignable"; else`);
@@ -690,7 +771,7 @@ function scriptWeb(p: Params): string {
   w.push("CODE=$(curl -s -o /tmp/sante.json -w '%{http_code}' http://127.0.0.1/api/sante || echo 000)");
   w.push('cat /tmp/sante.json 2>/dev/null; echo');
   w.push('case "$CODE" in');
-  w.push(`    200) echo "OK : affichage et connexion a la base. Ouvre http://${p.ipWeb}/ depuis un poste du reseau." ;;`);
+  w.push(`    200) echo "OK : affichage et connexion a la base. Ouvre http://${p.ipWeb}/ depuis un poste du reseau."${p.glpi ? `; echo "GLPI : http://${p.ipWeb}:8080/  (glpi / glpi, puis changer les mots de passe des comptes par defaut)"` : ''} ;;`);
   w.push(`    503) DETAIL=$(grep -o '"detail":"[^"]*"' /tmp/sante.json | cut -d'"' -f4)`);
   w.push(`         echo "Affichage OK, mais la base ${p.ipBdd} ne repond pas ($DETAIL)."`);
   w.push('         case "$DETAIL" in');
@@ -729,6 +810,11 @@ function scriptVerif(p: Params): string {
     v.push(`# Depuis la VM messagerie :  doveadm auth test ${b[0] || 'alice'}@${d} ${MDP}   ;   doveadm mailbox status -u ${b[0] || 'alice'}@${d} messages INBOX`);
     v.push(`# Regles pare-feu (OPNsense) : LAN -> DMZ ${p.ipMail} TCP 25,587,143,993,80 ; DMZ ${p.ipMail} -> LAN ${p.ipBdd} TCP 3306 ; DMZ -> Internet 80/443 (apt) ; WAN -> DMZ ${p.ipMail} TCP 25 si courrier entrant`);
     v.push(`# DNS interne (Unbound) : A mail.${d} -> ${p.ipMail} ; MX ${d} -> mail.${d}`);
+    v.push('');
+  }
+  if (p.glpi) {
+    v.push(`# GLPI : http://${p.ipWeb}:8080/  (ou http://glpi.${p.mail ? p.domaineMail : 'entreprise.lan'}/ si le DNS interne le connait) - glpi / glpi`);
+    v.push('# Depuis la VM web :  runuser -u www-data -- php /var/www/glpi/bin/console glpi:system:check_requirements');
     v.push('');
   }
   v.push('# Depuis la VM base : qui est connecte, et depuis ou');
