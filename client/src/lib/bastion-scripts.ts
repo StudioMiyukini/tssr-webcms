@@ -41,7 +41,7 @@ export type ParamsBastion = {
   mdpSysteme: boolean;
 };
 
-export type SectionBastion = { id: 'hote' | 'bastion' | 'cibles' | 'poste' | 'verif'; titre: string; code: string; fichier: string };
+export type SectionBastion = { id: 'hote' | 'bastion' | 'cibles' | 'poste' | 'posteNix' | 'verif'; titre: string; code: string; fichier: string };
 
 const LOGIN_RE = /^[a-z_][a-z0-9_-]{0,31}$/;
 const CLE_RE = /^(ssh-(ed25519|rsa|dss)|ecdsa-sha2-nistp(256|384|521)|sk-(ssh-ed25519|ecdsa-sha2-nistp256)@openssh\.com) [A-Za-z0-9+/]+=*( .*)?$/;
@@ -140,6 +140,25 @@ function blocAdmins(admins: Admin[], sudo: boolean): string[] {
   return r;
 }
 
+function gardeFou(admins: Admin[], cleSeulement: boolean): string[] {
+  const logins = admins.map(a => a.login).join(' ');
+  return [
+    "# Garde-fou : l'utilisateur qui lance ce script (souvent celui du master, ex. miyukini) doit pouvoir revenir.",
+    "# Sans lui dans AllowUsers - et sans mot de passe s'il n'a pas de cle - la prochaine connexion serait refusee.",
+    'MOI=${SUDO_USER:-$(logname 2>/dev/null || true)}',
+    `ALLOW="${logins || 'root'}"`,
+    `PASS=${cleSeulement ? 'no' : 'yes'}`,
+    'if [ -n "$MOI" ] && [ "$MOI" != root ] && ! echo " $ALLOW " | grep -q " $MOI "; then',
+    '    ALLOW="$ALLOW $MOI"',
+    '    echo "AVERTISSEMENT: $MOI (ton compte actuel) n est pas dans la liste des administrateurs : ajoute a AllowUsers pour ne pas te couper la branche. Retire-le de /etc/ssh/sshd_config.d/ quand les administrateurs auront leurs cles."',
+    'fi',
+    'if [ -n "$MOI" ] && [ "$PASS" = no ] && [ ! -s "/home/$MOI/.ssh/authorized_keys" ]; then',
+    '    PASS=yes',
+    '    echo "AVERTISSEMENT: $MOI n a pas de cle publique installee : le mot de passe reste accepte en SSH, sinon tu ne pourrais plus entrer. Mets sa cle (bloc 4), puis PasswordAuthentication no."',
+    'fi',
+  ];
+}
+
 function scriptBastion(p: ParamsBastion): string {
   const hote = nomHote(p.vm);
   const admins = listeAdmins(p.admins);
@@ -164,11 +183,12 @@ function scriptBastion(p: ParamsBastion): string {
     '',
     'etape "SSH durci : pas de root, pas de X11, journal detaille, seuls les administrateurs listes"',
     'install -d /etc/ssh/sshd_config.d',
+    ...gardeFou(admins, cleSeulement),
     "cat > /etc/ssh/sshd_config.d/10-bastion.conf <<EOF",
     `Port ${port}`,
-    `AllowUsers ${admins.map(a => a.login).join(' ') || 'root'}`,
+    'AllowUsers $ALLOW',
     'PermitRootLogin no',
-    `PasswordAuthentication ${cleSeulement ? 'no' : 'yes'}`,
+    'PasswordAuthentication $PASS',
     `KbdInteractiveAuthentication ${p.mfa ? 'yes' : 'no'}`,
     'PubkeyAuthentication yes',
     p.mfa ? 'AuthenticationMethods publickey,keyboard-interactive' : '# AuthenticationMethods (cle + code TOTP) : option MFA non cochee',
@@ -227,7 +247,7 @@ function scriptBastion(p: ParamsBastion): string {
   b.push('etape "Verification"');
   b.push(`ss -tlnp | grep -q ':${port} ' && echo "SSH ecoute sur ${port}" || { echo "ERREUR: SSH n ecoute pas sur ${port}"; exit 1; }`);
   if (p.fail2ban) b.push('fail2ban-client status sshd | head -3 || true');
-  b.push(`echo "Bastion pret : ${hote} (${p.ip}:${port}). Administrateurs : ${admins.map(a => a.login).join(', ')}."`);
+  b.push(`echo "Bastion pret : ${hote} (${p.ip}:${port}). Administrateurs : ${admins.map(a => a.login).join(', ')}. Les cles d hote ont ete regenerees : ton client SSH (MobaXterm, ssh) signalera un changement d empreinte, c est attendu."`);
   b.push(`echo "Suite : jouer le script (3) sur chaque serveur (${cibles.map(c => c.nom).join(', ')}), puis configurer le poste (4)."`);
   return b.join('\n');
 }
@@ -262,10 +282,11 @@ function scriptCibles(p: ParamsBastion): string {
     '',
     'etape "SSH : pas de root, administrateurs du bastion seulement"',
     'install -d /etc/ssh/sshd_config.d',
+    ...gardeFou(admins, !p.mdpAutorise && admins.some(a => a.cle)),
     'cat > /etc/ssh/sshd_config.d/10-derriere-bastion.conf <<EOF',
     'PermitRootLogin no',
-    `AllowUsers ${admins.map(a => a.login).join(' ') || 'root'}`,
-    `PasswordAuthentication ${p.mdpAutorise || !admins.some(a => a.cle) ? 'yes' : 'no'}`,
+    'AllowUsers $ALLOW',
+    'PasswordAuthentication $PASS',
     'X11Forwarding no',
     'LogLevel VERBOSE',
     'EOF',
@@ -301,47 +322,104 @@ function scriptCibles(p: ParamsBastion): string {
 
 // ---------------------------------------------------------------- poste -----
 
-function scriptPoste(p: ParamsBastion): string {
+function configSsh(p: ParamsBastion): string {
   const admins = listeAdmins(p.admins);
   const cibles = listeCibles(p.cibles);
   const login = admins[0]?.login || 'admin';
   const port = p.port || '22';
   const r: string[] = [];
-  r.push(`# Sur le poste de l'administrateur (Windows 10/11 avec OpenSSH, macOS, Linux) : fichier ~/.ssh/config`);
-  r.push(`#   Windows : C:\\Users\\<toi>\\.ssh\\config  (bloc-notes, sans extension)`);
-  r.push('#   La cle privee reste sur le poste ; le bastion ne la voit jamais (ProxyJump ouvre un tunnel, il ne s y connecte pas a ta place).');
-  r.push('');
+  r.push('# --- Bastion TSSR (genere) ---');
   r.push('Host bastion');
   r.push(`    HostName ${p.ip}`);
   r.push(`    Port ${port}`);
   r.push(`    User ${login}`);
   r.push('    IdentityFile ~/.ssh/id_ed25519');
-  r.push('');
+  r.push('    IdentitiesOnly yes');
   for (const c of cibles) {
+    r.push('');
     r.push(`Host ${c.nom}`);
     r.push(`    HostName ${c.ip}`);
     r.push(`    User ${login}`);
     r.push('    ProxyJump bastion');
     r.push('    IdentityFile ~/.ssh/id_ed25519');
-    r.push('');
+    r.push('    IdentitiesOnly yes');
   }
-  r.push('# --- Generer sa cle (une fois), puis donner la ligne .pub au configurateur (champ Administrateurs) ---');
-  r.push('ssh-keygen -t ed25519 -C "prenom.nom@entreprise"          # Entree, puis une phrase de passe');
-  r.push('cat ~/.ssh/id_ed25519.pub                                   # Windows : type $env:USERPROFILE\\.ssh\\id_ed25519.pub');
-  r.push('');
-  r.push('# --- Utiliser ---');
-  r.push('ssh bastion                      # le bastion lui-meme');
-  if (cibles[0]) {
-    r.push(`ssh ${cibles[0].nom}                    # ${cibles[0].ip} a travers le bastion, en une commande`);
-    r.push(`scp fichier.txt ${cibles[0].nom}:/tmp/  # copie de fichiers, meme chemin`);
-  }
-  r.push('');
-  r.push('# --- Sans fichier config (ponctuel) ---');
-  if (cibles[0]) r.push(`ssh -J ${login}@${p.ip}:${port} ${login}@${cibles[0].ip}`);
+  r.push('# --- fin bastion TSSR ---');
   return r.join('\n');
 }
 
-// ---------------------------------------------------------------- verif -----
+// Windows : un script PowerShell qui fait tout - client OpenSSH, cle, ~/.ssh/config (bloc remplace a chaque rejeu), test.
+function scriptPoste(p: ParamsBastion): string {
+  const admins = listeAdmins(p.admins);
+  const cibles = listeCibles(p.cibles);
+  const login = admins[0]?.login || 'admin';
+  const port = p.port || '22';
+  const w: string[] = [];
+  w.push('# ============================================================');
+  w.push(`#  Poste de l'administrateur (Windows 10/11) : cle SSH, ~/.ssh/config avec ProxyJump vers ${p.ip}, test`);
+  w.push('#  A executer dans PowerShell (pas besoin d etre administrateur). Rejouable : le bloc de config est remplace.');
+  w.push('# ============================================================');
+  w.push("$ErrorActionPreference = 'Stop'");
+  w.push(`$Login   = '${login}'`);
+  w.push(`$Bastion = '${p.ip}'`);
+  w.push(`$Port    = ${port}`);
+  w.push('$SshDir  = Join-Path $env:USERPROFILE \'.ssh\'');
+  w.push('$Cle     = Join-Path $SshDir \'id_ed25519\'');
+  w.push('$Config  = Join-Path $SshDir \'config\'');
+  w.push('');
+  w.push('# --- 1. Le client OpenSSH de Windows ---');
+  w.push('if (-not (Get-Command ssh.exe -ErrorAction SilentlyContinue)) {');
+  w.push('    Write-Warning "Client OpenSSH absent. Parametres > Applications > Fonctionnalites facultatives > Client OpenSSH, ou (admin) : Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0"');
+  w.push('    exit 1');
+  w.push('}');
+  w.push('New-Item -ItemType Directory -Force -Path $SshDir | Out-Null');
+  w.push('');
+  w.push('# --- 2. La cle de l administrateur (une fois ; la privee ne quitte jamais ce poste) ---');
+  w.push('if (-not (Test-Path $Cle)) {');
+  w.push('    Write-Host "Generation de la cle ed25519 (choisis une phrase de passe, ou Entree pour aucune)..."');
+  w.push('    ssh-keygen -t ed25519 -C "$Login@$env:COMPUTERNAME" -f $Cle');
+  w.push('}');
+  w.push('Write-Host ""');
+  w.push('Write-Host "Cle publique a coller dans le configurateur, champ Administrateurs, sur la ligne de $Login :" -ForegroundColor Cyan');
+  w.push('Write-Host ("$Login " + (Get-Content "$Cle.pub")) -ForegroundColor Yellow');
+  w.push('Write-Host ""');
+  w.push('');
+  w.push('# --- 3. ~/.ssh/config : le bloc bastion, remplace s il existe deja ---');
+  w.push('$Bloc = @\'');
+  w.push(configSsh(p));
+  w.push('\'@');
+  w.push("$Existant = if (Test-Path $Config) { Get-Content $Config -Raw } else { '' }");
+  w.push("$Existant = [regex]::Replace($Existant, '(?s)# --- Bastion TSSR \\(genere\\) ---.*?# --- fin bastion TSSR ---\\r?\\n?', '')");
+  w.push("$Nouveau  = ($Existant.TrimEnd() + \"`n`n\" + $Bloc + \"`n\").TrimStart()");
+  w.push('# UTF-8 sans BOM et fins de ligne LF : OpenSSH ne lit pas un fichier config avec BOM');
+  w.push("[IO.File]::WriteAllText($Config, ($Nouveau -replace \"`r`n\", \"`n\"), (New-Object System.Text.UTF8Encoding $false))");
+  w.push('Write-Host "Config ecrite : $Config"');
+  w.push('');
+  w.push('# --- 4. Test (apres avoir donne la cle publique au configurateur et joue le script 2 sur le bastion) ---');
+  w.push('Write-Host "Test du bastion :  ssh bastion hostname"');
+  w.push("try { ssh -o ConnectTimeout=8 -o BatchMode=yes bastion hostname } catch { Write-Warning \"Pas encore : la cle est-elle sur le bastion ? le script 2 a-t-il ete joue ? (ssh -v bastion pour le detail)\" }");
+  if (cibles[0]) {
+    w.push(`Write-Host "Puis, a travers lui :  ssh ${cibles[0].nom} hostname   (et scp fichier ${cibles[0].nom}:/tmp/)"`);
+  }
+  w.push('');
+  w.push('# --- MobaXterm, si tu preferes : Session > SSH > Remote host = $Bastion, Username = $Login, Port = $Port ;');
+  w.push('#     Advanced SSH settings > Use private key = $Cle (ou la cle exportee en .ppk) ;');
+  w.push('#     pour un serveur derriere : Network settings > SSH gateway (jump host) = $Bastion / $Login / meme cle.');
+  return w.join('\n');
+}
+
+function scriptPosteNix(p: ParamsBastion): string {
+  const cibles = listeCibles(p.cibles);
+  const admins = listeAdmins(p.admins);
+  const login = admins[0]?.login || 'admin';
+  const r: string[] = [];
+  r.push('# Linux / macOS : a ajouter dans ~/.ssh/config (chmod 600). La cle : ssh-keygen -t ed25519 ; donner ~/.ssh/id_ed25519.pub au configurateur.');
+  r.push(configSsh(p));
+  r.push('');
+  r.push('# Utiliser :  ssh bastion' + (cibles[0] ? `   ;   ssh ${cibles[0].nom}   ;   scp fichier ${cibles[0].nom}:/tmp/` : ''));
+  if (cibles[0]) r.push(`# Sans fichier config :  ssh -J ${login}@${p.ip}:${p.port || '22'} ${login}@${cibles[0].ip}`);
+  return r.join('\n');
+}
 
 function scriptVerif(p: ParamsBastion): string {
   const admins = listeAdmins(p.admins);
@@ -372,7 +450,8 @@ export function genererScriptsBastion(p: ParamsBastion): SectionBastion[] {
     { id: 'hote', titre: p.hv === 'hyperv' ? '① Sur l’hôte Hyper-V — cloner le bastion' : '① Sur l’hôte Proxmox — cloner le bastion', code: scriptHote(p), fichier: p.hv === 'hyperv' ? 'clone-bastion.ps1' : 'clone-bastion.sh' },
     { id: 'bastion', titre: `② Dans ${p.vm} — le bastion`, code: enFichier(scriptBastion(p), '~/bastion.sh'), fichier: `bastion-${hote}.sh` },
     { id: 'cibles', titre: '③ Sur chaque serveur — n’accepter SSH que depuis le bastion', code: enFichier(scriptCibles(p), '~/derriere-bastion.sh'), fichier: 'derriere-bastion.sh' },
-    { id: 'poste', titre: '④ Sur le poste de l’administrateur — ~/.ssh/config', code: scriptPoste(p), fichier: 'ssh-config.txt' },
+    { id: 'poste', titre: '④ Sur le poste de l’administrateur (Windows) — PowerShell : clé, config, test', code: scriptPoste(p), fichier: 'poste-bastion.ps1' },
+    { id: 'posteNix', titre: '④ bis — Linux / macOS : ~/.ssh/config', code: scriptPosteNix(p), fichier: 'ssh-config.txt' },
     { id: 'verif', titre: '⑤ Vérifier', code: scriptVerif(p), fichier: 'verif.txt' },
   ];
 }

@@ -33,12 +33,27 @@ CONTENU = '\n'.join([
         ['① Clonage', 'Sur l’hôte (Hyper-V ou Proxmox)', 'Un clone du master, 1 vCPU / 1 Go, sur le commutateur choisi ; dépôt du script ②'],
         ['② Bastion', 'Dans la VM bastion, en root', 'Nom, IP fixe, comptes des administrateurs avec leurs clés, SSH durci (root interdit, clés seulement, X11 et agent interdits, journal détaillé, bannière), fail2ban, commande <code>journal-bastion</code>'],
         ['③ Serveurs', 'Sur <strong>chaque</strong> serveur à protéger, en root (le même script partout)', 'Les mêmes administrateurs, root interdit, et le port 22 ouvert <strong>seulement pour l’adresse du bastion</strong> (nftables, ou ufw s’il est actif) — avec un verrou si tu es connecté en SSH depuis ailleurs'],
-        ['④ Poste', 'Sur le PC de l’administrateur', 'Le fichier <code>~/.ssh/config</code> avec <code>ProxyJump</code> : <code>ssh srv-web-01</code> traverse le bastion en une commande ; la clé privée ne quitte jamais le poste'],
+        ['④ Poste', 'Sur le PC de l’administrateur', '<strong>Windows</strong> : un script PowerShell qui vérifie le client OpenSSH, génère la clé si besoin, affiche la ligne à coller dans le champ Administrateurs, écrit le bloc <code>ProxyJump</code> dans <code>~/.ssh/config</code> (remplacé à chaque rejeu, sans BOM) et teste ; <strong>④ bis</strong> : le même bloc pour Linux / macOS. <code>ssh srv-web-01</code> traverse le bastion en une commande ; la clé privée ne quitte jamais le poste'],
         ['⑤ Vérifier', 'Poste, bastion, serveurs', 'Le rebond fonctionne, l’accès direct échoue, le journal montre qui est passé'],
     ]),
 
     '<div data-block="bastion-configurator"></div>',
 
+    '<h2>Ce qui est installé, concrètement</h2>',
+    '<p>Pas de produit « bastion » : le serveur <strong>OpenSSH de Debian</strong>, configuré pour ne faire que ça — '
+    'comptes nommés dans <code>AllowUsers</code>, <code>PermitRootLogin no</code>, clés seulement (le mot de passe du labo '
+    'sur demande), ni X11 ni transfert d’agent, mais <code>AllowTcpForwarding yes</code> pour le rebond, journal '
+    '<code>VERBOSE</code> (l’empreinte de chaque clé acceptée ou refusée) et bannière ; <strong>fail2ban</strong> qui bannit une '
+    'adresse après 5 échecs ; une commande <code>journal-bastion</code>. C’est tout : un bastion est une machine qui '
+    'sait faire une seule chose, et qu’on peut relire en dix lignes de configuration '
+    '(<code>/etc/ssh/sshd_config.d/10-bastion.conf</code>).</p>',
+    note('red', '🚨 Ton compte actuel reste autorisé — c’est voulu',
+         'Le script est lancé par <code>sudo</code> depuis un compte existant (celui du master, souvent). Ce compte est '
+         '<strong>ajouté à <code>AllowUsers</code></strong> même s’il n’est pas dans la liste des administrateurs, et s’il n’a pas '
+         'de clé installée, <strong>le mot de passe reste accepté</strong> : sinon la connexion suivante (MobaXterm, ssh) serait '
+         'refusée et tu serais enfermé dehors. Le script l’annonce en AVERTISSEMENT. Quand les administrateurs ont leurs clés, '
+         'retire ce compte de <code>AllowUsers</code> et passe <code>PasswordAuthentication no</code>. Autre effet attendu : les '
+         '<strong>clés d’hôte</strong> du clone sont régénérées, ton client SSH signalera un changement d’empreinte à la reconnexion.'),
     '<h2>Avant de lancer</h2>',
     bullets('Le bastion vit dans un <strong>réseau d’administration</strong> distinct (ici <code>192.168.40.0/24</code> par défaut) : le pare-feu laisse les postes d’administration atteindre le bastion sur son port SSH, le bastion atteindre les serveurs sur 22, et <strong>rien d’autre vers le port 22 des serveurs</strong>.',
             'Chaque administrateur génère <strong>sa</strong> clé sur <strong>son</strong> poste (<code>ssh-keygen -t ed25519</code>, bloc ④) et te donne la ligne <code>.pub</code> ; le bastion et les serveurs ne reçoivent que des clés publiques. Sans clé, seul le mot de passe du labo ouvre la porte — à cocher explicitement.',
@@ -64,6 +79,7 @@ CONTENU = '\n'.join([
     '<h2>Quand ça coince</h2>',
     tab(['Symptôme', 'Cause', 'Vérification'], [
         ['<code>Permission denied (publickey)</code> sur le bastion', 'Clé absente de <code>authorized_keys</code>, login pas dans <code>AllowUsers</code>, ou mot de passe non autorisé', '<code>journal-bastion</code> sur le bastion (LogLevel VERBOSE dit quelle clé a été présentée) ; <code>ssh -v</code> côté poste'],
+        ['MobaXterm ne se connecte plus après le script', 'Adresse ou port changés ; compte pas dans <code>AllowUsers</code> ; mot de passe désactivé ; empreinte d’hôte changée (clés régénérées)', 'Nouvelle session vers la nouvelle IP / le port ; accepter la nouvelle empreinte ; Advanced SSH settings › Use private key ; pour un serveur derrière : Network settings › SSH gateway (jump host) = le bastion'],
         ['<code>Connection timed out</code> vers un serveur, même via le bastion', 'Le pare-feu entre le réseau d’administration et le serveur ne laisse pas le bastion sur 22 ; ou le script ③ a été joué avec une autre IP de bastion', '<code>nft list table inet bastion</code> sur le serveur ; règles OPNsense'],
         ['Le rebond marche, l’accès direct <strong>aussi</strong>', 'Script ③ non joué, ou ufw actif sans règle', '<code>ufw status numbered</code>, <code>nft list ruleset</code>'],
         ['Banni par fail2ban', '5 échecs en 10 min', '<code>fail2ban-client status sshd</code> ; <code>fail2ban-client set sshd unbanip &lt;IP&gt;</code>'],

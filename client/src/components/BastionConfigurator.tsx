@@ -61,7 +61,7 @@ export function BastionConfigurator() {
   const [dnsSaisi, setDns] = useState('');
   const [iface, setIface] = useState('');
   const [port, setPort] = useState('22');
-  const [admins, setAdmins] = useState('jean ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... jean@poste\nmarie');
+  const [admins, setAdmins] = useState('miyukini\njean ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... jean@poste');
   const [cibles, setCibles] = useState('srv-web-01 192.168.30.5\nsrv-bdd-01 192.168.20.5\nsrv-mail-01 192.168.10.5');
   const [mdpAutorise, setMdpAutorise] = useState(false);
   const [mfa, setMfa] = useState(false);
@@ -209,7 +209,7 @@ export function BastionConfigurator() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', margin: '0 0 6px', gap: 8, flexWrap: 'wrap' }}>
             <div style={{ fontWeight: 700, fontSize: 14 }}>📜 {sec.titre}</div>
             <div style={{ display: 'flex', gap: 8 }}>
-              {sec.id !== 'verif' && sec.id !== 'poste' && (
+              {sec.id !== 'verif' && sec.id !== 'posteNix' && (
                 <button type="button" onClick={() => telecharger(sec.code, sec.fichier)} style={{ ...bouton, borderColor: 'var(--border)', color: 'var(--text)' }} title={`Télécharger ${sec.fichier}`}>💾 {sec.fichier.replace(/^.*\./, '.')}</button>
               )}
               {(sec.id === 'bastion' || sec.id === 'cibles') && (
