@@ -370,8 +370,8 @@ export function genererScriptsBastion(p: ParamsBastion): SectionBastion[] {
   const hote = nomHote(p.vm);
   return [
     { id: 'hote', titre: p.hv === 'hyperv' ? '① Sur l’hôte Hyper-V — cloner le bastion' : '① Sur l’hôte Proxmox — cloner le bastion', code: scriptHote(p), fichier: p.hv === 'hyperv' ? 'clone-bastion.ps1' : 'clone-bastion.sh' },
-    { id: 'bastion', titre: `② Dans ${p.vm} — le bastion`, code: enFichier(scriptBastion(p), '/root/bastion.sh'), fichier: `bastion-${hote}.sh` },
-    { id: 'cibles', titre: '③ Sur chaque serveur — n’accepter SSH que depuis le bastion', code: enFichier(scriptCibles(p), '/root/derriere-bastion.sh'), fichier: 'derriere-bastion.sh' },
+    { id: 'bastion', titre: `② Dans ${p.vm} — le bastion`, code: enFichier(scriptBastion(p), '~/bastion.sh'), fichier: `bastion-${hote}.sh` },
+    { id: 'cibles', titre: '③ Sur chaque serveur — n’accepter SSH que depuis le bastion', code: enFichier(scriptCibles(p), '~/derriere-bastion.sh'), fichier: 'derriere-bastion.sh' },
     { id: 'poste', titre: '④ Sur le poste de l’administrateur — ~/.ssh/config', code: scriptPoste(p), fichier: 'ssh-config.txt' },
     { id: 'verif', titre: '⑤ Vérifier', code: scriptVerif(p), fichier: 'verif.txt' },
   ];
@@ -379,7 +379,7 @@ export function genererScriptsBastion(p: ParamsBastion): SectionBastion[] {
 
 /** Version a coller dans un terminal : s'enregistre puis se lance. */
 export function pourConsoleBastion(sec: SectionBastion): string {
-  if (sec.id === 'bastion') return `cat > /root/bastion.sh <<'FIN_SCRIPT_TSSR'\n${sec.code}\nFIN_SCRIPT_TSSR\nsudo bash /root/bastion.sh`;
-  if (sec.id === 'cibles') return `cat > /root/derriere-bastion.sh <<'FIN_SCRIPT_TSSR'\n${sec.code}\nFIN_SCRIPT_TSSR\nsudo bash /root/derriere-bastion.sh`;
+  if (sec.id === 'bastion') return `cat > ~/bastion.sh <<'FIN_SCRIPT_TSSR'\n${sec.code}\nFIN_SCRIPT_TSSR\nsudo bash ~/bastion.sh`;
+  if (sec.id === 'cibles') return `cat > ~/derriere-bastion.sh <<'FIN_SCRIPT_TSSR'\n${sec.code}\nFIN_SCRIPT_TSSR\nsudo bash ~/derriere-bastion.sh`;
   return sec.code;
 }

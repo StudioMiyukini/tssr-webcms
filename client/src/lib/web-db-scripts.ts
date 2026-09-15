@@ -840,7 +840,7 @@ function scriptVerif(p: Params): string {
 /** Le script pret a coller dans un terminal : il s'enregistre dans /root puis se lance. */
 export function pourConsole(sec: Section): string {
   if (sec.id === 'verif' || sec.id === 'hote') return sec.code;
-  const cible = `/root/${sec.id}.sh`;
+  const cible = `~/${sec.id}.sh`;   // dossier de l'utilisateur connecte, pas /root : on fera sudo
   return `cat > ${cible} <<'FIN_SCRIPT_TSSR'\n${sec.code}\nFIN_SCRIPT_TSSR\nsudo bash ${cible}`;
 }
 
@@ -868,9 +868,9 @@ export function genererScripts(p: Params): Section[] {
   const hoteWeb = nomHote(p.vmWeb), hoteBdd = nomHote(p.vmBdd);
   return [
     { id: 'hote', titre: p.hv === 'hyperv' ? '① Sur l’hôte Hyper-V — cloner les deux VM' : '① Sur l’hôte Proxmox — cloner les deux VM', code: scriptHote(p), fichier: p.hv === 'hyperv' ? 'clone-web-bdd.ps1' : 'clone-web-bdd.sh' },
-    { id: 'bdd', titre: `② Dans ${p.vmBdd} — MariaDB`, code: enFichier(scriptBdd(p), '/root/bdd.sh'), fichier: `bdd-${hoteBdd}.sh` },
-    { id: 'web', titre: `③ Dans ${p.vmWeb} — nginx + Node.js + page de test`, code: enFichier(scriptWeb(p), '/root/web.sh'), fichier: `web-${hoteWeb}.sh` },
-    ...(p.mail ? [{ id: 'mail' as const, titre: `④ Dans ${p.vmMail} (DMZ) — Postfix + Dovecot + Roundcube`, code: enFichier(scriptMail(p), '/root/mail.sh'), fichier: `mail-${nomHote(p.vmMail)}.sh` }] : []),
+    { id: 'bdd', titre: `② Dans ${p.vmBdd} — MariaDB`, code: enFichier(scriptBdd(p), '~/bdd.sh'), fichier: `bdd-${hoteBdd}.sh` },
+    { id: 'web', titre: `③ Dans ${p.vmWeb} — nginx + Node.js + page de test`, code: enFichier(scriptWeb(p), '~/web.sh'), fichier: `web-${hoteWeb}.sh` },
+    ...(p.mail ? [{ id: 'mail' as const, titre: `④ Dans ${p.vmMail} (DMZ) — Postfix + Dovecot + Roundcube`, code: enFichier(scriptMail(p), '~/mail.sh'), fichier: `mail-${nomHote(p.vmMail)}.sh` }] : []),
     { id: 'verif', titre: p.mail ? '⑤ Vérifier' : '④ Vérifier', code: scriptVerif(p), fichier: 'verif.txt' },
   ];
 }
