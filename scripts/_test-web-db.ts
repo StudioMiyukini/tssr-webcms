@@ -8,6 +8,8 @@ const p: Params = {
   ipWeb: process.env.IP_WEB || '192.168.30.5', cidrWeb: '24', gwWeb: process.env.GW || '192.168.30.254', dnsWeb: process.env.GW || '192.168.30.254',
   ipBdd: process.env.IP_BDD || '192.168.20.5', cidrBdd: '24', gwBdd: process.env.GW || '192.168.20.254', dnsBdd: process.env.GW || '192.168.20.254', iface: '',
   bdd: 'appdb', utilisateur: 'appuser', nodeSource: false, mdpSysteme: true,
+  mail: process.env.MAIL !== '0', vmMail: 'SRV_MAIL_01', idMail: '203', ipMail: process.env.IP_MAIL || '192.168.10.5', cidrMail: '24', gwMail: process.env.GW || '192.168.10.254', dnsMail: process.env.GW || '192.168.10.254',
+  domaineMail: 'entreprise.lan', boites: 'alice, bob',
 };
 const dir = process.argv[2] || '.smoke-webdb';
 for (const s of genererScripts(p)) writeFileSync(`${dir}/${s.fichier}`, s.code.replace(/\r\n/g, '\n') + '\n');

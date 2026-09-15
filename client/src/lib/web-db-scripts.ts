@@ -47,13 +47,25 @@ export type Params = {
   utilisateur: string;
   nodeSource: boolean;
   mdpSysteme: boolean;
+  // Messagerie en DMZ (optionnelle) : Postfix + Dovecot + Roundcube, comptes et webmail dans MariaDB.
+  mail: boolean;
+  vmMail: string;
+  idMail: string;
+  ipMail: string;
+  cidrMail: string;
+  gwMail: string;
+  dnsMail: string;
+  domaineMail: string;
+  boites: string;          // « alice, bob » : une boite par nom, @domaineMail
 };
 
 export type Reseau = { ip: string; cidr: string; gw: string; dns: string };
 export const reseauWeb = (p: Params): Reseau => ({ ip: p.ipWeb, cidr: p.cidrWeb, gw: p.gwWeb, dns: p.dnsWeb });
+export const reseauMail = (p: Params): Reseau => ({ ip: p.ipMail, cidr: p.cidrMail, gw: p.gwMail, dns: p.dnsMail });
+export const listeBoites = (p: Params | string) => Array.from(new Set((typeof p === 'string' ? p : p.boites).split(/[,\s;]+/).map(b => b.trim().toLowerCase()).filter(b => /^[a-z0-9._-]+$/.test(b))));
 export const reseauBdd = (p: Params): Reseau => ({ ip: p.ipBdd, cidr: p.cidrBdd, gw: p.gwBdd, dns: p.dnsBdd });
 
-export type Section = { id: 'hote' | 'bdd' | 'web' | 'verif'; titre: string; code: string; fichier: string };
+export type Section = { id: 'hote' | 'bdd' | 'web' | 'mail' | 'verif'; titre: string; code: string; fichier: string };
 
 // Un nom de VM peut porter des majuscules et des underscores ; un nom d'hôte, non.
 export const nomHote = (vm: string) => vm.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '') || 'debian';
@@ -98,6 +110,7 @@ function identite(p: Params, nom: string): string[] {
   r.push(`    if grep -q '^127\\.0\\.1\\.1' /etc/hosts; then H=$(sed "s/^127\\.0\\.1\\.1.*/127.0.1.1\\t${nom}/" /etc/hosts); printf '%s\\n' "$H" > /etc/hosts; else printf '127.0.1.1\\t%s\\n' '${nom}' >> /etc/hosts; fi`);
   r.push(`    grep -q '\\b${nomHote(p.vmWeb)}\\b' /etc/hosts || printf '%s\\t%s\\n' '${p.ipWeb}' '${nomHote(p.vmWeb)}' >> /etc/hosts`);
   r.push(`    grep -q '\\b${nomHote(p.vmBdd)}\\b' /etc/hosts || printf '%s\\t%s\\n' '${p.ipBdd}' '${nomHote(p.vmBdd)}' >> /etc/hosts`);
+  if (p.mail) r.push(`    grep -q '\\bmail.${p.domaineMail}\\b' /etc/hosts || printf '%s\\t%s %s\\n' '${p.ipMail}' 'mail.${p.domaineMail}' '${nomHote(p.vmMail)}' >> /etc/hosts`);
   r.push('    # Un clone garde l\'identite du master : on la regenere (machine-id, cles SSH).');
   r.push('    if [ -z "${DEJA_CLONE_PREPARE:-}" ] && [ ! -f /etc/.clone-prepare ]; then');
   r.push('        rm -f /etc/machine-id /var/lib/dbus/machine-id; systemd-machine-id-setup 2>/dev/null || true');
@@ -191,7 +204,7 @@ function scriptHote(p: Params): string {
   const hoteWeb = nomHote(p.vmWeb), hoteBdd = nomHote(p.vmBdd);
   if (p.hv === 'hyperv') {
     h.push('# ============================================================');
-    h.push(`#  Clonage Hyper-V : ${p.master}  ->  ${p.vmWeb} (nginx + Node)  et  ${p.vmBdd} (MariaDB)`);
+    h.push(`#  Clonage Hyper-V : ${p.master}  ->  ${p.vmWeb} (nginx + Node), ${p.vmBdd} (MariaDB)${p.mail ? `, ${p.vmMail} (messagerie DMZ)` : ''}`);
     h.push(`#  ${p.vcpu} vCPU - ${p.ram} Go RAM - commutateur ${p.sw}`);
     h.push(`#  ${p.vmWeb} : ${p.ipWeb}/${p.cidrWeb} via ${p.gwWeb}   |   ${p.vmBdd} : ${p.ipBdd}/${p.cidrBdd} via ${p.gwBdd}`);
     h.push("#  A executer SUR L'HOTE Hyper-V (PowerShell admin)");
@@ -200,7 +213,7 @@ function scriptHote(p: Params): string {
     h.push(`$Export  = '${p.exportPath}'`);
     h.push(`$VhdDir  = '${p.vhdDir}'`);
     h.push(`$Switch  = '${p.sw}'`);
-    h.push(`$Clones  = @('${p.vmWeb}', '${p.vmBdd}')`);
+    h.push(`$Clones  = @('${p.vmWeb}', '${p.vmBdd}'${p.mail ? `, '${p.vmMail}'` : ''})`);
     h.push('$Ici     = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }   # ou se trouvent les .sh telecharges');
     h.push('');
     h.push('if (-not (Get-VM -Name $Source -ErrorAction SilentlyContinue)) { throw "VM source $Source introuvable (Get-VM pour lister)" }');
@@ -233,7 +246,7 @@ function scriptHote(p: Params): string {
       h.push('#     Necessite hyperv-daemons dans le master (service hv-fcopy-daemon). Sinon : copie par scp, ou');
       h.push("#     coller le script dans la console :  cat > /root/web.sh <<'FIN'  ...  FIN");
       h.push('Write-Output "Attente du demarrage des VM (60 s)..."; Start-Sleep -Seconds 60');
-      h.push(`$Fichiers = @{ '${p.vmBdd}' = @('bdd-${hoteBdd}.sh', '/root/bdd.sh'); '${p.vmWeb}' = @('web-${hoteWeb}.sh', '/root/web.sh') }`);
+      h.push(`$Fichiers = @{ '${p.vmBdd}' = @('bdd-${hoteBdd}.sh', '/root/bdd.sh'); '${p.vmWeb}' = @('web-${hoteWeb}.sh', '/root/web.sh')${p.mail ? `; '${p.vmMail}' = @('mail-${nomHote(p.vmMail)}.sh', '/root/mail.sh')` : ''} }`);
       h.push('foreach ($Clone in $Fichiers.Keys) {');
       h.push('    $Src = Join-Path $Ici $Fichiers[$Clone][0]');
       h.push('    if (-not (Test-Path $Src)) { Write-Warning "$Src introuvable : telecharge le .sh depuis la page, dans le dossier du script"; continue }');
@@ -254,7 +267,9 @@ function scriptHote(p: Params): string {
     h.push('set -e');
     h.push(`qm status ${p.masterId} >/dev/null 2>&1 || { echo "VMID ${p.masterId} (master) introuvable : qm list"; exit 1; }`);
     h.push(`[ "$(qm status ${p.masterId} | awk '{print $2}')" = stopped ] || qm shutdown ${p.masterId} --timeout 60   # un master se clone eteint`);
-    for (const [nom, id] of [[hoteWeb, p.idWeb], [hoteBdd, p.idBdd]] as const) {
+    const clones: [string, string][] = [[hoteWeb, p.idWeb], [hoteBdd, p.idBdd]];
+    if (p.mail) clones.push([nomHote(p.vmMail), p.idMail]);
+    for (const [nom, id] of clones) {
       h.push(`qm status ${id} >/dev/null 2>&1 && { echo "VMID ${id} existe deja"; exit 1; }`);
       h.push(`qm clone ${p.masterId} ${id} --name ${nom} --full`);
       h.push(`qm set ${id} --cores ${p.vcpu || '2'} --memory ${(Number(p.ram) || 2) * 1024} --net0 virtio,bridge=${p.sw}`);
@@ -299,20 +314,216 @@ function scriptBdd(p: Params): string {
     `USE \\\`${p.bdd}\\\`;`,
     'CREATE TABLE IF NOT EXISTS messages (id INT AUTO_INCREMENT PRIMARY KEY, texte VARCHAR(200) NOT NULL UNIQUE, cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP);',
     `INSERT IGNORE INTO messages (texte) VALUES ('Bonjour depuis ${hoteBdd} (${p.ipBdd})'), ('La connexion moteur -> base fonctionne');`,
+    ...(p.mail ? sqlMessagerie(p) : []),
     'FLUSH PRIVILEGES;',
     'SQL',
     '',
-    `etape "Pare-feu (seulement si ufw est installe) : 3306 depuis ${p.ipWeb}, SSH"`,
-    `if command -v ufw >/dev/null; then ufw allow from ${p.ipWeb} to any port 3306 proto tcp; ufw allow 22/tcp; ufw --force enable; fi`,
+    `etape "Pare-feu (seulement si ufw est installe) : 3306 depuis ${p.ipWeb}${p.mail ? ` et ${p.ipMail}` : ''}, SSH"`,
+    `if command -v ufw >/dev/null; then ufw allow from ${p.ipWeb} to any port 3306 proto tcp; ${p.mail ? `ufw allow from ${p.ipMail} to any port 3306 proto tcp; ` : ''}ufw allow 22/tcp; ufw --force enable; fi`,
     '',
     ...finReseau(),
     '',
     'etape "Verification"',
     `mysql -u root -p'${MDP}' -e "SELECT User, Host FROM mysql.user WHERE User='${p.utilisateur}'; SELECT COUNT(*) AS lignes FROM \\\`${p.bdd}\\\`.messages;"`,
     "ss -tlnp | grep -q '0.0.0.0:3306' && echo \"MariaDB ecoute sur 3306\" || { echo \"ERREUR: MariaDB n'ecoute pas sur le reseau\"; ss -tlnp | grep 3306 || true; exit 1; }",
-    `echo "VM base prete : ${hoteBdd} (${p.ipBdd}). Joue maintenant le script web sur ${p.vmWeb}."`,
+    ...(p.mail ? [`mysql -u root -p'${MDP}' -e "SELECT email FROM maildb.virtual_users; SELECT User, Host FROM mysql.user WHERE User IN ('mailuser','roundcube');"`] : []),
+    `echo "VM base prete : ${hoteBdd} (${p.ipBdd}). Joue maintenant le script web sur ${p.vmWeb}${p.mail ? `, puis le script messagerie sur ${p.vmMail}` : ''}."`,
   ];
   return b.join('\n');
+}
+
+// Comptes de messagerie et webmail dans MariaDB : Postfix et Dovecot lisent virtual_*, Roundcube a sa base.
+// Le mot de passe est stocke au format Dovecot {SHA512} = base64(sha512(mot de passe)), calculable en SQL.
+function sqlMessagerie(p: Params): string[] {
+  const d = p.domaineMail;
+  const boites = listeBoites(p);
+  const q: string[] = [];
+  q.push('-- ---- Messagerie : domaines, boites, alias (lus par Postfix et Dovecot depuis la DMZ) ----');
+  q.push('CREATE DATABASE IF NOT EXISTS maildb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;');
+  q.push(`CREATE USER IF NOT EXISTS 'mailuser'@'${p.ipMail}' IDENTIFIED BY '${MDP}';`);
+  q.push(`ALTER USER 'mailuser'@'${p.ipMail}' IDENTIFIED BY '${MDP}';`);
+  q.push(`GRANT SELECT ON maildb.* TO 'mailuser'@'${p.ipMail}';`);
+  q.push('USE maildb;');
+  q.push('CREATE TABLE IF NOT EXISTS virtual_domains (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(100) NOT NULL UNIQUE);');
+  q.push('CREATE TABLE IF NOT EXISTS virtual_users (id INT AUTO_INCREMENT PRIMARY KEY, domain_id INT NOT NULL, email VARCHAR(120) NOT NULL UNIQUE, password VARCHAR(160) NOT NULL, FOREIGN KEY (domain_id) REFERENCES virtual_domains(id) ON DELETE CASCADE);');
+  q.push('CREATE TABLE IF NOT EXISTS virtual_aliases (id INT AUTO_INCREMENT PRIMARY KEY, domain_id INT NOT NULL, source VARCHAR(120) NOT NULL, destination VARCHAR(120) NOT NULL, UNIQUE KEY (source, destination), FOREIGN KEY (domain_id) REFERENCES virtual_domains(id) ON DELETE CASCADE);');
+  q.push(`INSERT IGNORE INTO virtual_domains (name) VALUES ('${d}');`);
+  for (const b of boites) {
+    q.push(`INSERT INTO virtual_users (domain_id, email, password) SELECT id, '${b}@${d}', CONCAT('{SHA512}', TO_BASE64(UNHEX(SHA2('${MDP}', 512)))) FROM virtual_domains WHERE name='${d}' ON DUPLICATE KEY UPDATE password=VALUES(password);`);
+  }
+  if (boites.length) {
+    q.push(`INSERT IGNORE INTO virtual_aliases (domain_id, source, destination) SELECT id, 'postmaster@${d}', '${boites[0]}@${d}' FROM virtual_domains WHERE name='${d}';`);
+    q.push(`INSERT IGNORE INTO virtual_aliases (domain_id, source, destination) SELECT id, 'contact@${d}', '${boites[0]}@${d}' FROM virtual_domains WHERE name='${d}';`);
+  }
+  q.push('-- ---- Roundcube (webmail) : sa propre base, schema cree par le serveur de messagerie ----');
+  q.push('CREATE DATABASE IF NOT EXISTS roundcube CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;');
+  q.push(`CREATE USER IF NOT EXISTS 'roundcube'@'${p.ipMail}' IDENTIFIED BY '${MDP}';`);
+  q.push(`ALTER USER 'roundcube'@'${p.ipMail}' IDENTIFIED BY '${MDP}';`);
+  q.push(`GRANT ALL PRIVILEGES ON roundcube.* TO 'roundcube'@'${p.ipMail}';`);
+  return q;
+}
+
+// ---------------------------------------------------------------- messagerie --
+
+function scriptMail(p: Params): string {
+  const d = p.domaineMail;
+  const hote = nomHote(p.vmMail);
+  const boites = listeBoites(p);
+  const premier = boites[0] || 'alice', second = boites[1] || boites[0] || 'alice';
+  const m: string[] = [
+    ...entete(`VM messagerie (DMZ) : ${p.vmMail} (${p.ipMail}) - Postfix + Dovecot + Roundcube, comptes dans ${nomHote(p.vmBdd)} (${p.ipBdd})`, p.vmMail),
+    ...identite(p, hote),
+    ...reseau(p, reseauMail(p)),
+    '',
+    'identite',
+    ...sequenceReseau('postfix dovecot-imapd roundcube'),
+    '',
+    `etape "Le flux vers la base ${p.ipBdd}:3306 (depuis la DMZ : le pare-feu doit l'autoriser)"`,
+    `timeout 3 bash -c 'exec 3<>/dev/tcp/${p.ipBdd}/3306' 2>/dev/null && echo "3306 joignable" || { echo "ERREUR: ${p.ipBdd}:3306 injoignable depuis la DMZ. Script base joue ? Regle pare-feu DMZ -> LAN : TCP 3306 de ${p.ipMail} vers ${p.ipBdd} ?"; exit 1; }`,
+    '',
+    'etape "Installation : Postfix, Dovecot (IMAP, LMTP, SQL), Roundcube, Apache, outils de test"',
+    `echo "postfix postfix/main_mailer_type select Internet Site" | debconf-set-selections`,
+    `echo "postfix postfix/mailname string mail.${d}" | debconf-set-selections`,
+    'echo "roundcube-core roundcube/dbconfig-install boolean false" | debconf-set-selections',
+    'apt_essais apt-get update -q',
+    'apt_essais apt-get install -y -q postfix postfix-mysql dovecot-core dovecot-imapd dovecot-lmtpd dovecot-mysql mariadb-client swaks curl',
+    'apt_essais apt-get install -y -q roundcube roundcube-mysql apache2',
+    '',
+    'etape "Utilisateur vmail : toutes les boites lui appartiennent (/var/mail/vhosts)"',
+    'getent group vmail >/dev/null || groupadd -g 5000 vmail',
+    'getent passwd vmail >/dev/null || useradd -u 5000 -g vmail -d /var/mail/vhosts -s /usr/sbin/nologin -M vmail',
+    `install -d -o vmail -g vmail -m 770 /var/mail/vhosts /var/mail/vhosts/${d}`,
+    '',
+    'etape "Postfix : domaines, boites et alias lus dans MariaDB ; remise a Dovecot par LMTP ; SASL par Dovecot"',
+    `for f in domains users aliases; do case $f in domains) Q="SELECT 1 FROM virtual_domains WHERE name='%s'";; users) Q="SELECT 1 FROM virtual_users WHERE email='%s'";; aliases) Q="SELECT destination FROM virtual_aliases WHERE source='%s'";; esac`,
+    '    cat > /etc/postfix/mysql-$f.cf <<EOF',
+    `user = mailuser`,
+    `password = ${MDP}`,
+    `hosts = ${p.ipBdd}`,
+    'dbname = maildb',
+    'query = $Q',
+    'EOF',
+    'done; chmod 640 /etc/postfix/mysql-*.cf; chgrp postfix /etc/postfix/mysql-*.cf',
+    `postconf -e "myhostname = mail.${d}" "mydomain = ${d}" "myorigin = ${d}" \\`,
+    `    "mydestination = localhost" "mynetworks = 127.0.0.0/8 ${reseauCidr(p.ipWeb, p.cidrWeb)} ${reseauCidr(p.ipBdd, p.cidrBdd)} ${reseauCidr(p.ipMail, p.cidrMail)}" \\`,
+    '    "virtual_mailbox_domains = mysql:/etc/postfix/mysql-domains.cf" "virtual_mailbox_maps = mysql:/etc/postfix/mysql-users.cf" "virtual_alias_maps = mysql:/etc/postfix/mysql-aliases.cf" \\',
+    '    "virtual_transport = lmtp:unix:private/dovecot-lmtp" \\',
+    '    "smtpd_sasl_type = dovecot" "smtpd_sasl_path = private/auth" "smtpd_sasl_auth_enable = yes" \\',
+    '    "smtpd_recipient_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination" \\',
+    '    "smtpd_tls_security_level = may" "smtp_tls_security_level = may" "inet_interfaces = all" "inet_protocols = ipv4" "message_size_limit = 26214400"',
+    '# Soumission authentifiee sur 587 (les clients de messagerie)',
+    "grep -q '^submission inet' /etc/postfix/master.cf || cat >> /etc/postfix/master.cf <<'EOF'",
+    'submission inet n       -       y       -       -       smtpd',
+    '  -o syslog_name=postfix/submission',
+    '  -o smtpd_tls_security_level=may',
+    '  -o smtpd_sasl_auth_enable=yes',
+    '  -o smtpd_client_restrictions=permit_sasl_authenticated,reject',
+    'EOF',
+    'postmap -q "' + premier + '@' + d + '" mysql:/etc/postfix/mysql-users.cf | grep -q 1 && echo "Postfix lit les boites dans MariaDB" || { echo "ERREUR: Postfix ne trouve pas ' + premier + '@' + d + ' dans maildb (script base joue avec la messagerie cochee ?)"; exit 1; }',
+    '',
+    'etape "Dovecot : authentification SQL, boites Maildir, LMTP et SASL pour Postfix"',
+    "cat > /etc/dovecot/dovecot-sql.conf.ext <<EOF",
+    'driver = mysql',
+    `connect = host=${p.ipBdd} dbname=maildb user=mailuser password=${MDP}`,
+    'default_pass_scheme = SHA512',
+    "password_query = SELECT email AS user, password FROM virtual_users WHERE email='%u'",
+    'EOF',
+    'chmod 640 /etc/dovecot/dovecot-sql.conf.ext',
+    "cat > /etc/dovecot/local.conf <<'EOF'",
+    '# Configuration du labo (prend le dessus sur conf.d/*)',
+    'protocols = imap lmtp',
+    'mail_location = maildir:/var/mail/vhosts/%d/%n',
+    'mail_uid = vmail',
+    'mail_gid = vmail',
+    'first_valid_uid = 5000',
+    'last_valid_uid = 5000',
+    'disable_plaintext_auth = no      # labo : IMAP en clair sur le LAN accepte ; en production, TLS obligatoire',
+    'auth_mechanisms = plain login',
+    'passdb {',
+    '  driver = sql',
+    '  args = /etc/dovecot/dovecot-sql.conf.ext',
+    '}',
+    'userdb {',
+    '  driver = static',
+    '  args = uid=vmail gid=vmail home=/var/mail/vhosts/%d/%n',
+    '}',
+    'service lmtp {',
+    '  unix_listener /var/spool/postfix/private/dovecot-lmtp {',
+    '    mode = 0600',
+    '    user = postfix',
+    '    group = postfix',
+    '  }',
+    '}',
+    'service auth {',
+    '  unix_listener /var/spool/postfix/private/auth {',
+    '    mode = 0660',
+    '    user = postfix',
+    '    group = postfix',
+    '  }',
+    '}',
+    'EOF',
+    "# Les passdb/userdb par defaut de Debian (PAM, systeme) genent : on les neutralise",
+    "sed -i 's/^!include auth-system.conf.ext/#!include auth-system.conf.ext/' /etc/dovecot/conf.d/10-auth.conf",
+    'systemctl enable --now dovecot postfix && systemctl restart dovecot postfix',
+    `doveadm auth test ${premier}@${d} ${MDP} >/dev/null && echo "Dovecot authentifie ${premier}@${d} contre MariaDB" || { echo "ERREUR: Dovecot n'authentifie pas ${premier}@${d} : doveadm auth test ${premier}@${d} ${MDP} ; journalctl -u dovecot -n 20"; exit 1; }`,
+    '',
+    `etape "Roundcube (webmail) : base roundcube sur ${p.ipBdd}, IMAP et SMTP locaux"`,
+    `if ! mysql -h ${p.ipBdd} -u roundcube -p'${MDP}' roundcube -e 'SELECT 1 FROM users LIMIT 1' >/dev/null 2>&1; then mysql -h ${p.ipBdd} -u roundcube -p'${MDP}' roundcube < /usr/share/roundcube/SQL/mysql.initial.sql && echo "Schema Roundcube cree"; fi`,
+    "DES_KEY=$(od -An -tx1 -N 12 /dev/urandom | tr -d ' \\n')    # 24 caracteres hexadecimaux, sans SIGPIPE (pipefail)",
+    "cat > /etc/roundcube/config.inc.php <<'EOF'",
+    '<?php',
+    '\$config = [];',
+    `\$config['db_dsnw'] = 'mysql://roundcube:${MDP}@${p.ipBdd}/roundcube';`,
+    "\$config['imap_host'] = 'localhost:143';",
+    "\$config['smtp_host'] = 'localhost:25';",
+    "\$config['smtp_user'] = '';",
+    "\$config['smtp_pass'] = '';",
+    "\$config['support_url'] = '';",
+    `\$config['product_name'] = 'Webmail ${d}';`,
+    "$config['des_key'] = 'DES_KEY_A_REMPLACER';",
+    "\$config['plugins'] = ['archive', 'zipdownload'];",
+    "\$config['language'] = 'fr_FR';",
+    "\$config['skin'] = 'elastic';",
+    "\$config['log_dir'] = '/var/log/roundcube/';",
+    "\$config['temp_dir'] = '/var/lib/roundcube/temp/';",
+    'EOF',
+    'sed -i "s/DES_KEY_A_REMPLACER/$DES_KEY/" /etc/roundcube/config.inc.php',
+    'chown root:www-data /etc/roundcube/config.inc.php && chmod 640 /etc/roundcube/config.inc.php',
+    "# Le paquet Debian livre l'alias /roundcube commente : on l'active, a la racine du site",
+    "cat > /etc/apache2/conf-available/webmail.conf <<'EOF'",
+    'Alias /roundcube /var/lib/roundcube/public_html',
+    '<Directory /var/lib/roundcube/public_html>',
+    '    Options +FollowSymLinks',
+    '    AllowOverride All',
+    '    Require all granted',
+    '</Directory>',
+    'RedirectMatch ^/$ /roundcube/',
+    'EOF',
+    'a2enconf webmail >/dev/null && a2enmod rewrite >/dev/null; systemctl enable --now apache2 && systemctl reload apache2',
+    '',
+    `if command -v ufw >/dev/null; then for port in 22 25 587 143 993 80; do ufw allow $port/tcp; done; ufw --force enable; fi`,
+    '',
+    ...finReseau(),
+    '',
+    'etape "Verification : un message de ' + second + ' vers ' + premier + ', puis le webmail"',
+    `swaks --server 127.0.0.1:587 --auth-user ${second}@${d} --auth-password ${MDP} --from ${second}@${d} --to ${premier}@${d} --header "Subject: Test messagerie ${d}" --body "Message de test envoye par le script de mise en service." --quit-after . >/dev/null 2>&1 || swaks --server 127.0.0.1:587 --auth-user ${second}@${d} --auth-password ${MDP} --from ${second}@${d} --to ${premier}@${d} --header "Subject: Test messagerie ${d}" --body "Message de test." >/dev/null 2>&1 || { echo "ERREUR: envoi SMTP authentifie refuse : journalctl -u postfix -n 30"; exit 1; }`,
+    'sleep 3',
+    `N=$(find /var/mail/vhosts/${d}/${premier}/new /var/mail/vhosts/${d}/${premier}/cur -type f 2>/dev/null | wc -l)`,
+    `[ "$N" -ge 1 ] && echo "Message remis dans la boite de ${premier}@${d} ($N message(s))" || { echo "ERREUR: rien dans /var/mail/vhosts/${d}/${premier}/ : journalctl -u postfix -u dovecot -n 40"; exit 1; }`,
+    "CODE=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1/roundcube/ || echo 000)",
+    `[ "$CODE" = 200 ] && echo "Webmail : http://${p.ipMail}/roundcube/ (compte ${premier}@${d} / ${MDP})" || { echo "ERREUR: Roundcube repond $CODE : tail /var/log/roundcube/errors.log ; apache2ctl configtest"; exit 1; }`,
+    `echo "VM messagerie prete : ${hote} (${p.ipMail}). Clients : IMAP ${p.ipMail}:143, SMTP ${p.ipMail}:587 (authentifie), identifiant = adresse complete."`,
+  ];
+  return m.join('\n');
+}
+
+// Reseau d'une VM en notation CIDR (adresse reseau/masque), pour mynetworks.
+function reseauCidr(ip: string, cidr: string): string {
+  const c = Number(cidr) || 24;
+  const n = ip.split('.').map(Number).reduce((a, b) => (a << 8) + b, 0) >>> 0;
+  const masque = c === 0 ? 0 : (0xffffffff << (32 - c)) >>> 0;
+  const r = (n & masque) >>> 0;
+  return [24, 16, 8, 0].map(s => (r >>> s) & 255).join('.') + '/' + c;
 }
 
 function scriptWeb(p: Params): string {
@@ -441,6 +652,16 @@ function scriptVerif(p: Params): string {
   v.push(`# Depuis la VM web : le flux vers la base passe-t-il ? (si les VM sont dans deux reseaux, le routeur/pare-feu doit laisser TCP 3306 de ${p.ipWeb} vers ${p.ipBdd})`);
   v.push(`ping ${p.ipBdd} ; timeout 3 bash -c 'exec 3<>/dev/tcp/${p.ipBdd}/3306' && echo "3306 ouvert" || echo "3306 bloque"`);
   v.push('');
+  if (p.mail) {
+    const d = p.domaineMail, b = listeBoites(p);
+    v.push(`# Messagerie (DMZ ${p.ipMail}) : webmail, IMAP, SMTP`);
+    v.push(`# Navigateur : http://${p.ipMail}/roundcube/   compte ${b[0] || 'alice'}@${d} / ${MDP}`);
+    v.push(`# Client (Thunderbird, Outlook) : IMAP ${p.ipMail} port 143 (ou 993), SMTP ${p.ipMail} port 587, identifiant = l'adresse complete`);
+    v.push(`# Depuis la VM messagerie :  doveadm auth test ${b[0] || 'alice'}@${d} ${MDP}   ;   doveadm mailbox status -u ${b[0] || 'alice'}@${d} messages INBOX`);
+    v.push(`# Regles pare-feu (OPNsense) : LAN -> DMZ ${p.ipMail} TCP 25,587,143,993,80 ; DMZ ${p.ipMail} -> LAN ${p.ipBdd} TCP 3306 ; DMZ -> Internet 80/443 (apt) ; WAN -> DMZ ${p.ipMail} TCP 25 si courrier entrant`);
+    v.push(`# DNS interne (Unbound) : A mail.${d} -> ${p.ipMail} ; MX ${d} -> mail.${d}`);
+    v.push('');
+  }
   v.push('# Depuis la VM base : qui est connecte, et depuis ou');
   v.push(`mysql -u root -p'${MDP}' -e 'SHOW PROCESSLIST;'`);
   return v.join('\n');
@@ -448,7 +669,7 @@ function scriptVerif(p: Params): string {
 
 /** Le script pret a coller dans un terminal : il s'enregistre dans /root puis se lance. */
 export function pourConsole(sec: Section): string {
-  if (sec.id === 'verif' || sec.fichier.endsWith('.ps1')) return sec.code;
+  if (sec.id === 'verif' || sec.id === 'hote') return sec.code;
   const cible = `/root/${sec.id}.sh`;
   return `cat > ${cible} <<'FIN_SCRIPT_TSSR'\n${sec.code}\nFIN_SCRIPT_TSSR\nsudo bash ${cible}`;
 }
@@ -479,7 +700,8 @@ export function genererScripts(p: Params): Section[] {
     { id: 'hote', titre: p.hv === 'hyperv' ? '① Sur l’hôte Hyper-V — cloner les deux VM' : '① Sur l’hôte Proxmox — cloner les deux VM', code: scriptHote(p), fichier: p.hv === 'hyperv' ? 'clone-web-bdd.ps1' : 'clone-web-bdd.sh' },
     { id: 'bdd', titre: `② Dans ${p.vmBdd} — MariaDB`, code: enFichier(scriptBdd(p), '/root/bdd.sh'), fichier: `bdd-${hoteBdd}.sh` },
     { id: 'web', titre: `③ Dans ${p.vmWeb} — nginx + Node.js + page de test`, code: enFichier(scriptWeb(p), '/root/web.sh'), fichier: `web-${hoteWeb}.sh` },
-    { id: 'verif', titre: '④ Vérifier', code: scriptVerif(p), fichier: 'verif.txt' },
+    ...(p.mail ? [{ id: 'mail' as const, titre: `④ Dans ${p.vmMail} (DMZ) — Postfix + Dovecot + Roundcube`, code: enFichier(scriptMail(p), '/root/mail.sh'), fichier: `mail-${nomHote(p.vmMail)}.sh` }] : []),
+    { id: 'verif', titre: p.mail ? '⑤ Vérifier' : '④ Vérifier', code: scriptVerif(p), fichier: 'verif.txt' },
   ];
 }
 

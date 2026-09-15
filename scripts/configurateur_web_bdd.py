@@ -28,13 +28,40 @@ CONTENU = '\n'.join([
 
     '<h2>Ce que l’outil produit</h2>',
     tab(['Script', 'Où le jouer', 'Ce qu’il fait'], [
-        ['① Clonage', 'Sur l’hôte (PowerShell Hyper-V, ou shell Proxmox)', 'Deux clones du master, vCPU / RAM, commutateur, démarrage ; dépôt des scripts ② et ③ dans les VM (Hyper-V, si <code>hyperv-daemons</code> est dans le master)'],
+        ['① Clonage', 'Sur l’hôte (PowerShell Hyper-V, ou shell Proxmox)', 'Deux clones du master (trois avec la messagerie), vCPU / RAM, commutateur, démarrage ; dépôt des scripts ② et ③ dans les VM (Hyper-V, si <code>hyperv-daemons</code> est dans le master)'],
         ['② VM base', 'Dans la VM base, en root', 'Nom, IP fixe, MariaDB qui écoute sur le réseau, base + utilisateur autorisé <strong>depuis la VM web seulement</strong>, table de test remplie'],
         ['③ VM web', 'Dans la VM web, en root', 'Nom, IP fixe, nginx + Node.js, application de test dans <code>/srv/app</code> (identifiants dans <code>.env</code>), service systemd, nginx en mandataire inverse'],
-        ['④ Vérifier', 'Depuis un poste, puis depuis chaque VM', 'ping, <code>curl /api/sante</code>, la page dans le navigateur, le client mysql, les journaux'],
+        ['④ VM messagerie (option)', 'Dans la VM DMZ, en root', 'Postfix + Dovecot + Roundcube, comptes lus dans la base, message de test envoyé et remis, webmail vérifié'],
+        ['⑤ Vérifier', 'Depuis un poste, puis depuis chaque VM', 'ping, <code>curl /api/sante</code>, la page dans le navigateur, le client mysql, les journaux'],
     ]),
 
     '<div data-block="web-db-configurator"></div>',
+
+    '<h2>Option : la messagerie en DMZ</h2>',
+    '<p>En cochant <strong>VM 3 — messagerie en DMZ</strong>, l’outil ajoute un troisième clone : '
+    '<strong>Postfix</strong> (SMTP, port 25 entre serveurs et 587 authentifié pour les clients), '
+    '<strong>Dovecot</strong> (IMAP 143/993, remise LMTP) et <strong>Roundcube</strong> (webmail sur Apache). '
+    'La base MariaDB de la VM base est <strong>réutilisée</strong> deux fois : les domaines, boîtes et alias '
+    'sont dans <code>maildb</code> (Postfix et Dovecot les lisent avec un compte en lecture seule autorisé depuis '
+    'l’IP de la DMZ), et Roundcube a sa base <code>roundcube</code>. Le mot de passe des boîtes est stocké au '
+    'format Dovecot <code>{SHA512}</code>, calculé en SQL par le script base — le serveur de messagerie n’a '
+    'donc rien à écrire dans la base.</p>',
+    tab(['Composant', 'Rôle', 'Où il lit / écrit'], [
+        ['Postfix', 'Reçoit (25), accepte les envois authentifiés (587), remet à Dovecot par LMTP', '<code>maildb</code> : <code>virtual_domains</code>, <code>virtual_users</code>, <code>virtual_aliases</code> (lecture)'],
+        ['Dovecot', 'Authentifie (SASL pour Postfix, IMAP pour les clients), range en Maildir sous <code>/var/mail/vhosts/&lt;domaine&gt;/&lt;boîte&gt;</code>', '<code>maildb.virtual_users</code> (lecture) ; utilisateur système <code>vmail</code> (uid 5000)'],
+        ['Roundcube', 'Webmail <code>http://&lt;IP DMZ&gt;/roundcube/</code>, IMAP et SMTP en local', '<code>roundcube</code> (lecture/écriture : sessions, carnets, préférences)'],
+    ]),
+    note('yellow', '🧱 Ce que le pare-feu doit laisser passer',
+         '<strong>DMZ → LAN</strong> : TCP 3306 de la VM messagerie vers la VM base — le seul flux de la DMZ vers '
+         'l’intérieur, à écrire précisément (source, destination, port) · <strong>LAN → DMZ</strong> : 25, 587, 143, 993 '
+         'et 80 vers la VM messagerie · <strong>DMZ → Internet</strong> : 80/443 le temps de l’installation · '
+         '<strong>Internet → DMZ</strong> : 25 seulement si le domaine reçoit du courrier de l’extérieur. Dans le DNS '
+         'interne (Unbound sur OPNsense) : un A pour <code>mail.&lt;domaine&gt;</code> et un MX pour le domaine. '
+         'Les cours : <a href="/pages/dmz">Comprendre la DMZ</a>, <a href="/pages/dmz-mise-en-place">Mettre en place une DMZ</a>.'),
+    '<p>Le script messagerie vérifie lui-même : le flux vers la base, que Postfix trouve une boîte dans '
+    'MariaDB, que Dovecot authentifie un compte, puis <strong>envoie un vrai message</strong> d’une boîte à l’autre '
+    'en SMTP authentifié et constate sa remise dans le Maildir, et enfin que le webmail répond. Côté client : '
+    'IMAP sur l’IP DMZ port 143, SMTP port 587, identifiant = l’adresse complète, mot de passe du labo.</p>',
 
     '<h2>Avant de lancer</h2>',
     bullets('Le <strong>master</strong> est un Debian 12 installé, à jour, éteint. Le script reconnaît le gestionnaire réseau en place — <code>ifupdown</code> (installation par défaut), NetworkManager (avec bureau) ou systemd-networkd (images cloud) — et ne remplace que sa configuration. Sur Hyper-V, le paquet <code>hyperv-daemons</code> dans le master permet à ① de déposer les scripts sans réseau.',

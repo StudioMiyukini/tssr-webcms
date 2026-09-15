@@ -13,7 +13,7 @@
  * de production, et la page le dit.
  */
 import { memo, useDeferredValue, useMemo, useRef, useState } from 'react';
-import { MDP, genererScripts, nomHote, pourConsole, type Hyperviseur } from '@/lib/web-db-scripts';
+import { MDP, genererScripts, listeBoites, nomHote, pourConsole, type Hyperviseur } from '@/lib/web-db-scripts';
 
 const champ: React.CSSProperties = { width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface)', color: 'var(--text)', fontSize: 14, boxSizing: 'border-box' };
 const mono: React.CSSProperties = { fontFamily: "ui-monospace,'Space Mono',SFMono-Regular,Menlo,Consolas,monospace" };
@@ -83,6 +83,16 @@ export function WebDbConfigurator() {
   const [utilisateur, setUtilisateur] = useState('appuser');
   const [nodeSource, setNodeSource] = useState(false);
   const [mdpSysteme, setMdpSysteme] = useState(true);
+  // --- Messagerie en DMZ (optionnelle) ---
+  const [mail, setMail] = useState(false);
+  const [vmMail, setVmMail] = useState('SRV_MAIL_01');
+  const [idMail, setIdMail] = useState('203');
+  const [ipMail, setIpMail] = useState('192.168.10.5');
+  const [cidrMail, setCidrMail] = useState('24');
+  const [gwMailSaisi, setGwMail] = useState('');
+  const [dnsMailSaisi, setDnsMail] = useState('');
+  const [domaineMail, setDomaineMail] = useState('entreprise.lan');
+  const [boites, setBoites] = useState('alice, bob');
   const [copie, setCopie] = useState('');
 
   const persist = (k: string, v: string, set: (v: string) => void) => { set(v); lsSet(k, v); };
@@ -92,6 +102,9 @@ export function WebDbConfigurator() {
   const gwBdd = gwBddSaisi || passerelleDe(ipBdd);
   const dnsWeb = dnsWebSaisi || gwWeb;
   const dnsBdd = dnsBddSaisi || gwBdd;
+  const gwMail = gwMailSaisi || passerelleDe(ipMail);
+  const dnsMail = dnsMailSaisi || gwMail;
+  const hoteMail = nomHote(vmMail);
   const memeReseau = ipValide(ipWeb) && ipValide(ipBdd) && cidrWeb === cidrBdd && reseauDe(ipWeb, Number(cidrWeb)) === reseauDe(ipBdd, Number(cidrBdd));
   const hoteWeb = nomHote(vmWeb);
   const hoteBdd = nomHote(vmBdd);
@@ -99,7 +112,8 @@ export function WebDbConfigurator() {
   // Les fautes que la syntaxe ne signale pas : c'est là qu'on perd une heure.
   const soucis = useMemo(() => {
     const s: string[] = [];
-    const vms = [['web', ipWeb, cidrWeb, gwWeb, dnsWeb], ['base', ipBdd, cidrBdd, gwBdd, dnsBdd]] as const;
+    const vms: [string, string, string, string, string][] = [['web', ipWeb, cidrWeb, gwWeb, dnsWeb], ['base', ipBdd, cidrBdd, gwBdd, dnsBdd]];
+    if (mail) vms.push(['messagerie', ipMail, cidrMail, gwMail, dnsMail]);
     for (const [nom, ip, cidr, gw, dns] of vms) {
       if (!ipValide(ip)) { s.push(`L'adresse de la VM ${nom} « ${ip} » n'est pas une adresse IPv4.`); continue; }
       if (!ipValide(gw)) s.push(`La passerelle de la VM ${nom} « ${gw} » n'est pas une adresse IPv4.`);
@@ -112,12 +126,18 @@ export function WebDbConfigurator() {
     if (hv === 'proxmox' && idWeb === idBdd) s.push('Les deux VM Proxmox ont le même identifiant.');
     if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(bdd)) s.push('Le nom de la base : lettres, chiffres et _ seulement.');
     if (!/^[A-Za-z_][A-Za-z0-9_]{0,31}$/.test(utilisateur)) s.push('Le nom d’utilisateur MariaDB : lettres, chiffres et _ (32 caractères max).');
+    if (mail) {
+      if (ipValide(ipMail) && (ipMail === ipWeb || ipMail === ipBdd)) s.push('La VM messagerie a la même adresse qu’une autre VM.');
+      if (!/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(domaineMail)) s.push('Le domaine de messagerie doit ressembler à « entreprise.lan » (minuscules, un point au moins).');
+      if (!listeBoites(boites).length) s.push('Au moins une boîte (lettres, chiffres, . _ -), séparées par des virgules.');
+      if (hv === 'proxmox' && (idMail === idWeb || idMail === idBdd)) s.push('La VM messagerie Proxmox a le même identifiant qu’une autre VM.');
+    }
     return s;
-  }, [ipWeb, cidrWeb, gwWeb, dnsWeb, ipBdd, cidrBdd, gwBdd, dnsBdd, vmWeb, vmBdd, hv, idWeb, idBdd, bdd, utilisateur]);
+  }, [ipWeb, cidrWeb, gwWeb, dnsWeb, ipBdd, cidrBdd, gwBdd, dnsBdd, vmWeb, vmBdd, hv, idWeb, idBdd, bdd, utilisateur, mail, ipMail, cidrMail, gwMail, dnsMail, domaineMail, boites, idMail]);
 
   // Les quatre scripts (40 Ko de texte) se regenerent a chaque frappe : en valeur differee, la saisie reste fluide.
-  const params = useDeferredValue(useMemo(() => ({ hv, master, masterId, exportPath, vhdDir, sw, copierFichiers, vmWeb, vmBdd, idWeb, idBdd, vcpu, ram, ipWeb, cidrWeb, gwWeb, dnsWeb, ipBdd, cidrBdd, gwBdd, dnsBdd, iface, bdd, utilisateur, nodeSource, mdpSysteme }),
-    [hv, master, masterId, exportPath, vhdDir, sw, copierFichiers, vmWeb, vmBdd, idWeb, idBdd, vcpu, ram, ipWeb, cidrWeb, gwWeb, dnsWeb, ipBdd, cidrBdd, gwBdd, dnsBdd, iface, bdd, utilisateur, nodeSource, mdpSysteme]));
+  const params = useDeferredValue(useMemo(() => ({ hv, master, masterId, exportPath, vhdDir, sw, copierFichiers, vmWeb, vmBdd, idWeb, idBdd, vcpu, ram, ipWeb, cidrWeb, gwWeb, dnsWeb, ipBdd, cidrBdd, gwBdd, dnsBdd, iface, bdd, utilisateur, nodeSource, mdpSysteme, mail, vmMail, idMail, ipMail, cidrMail, gwMail, dnsMail, domaineMail, boites }),
+    [hv, master, masterId, exportPath, vhdDir, sw, copierFichiers, vmWeb, vmBdd, idWeb, idBdd, vcpu, ram, ipWeb, cidrWeb, gwWeb, dnsWeb, ipBdd, cidrBdd, gwBdd, dnsBdd, iface, bdd, utilisateur, nodeSource, mdpSysteme, mail, vmMail, idMail, ipMail, cidrMail, gwMail, dnsMail, domaineMail, boites]));
   const sections = useMemo(() => genererScripts(params), [params]);
 
   const pres = useRef<Record<string, HTMLPreElement | null>>({});
@@ -270,6 +290,70 @@ export function WebDbConfigurator() {
         </div>
       </div>
 
+      {/* Messagerie en DMZ */}
+      <div style={{ ...groupe, borderColor: mail ? 'var(--accent)' : 'var(--border)' }}>
+        <div style={legende}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <input type="checkbox" checked={mail} onChange={e => setMail(e.target.checked)} />
+            📧 VM 3 — messagerie en DMZ (Postfix + Dovecot + Roundcube, comptes dans la base)
+          </label>
+        </div>
+        {mail ? (
+          <>
+            <div style={rangee}>
+              <div>
+                <label style={etiquette}>Nom de la VM</label>
+                <input style={{ ...champ, ...mono }} value={vmMail} onChange={e => setVmMail(e.target.value)} />
+              </div>
+              <div>
+                <label style={etiquette}>Domaine de messagerie</label>
+                <input style={{ ...champ, ...mono }} value={domaineMail} onChange={e => setDomaineMail(e.target.value.trim().toLowerCase())} placeholder="entreprise.lan" />
+              </div>
+              <div>
+                <label style={etiquette}>Boîtes (séparées par des virgules)</label>
+                <input style={{ ...champ, ...mono }} value={boites} onChange={e => setBoites(e.target.value)} placeholder="alice, bob" />
+              </div>
+              {hv === 'proxmox' && (
+                <div>
+                  <label style={etiquette}>VMID</label>
+                  <input style={champ} value={idMail} onChange={e => setIdMail(e.target.value.replace(/\D/g, ''))} />
+                </div>
+              )}
+            </div>
+            <div style={{ ...rangee, marginTop: 10 }}>
+              <div>
+                <label style={etiquette}>Adresse IP (DMZ)</label>
+                <input style={{ ...champ, ...mono }} value={ipMail} onChange={e => setIpMail(e.target.value.trim())} />
+              </div>
+              <div>
+                <label style={etiquette}>Masque</label>
+                <select style={champ} value={cidrMail} onChange={e => setCidrMail(e.target.value)}>
+                  {CIDRS.map(c => <option key={c} value={String(c)}>/{c} — {masqueDe(c)}</option>)}
+                </select>
+              </div>
+              <div>
+                <label style={etiquette}>Passerelle {!gwMailSaisi && <span className="meta" style={{ fontWeight: 400 }}>(auto .254)</span>}</label>
+                <input style={{ ...champ, ...mono }} value={gwMail} onChange={e => setGwMail(e.target.value.trim())} />
+              </div>
+              <div>
+                <label style={etiquette}>DNS {!dnsMailSaisi && <span className="meta" style={{ fontWeight: 400 }}>(= passerelle)</span>}</label>
+                <input style={{ ...champ, ...mono }} value={dnsMail} onChange={e => setDnsMail(e.target.value.trim())} />
+              </div>
+            </div>
+            <div className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>
+              Nom d’hôte <code>{hoteMail}</code>, aussi <code>mail.{domaineMail}</code> · comptes {listeBoites(boites).map(b => <code key={b} style={{ marginRight: 4 }}>{b}@{domaineMail}</code>)} (mot de passe {MDP}) · alias <code>postmaster@</code> et <code>contact@</code> vers la première boîte · webmail <code>http://{ipMail}/roundcube/</code>.
+              Les comptes vivent dans la base <code>maildb</code> de la VM base (lus par Postfix et Dovecot avec <code>mailuser@{ipMail}</code>, lecture seule) ; Roundcube a sa base <code>roundcube</code>.
+            </div>
+            <aside className="pb-note pb-note-yellow" style={{ marginTop: 10, marginBottom: 0 }}>
+              <p className="pb-note-title">🧱 Règles de pare-feu entre la DMZ et le reste</p>
+              <p><strong>DMZ → LAN</strong> : TCP 3306 de {ipMail} vers {ipBdd} (le seul flux sortant de la DMZ vers le LAN — c’est le prix du « réutiliser la base ») · <strong>LAN → DMZ</strong> : TCP 25, 587, 143, 993, 80 vers {ipMail} · <strong>DMZ → Internet</strong> : 80/443 (apt) · <strong>Internet → DMZ</strong> : TCP 25 vers {ipMail} seulement si le domaine reçoit du courrier de l’extérieur. DNS interne : <code>mail.{domaineMail}</code> → {ipMail}, MX de <code>{domaineMail}</code> → <code>mail.{domaineMail}</code>.</p>
+            </aside>
+          </>
+        ) : (
+          <div className="meta" style={{ fontSize: 12 }}>Coche pour ajouter un troisième clone en DMZ : serveur SMTP/IMAP avec webmail, dont les comptes et le webmail utilisent MariaDB sur la VM base. Un script ④ s’ajoute, et le script base crée les bases <code>maildb</code> et <code>roundcube</code>.</div>
+        )}
+      </div>
+
       {/* Entre les deux VM */}
       <div style={groupe}>
         <div style={legende}>🔀 Entre les deux VM</div>
@@ -335,7 +419,7 @@ export function WebDbConfigurator() {
               {sec.id !== 'verif' && (
                 <button type="button" onClick={() => telecharger(sec.code, sec.fichier)} style={{ ...bouton, borderColor: 'var(--border)', color: 'var(--text)' }} title={`Télécharger ${sec.fichier}`}>💾 {sec.fichier.replace(/^.*\./, '.')}</button>
               )}
-              {(sec.id === 'bdd' || sec.id === 'web') && (
+              {(sec.id === 'bdd' || sec.id === 'web' || sec.id === 'mail') && (
                 <button type="button" onClick={() => copier('console-' + sec.id, pourConsole(sec))} style={{ ...bouton, background: copie === 'console-' + sec.id ? 'var(--accent)' : 'transparent', color: copie === 'console-' + sec.id ? '#fff' : 'var(--accent)' }} title="Copie le script enveloppé dans un cat > /root/….sh <<'FIN' … FIN suivi de sudo bash : à coller tel quel dans le terminal de la VM">
                   {copie === 'console-' + sec.id ? '✓ Copié' : '🖥️ Pour la console'}
                 </button>
