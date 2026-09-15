@@ -37,6 +37,7 @@ const BLOCKS: Record<string, BlockDef> = {
   'static-route-generator': { load: () => named(import('./StaticRouteGenerator'), 'StaticRouteGenerator') },
   'ssh-configurator': { load: () => named(import('./SshConfigurator'), 'SshConfigurator') },
   'web-db-configurator': { load: () => named(import('./WebDbConfigurator'), 'WebDbConfigurator') },
+  'bastion-configurator': { load: () => named(import('./BastionConfigurator'), 'BastionConfigurator') },
   'network-workshop': { load: () => named(import('./NetworkWorkshop'), 'NetworkWorkshop') },
   'hex-converter': { load: () => named(import('./HexConverter'), 'HexConverter') },
   'realisation1-trainer': { load: () => named(import('./Realisation1Trainer'), 'Realisation1Trainer') },

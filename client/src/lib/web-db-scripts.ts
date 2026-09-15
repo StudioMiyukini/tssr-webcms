@@ -74,7 +74,7 @@ export const nomHote = (vm: string) => vm.toLowerCase().replace(/[^a-z0-9-]+/g, 
 
 // ---------------------------------------------------------------- bash commun --
 
-function entete(titre: string, nomVm: string): string[] {
+export function entete(titre: string, nomVm: string): string[] {
   return [
     '#!/usr/bin/env bash',
     `# ${titre}`,
@@ -103,23 +103,27 @@ function entete(titre: string, nomVm: string): string[] {
   ];
 }
 
-function identite(p: Params, nom: string): string[] {
+export type Hote = [ip: string, noms: string];
+
+/** Nom de machine, /etc/hosts, identite neuve du clone, mot de passe du labo. Fonction bash `identite`. */
+export function identiteGenerique(nom: string, hotes: Hote[], mdpSysteme: boolean): string[] {
   const r: string[] = [];
   r.push('identite() {');
   r.push(`    etape "Nom de machine : ${nom}"`);
   r.push(`    hostnamectl set-hostname ${nom} 2>/dev/null || { echo ${nom} > /etc/hostname; hostname ${nom}; }`);
   // Pas de sed -i sur /etc/hosts : sur certains systemes (conteneurs) c'est un montage a part, et le renommage echoue.
   r.push(`    if grep -q '^127\\.0\\.1\\.1' /etc/hosts; then H=$(sed "s/^127\\.0\\.1\\.1.*/127.0.1.1\\t${nom}/" /etc/hosts); printf '%s\\n' "$H" > /etc/hosts; else printf '127.0.1.1\\t%s\\n' '${nom}' >> /etc/hosts; fi`);
-  r.push(`    grep -q '\\b${nomHote(p.vmWeb)}\\b' /etc/hosts || printf '%s\\t%s\\n' '${p.ipWeb}' '${nomHote(p.vmWeb)}' >> /etc/hosts`);
-  r.push(`    grep -q '\\b${nomHote(p.vmBdd)}\\b' /etc/hosts || printf '%s\\t%s\\n' '${p.ipBdd}' '${nomHote(p.vmBdd)}' >> /etc/hosts`);
-  if (p.mail) r.push(`    grep -q '\\bmail.${p.domaineMail}\\b' /etc/hosts || printf '%s\\t%s %s\\n' '${p.ipMail}' 'mail.${p.domaineMail}' '${nomHote(p.vmMail)}' >> /etc/hosts`);
+  for (const [ip, noms] of hotes) {
+    const premier = noms.split(' ')[0];
+    r.push(`    grep -q '\\b${premier}\\b' /etc/hosts || printf '%s\\t%s\\n' '${ip}' '${noms}' >> /etc/hosts`);
+  }
   r.push('    # Un clone garde l\'identite du master : on la regenere (machine-id, cles SSH).');
   r.push('    if [ -z "${DEJA_CLONE_PREPARE:-}" ] && [ ! -f /etc/.clone-prepare ]; then');
   r.push('        rm -f /etc/machine-id /var/lib/dbus/machine-id; systemd-machine-id-setup 2>/dev/null || true');
   r.push('        if [ -d /etc/ssh ] && ls /etc/ssh/ssh_host_*_key >/dev/null 2>&1; then rm -f /etc/ssh/ssh_host_*; dpkg-reconfigure -f noninteractive openssh-server 2>/dev/null || ssh-keygen -A; fi');
   r.push('        touch /etc/.clone-prepare');
   r.push('    fi');
-  if (p.mdpSysteme) {
+  if (mdpSysteme) {
     r.push(`    # Mot de passe du labo sur root, et sur l'utilisateur 1000 s'il existe`);
     r.push(`    echo "root:${MDP}" | chpasswd`);
     r.push(`    U=$(getent passwd 1000 | cut -d: -f1 || true); [ -n "$U" ] && echo "$U:${MDP}" | chpasswd || true`);
@@ -128,12 +132,19 @@ function identite(p: Params, nom: string): string[] {
   return r;
 }
 
-function reseau(p: Params, n: Reseau): string[] {
+function identite(p: Params, nom: string): string[] {
+  const hotes: Hote[] = [[p.ipWeb, nomHote(p.vmWeb)], [p.ipBdd, nomHote(p.vmBdd)]];
+  if (p.mail) hotes.push([p.ipMail, `mail.${p.domaineMail} ${nomHote(p.vmMail)}`]);
+  return identiteGenerique(nom, hotes, p.mdpSysteme);
+}
+
+/** Adresse fixe selon le gestionnaire reseau en place. Fonction bash `reseau`. */
+export function reseauGenerique(n: Reseau, ifaceForcee: string): string[] {
   const { ip, cidr, gw, dns } = n;
   const r: string[] = [];
   r.push('reseau() {');
   // Premiere carte qui n'est pas lo ; le suffixe @ifNN (interfaces virtuelles) n'appartient pas au nom.
-  r.push(`    IFACE=\${IFACE:-${p.iface || "$(ip -o link show | awk -F': ' '$2!=\"lo\"{print $2; exit}' | cut -d@ -f1)"}}`);
+  r.push(`    IFACE=\${IFACE:-${ifaceForcee || "$(ip -o link show | awk -F': ' '$2!=\"lo\"{print $2; exit}' | cut -d@ -f1)"}}`);
   r.push(`    etape "Adresse fixe ${ip}/${cidr} sur $IFACE (passerelle ${gw}, DNS ${dns})"`);
   r.push('    if systemctl is-active --quiet NetworkManager 2>/dev/null; then');
   r.push('        # --- NetworkManager (installation avec bureau) ---');
@@ -184,8 +195,12 @@ function reseau(p: Params, n: Reseau): string[] {
   return r;
 }
 
+function reseau(p: Params, n: Reseau): string[] {
+  return reseauGenerique(n, p.iface);
+}
+
 // L'ordre : installer avec le reseau courant s'il sort sur Internet, sinon adresser d'abord.
-function sequenceReseau(paquets: string): string[] {
+export function sequenceReseau(paquets: string): string[] {
   return [
     'RESEAU_FAIT=0',
     'if [ -z "${SANS_RESEAU:-}" ] && ! internet_ok; then',
@@ -197,7 +212,7 @@ function sequenceReseau(paquets: string): string[] {
   ];
 }
 
-const finReseau = () => ['[ -n "${SANS_RESEAU:-}" ] || [ "$RESEAU_FAIT" = 1 ] || reseau'];
+export const finReseau = () => ['[ -n "${SANS_RESEAU:-}" ] || [ "$RESEAU_FAIT" = 1 ] || reseau'];
 
 // ---------------------------------------------------------------- les scripts --
 
@@ -666,7 +681,7 @@ function blocGlpi(p: Params): string[] {
 }
 
 // Reseau d'une VM en notation CIDR (adresse reseau/masque), pour mynetworks.
-function reseauCidr(ip: string, cidr: string): string {
+export function reseauCidr(ip: string, cidr: string): string {
   const c = Number(cidr) || 24;
   const n = ip.split('.').map(Number).reduce((a, b) => (a << 8) + b, 0) >>> 0;
   const masque = c === 0 ? 0 : (0xffffffff << (32 - c)) >>> 0;
@@ -832,7 +847,7 @@ export function pourConsole(sec: Section): string {
 // Tout le corps dans une fonction, appelee seulement si le script est un fichier : colle tel quel
 // dans un terminal, il ne fait que definir la fonction et dire comment s'en servir — au lieu
 // d'appliquer `set -e` au shell interactif et de le fermer au premier `exit`.
-function enFichier(code: string, cible: string): string {
+export function enFichier(code: string, cible: string): string {
   const lignes = code.split('\n');
   const debut = lignes.findIndex(l => l.startsWith('set -euo pipefail'));
   return [
