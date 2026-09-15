@@ -301,7 +301,9 @@ function scriptBdd(p: Params): string {
     '',
     `etape "Compte root, base ${p.bdd}, utilisateur ${p.utilisateur} autorise depuis ${p.ipWeb} seulement"`,
     // Premier passage : root entre par le socket ; rejeu apres un ancien script : par le mot de passe.
-    `if mysql -e 'SELECT 1' >/dev/null 2>&1; then MY=(mysql); else MY=(mysql -u root -p'${MDP}'); fi`,
+    "# Debian 13 (MariaDB 11) n'installe plus la commande mysql : le client s'appelle mariadb.",
+    'MYSQL=$(command -v mariadb || command -v mysql)',
+    `if "$MYSQL" -e 'SELECT 1' >/dev/null 2>&1; then MY=("$MYSQL"); else MY=("$MYSQL" -u root -p'${MDP}'); fi`,
     '"${MY[@]}" <<SQL',
     // root garde l'acces par socket (sudo mysql, et le rejeu du script) ET recoit le mot de passe du labo.
     `ALTER USER 'root'@'localhost' IDENTIFIED VIA unix_socket OR mysql_native_password USING PASSWORD('${MDP}');`,
@@ -324,9 +326,9 @@ function scriptBdd(p: Params): string {
     ...finReseau(),
     '',
     'etape "Verification"',
-    `mysql -u root -p'${MDP}' -e "SELECT User, Host FROM mysql.user WHERE User='${p.utilisateur}'; SELECT COUNT(*) AS lignes FROM \\\`${p.bdd}\\\`.messages;"`,
+    `"$MYSQL" -u root -p'${MDP}' -e "SELECT User, Host FROM mysql.user WHERE User='${p.utilisateur}'; SELECT COUNT(*) AS lignes FROM \\\`${p.bdd}\\\`.messages;"`,
     "ss -tlnp | grep -q '0.0.0.0:3306' && echo \"MariaDB ecoute sur 3306\" || { echo \"ERREUR: MariaDB n'ecoute pas sur le reseau\"; ss -tlnp | grep 3306 || true; exit 1; }",
-    ...(p.mail ? [`mysql -u root -p'${MDP}' -e "SELECT email FROM maildb.virtual_users; SELECT User, Host FROM mysql.user WHERE User IN ('mailuser','roundcube');"`] : []),
+    ...(p.mail ? [`"$MYSQL" -u root -p'${MDP}' -e "SELECT email FROM maildb.virtual_users; SELECT User, Host FROM mysql.user WHERE User IN ('mailuser','roundcube');"`] : []),
     `echo "VM base prete : ${hoteBdd} (${p.ipBdd}). Joue maintenant le script web sur ${p.vmWeb}${p.mail ? `, puis le script messagerie sur ${p.vmMail}` : ''}."`,
   ];
   return b.join('\n');
@@ -389,6 +391,9 @@ function scriptMail(p: Params): string {
     'apt_essais apt-get install -y -q postfix postfix-mysql dovecot-core dovecot-imapd dovecot-lmtpd dovecot-mysql mariadb-client swaks curl',
     'apt_essais apt-get install -y -q roundcube roundcube-mysql apache2',
     '',
+    "# L'adresse fixe maintenant : la base n'accepte mailuser et roundcube que depuis l'adresse DMZ prevue.",
+    ...finReseau(),
+    '',
     'etape "Utilisateur vmail : toutes les boites lui appartiennent (/var/mail/vhosts)"',
     'getent group vmail >/dev/null || groupadd -g 5000 vmail',
     'getent passwd vmail >/dev/null || useradd -u 5000 -g vmail -d /var/mail/vhosts -s /usr/sbin/nologin -M vmail',
@@ -419,9 +424,16 @@ function scriptMail(p: Params): string {
     '  -o smtpd_sasl_auth_enable=yes',
     '  -o smtpd_client_restrictions=permit_sasl_authenticated,reject',
     'EOF',
-    'postmap -q "' + premier + '@' + d + '" mysql:/etc/postfix/mysql-users.cf | grep -q 1 && echo "Postfix lit les boites dans MariaDB" || { echo "ERREUR: Postfix ne trouve pas ' + premier + '@' + d + ' dans maildb (script base joue avec la messagerie cochee ?)"; exit 1; }',
+    'if postmap -q "' + premier + '@' + d + '" mysql:/etc/postfix/mysql-users.cf 2>/tmp/postmap.err | grep -q 1; then echo "Postfix lit les boites dans MariaDB"; else',
+    '    echo "ERREUR: Postfix ne trouve pas ' + premier + '@' + d + ' dans maildb."; cat /tmp/postmap.err',
+    `    grep -q 'not allowed to connect' /tmp/postmap.err && echo " -> la base refuse cette adresse source ($(hostname -I)) : mailuser est autorise depuis ${p.ipMail} seulement. La VM a-t-elle bien ${p.ipMail} (SANS_RESEAU ?), le script base a-t-il ete genere avec cette adresse ?"`,
+    `    grep -q 'not allowed to connect' /tmp/postmap.err || echo " -> script base joue avec la messagerie cochee ? ($MYSQL -h ${p.ipBdd} -u mailuser -p'${MDP}' maildb -e 'SELECT email FROM virtual_users')"`,
+    '    exit 1; fi',
     '',
     'etape "Dovecot : authentification SQL, boites Maildir, LMTP et SASL pour Postfix"',
+    'DOVECOT_VERSION=$(dovecot --version | cut -d. -f1-2)',
+    'if [ "${DOVECOT_VERSION}" = "2.3" ]; then',
+    '# ---- Dovecot 2.3 (Debian 12) ----',
     "cat > /etc/dovecot/dovecot-sql.conf.ext <<EOF",
     'driver = mysql',
     `connect = host=${p.ipBdd} dbname=maildb user=mailuser password=${MDP}`,
@@ -462,13 +474,71 @@ function scriptMail(p: Params): string {
     '  }',
     '}',
     'EOF',
+    'else',
+    '# ---- Dovecot 2.4 (Debian 13) : nouvelle syntaxe (mail_path, passdb sql { query }, %{user | domain}) ----',
+    "cat > /etc/dovecot/local.conf <<EOF",
+    '# Configuration du labo (prend le dessus sur conf.d/*)',
+    'protocols = imap lmtp',
+    'mail_driver = maildir',
+    'mail_path = /var/mail/vhosts/%{user | domain}/%{user | username}',
+    'mail_home = /var/mail/vhosts/%{user | domain}/%{user | username}',
+    "mail_inbox_path = /var/mail/vhosts/%{user | domain}/%{user | username}   # Debian le met dans /var/mail/%{user} (mbox) ; ici INBOX = le Maildir lui-meme",
+    'mail_uid = vmail',
+    'mail_gid = vmail',
+    'first_valid_uid = 5000',
+    'last_valid_uid = 5000',
+    'auth_allow_cleartext = yes      # labo : IMAP en clair sur le LAN accepte ; en production, TLS obligatoire',
+    'auth_mechanisms = plain login',
+    '# Debian retire le domaine des adresses en LMTP (conf.d/20-lmtp.conf) : nos boites sont des adresses completes',
+    'protocol lmtp {',
+    '  auth_username_format = %{user | lower}',
+    '}',
+    'sql_driver = mysql',
+    `mysql ${p.ipBdd} {`,
+    '  user = mailuser',
+    `  password = ${MDP}`,
+    '  dbname = maildb',
+    '}',
+    'passdb sql {',
+    '  query = SELECT password FROM virtual_users WHERE email = \'%{user}\'',
+    '}',
+    'userdb static {',
+    '  fields {',
+    '    uid = vmail',
+    '    gid = vmail',
+    '    home = /var/mail/vhosts/%{user | domain}/%{user | username}',
+    '  }',
+    '}',
+    'service lmtp {',
+    '  unix_listener /var/spool/postfix/private/dovecot-lmtp {',
+    '    mode = 0600',
+    '    user = postfix',
+    '    group = postfix',
+    '  }',
+    '}',
+    'service auth {',
+    '  unix_listener /var/spool/postfix/private/auth {',
+    '    mode = 0660',
+    '    user = postfix',
+    '    group = postfix',
+    '  }',
+    '}',
+    'EOF',
+    'chmod 640 /etc/dovecot/local.conf',
+    'fi',
     "# Les passdb/userdb par defaut de Debian (PAM, systeme) genent : on les neutralise",
-    "sed -i 's/^!include auth-system.conf.ext/#!include auth-system.conf.ext/' /etc/dovecot/conf.d/10-auth.conf",
-    'systemctl enable --now dovecot postfix && systemctl restart dovecot postfix',
+    "sed -i 's/^!include auth-system.conf.ext/#!include auth-system.conf.ext/' /etc/dovecot/conf.d/10-auth.conf 2>/dev/null || true",
+    '# Le fichier local.conf doit etre lu : Debian l\'inclut en fin de dovecot.conf (sinon on l\'ajoute)',
+    "grep -q 'local.conf' /etc/dovecot/dovecot.conf || echo '!include_try local.conf' >> /etc/dovecot/dovecot.conf",
+    'doveconf -n >/dev/null || { echo "ERREUR: configuration Dovecot invalide (version $DOVECOT_VERSION) :"; doveconf -n 2>&1 | tail -5; exit 1; }',
+    "# Postfix d'abord : c'est lui qui cree /var/spool/postfix/private, ou Dovecot pose ses sockets LMTP et auth",
+    'systemctl enable --now postfix && systemctl restart postfix',
+    'systemctl enable --now dovecot && systemctl restart dovecot',
     `doveadm auth test ${premier}@${d} ${MDP} >/dev/null && echo "Dovecot authentifie ${premier}@${d} contre MariaDB" || { echo "ERREUR: Dovecot n'authentifie pas ${premier}@${d} : doveadm auth test ${premier}@${d} ${MDP} ; journalctl -u dovecot -n 20"; exit 1; }`,
     '',
     `etape "Roundcube (webmail) : base roundcube sur ${p.ipBdd}, IMAP et SMTP locaux"`,
-    `if ! mysql -h ${p.ipBdd} -u roundcube -p'${MDP}' roundcube -e 'SELECT 1 FROM users LIMIT 1' >/dev/null 2>&1; then mysql -h ${p.ipBdd} -u roundcube -p'${MDP}' roundcube < /usr/share/roundcube/SQL/mysql.initial.sql && echo "Schema Roundcube cree"; fi`,
+    'MYSQL=$(command -v mariadb || command -v mysql)',
+    `if ! "$MYSQL" -h ${p.ipBdd} -u roundcube -p'${MDP}' roundcube -e 'SELECT 1 FROM users LIMIT 1' >/dev/null 2>&1; then "$MYSQL" -h ${p.ipBdd} -u roundcube -p'${MDP}' roundcube < /usr/share/roundcube/SQL/mysql.initial.sql && echo "Schema Roundcube cree"; fi`,
     "DES_KEY=$(od -An -tx1 -N 12 /dev/urandom | tr -d ' \\n')    # 24 caracteres hexadecimaux, sans SIGPIPE (pipefail)",
     "cat > /etc/roundcube/config.inc.php <<'EOF'",
     '<?php',
@@ -503,13 +573,11 @@ function scriptMail(p: Params): string {
     '',
     `if command -v ufw >/dev/null; then for port in 22 25 587 143 993 80; do ufw allow $port/tcp; done; ufw --force enable; fi`,
     '',
-    ...finReseau(),
-    '',
     'etape "Verification : un message de ' + second + ' vers ' + premier + ', puis le webmail"',
     `swaks --server 127.0.0.1:587 --auth-user ${second}@${d} --auth-password ${MDP} --from ${second}@${d} --to ${premier}@${d} --header "Subject: Test messagerie ${d}" --body "Message de test envoye par le script de mise en service." --quit-after . >/dev/null 2>&1 || swaks --server 127.0.0.1:587 --auth-user ${second}@${d} --auth-password ${MDP} --from ${second}@${d} --to ${premier}@${d} --header "Subject: Test messagerie ${d}" --body "Message de test." >/dev/null 2>&1 || { echo "ERREUR: envoi SMTP authentifie refuse : journalctl -u postfix -n 30"; exit 1; }`,
     'sleep 3',
-    `N=$(find /var/mail/vhosts/${d}/${premier}/new /var/mail/vhosts/${d}/${premier}/cur -type f 2>/dev/null | wc -l)`,
-    `[ "$N" -ge 1 ] && echo "Message remis dans la boite de ${premier}@${d} ($N message(s))" || { echo "ERREUR: rien dans /var/mail/vhosts/${d}/${premier}/ : journalctl -u postfix -u dovecot -n 40"; exit 1; }`,
+    `N=$(doveadm mailbox status -u ${premier}@${d} messages INBOX 2>/dev/null | sed 's/.*messages=//' || echo 0); N=\${N:-0}`,
+    `[ "$N" -ge 1 ] && echo "Message remis dans la boite de ${premier}@${d} ($N message(s) dans INBOX)" || { echo "ERREUR: INBOX de ${premier}@${d} vide : journalctl -u postfix -u dovecot -n 40"; exit 1; }`,
     "CODE=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1/roundcube/ || echo 000)",
     `[ "$CODE" = 200 ] && echo "Webmail : http://${p.ipMail}/roundcube/ (compte ${premier}@${d} / ${MDP})" || { echo "ERREUR: Roundcube repond $CODE : tail /var/log/roundcube/errors.log ; apache2ctl configtest"; exit 1; }`,
     `echo "VM messagerie prete : ${hote} (${p.ipMail}). Clients : IMAP ${p.ipMail}:143, SMTP ${p.ipMail}:587 (authentifie), identifiant = adresse complete."`,
@@ -567,6 +635,9 @@ function scriptWeb(p: Params): string {
   w.push('cd /srv/app && npm install --omit=dev --no-audit --no-fund --loglevel=error');
   w.push('chown -R www-data:www-data /srv/app && chmod 640 /srv/app/.env');
   w.push('');
+  w.push("# L'adresse fixe maintenant : MariaDB n'accepte l'application que depuis elle. Tout ce qui suit ne demande plus Internet.");
+  w.push(...finReseau());
+  w.push('');
   w.push('etape "Service systemd (les identifiants restent dans .env, lisible par www-data seul)"');
   w.push("cat > /etc/systemd/system/app.service <<'EOF'");
   w.push('[Unit]');
@@ -607,8 +678,6 @@ function scriptWeb(p: Params): string {
   w.push('nginx -t && systemctl enable --now nginx && systemctl reload nginx');
   w.push('if command -v ufw >/dev/null; then ufw allow 80/tcp; ufw allow 22/tcp; ufw --force enable; fi');
   w.push('');
-  w.push(...finReseau());
-  w.push('');
   w.push(`etape "Verification : le flux vers la base (${p.ipBdd}:3306), puis l'application"`);
   w.push(`if timeout 3 bash -c 'exec 3<>/dev/tcp/${p.ipBdd}/3306' 2>/dev/null; then echo "Port 3306 de ${p.ipBdd} joignable"; else`);
   w.push(`    echo "AVERTISSEMENT: ${p.ipBdd}:3306 injoignable depuis cette VM."`);
@@ -645,7 +714,7 @@ function scriptVerif(p: Params): string {
   v.push(`# Navigateur : http://${p.ipWeb}/  -> la page de test, verte si la base repond`);
   v.push('');
   v.push("# Depuis la VM web, a la main (le meme chemin que l'application) :");
-  v.push(`mysql -h ${p.ipBdd} -u ${p.utilisateur} -p'${MDP}' ${p.bdd} -e 'SELECT * FROM messages;'   # apt install mariadb-client si absent`);
+  v.push(`mariadb -h ${p.ipBdd} -u ${p.utilisateur} -p'${MDP}' ${p.bdd} -e 'SELECT * FROM messages;'   # apt install mariadb-client si absent (mysql sur Debian 12)`);
   v.push('journalctl -u app -n 30                 # si la page dit "base : erreur"');
   v.push('tail -f /var/log/config-vm.log          # si le script a ete lance en SSH (il tourne detache)');
   v.push('');
@@ -663,7 +732,7 @@ function scriptVerif(p: Params): string {
     v.push('');
   }
   v.push('# Depuis la VM base : qui est connecte, et depuis ou');
-  v.push(`mysql -u root -p'${MDP}' -e 'SHOW PROCESSLIST;'`);
+  v.push(`mariadb -u root -p'${MDP}' -e 'SHOW PROCESSLIST;'      # ou mysql sur Debian 12`);
   return v.join('\n');
 }
 
