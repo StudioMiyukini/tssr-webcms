@@ -40,6 +40,7 @@ import planningsRouter from './routes/plannings';
 import forumRouter from './routes/forum';
 import backupRouter from './routes/backup';
 import horsLigneRouter from './routes/hors-ligne';
+import scriptsPartagesRouter from './routes/scripts-partages';
 import { SqliteSessionStore } from './lib/session-store';
 import { errorHandler } from './lib/http';
 import { resolveMeta, metaTags } from './lib/seo';
@@ -100,6 +101,8 @@ async function createServer() {
   // Le site hors-ligne passe AVANT le cache : « infos » rend un état vivant (l'archive
   // vient-elle d'être bâtie ?) qu'une réponse figée 60 s ferait mentir.
   app.use(horsLigneRouter);
+  // Les scripts des configurateurs, deposes pour curl : GET /s/:id hors de /api, jamais en cache.
+  app.use(scriptsPartagesRouter);
   app.use('/api/public', publicCache(getCacheConfig));
 
   // ===== API routes =====

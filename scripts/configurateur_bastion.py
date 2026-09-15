@@ -54,6 +54,28 @@ CONTENU = '\n'.join([
          'refusée et tu serais enfermé dehors. Le script l’annonce en AVERTISSEMENT. Quand les administrateurs ont leurs clés, '
          'retire ce compte de <code>AllowUsers</code> et passe <code>PasswordAuthentication no</code>. Autre effet attendu : les '
          '<strong>clés d’hôte</strong> du clone sont régénérées, ton client SSH signalera un changement d’empreinte à la reconnexion.'),
+    '<h2>Mot de passe, clé, ou les deux</h2>',
+    tab(['Mode', 'Ce que SSH accepte', 'Quand'], [
+        ['<strong>Mot de passe</strong>', 'Le mot de passe du labo, pour les comptes listés (et les clés collées, si présentes)', 'Premiers pas, MobaXterm sans clé'],
+        ['<strong>Clé seulement</strong>', 'Uniquement une clé publique connue ; le mot de passe est refusé', 'Le fonctionnement normal d’un bastion'],
+        ['<strong>Les deux</strong>', 'Clé ou mot de passe', 'La transition : on pose les clés, puis on passera en « clé seulement »'],
+    ]),
+    '<p>Les clés viennent normalement <strong>du poste</strong> de chaque administrateur (bloc ④). L’option <strong>Générer les clés pendant le script</strong> '
+    'fait l’inverse pour aller vite en labo : le script du bastion fabrique une paire ed25519 par administrateur (<strong>en écrasant</strong> une clé '
+    'générée précédemment), installe la publique dans <code>authorized_keys</code>, et affiche la privée en fin de script — rangée dans '
+    '<code>~/.ssh/cle-bastion-&lt;login&gt;</code>. Chaque admin la rapatrie sur son poste (<code>scp</code> avec le mot de passe, la commande est imprimée), '
+    'puis on l’efface du bastion. Pour les serveurs, le script imprime les <code>ssh-copy-id</code> à lancer depuis le bastion <strong>avant</strong> de jouer ③ '
+    'en mode « clé seulement ». Une clé fabriquée sur le serveur et transportée est moins propre qu’une clé née sur le poste : c’est le compromis du labo.</p>',
+    '<h2>Récupérer un script sans navigateur : la ligne curl</h2>',
+    '<p>Les VM n’ont pas de navigateur, et coller trois cents lignes dans une console passe mal. Sous chaque bloc, <strong>🔗 Ligne curl</strong> dépose le '
+    'script sur le site (sept jours, identifiant de huit caractères) et affiche la commande à taper dans la VM : '
+    '<code>curl -fsSL https://…/s/abcd2345 -o ~/bastion.sh &amp;&amp; sudo bash ~/bastion.sh</code> — ou <code>wget</code> si <code>curl</code> manque, '
+    'ou <code>Invoke-WebRequest</code> pour les scripts PowerShell. Huit caractères se recopient depuis l’écran, même sans presse-papiers.</p>',
+    '<h2>Et les interfaces web ?</h2>',
+    '<p>Le bastion ne concerne que le <strong>port 22</strong> : GLPI (<code>:8080</code>), le webmail, la page de test restent joignables comme avant depuis le '
+    'réseau qui y a droit selon le pare-feu. Si ton poste ne les atteint pas directement, le bloc ④ ajoute une entrée <code>tunnels</code> : '
+    '<code>ssh -N tunnels</code> ouvre un port local par serveur (<code>http://localhost:18080</code> → premier serveur, 18081 → le suivant…) ; ou '
+    '<code>ssh -N -D 1080 bastion</code> et un proxy SOCKS5 <code>localhost:1080</code> dans Firefox pour tout faire passer par le bastion.</p>',
     '<h2>Avant de lancer</h2>',
     bullets('Le bastion vit dans un <strong>réseau d’administration</strong> distinct (ici <code>192.168.40.0/24</code> par défaut) : le pare-feu laisse les postes d’administration atteindre le bastion sur son port SSH, le bastion atteindre les serveurs sur 22, et <strong>rien d’autre vers le port 22 des serveurs</strong>.',
             'Chaque administrateur génère <strong>sa</strong> clé sur <strong>son</strong> poste (<code>ssh-keygen -t ed25519</code>, bloc ④) et te donne la ligne <code>.pub</code> ; le bastion et les serveurs ne reçoivent que des clés publiques. Sans clé, seul le mot de passe du labo ouvre la porte — à cocher explicitement.',

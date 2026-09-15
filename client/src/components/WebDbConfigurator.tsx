@@ -13,6 +13,7 @@
  * de production, et la page le dit.
  */
 import { memo, useDeferredValue, useMemo, useRef, useState } from 'react';
+import { deposerScript, lignesRecuperation } from '@/lib/partage-script';
 import { MDP, genererScripts, listeBoites, nomHote, pourConsole, type Hyperviseur } from '@/lib/web-db-scripts';
 
 const champ: React.CSSProperties = { width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface)', color: 'var(--text)', fontSize: 14, boxSizing: 'border-box' };
@@ -142,6 +143,18 @@ export function WebDbConfigurator() {
   const sections = useMemo(() => genererScripts(params), [params]);
 
   const pres = useRef<Record<string, HTMLPreElement | null>>({});
+  // Ligne curl : le script deposé sur le site, et la commande qui le rapatrie dans la VM.
+  const [depot, setDepot] = useState<Record<string, string>>({});
+  const partager = async (sec: { id: string; code: string; fichier: string }) => {
+    setDepot(d => ({ ...d, [sec.id]: 'en cours' }));
+    try {
+      const r = await deposerScript(sec.fichier, sec.code);
+      setDepot(d => ({ ...d, [sec.id]: lignesRecuperation(r.url, sec.fichier, true) }));
+    } catch (e) {
+      setDepot(d => ({ ...d, [sec.id]: 'ERREUR : ' + (e instanceof Error ? e.message : String(e)) }));
+    }
+  };
+
   const copier = async (id: string, texte: string) => {
     const fini = () => { setCopie(id); setTimeout(() => setCopie(''), 1600); };
     try { await navigator.clipboard.writeText(texte); fini(); return; } catch { /* API refusee : on passe par la selection */ }
@@ -430,11 +443,27 @@ export function WebDbConfigurator() {
                   {copie === 'console-' + sec.id ? '✓ Copié' : '🖥️ Pour la console'}
                 </button>
               )}
+              {sec.id !== 'verif' && (
+                <button type="button" onClick={() => partager(sec)} disabled={depot[sec.id] === 'en cours'} style={{ ...bouton, borderColor: 'var(--border)', color: 'var(--text)' }} title="Dépose le script sur le site (7 jours) et donne la ligne curl / wget à taper dans la VM">
+                  {depot[sec.id] === 'en cours' ? '…' : '🔗 Ligne curl'}
+                </button>
+              )}
               <button type="button" onClick={() => copier(sec.id, sec.code)} style={{ ...bouton, background: copie === sec.id ? 'var(--accent)' : 'transparent', color: copie === sec.id ? '#fff' : 'var(--accent)' }} title="Le script seul, à enregistrer dans un fichier">
                 {copie === sec.id ? '✓ Copié' : copie === 'sel-' + sec.id ? 'Sélectionné — Ctrl+C' : 'Copier'}
               </button>
             </div>
           </div>
+          {depot[sec.id] && depot[sec.id] !== 'en cours' && (
+            <div style={{ margin: '0 0 8px', border: '1px solid var(--accent)', borderRadius: 8, padding: '8px 10px', background: 'var(--surface)', fontSize: 12.5 }}>
+              {depot[sec.id]!.startsWith('ERREUR') ? <span style={{ color: '#dc2626' }}>{depot[sec.id]}</span> : (
+                <>
+                  <div className="meta" style={{ fontSize: 11.5, marginBottom: 4 }}>À taper dans {sec.id === 'hote' ? 'PowerShell sur l’hôte' : 'la VM'} (valable 7 jours, le script est récupéré tel quel, aucun collage) :</div>
+                  <pre style={{ ...pre, padding: '8px 10px', marginBottom: 6 }}><code>{depot[sec.id]}</code></pre>
+                  <button type="button" onClick={() => copier('curl-' + sec.id, depot[sec.id]!)} style={{ ...bouton, padding: '4px 10px', fontSize: 12 }}>{copie === 'curl-' + sec.id ? '✓ Copié' : 'Copier la ligne'}</button>
+                </>
+              )}
+            </div>
+          )}
           <Bloc code={sec.code} refPre={el => { pres.current[sec.id] = el; }} />
         </div>
       ))}

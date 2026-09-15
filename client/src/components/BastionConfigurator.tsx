@@ -10,8 +10,9 @@
  * (mémorisés dans le navigateur), mêmes briques de script.
  */
 import { memo, useDeferredValue, useMemo, useRef, useState } from 'react';
+import { deposerScript, lignesRecuperation } from '@/lib/partage-script';
 import { MDP, nomHote, type Hyperviseur } from '@/lib/web-db-scripts';
-import { genererScriptsBastion, listeAdmins, listeCibles, pourConsoleBastion } from '@/lib/bastion-scripts';
+import { genererScriptsBastion, listeAdmins, listeCibles, pourConsoleBastion, type Auth } from '@/lib/bastion-scripts';
 
 const champ: React.CSSProperties = { width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface)', color: 'var(--text)', fontSize: 14, boxSizing: 'border-box' };
 const mono: React.CSSProperties = { fontFamily: "ui-monospace,'Space Mono',SFMono-Regular,Menlo,Consolas,monospace" };
@@ -63,7 +64,8 @@ export function BastionConfigurator() {
   const [port, setPort] = useState('22');
   const [admins, setAdmins] = useState('miyukini\njean ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAI... jean@poste');
   const [cibles, setCibles] = useState('srv-web-01 192.168.30.5\nsrv-bdd-01 192.168.20.5\nsrv-mail-01 192.168.10.5');
-  const [mdpAutorise, setMdpAutorise] = useState(false);
+  const [auth, setAuth] = useState<Auth>('les-deux');
+  const [genererCles, setGenererCles] = useState(false);
   const [mfa, setMfa] = useState(false);
   const [fail2ban, setFail2ban] = useState(true);
   const [mdpSysteme, setMdpSysteme] = useState(true);
@@ -88,13 +90,25 @@ export function BastionConfigurator() {
     if (!listeA.length) s.push('Au moins un administrateur (login en minuscules, puis sa clé publique sur la même ligne).');
     if (!listeC.length) s.push('Au moins un serveur à mettre derrière le bastion (« nom ip » par ligne).');
     if (listeC.some(c => c.ip === ip)) s.push('Un serveur cible a l’adresse du bastion.');
-    if (!mdpAutorise && listeA.length && !listeA.some(a => a.cle)) s.push('Aucune clé publique : coche « Autoriser le mot de passe » ou colle les clés, sinon personne ne pourra entrer.');
+    if (auth === 'cle' && listeA.length && !listeA.some(a => a.cle) && !genererCles) s.push('Mode « clé seulement » sans aucune clé : colle les clés publiques, coche « Générer les clés pendant le script », ou choisis un mode avec mot de passe.');
     return s;
-  }, [ip, gw, dns, cidr, port, listeA, listeC, mdpAutorise]);
+  }, [ip, gw, dns, cidr, port, listeA, listeC, auth, genererCles]);
 
-  const params = useDeferredValue(useMemo(() => ({ hv, master, masterId, exportPath, vhdDir, sw, copierFichiers, vm, id, ip, cidr, gw, dns, iface, port, admins, cibles, mdpAutorise, mfa, fail2ban, mdpSysteme }),
-    [hv, master, masterId, exportPath, vhdDir, sw, copierFichiers, vm, id, ip, cidr, gw, dns, iface, port, admins, cibles, mdpAutorise, mfa, fail2ban, mdpSysteme]));
+  const params = useDeferredValue(useMemo(() => ({ hv, master, masterId, exportPath, vhdDir, sw, copierFichiers, vm, id, ip, cidr, gw, dns, iface, port, admins, cibles, auth, genererCles, mfa, fail2ban, mdpSysteme }),
+    [hv, master, masterId, exportPath, vhdDir, sw, copierFichiers, vm, id, ip, cidr, gw, dns, iface, port, admins, cibles, auth, genererCles, mfa, fail2ban, mdpSysteme]));
   const sections = useMemo(() => genererScriptsBastion(params), [params]);
+
+  // Ligne curl : le script deposé sur le site, et la commande qui le rapatrie dans la VM.
+  const [depot, setDepot] = useState<Record<string, string>>({});
+  const partager = async (sec: { id: string; code: string; fichier: string }) => {
+    setDepot(d => ({ ...d, [sec.id]: 'en cours' }));
+    try {
+      const r = await deposerScript(sec.fichier, sec.code);
+      setDepot(d => ({ ...d, [sec.id]: lignesRecuperation(r.url, sec.fichier, sec.id !== 'poste' && sec.id !== 'posteNix') }));
+    } catch (e) {
+      setDepot(d => ({ ...d, [sec.id]: 'ERREUR : ' + (e instanceof Error ? e.message : String(e)) }));
+    }
+  };
 
   const copier = async (cle: string, texte: string) => {
     const fini = () => { setCopie(cle); setTimeout(() => setCopie(''), 1600); };
@@ -179,10 +193,17 @@ export function BastionConfigurator() {
           <textarea style={zone} value={admins} onChange={e => setAdmins(e.target.value)} spellCheck={false} />
           <div className="meta" style={{ fontSize: 11.5, marginTop: 6 }}>
             La clé vient de <code>~/.ssh/id_ed25519.pub</code> sur le poste (bloc ④ pour la générer). {listeA.length ? <>Reconnus : {listeA.map(a => <code key={a.login} style={{ marginRight: 4 }}>{a.login}{a.cle ? ' 🔑' : ''}</code>)}</> : 'Aucun administrateur reconnu.'}
-            {sansCle.length > 0 && <> — sans clé : {sansCle.map(a => a.login).join(', ')} (mot de passe {MDP} si autorisé).</>}
+            {sansCle.length > 0 && <> — sans clé collée : {sansCle.map(a => a.login).join(', ')}{genererCles ? ' (une clé sera fabriquée par le script)' : auth !== 'cle' ? ` (mot de passe ${MDP})` : ' (bloqués !)'}.</>}
+            {genererCles && <> Les clés fabriquées sur le bastion sont affichées en fin de script et rangées dans <code>~/.ssh/cle-bastion-&lt;login&gt;</code> : chaque admin rapatrie sa clé privée sur son poste (<code>scp</code>), puis on l’efface du bastion ; pour les serveurs, le script imprime les <code>ssh-copy-id</code> à lancer avant ③.</>}
           </div>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginTop: 10 }}>
-            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, cursor: 'pointer' }}><input type="checkbox" checked={mdpAutorise} onChange={e => setMdpAutorise(e.target.checked)} /> Autoriser le mot de passe {MDP} en SSH (labo)</label>
+            <span style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, flexWrap: 'wrap' }}>
+              <span style={{ fontWeight: 600, color: 'var(--text-soft)', fontSize: 12.5 }}>SSH accepte :</span>
+              {([['mdp', `mot de passe ${MDP}`], ['cle', 'clé seulement'], ['les-deux', 'les deux']] as [Auth, string][]).map(([v, l]) => (
+                <label key={v} style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}><input type="radio" name="auth-bastion" checked={auth === v} onChange={() => setAuth(v)} /> {l}</label>
+              ))}
+            </span>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, cursor: 'pointer' }}><input type="checkbox" checked={genererCles} onChange={e => setGenererCles(e.target.checked)} /> Générer les clés des administrateurs pendant le script (écrase les existantes)</label>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, cursor: 'pointer' }}><input type="checkbox" checked={mfa} onChange={e => setMfa(e.target.checked)} /> MFA : clé + code TOTP</label>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, cursor: 'pointer' }}><input type="checkbox" checked={fail2ban} onChange={e => setFail2ban(e.target.checked)} /> fail2ban</label>
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13.5, cursor: 'pointer' }}><input type="checkbox" checked={mdpSysteme} onChange={e => setMdpSysteme(e.target.checked)} /> root du bastion en {MDP} (console)</label>
@@ -217,11 +238,27 @@ export function BastionConfigurator() {
                   {copie === 'console-' + sec.id ? '✓ Copié' : '🖥️ Pour la console'}
                 </button>
               )}
+              {sec.id !== 'verif' && (
+                <button type="button" onClick={() => partager(sec)} disabled={depot[sec.id] === 'en cours'} style={{ ...bouton, borderColor: 'var(--border)', color: 'var(--text)' }} title="Dépose le script sur le site (7 jours) et donne la ligne curl / wget à taper dans la VM">
+                  {depot[sec.id] === 'en cours' ? '…' : '🔗 Ligne curl'}
+                </button>
+              )}
               <button type="button" onClick={() => copier(sec.id, sec.code)} style={{ ...bouton, background: copie === sec.id ? 'var(--accent)' : 'transparent', color: copie === sec.id ? '#fff' : 'var(--accent)' }}>
                 {copie === sec.id ? '✓ Copié' : copie === 'sel-' + sec.id ? 'Sélectionné — Ctrl+C' : 'Copier'}
               </button>
             </div>
           </div>
+          {depot[sec.id] && depot[sec.id] !== 'en cours' && (
+            <div style={{ margin: '0 0 8px', border: '1px solid var(--accent)', borderRadius: 8, padding: '8px 10px', background: 'var(--surface)', fontSize: 12.5 }}>
+              {depot[sec.id]!.startsWith('ERREUR') ? <span style={{ color: '#dc2626' }}>{depot[sec.id]}</span> : (
+                <>
+                  <div className="meta" style={{ fontSize: 11.5, marginBottom: 4 }}>À taper dans {sec.id === 'poste' ? 'PowerShell sur le poste' : 'la VM'} (valable 7 jours, le script est récupéré tel quel, aucun collage) :</div>
+                  <pre style={{ ...pre, padding: '8px 10px', marginBottom: 6 }}><code>{depot[sec.id]}</code></pre>
+                  <button type="button" onClick={() => copier('curl-' + sec.id, depot[sec.id]!)} style={{ ...bouton, padding: '4px 10px', fontSize: 12 }}>{copie === 'curl-' + sec.id ? '✓ Copié' : 'Copier la ligne'}</button>
+                </>
+              )}
+            </div>
+          )}
           <Bloc code={sec.code} refPre={el => { pres.current[sec.id] = el; }} />
         </div>
       ))}

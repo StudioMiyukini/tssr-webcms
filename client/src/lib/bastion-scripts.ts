@@ -17,6 +17,8 @@ import {
 export type Admin = { login: string; cle: string };
 export type Cible = { nom: string; ip: string };
 
+export type Auth = 'mdp' | 'cle' | 'les-deux';
+
 export type ParamsBastion = {
   hv: Hyperviseur;
   master: string;
@@ -35,7 +37,8 @@ export type ParamsBastion = {
   port: string;            // port SSH du bastion, 22 ou autre
   admins: string;          // une ligne par administrateur : « login ssh-ed25519 AAAA… commentaire » (la cle est optionnelle)
   cibles: string;          // une ligne par serveur : « nom ip »
-  mdpAutorise: boolean;    // mot de passe du labo accepte en SSH (sinon cle seulement)
+  auth: Auth;              // ce que SSH accepte : le mot de passe du labo, la cle, ou les deux
+  genererCles: boolean;    // le script du bastion fabrique une paire de cles par administrateur (ecrase l'existante)
   mfa: boolean;            // TOTP (google-authenticator) en plus de la cle
   fail2ban: boolean;
   mdpSysteme: boolean;
@@ -124,7 +127,7 @@ function scriptHote(p: ParamsBastion): string {
 
 // ---------------------------------------------------------------- bastion ---
 
-function blocAdmins(admins: Admin[], sudo: boolean): string[] {
+function blocAdmins(admins: Admin[], sudo: boolean, genererCles = false): string[] {
   const r: string[] = [];
   r.push('etape "Comptes des administrateurs"');
   for (const a of admins) {
@@ -132,10 +135,42 @@ function blocAdmins(admins: Admin[], sudo: boolean): string[] {
     r.push(`echo "${a.login}:${MDP}" | chpasswd`);
     if (sudo) r.push(`usermod -aG sudo ${a.login} 2>/dev/null || true`);
     r.push(`install -d -m 700 -o ${a.login} -g ${a.login} /home/${a.login}/.ssh`);
+    r.push(`touch /home/${a.login}/.ssh/authorized_keys; chmod 600 /home/${a.login}/.ssh/authorized_keys; chown ${a.login}:${a.login} /home/${a.login}/.ssh/authorized_keys`);
     if (a.cle) {
-      r.push(`grep -qF '${a.cle.split(' ').slice(0, 2).join(' ')}' /home/${a.login}/.ssh/authorized_keys 2>/dev/null || echo '${a.cle}' >> /home/${a.login}/.ssh/authorized_keys`);
-      r.push(`chmod 600 /home/${a.login}/.ssh/authorized_keys && chown ${a.login}:${a.login} /home/${a.login}/.ssh/authorized_keys`);
+      r.push(`grep -qF '${a.cle.split(' ').slice(0, 2).join(' ')}' /home/${a.login}/.ssh/authorized_keys || echo '${a.cle}' >> /home/${a.login}/.ssh/authorized_keys`);
     }
+    if (genererCles) {
+      // Une paire par administrateur, fabriquee ici, ecrasee a chaque passage : la privee est a emporter sur le poste, puis a effacer d'ici.
+      r.push(`K=/home/${a.login}/.ssh/cle-bastion-${a.login}`);
+      r.push('rm -f "$K" "$K.pub"');
+      r.push(`ssh-keygen -q -t ed25519 -N '' -C '${a.login}@bastion-genere' -f "$K"`);
+      r.push(`chown ${a.login}:${a.login} "$K" "$K.pub"; chmod 600 "$K"`);
+      r.push(`grep -v '${a.login}@bastion-genere' /home/${a.login}/.ssh/authorized_keys > /home/${a.login}/.ssh/authorized_keys.tmp || true`);
+      r.push(`cat "$K.pub" >> /home/${a.login}/.ssh/authorized_keys.tmp && mv /home/${a.login}/.ssh/authorized_keys.tmp /home/${a.login}/.ssh/authorized_keys`);
+      r.push(`chmod 600 /home/${a.login}/.ssh/authorized_keys; chown ${a.login}:${a.login} /home/${a.login}/.ssh/authorized_keys`);
+    }
+  }
+  return r;
+}
+
+// Les cles fabriquees sur le bastion : les montrer, dire ou elles sont, comment les emporter et les poser sur les serveurs.
+function blocClesGenerees(p: ParamsBastion, admins: Admin[], cibles: Cible[]): string[] {
+  const r: string[] = [];
+  r.push('etape "Cles generees : a emporter sur le poste de chaque administrateur, puis a effacer d ici"');
+  for (const a of admins) {
+    r.push(`echo; echo "----- ${a.login} : cle PRIVEE (a mettre dans ~/.ssh/id_ed25519 sur le poste de ${a.login}, chmod 600) -----"`);
+    r.push(`cat /home/${a.login}/.ssh/cle-bastion-${a.login}`);
+    r.push(`echo "----- ${a.login} : cle publique (deja dans authorized_keys ici) -----"`);
+    r.push(`cat /home/${a.login}/.ssh/cle-bastion-${a.login}.pub`);
+  }
+  r.push('echo');
+  r.push(`echo "Depuis le poste, recuperer sa cle privee (mot de passe ${MDP}) :   scp -P ${p.port || '22'} ${admins[0]?.login || 'admin'}@${p.ip}:.ssh/cle-bastion-${admins[0]?.login || 'admin'} ~/.ssh/id_ed25519"`);
+  r.push(`echo '  Windows : scp -P ${p.port || '22'} ${admins[0]?.login || 'admin'}@${p.ip}:.ssh/cle-bastion-${admins[0]?.login || 'admin'} %USERPROFILE%\\.ssh\\id_ed25519'`);
+  r.push('echo "Puis, ici, effacer la privee :   rm ~/.ssh/cle-bastion-*   (la publique est deja dans authorized_keys)"');
+  if (cibles.length) {
+    r.push('echo');
+    r.push(`echo "Poser la cle publique sur chaque serveur (depuis le bastion, en tant que ${admins[0]?.login || 'admin'}, tant que le mot de passe y est accepte) :"`);
+    for (const a of admins) for (const c of cibles) r.push(`echo "  ssh-copy-id -i /home/${a.login}/.ssh/cle-bastion-${a.login}.pub ${a.login}@${c.ip}"`);
   }
   return r;
 }
@@ -167,7 +202,7 @@ function scriptBastion(p: ParamsBastion): string {
   const n: Reseau = { ip: p.ip, cidr: p.cidr, gw: p.gw, dns: p.dns };
   const port = p.port || '22';
   const paquets = ['openssh-server', 'iproute2', p.fail2ban ? 'fail2ban python3-systemd' : '', p.mfa ? 'libpam-google-authenticator' : ''].filter(Boolean).join(' ');
-  const cleSeulement = !p.mdpAutorise && admins.some(a => a.cle);
+  const cleSeulement = p.auth === 'cle';
   const b: string[] = [
     ...entete(`Bastion SSH : ${p.vm} (${p.ip}) - porte d'entree unique vers ${cibles.map(c => c.nom).join(', ') || 'les serveurs'}`, p.vm),
     ...identiteGenerique(hote, hotes, p.mdpSysteme),
@@ -179,7 +214,7 @@ function scriptBastion(p: ParamsBastion): string {
     `etape "Installation : ${paquets}"`,
     `apt_essais apt-get update -q && apt_essais apt-get install -y -q ${paquets}`,
     '',
-    ...blocAdmins(admins, true),
+    ...blocAdmins(admins, true, p.genererCles),
     '',
     'etape "SSH durci : pas de root, pas de X11, journal detaille, seuls les administrateurs listes"',
     'install -d /etc/ssh/sshd_config.d',
@@ -213,7 +248,7 @@ function scriptBastion(p: ParamsBastion): string {
     b.push("sed -i 's/^@include common-auth/#@include common-auth   # desactive : la cle remplace le mot de passe, le TOTP s ajoute/' /etc/pam.d/sshd");
   }
   if (!cleSeulement) {
-    b.push(`echo "AVERTISSEMENT: le mot de passe du labo (${MDP}) est accepte en SSH ${admins.some(a => a.cle) ? '(case Autoriser le mot de passe)' : '(aucune cle publique fournie)'} : un bastion de production n accepte que les cles."`);
+    b.push(`echo "AVERTISSEMENT: le mot de passe du labo (${MDP}) est accepte en SSH (mode ${p.auth === 'mdp' ? 'mot de passe' : 'mot de passe + cle'}) : un bastion de production n accepte que les cles."`);
   }
   b.push('sshd -t || { echo "ERREUR: configuration SSH invalide"; sshd -t; exit 1; }');
   b.push('systemctl enable --now ssh && systemctl restart ssh');
@@ -247,6 +282,7 @@ function scriptBastion(p: ParamsBastion): string {
   b.push('etape "Verification"');
   b.push(`ss -tlnp | grep -q ':${port} ' && echo "SSH ecoute sur ${port}" || { echo "ERREUR: SSH n ecoute pas sur ${port}"; exit 1; }`);
   if (p.fail2ban) b.push('fail2ban-client status sshd | head -3 || true');
+  if (p.genererCles) b.push(...blocClesGenerees(p, admins, cibles));
   b.push(`echo "Bastion pret : ${hote} (${p.ip}:${port}). Administrateurs : ${admins.map(a => a.login).join(', ')}. Les cles d hote ont ete regenerees : ton client SSH (MobaXterm, ssh) signalera un changement d empreinte, c est attendu."`);
   b.push(`echo "Suite : jouer le script (3) sur chaque serveur (${cibles.map(c => c.nom).join(', ')}), puis configurer le poste (4)."`);
   return b.join('\n');
@@ -282,7 +318,7 @@ function scriptCibles(p: ParamsBastion): string {
     '',
     'etape "SSH : pas de root, administrateurs du bastion seulement"',
     'install -d /etc/ssh/sshd_config.d',
-    ...gardeFou(admins, !p.mdpAutorise && admins.some(a => a.cle)),
+    ...gardeFou(admins, p.auth === 'cle'),
     'cat > /etc/ssh/sshd_config.d/10-derriere-bastion.conf <<EOF',
     'PermitRootLogin no',
     'AllowUsers $ALLOW',
@@ -344,6 +380,20 @@ function configSsh(p: ParamsBastion): string {
     r.push('    IdentityFile ~/.ssh/id_ed25519');
     r.push('    IdentitiesOnly yes');
   }
+  r.push('');
+  r.push('# Interfaces web derriere le bastion (GLPI, webmail, page de test) : un tunnel local, puis http://localhost:<port> dans le navigateur.');
+  r.push('#   ssh -N tunnels     (cette entree ouvre les tunnels ci-dessous et attend)');
+  r.push('Host tunnels');
+  r.push(`    HostName ${p.ip}`);
+  r.push(`    Port ${port}`);
+  r.push(`    User ${login}`);
+  r.push('    IdentityFile ~/.ssh/id_ed25519');
+  let portLocal = 18080;
+  for (const c of cibles) {
+    r.push(`    LocalForward ${portLocal} ${c.ip}:80        # http://localhost:${portLocal}  ->  ${c.nom}`);
+    portLocal += 1;
+  }
+  r.push('#   Ou tout le navigateur a travers le bastion (proxy SOCKS) :  ssh -N -D 1080 bastion   puis proxy SOCKS5 localhost:1080 dans Firefox.');
   r.push('# --- fin bastion TSSR ---');
   return r.join('\n');
 }
@@ -464,6 +514,9 @@ function scriptVerif(p: ParamsBastion): string {
   v.push('');
   v.push("# Depuis le poste : la porte directe est fermee (doit echouer : timeout ou refused)");
   if (cibles[0]) v.push(`ssh -o ConnectTimeout=5 ${login}@${cibles[0].ip} hostname`);
+  v.push('');
+  v.push('# Interfaces web (GLPI :8080, webmail, page de test) : le bastion ne les bloque pas, seul le port 22 des serveurs est reserve.');
+  v.push('# Si ton reseau n atteint pas les serveurs :  ssh -N tunnels   (entree du bloc 4) puis http://localhost:18080 ; ou  ssh -N -D 1080 bastion  + proxy SOCKS5 dans Firefox.');
   v.push('');
   v.push('# Sur le bastion : qui est passe');
   v.push('journal-bastion 50');
