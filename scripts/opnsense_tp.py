@@ -75,6 +75,7 @@ TPS = [
     ('tp-opnsense-installation', '1.1', 'Installation'),
     ('tp-opnsense-filtrage', '1.2', 'Filtrage des flux'),
     ('tp-opnsense-nat', '1.3', 'NAT'),
+    ('tp-opnsense-dmz', '1.4', 'DMZ · GLPI · bastion'),
 ]
 
 
@@ -1018,6 +1019,366 @@ TP13 = '\n'.join([
 ])
 
 
+SVG_INFRA_14 = (
+    '<svg viewBox="0 0 600 340" role="img" aria-label="La maquette du TP 1.4 : OPNsense entre le WAN, le LAN des postes, OPT1 le reseau serveur et la DMZ, avec le bastion Guacamole sur webdmz" style="max-width:600px;width:100%;height:auto;margin:8px 0 12px;font-family:system-ui,sans-serif">'
+    '<ellipse cx="300" cy="26" rx="52" ry="20" fill="#64748b"/>'
+    '<text x="300" y="31" text-anchor="middle" font-size="12.5" fill="#fff" font-weight="bold">Internet / hote admin</text>'
+    '<line x1="300" y1="46" x2="300" y2="84" stroke="#94a3b8" stroke-width="2.5"/>'
+    '<text x="310" y="66" font-size="9.5" fill="#64748b">WAN &middot; NAT admin 22111, web 80/8080/8081</text>'
+    '<rect x="236" y="84" width="128" height="70" rx="10" fill="#dc2626"/>'
+    '<text x="300" y="108" text-anchor="middle" font-size="13.5" fill="#fff" font-weight="bold">OPNsense</text>'
+    '<text x="300" y="124" text-anchor="middle" font-size="9.5" fill="#fecaca">4 pattes &middot; deny by default</text>'
+    '<text x="300" y="140" text-anchor="middle" font-size="9" fill="#fff">LAN .10.254 &middot; OPT1 .20.254 &middot; DMZ .30.254</text>'
+    '<line x1="236" y1="119" x2="120" y2="119" stroke="#16a34a" stroke-width="2.5"/>'
+    '<rect x="18" y="96" width="102" height="48" rx="8" fill="#059669"/>'
+    '<text x="69" y="115" text-anchor="middle" font-size="11.5" fill="#fff" font-weight="bold">LAN</text>'
+    '<text x="69" y="129" text-anchor="middle" font-size="9" fill="#d1fae5">192.168.10.0/24</text>'
+    '<text x="69" y="140" text-anchor="middle" font-size="8.5" fill="#d1fae5">postes clients</text>'
+    '<line x1="300" y1="154" x2="300" y2="210" stroke="#d97706" stroke-width="2.5"/>'
+    '<text x="310" y="184" font-size="9.5" fill="#d97706">DMZ &middot; sorties filtrees, LAN interdit</text>'
+    '<rect x="196" y="210" width="208" height="96" rx="10" fill="#d97706"/>'
+    '<text x="300" y="230" text-anchor="middle" font-size="12.5" fill="#fff" font-weight="bold">DMZ &mdash; webdmz</text>'
+    '<text x="300" y="245" text-anchor="middle" font-size="9" fill="#fef3c7">192.168.30.2 &middot; Debian 13</text>'
+    '<rect x="206" y="254" width="88" height="44" rx="6" fill="#b45309"/>'
+    '<text x="250" y="271" text-anchor="middle" font-size="9.5" fill="#fff" font-weight="bold">Apache + GLPI</text>'
+    '<text x="250" y="285" text-anchor="middle" font-size="8.5" fill="#fef3c7">:80 site &middot; :8080 GLPI</text>'
+    '<rect x="306" y="254" width="88" height="44" rx="6" fill="#7c2d12"/>'
+    '<text x="350" y="271" text-anchor="middle" font-size="9.5" fill="#fff" font-weight="bold">Guacamole</text>'
+    '<text x="350" y="285" text-anchor="middle" font-size="8.5" fill="#fed7aa">:8081 &middot; bastion HTML5</text>'
+    '<line x1="364" y1="119" x2="480" y2="119" stroke="#f59e0b" stroke-width="2.5"/>'
+    '<rect x="480" y="96" width="104" height="48" rx="8" fill="#0369a1"/>'
+    '<text x="532" y="115" text-anchor="middle" font-size="11.5" fill="#fff" font-weight="bold">OPT1</text>'
+    '<text x="532" y="129" text-anchor="middle" font-size="9" fill="#e0f2fe">192.168.20.0/24</text>'
+    '<text x="532" y="140" text-anchor="middle" font-size="8.5" fill="#e0f2fe">reseau serveur</text>'
+    '<rect x="468" y="176" width="128" height="44" rx="8" fill="#075985"/>'
+    '<text x="532" y="193" text-anchor="middle" font-size="10" fill="#fff" font-weight="bold">glpidb &middot; .20.3</text>'
+    '<text x="532" y="207" text-anchor="middle" font-size="8.5" fill="#e0f2fe">MariaDB :3306 (ufw)</text>'
+    '<rect x="468" y="230" width="128" height="40" rx="8" fill="#0c4a6e"/>'
+    '<text x="532" y="246" text-anchor="middle" font-size="10" fill="#fff" font-weight="bold">SRV-DNS-WEB &middot; .20.2</text>'
+    '<text x="532" y="260" text-anchor="middle" font-size="8.5" fill="#e0f2fe">RDP :3389</text>'
+    '<line x1="394" y1="276" x2="468" y2="250" stroke="#16a34a" stroke-width="1.6" stroke-dasharray="4 3"/>'
+    '<text x="432" y="256" text-anchor="middle" font-size="8" fill="#16a34a">3306</text>'
+    '<text x="300" y="326" text-anchor="middle" font-size="10" fill="#64748b">Le service expose en DMZ ne joint OPT1 que sur le seul port dont il a besoin &mdash; jamais le LAN</text>'
+    '</svg>')
+
+
+TP14 = '\n'.join([
+    hero('TP · corrigé · Réseau', 'TP OPNsense 1.4 — DMZ, 3-tiers (GLPI) et bastion (corrigé)',
+         'Ajouter une DMZ à l’infrastructure des TP 1.1 à 1.3, y isoler un serveur web, durcir son '
+         'accès, monter une application 3-tiers (GLPI) dont la base vit sur le réseau serveur, '
+         'éprouver la segmentation par une simulation d’exfiltration, puis centraliser les accès '
+         'd’administration derrière un bastion HTML5 (Apache Guacamole).'),
+    STYLE_TP,
+    fil_tp('tp-opnsense-dmz'),
+    le_tp('Étendre le réseau d’une zone démilitarisée, comprendre la segmentation et l’isolation par '
+          'commutateur virtuel dédié, appliquer le moindre privilège aux flux, sécuriser SSH par clé, '
+          'déployer une architecture 3-tiers, vérifier qu’une compromission du service exposé reste '
+          'contenue, et tracer les accès d’administration derrière un portail unique.',
+          '<a href="/pages/dmz">La DMZ — comprendre</a> et <a href="/pages/dmz-mise-en-place">la '
+          'mettre en place</a>, <a href="/pages/opnsense-segmentation">OPNsense — segmenter</a>, '
+          '<a href="/pages/procedure-glpi">GLPI (installation)</a>'),
+    note('gray', '📌 La suite des TP 1.1 à 1.3',
+         'Le point de départ est l’infrastructure déjà montée et testée : <strong>WAN</strong>, '
+         '<strong>LAN</strong> (192.168.10.0/24, les postes) et <strong>OPT1</strong> '
+         '(192.168.20.0/24, le réseau serveur, avec SRV-DNS-WEB exposé par NAT). Ce TP y ajoute une '
+         'quatrième zone, la <strong>DMZ</strong>, puis va volontairement au-delà du simple montage : '
+         'mise en conformité « production », application 3-tiers, simulation d’attaque, bastion. '
+         'Chaque étape est une <strong>consigne</strong> (l’action, puis ce qu’il faut constater) ; '
+         'l’encadré qui suit documente ce qui a été observé et pourquoi. Certains résultats précis '
+         '(un conflit avec un service déjà en place) dépendent des choix des TP précédents et '
+         'peuvent varier d’un poste à l’autre — la méthode de diagnostic, elle, reste la même.'),
+    '<h2>L’infrastructure, une fois le TP terminé</h2>',
+    SVG_INFRA_14,
+    tab(['Zone', 'Machine', 'Adresse', 'Rôle après ce TP'], [
+        ['<strong>DMZ</strong> (opt2 / hn3)', 'webdmz', '<code>192.168.30.2</code>',
+         'Apache : le site sur :80, GLPI sur :8080 ; conteneur Guacamole sur :8081'],
+        ['<strong>OPT1</strong>', 'glpidb', '<code>192.168.20.3</code>',
+         'MariaDB (base de GLPI), joignable du seul webdmz sur 3306'],
+        ['<strong>OPT1</strong>', 'SRV-DNS-WEB', '<code>192.168.20.2</code>',
+         'cible RDP du bastion (déjà là depuis le TP 1.3)'],
+        ['<strong>Pare-feu DMZ</strong>', 'OPNsense', '<code>192.168.30.254</code>',
+         'la patte du pare-feu sur la DMZ'],
+    ]),
+
+    '<h2>A · La zone DMZ et la VM webdmz</h2>',
+    '<h3>① Une quatrième interface, sur son propre commutateur</h3>',
+    '<p>Dans <span class="lx-nav">Hyper-V › Gestionnaire de commutateurs virtuels</span>, un '
+    '<strong>nouveau commutateur privé</strong> <code>vSwitch-DMZ</code>. Une carte de la VM '
+    'OPNsense y est reliée, puis assignée dans <span class="lx-nav">Interfaces › Assignations</span> '
+    'comme <code>opt2</code> (<code>hn3</code>), activée, IPv4 statique '
+    '<code>192.168.30.254/24</code>.</p>',
+    qr('Pourquoi un commutateur virtuel dédié plutôt que réutiliser celui du LAN ou d’OPT1 ?',
+       'Pour <strong>isoler dès la couche virtuelle</strong>. Un <code>vSwitch</code> distinct '
+       'empêche tout accès direct entre la DMZ et les autres zones au niveau du réseau local, '
+       '<em>avant même</em> le pare-feu : toute communication inter-zones est obligée de transiter '
+       'par OPNsense, où elle est filtrée. Mutualiser le commutateur, ce serait rendre les machines '
+       'visibles entre elles sans qu’aucune règle ne le décide.'),
+    '<h3>② La VM webdmz (Debian 13), et le piège du sudo</h3>',
+    cmd('su -\nusermod -aG sudo &lt;utilisateur&gt;\n# puis se déconnecter / reconnecter pour que le groupe soit pris en compte'),
+    qr('Un mot de passe root défini pendant l’installation donne-t-il directement sudo à l’utilisateur ?',
+       '<strong>Non.</strong> Sur Debian, quand un mot de passe root est fixé à l’installation, '
+       'l’utilisateur créé n’est <em>pas</em> ajouté au groupe <code>sudo</code>. Il faut le faire à '
+       'la main en root, puis rouvrir une session pour que l’appartenance au groupe s’applique.'),
+    '<h3>③ La sortie Internet de la DMZ (deny by default)</h3>',
+    qr('Une interface neuve bloque-t-elle la sortie Internet, alors qu’aucune règle de blocage n’a été écrite ?',
+       '<strong>Oui.</strong> OPNsense fonctionne en <strong>deny by default</strong> : une '
+       'interface fraîche démarre <em>sans aucune règle de pass</em>, donc tout est bloqué, y compris '
+       'la sortie. Ce n’est jamais l’absence d’une règle de blocage qui ferme un flux — c’est '
+       'l’absence d’une règle d’autorisation. Sans règles, <code>apt</code> et la résolution de noms '
+       'échouent (exactement l’incident de l’étape ⑮ pour glpidb). On crée donc la sortie DMZ '
+       '(TCP/UDP, source <em>DMZ net</em>, destination <em>any</em>, ports 80/443/53) — puis une '
+       'règle <strong>ICMP séparée</strong> : le ping n’est couvert par aucune règle TCP/UDP, c’est '
+       'un protocole distinct.'),
+    '<h3>④ Durcir SSH, installer le service web</h3>',
+    cmd('sudo nano /etc/ssh/sshd_config\n  Port 22111\n  PermitRootLogin no\nsudo systemctl restart ssh\n\nsudo apt install apache2 -y\ncurl -I localhost   # 200 OK attendu'),
+    qr('Pourquoi laisser encore l’authentification par mot de passe active à ce stade ?',
+       'Pour <strong>valider l’accès de bout en bout avant de couper le filet</strong>. Changer le '
+       'port (22 → 22111) et interdire root en direct réduisent tout de suite le bruit des scans, '
+       'sans attendre la mise en place des clés (étape ⑪). On ne durcit qu’une chose à la fois, en '
+       'gardant un accès qui marche.'),
+    '<h3>⑤ Le NAT d’administration, source restreinte</h3>',
+    qr('Restreindre la source à l’IP de l’hôte plutôt qu’à « WAN net » — quel intérêt ?',
+       'Réduire la surface d’exposition <strong>dès la conception</strong> : seule la machine '
+       'd’administration légitime peut initier un SSH depuis l’extérieur vers <code>webdmz:22111</code>. '
+       'Une redirection <em>Destination NAT</em> est créée en ce sens. '
+       '<em>Toujours cliquer sur « Appliquer » après une règle NAT ou de filtrage — la sauvegarde '
+       'seule ne suffit pas.</em>'),
+
+    '<h2>B · Finaliser l’accès SSH et le NAT</h2>',
+    '<h3>⑥ Tester le SSH admin — rejet actif ou blocage silencieux ?</h3>',
+    qr('La connexion échoue : est-ce un rejet actif ou un blocage silencieux du pare-feu, et comment le savoir sans modifier de règle à l’aveugle ?',
+       '<strong>Refus immédiat (RST) = rejet actif</strong>, pas un <em>timeout</em>. Le journal '
+       'live d’OPNsense (<span class="lx-nav">Pare-feu › Fichiers journaux › Vue en direct</span>, '
+       'filtré WAN) ne montrait <em>aucune</em> règle de blocage correspondant à la tentative : le '
+       'pare-feu est donc écarté. Cause réelle : <code>sshd</code> n’avait jamais été redémarré '
+       'après le changement de port. Un <code>systemctl restart ssh</code> et l’accès aboutit. '
+       'La leçon : un RST vient d’un hôte qui répond « fermé » (service pas là), un <em>timeout</em> '
+       'd’un paquet jeté en silence (pare-feu) — le journal tranche.'),
+    '<h3>⑦ Publier le site sur le port 80, ⑧ déposer la page</h3>',
+    cmd('sudo mv /home/&lt;user&gt;/dmz.html /var/www/html/\nsudo chown -R www-data:www-data /var/www/html/\nsudo mv /var/www/html/dmz.html /var/www/html/index.html\ncurl -I localhost   # 200 OK, le bon contenu a la racine'),
+    qr('Un fichier déposé sur le serveur est-il servi automatiquement comme page d’accueil ?',
+       '<strong>Non.</strong> Tant qu’il garde son nom d’origine, Apache continue de servir sa page '
+       'par défaut à la racine. Il faut le déplacer dans <code>/var/www/html</code>, corriger le '
+       'propriétaire (<code>www-data</code>), puis le renommer <code>index.html</code>. Le panneau '
+       'SFTP de MobaXterm (même session SSH) sert à le glisser dans le <code>/home</code> de '
+       'l’utilisateur.'),
+    '<h3>⑨ L’accès depuis l’extérieur tombe sur le mauvais site</h3>',
+    qr('Le site vu depuis le WAN est-il bien celui de webdmz ?',
+       '<strong>Non</strong> — c’est le site IIS du TP 1.3 qui répond. Cause : sa règle NAT '
+       'préexistante ciblait aussi <em>WAN address</em>, qui désigne <strong>toutes</strong> les '
+       'adresses de l’interface, pas seulement l’IP principale ; évaluée en premier (OPNsense '
+       's’arrête à la première correspondance), elle interceptait le trafic de webdmz. Correction : '
+       'une <strong>IP virtuelle</strong> (<span class="lx-nav">Interfaces › Virtual IPs</span>, '
+       'type <em>IP Alias</em>, ex. <code>10.22.10.121/24</code>), puis les deux règles NAT passées '
+       'de « WAN address » à <strong>Single host</strong> avec leur IP propre — plus d’ambiguïté, '
+       'quel que soit l’ordre.'),
+    '<h3>⑩ Vérifier l’isolation DMZ → LAN</h3>',
+    qr('Le ping DMZ → LAN échoue-t-il comme prévu ? La règle ICMP de l’étape ③ suffisait-elle ?',
+       '<strong>Non, pas au premier essai</strong> : le ping passait. La règle ICMP « destination '
+       '<em>any</em> » créée pour le diagnostic autorisait <em>aussi</em> le ping vers les réseaux '
+       'internes — « any » inclut le LAN, pas seulement Internet. On ajoute un <strong>blocage '
+       'explicite et journalisé</strong>, placé <em>en tête</em> de l’interface DMZ, avec un alias '
+       '<code>Zone_Internes</code> (LAN + OPT1). Nouveau test : le ping échoue enfin.'),
+
+    '<h2>C · Durcissement « production »</h2>',
+    '<h3>⑪ SSH par clé, puis mot de passe coupé</h3>',
+    cmd('# une fois la cle testee avec succes dans une NOUVELLE session :\nsudo nano /etc/ssh/sshd_config   # PasswordAuthentication no\nsudo systemctl restart ssh'),
+    note('yellow', '⚠️ La règle d’or des clés SSH',
+         'On valide la connexion par clé dans une <strong>nouvelle</strong> session — sans fermer '
+         'celle qui marche déjà — <em>avant</em> de couper le mot de passe. C’est ce qui évite de se '
+         'retrouver enfermé dehors, à devoir passer par la console de la VM. Génération de la paire '
+         '(EdDSA) avec MobaKeyGen, clé publique copiée dans <code>~/.ssh/authorized_keys</code>. '
+         'Voir <a href="/pages/tp-ssh-securisation">TP — Sécuriser SSH : port et clés</a>.'),
+    '<h3>⑫ Restreindre les flux sortants au strict nécessaire</h3>',
+    qr('Figer en dur l’IP de deb.debian.org serait-il durable ?',
+       '<strong>Non</strong> — <code>deb.debian.org</code> est derrière un CDN à IP multiples, une '
+       'IP figée devient vite fausse. On sépare en trois règles <em>scopées</em> : DNS (53) vers le '
+       'seul résolveur <code>192.168.30.254</code> ; HTTP/HTTPS (80/443) vers un alias '
+       '<code>Debian_Mirrors</code> (type <em>Host(s)</em> : <code>deb.debian.org</code>, '
+       '<code>security.debian.org</code>, <strong>rafraîchissement 1h</strong>) ; ICMP restreint au '
+       'résolveur. Piège : un alias sans fréquence de rafraîchissement se périme avec la rotation '
+       'd’IP du CDN.'),
+    '<h3>⑬ Un blocage explicite DMZ → réseaux internes</h3>',
+    qr('Le refus par défaut ne suffisait-il pas déjà, techniquement ?',
+       '<strong>Si, fonctionnellement.</strong> Mais une règle de blocage explicite apporte deux '
+       'choses que le refus implicite n’a pas : la <strong>journalisation</strong> (on voit les '
+       'tentatives de pivot) et une <strong>protection structurelle</strong> — placée en tête, elle '
+       'intercepte le trafic avant qu’une règle permissive ajoutée plus bas par erreur ne '
+       's’applique. Le refus implicite, lui, est muet et fragile à l’ordre des règles.'),
+
+    '<h2>D · L’architecture 3-tiers (GLPI) <span style="font-weight:400;color:var(--text-muted);font-size:14px">— partie bonus</span></h2>',
+    '<p>Le service exposé en DMZ n’a accès qu’à sa base de données, sur une VM dédiée d’OPT1 — '
+    '<strong>jamais plus, jamais moins</strong>. C’est l’intérêt concret d’une DMZ.</p>',
+    '<h3>⑭ La VM glpidb, sur le réseau serveur</h3>',
+    qr('Pourquoi héberger la base sur OPT1 plutôt que sur le LAN des postes ?',
+       'Par <strong>cohérence de rôle</strong> : OPT1 est déjà le « réseau serveur » des TP '
+       'précédents (SRV-DNS-WEB y vit). Une base de données n’a rien à faire sur le réseau des '
+       'utilisateurs. VM Debian 13 <code>glpidb</code>, IP <code>192.168.20.3/24</code>, passerelle '
+       '<code>192.168.20.254</code>.'),
+    '<h3>⑮ Installer glpidb — DNS et miroir, encore</h3>',
+    qr('OPT1 n’avait jamais eu besoin de sortie Internet — l’installation passe-t-elle sans accroc ?',
+       '<strong>Non, deux incidents.</strong> ① Miroir Debian injoignable : seule une règle ICMP '
+       'héritée existait, aucune sortie Internet (même cause qu’au ③). On ajoute deux règles TCP '
+       'scopées à la VM, destination <code>Debian_Mirrors</code>, ports 80/443. ② DNS non résolu '
+       'malgré ça : diagnostic dans le shell BusyBox de l’installeur (<em>Alt+F2</em>) — ping '
+       'passerelle et voisin OK, mais <code>wget</code> échoue précisément sur la résolution. La '
+       'règle DNS (53 vers le résolveur) créée pour la DMZ n’avait pas d’équivalent sur OPT1. On '
+       'l’ajoute.'),
+    '<h3>⑯ MariaDB : base et compte scopés à webdmz</h3>',
+    cmd('sudo apt install mariadb-server -y\nsudo mariadb-secure-installation   # mysql_secure_installation n\'existe plus (MariaDB 11.x)\n\nsudo nano /etc/mysql/mariadb.conf.d/50-server.cnf\n  bind-address = 192.168.20.3   # au lieu de 127.0.0.1\nsudo systemctl restart mariadb'),
+    cmd('sudo mariadb\nCREATE DATABASE glpidb;\nCREATE USER \'glpiuser\'@\'192.168.30.2\' IDENTIFIED BY \'&lt;mot de passe&gt;\';\nGRANT ALL PRIVILEGES ON glpidb.* TO \'glpiuser\'@\'192.168.30.2\';\nFLUSH PRIVILEGES;'),
+    qr('Toutes les règles réseau et le grant en place, une connexion distante suffit-elle si MariaDB n’écoute que sur 127.0.0.1 ?',
+       '<strong>Non.</strong> Par défaut MariaDB n’écoute que l’interface locale : la connexion de '
+       'webdmz est refusée <em>avant</em> même d’atteindre la couche applicative. Il faut '
+       '<strong>ouvrir explicitement</strong> l’écoute sur l’IP réseau (<code>bind-address</code>). '
+       'Le compte de service est scopé <strong>au niveau du moteur</strong> — pas seulement au '
+       'pare-feu — à la seule IP de webdmz : <code>\'glpiuser\'@\'192.168.30.2\'</code>. Deuxième '
+       'couche indépendante : <code>ufw</code> sur glpidb, scopé lui aussi à webdmz.'),
+    '<h3>⑰ Restreindre DMZ → OPT1 au strict nécessaire de GLPI</h3>',
+    qr('Quelle est la règle minimale entre webdmz et glpidb ?',
+       'Une <strong>seule</strong> règle : source <em>Single host</em> <code>192.168.30.2</code> '
+       '(webdmz seul, pas tout le sous-réseau DMZ), destination <em>Single host</em> '
+       '<code>192.168.20.3</code>, port TCP <strong>3306</strong>, positionnée <strong>au-dessus</strong> '
+       'du blocage explicite DMZ → réseaux internes. L’ordre est déterminant : une règle plus '
+       'spécifique placée <em>après</em> un blocage plus général n’a aucun effet. Contre-preuve : la '
+       'même requête lancée depuis glpidb elle-même est refusée par MariaDB '
+       '(« Host … is not allowed ») — le scope du compte agit même en local, indépendamment du '
+       'pare-feu.'),
+    '<h3>⑱–⑳ PHP, le code GLPI, la cohabitation des sites</h3>',
+    cmd('sudo apt install php libapache2-mod-php php-mysqli php-curl php-gd php-intl php-mbstring php-bcmath php-xml php-zip -y\nsudo mkdir -p /var/www/glpi\nsudo tar -xzf /home/&lt;user&gt;/glpi-11.0.8.tgz -C /var/www/glpi --strip-components=1\nsudo chown -R www-data:www-data /var/www/glpi'),
+    qr('Le téléchargement de l’archive GLPI depuis github.com échoue malgré une règle sortante dédiée — pourquoi ?',
+       '<code>github.com</code> est servi par du <strong>DNS round-robin</strong> sur toute une '
+       'plage d’IP (« nous ne recommandons pas d’autoriser par adresse IP », dit GitHub). L’alias '
+       'n’avait capté qu’une IP, non représentative. Plutôt que d’élargir la DMZ pour un cas isolé, '
+       'l’archive est téléchargée <strong>depuis l’hôte</strong> (accès non filtré) et transférée '
+       'par SFTP, réutilisant le canal SSH déjà en place — même procédé qu’à l’étape ⑱.'),
+    qr('Pointer le DocumentRoot vers /var/www/glpi/public casse-t-il le site existant ?',
+       '<strong>Oui</strong> — les deux ne peuvent pas partager le même port. On sépare '
+       '<strong>par port Apache</strong> : le site d’origine reste sur :80, GLPI sur un vhost dédié '
+       ':8080, avec une règle NAT en miroir de celle du port 80. Même logique que la séparation par '
+       'IP de l’étape ⑨, cette fois au niveau applicatif.'),
+    cmd('# /etc/apache2/ports.conf\nListen 8080\n\n# /etc/apache2/sites-available/glpi.conf\n&lt;VirtualHost *:8080&gt;\n    ServerName glpi.tssr.lan\n    DocumentRoot /var/www/glpi/public\n    &lt;Directory /var/www/glpi/public&gt;\n        Require all granted\n        RewriteEngine On\n        RewriteCond %{REQUEST_FILENAME} !-f\n        RewriteRule ^(.*)$ index.php [QSA,L]\n    &lt;/Directory&gt;\n&lt;/VirtualHost&gt;\n\nsudo a2ensite glpi.conf &amp;&amp; sudo systemctl restart apache2'),
+    qr('Le compte glpiuser (MariaDB) et le compte glpi (GLPI) — même chose ?',
+       '<strong>Non, deux couches indépendantes.</strong> <code>glpiuser</code> autorise la '
+       'connexion technique <em>application ↔ base</em> ; les comptes <code>glpi</code> / '
+       '<code>tech</code> / <code>normal</code> / <code>post-only</code> gèrent les accès '
+       '<em>humains</em> à l’interface, stockés dans une table <em>à l’intérieur</em> de cette même '
+       'base. Sécurisation : mot de passe du super-admin <code>glpi</code> changé, comptes de démo '
+       'désactivés, et <code>install/install.php</code> supprimé.'),
+
+    '<h2>E · Simulation d’exfiltration <span style="font-weight:400;color:var(--text-muted);font-size:14px">— la segmentation à l’épreuve</span></h2>',
+    '<p>Plutôt qu’une faille applicative (peu probable sur un GLPI à jour), l’hypothèse réaliste : '
+    '<strong>webdmz est déjà compromis</strong>. Que peut réellement en faire un attaquant ?</p>',
+    tab(['Test', 'Résultat', 'Couche responsable'], [
+        ['Extraction via webdmz (canal autorisé)', '<strong>Réussie</strong>', '— (comportement voulu)'],
+        ['Exfiltration vers Internet (webhook.site)', 'Bloquée', 'Règles sortantes DMZ (⑫)'],
+        ['Mouvement latéral (autres ports de glpidb : 22, 445)', 'Bloqué', 'Règle DMZ → OPT1 limitée à 3306 (⑰)'],
+        ['Accès depuis le LAN vers glpidb:3306', 'Bloqué', 'Pare-feu OPNsense, interface LAN'],
+        ['Accès depuis glpidb elle-même', 'Refusé par MariaDB', 'Grant scopé à 192.168.30.2 (⑯)'],
+    ]),
+    qr('L’exfiltration vers Internet est bloquée : rejet immédiat ou silence, et quelle différence pour l’attaquant ?',
+       '<strong>Blocage silencieux (drop)</strong>, pas un rejet actif. Aucune réponse ne revient ; '
+       'le client réessaie seul jusqu’à épuiser son délai — <em>269 secondes observées avec '
+       'curl</em>. Le journal du pare-feu, lui, montre l’entrée « block » immédiatement. Un outil '
+       'd’exfiltration réel n’a donc pas de signal clair : juste un silence qui traîne, qui le '
+       'ralentit et peut déclencher une détection d’anomalie.'),
+    qr('L’accès depuis le LAN à glpidb:3306 échoue : quelle couche a joué, OPNsense ou l’ufw de glpidb ?',
+       '<strong>OPNsense</strong> (couche réseau). Le journal LAN montre le blocage « Default deny / '
+       'state violation » au même horodatage que le test <em>Test-NetConnection</em> : le paquet '
+       'n’est jamais arrivé jusqu’à <code>ufw</code>. Les deux couches restent complémentaires — '
+       '<code>ufw</code> servirait de filet si une règle OPNsense future devenait accidentellement '
+       'plus permissive entre LAN et OPT1.'),
+    note('green', '✅ Ce que prouve la simulation',
+         'La segmentation <strong>contient</strong> la compromission : depuis webdmz, un attaquant '
+         'n’atteint que le port 3306 de la seule glpidb (le canal qu’on a délibérément ouvert), ne '
+         'sort pas vers Internet, ne pivote pas ailleurs. Les défenses se cumulent en profondeur : '
+         'règles sortantes, règle inter-zones minimale, grant MariaDB scopé, ufw local. À corriger '
+         'malgré tout : le mot de passe du compte <code>glpiuser</code> resté à sa valeur de test '
+         '(<code>ALTER USER</code> + <code>config_db.php</code>), le passage en HTTPS, '
+         '<code>ServerTokens Prod</code>, <code>fail2ban</code> et <code>unattended-upgrades</code>.'),
+
+    '<h2>F · Le bastion HTML5 (Apache Guacamole) <span style="font-weight:400;color:var(--text-muted);font-size:14px">— partie bonus</span></h2>',
+    '<p>Dernier étage : les accès d’administration eux-mêmes. Au lieu d’un accès direct par machine '
+    '(un port SSH ou RDP à router pour chacune), un <strong>bastion</strong> Guacamole centralise '
+    'tout derrière un seul portail HTTP(S), sans client lourd et sans exposer les ports sensibles '
+    'des cibles. Comparer avec le '
+    '<a href="/pages/configurateur-bastion">configurateur bastion SSH</a> (ProxyJump/OpenSSH), '
+    'l’autre façon de faire.</p>',
+    '<h3>㉕ Guacamole en conteneur sur webdmz</h3>',
+    cmd('sudo apt update &amp;&amp; sudo apt install -y curl ca-certificates\ncurl -fsSL https://get.docker.com | sudo sh\nsudo usermod -aG docker &lt;user&gt;   # deconnexion / reconnexion\n\nmkdir -p ~/guacamole &amp;&amp; cd ~/guacamole\n# docker-compose.yml : image oznu/guacamole (tout-en-un), port 8081:8080, volume ./config\ndocker compose up -d'),
+    qr('Pourquoi installer le bastion sur webdmz plutôt que sur une nouvelle VM, comme glpidb ?',
+       'Webdmz est <strong>déjà</strong> la seule machine de la DMZ exposée et administrée : y '
+       'ajouter un service ne crée ni nouvelle IP ni nouvelles règles de sortie. Docker isole '
+       'Guacamole du reste du système sans dédier une VM entière à ce seul rôle. Contrepartie '
+       'assumée : Guacamole partage désormais le <strong>même point de défaillance</strong> que le '
+       'site et GLPI. <em>À noter : l’installation de Docker a nécessité d’élargir temporairement la '
+       'sortie DMZ (domaines Docker à IP instables) — à re-restreindre ensuite, ou à contourner par '
+       '<code>docker save</code> sur l’hôte puis <code>docker load</code> via SFTP.</em>'),
+    '<h3>㉖ Exposer le portail par NAT, ㉗ configurer les cibles</h3>',
+    cmd('Pare-feu › NAT › Destination NAT › + :\n  interface WAN, TCP, port 8081 -&gt; 192.168.30.2:8081'),
+    qr('Guacamole tourne sur webdmz : pour atteindre glpidb, doit-il repasser par le NAT du port 22111 ?',
+       '<strong>Non — deux chemins distincts.</strong> Le port 22111 est la redirection <em>externe</em> '
+       '(WAN → SSH de webdmz) qu’emprunte l’<em>humain</em> via MobaXterm. Guacamole, lui, s’exécute '
+       '<em>sur</em> webdmz : pour joindre glpidb il communique <strong>en direct</strong>, à '
+       'l’intérieur du réseau, sur le port SSH standard (22) de la cible, sans aucune règle NAT '
+       'externe. Deux connexions sont créées : SSH vers <code>192.168.20.3:22</code> (glpidb), RDP '
+       'vers <code>192.168.20.2:3389</code> (SRV-DNS-WEB, certificat auto-signé à ignorer).'),
+    '<h3>㉘ Autoriser les flux Guacamole → OPT1</h3>',
+    qr('La DMZ a déjà ses règles de sortie — suffisent-elles pour ces deux nouveaux flux ?',
+       '<strong>Non.</strong> Les sorties DMZ (⑫) sont scopées à des destinations précises '
+       '(résolveur, miroirs) et ne couvrent ni glpidb ni SRV-DNS-WEB ; le blocage explicite DMZ → '
+       'Zone_Internes (⑬) s’applique donc par défaut. Chaque protocole a besoin de <strong>sa</strong> '
+       'règle d’autorisation, au-dessus du blocage : webdmz → glpidb TCP <strong>22</strong>, et '
+       'webdmz → SRV-DNS-WEB TCP <strong>3389</strong>.'),
+    '<h3>㉙–㉞ Le dépannage SSH, en couches</h3>',
+    '<p>La connexion RDP passe du premier coup ; la SSH reste bloquée « en attente de réponse ». '
+    'Deux règles créées symétriquement, résultats asymétriques : un cas d’école de diagnostic '
+    'méthodique, couche après couche.</p>',
+    tab(['Couche vérifiée', 'Constat', 'Verdict'], [
+        ['Bastion (config Guacamole)', 'Champ « clé d’hôte » vide → aucune vérification stricte',
+         'Écarté'],
+        ['Service sur la cible', '<code>systemctl status ssh</code> : sshd actif et à l’écoute',
+         'Écarté'],
+        ['Pare-feu OPNsense', 'Vue en direct : <em>pass</em> explicite pour 30.2 → 20.3:22',
+         'Écarté — le paquet passe le périmètre'],
+        ['Pare-feu local ufw (glpidb)', 'deny-by-default : rien n’ouvrait le 22 (seul 3306 l’était)',
+         '<strong>Cause 1</strong>'],
+        ['Négociation SSH (KEX)', '<code>journalctl -u ssh</code> : <em>no matching key exchange method</em>',
+         '<strong>Cause 2</strong>'],
+    ]),
+    qr('OPNsense laisse passer, mais glpidb ne répond pas — pourquoi ufw bloque-t-il le 22 sans règle qui le vise ?',
+       'Comme OPNsense, <code>ufw</code> est en <strong>deny-by-default</strong> : sans autorisation '
+       'explicite du port 22, l’entrée est refusée quelle que soit l’origine. Seul le 3306 avait été '
+       'ouvert (⑯), scopé à webdmz — rien n’avait été prévu pour SSH. On l’ouvre '
+       '(idéalement <code>ufw allow from 192.168.30.2 to any port 22 proto tcp</code>, même logique '
+       'que le grant, plutôt qu’un <code>allow 22/tcp</code> générique).'),
+    qr('Réseau ouvert, Guacamole affiche pourtant « le serveur distant a fermé la connexion » — pourquoi ?',
+       'Ce n’est plus un blocage réseau mais un <strong>échec de négociation SSH</strong>. '
+       '<code>journalctl -u ssh</code> (<code>auth.log</code> n’existe plus sur Debian 12/13) '
+       'donne la cause exacte : <em>no matching key exchange method found</em>. Debian 13 (trixie) '
+       'embarque un OpenSSH qui a <strong>retiré par défaut</strong> d’anciens algorithmes d’échange '
+       'de clés (dont <code>diffie-hellman-group14-sha1</code>) que la bibliothèque SSH de '
+       '<code>guacd</code> propose encore. On les réautorise côté cible :'),
+    cmd('# /etc/ssh/sshd_config (fin du fichier)\nKexAlgorithms +diffie-hellman-group14-sha1,diffie-hellman-group-exchange-sha256\nHostKeyAlgorithms +ssh-rsa\nsudo systemctl restart ssh'),
+    note('gray', '🔍 La démarche, plus que le correctif',
+         'RST vs timeout (⑥), « pass » au périmètre mais silence sur la cible (ufw), puis une erreur '
+         '<em>différente</em> qui signe le passage d’un problème réseau à un problème applicatif '
+         '(KEX) : à chaque étage on <strong>écarte</strong> une couche par une observation, sans '
+         'toucher aux règles à l’aveugle. C’est la même méthode qu’au TP 1.3, appliquée à une pile '
+         'plus haute.'),
+
+    note('green', '✅ Ce qu’il faut retenir de ce TP',
+         'Une DMZ n’est pas qu’une troisième patte : c’est un <strong>contrat d’isolation</strong> '
+         'qu’on éprouve. Le service exposé ne joint l’intérieur que par le port strict dont il a '
+         'besoin (moindre privilège), les défenses se cumulent (pare-feu périmétrique + pare-feu '
+         'local + scope applicatif), et chaque flux inter-zones se décide par une règle <em>et</em> '
+         'se journalise. Un bastion réduit encore la surface : un seul point d’entrée d’administration, '
+         'tracé, au lieu d’un port sensible par machine. Reste toujours une liste de durcissement '
+         '« production » — HTTPS partout, mots de passe par défaut changés, MFA sur le bastion, '
+         'sorties re-restreintes — que le mode « labo » laisse ouverte à dessein.'),
+])
+
+
 # ══════════════════════════════════════════════════ les index ══
 
 TP_SECTION_ID = 'sec-opnsense'
@@ -1033,6 +1394,10 @@ TP_CARTES = [
     ('tp-opnsense-nat', '🔁', 'OPNsense 1.3 — NAT',
      'Publier IIS par une redirection de port, la règle de filtrage associée, le piège des réseaux '
      'privés sur le WAN, la traduction dans les journaux — et le bonus HTTPS, FTP, RDP, SSH.'),
+    ('tp-opnsense-dmz', '🛡️', 'OPNsense 1.4 — DMZ, GLPI, bastion',
+     'Ajouter une DMZ, y isoler un serveur web, monter GLPI en 3-tiers (base sur OPT1), éprouver la '
+     'segmentation par une simulation d’exfiltration, puis centraliser l’administration derrière un '
+     'bastion HTML5 (Guacamole).'),
 ]
 
 
@@ -1100,6 +1465,11 @@ PAGES = [
     ('tp-opnsense-nat', 'TP OPNsense 1.3 — NAT (corrigé)',
      'Publier le serveur web interne vers le WAN par une redirection de port, le lien entre NAT et '
      'règles de filtrage, la traduction dans les journaux — et le bonus HTTPS, FTP, RDP, SSH.', TP13),
+    ('tp-opnsense-dmz', 'TP OPNsense 1.4 — DMZ, 3-tiers (GLPI) et bastion (corrigé)',
+     'Ajouter une DMZ à l’infrastructure des TP 1.1–1.3, y isoler un serveur web et le durcir, monter '
+     'une application 3-tiers (GLPI) dont la base vit sur le réseau serveur, éprouver la segmentation '
+     'par une simulation d’exfiltration, puis déployer un bastion d’administration HTML5 (Guacamole).',
+     TP14),
 ]
 
 

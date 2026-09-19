@@ -96,14 +96,32 @@ COMPRENDRE = '\n'.join([
         ['Choisir pour', 'Site-à-site entre pare-feux, interop constructeurs, cloud', 'Nomade avec MFA et comptes AD, réseaux qui filtrent tout sauf 443', 'Nomade et site-à-site simples, performance, administrateurs'],
     ]),
     acc(
-        ('IPsec en un peu plus de détail',
-         '<p><strong>IKE</strong> (Internet Key Exchange, aujourd’hui v2) est la négociation : les deux pairs s’authentifient et '
-         'fabriquent des clés de session (phase 1, « IKE SA »), puis définissent ce qui passe dans le tunnel et avec quels '
-         'algorithmes (phase 2, « Child SA » ou « IPsec SA »). <strong>ESP</strong> (Encapsulating Security Payload) transporte '
-         'ensuite les paquets chiffrés — protocole IP n° 50, ou encapsulé dans UDP 4500 quand il y a du NAT (<strong>NAT-T</strong>). '
-         'Deux modes : <em>tunnel</em> (tout le paquet IP est encapsulé — le site-à-site) et <em>transport</em> (seule la charge '
-         'est chiffrée — entre deux hôtes). Ce qui fait échouer 90 % des IPsec : une <strong>proposition</strong> qui ne correspond pas '
-         'des deux côtés (AES-256-GCM / SHA-256 / groupe DH 14…) ou des <strong>réseaux locaux/distants</strong> mal déclarés en phase 2.</p>'),
+        ('IPsec en détail : AH/ESP, PSK/RSA, les deux phases',
+         '<p><strong>Où il agit.</strong> IPsec chiffre à la <strong>couche 3</strong> (les paquets IP eux-mêmes), donc protège '
+         '<em>tout</em> le trafic — là où SSL/TLS s’appuie sur TCP pour sécuriser une application à la fois. Il ne fonctionne '
+         'qu’en <strong>unicast</strong> : pour transporter du multicast (un « Hello » OSPF entre deux sites, par exemple) on le '
+         'complète d’un tunnel <strong>GRE</strong> (ou L2TP) que l’on chiffre ensuite avec IPsec.</p>'
+         '<p><strong>AH ou ESP ?</strong> Deux protocoles d’encapsulation aux garanties différentes. '
+         '<strong>AH</strong> (Authentication Header) authentifie et garantit l’intégrité — mais <em>ne chiffre pas</em> : pas de '
+         'confidentialité. <strong>ESP</strong> (Encapsulating Security Payload) authentifie, garantit l’intégrité <em>et</em> '
+         'chiffre. En pratique on utilise <strong>ESP</strong> (protocole IP n° 50, ou encapsulé dans UDP 4500 en présence de NAT — '
+         '<strong>NAT-T</strong>). Deux modes : <em>tunnel</em> (tout le paquet IP est encapsulé — le site-à-site) et '
+         '<em>transport</em> (seule la charge est chiffrée — entre deux hôtes).</p>'
+         '<p><strong>Authentifier les pairs : PSK ou RSA.</strong> Le <strong>PSK</strong> (clé pré-partagée) est un secret '
+         'configuré des deux côtés — simple, mais sensible au brute force et au dictionnaire ; acceptable entre deux pare-feux, '
+         'à proscrire pour des nomades. Les <strong>certificats (RSA)</strong> reposent sur une paire de clés et une '
+         '<a href="/pages/la-cryptographie">signature numérique</a> : chaque pair hache ses données d’authentification, chiffre le '
+         'condensat avec sa clé <em>privée</em> (la signature) et l’envoie avec son certificat ; l’autre vérifie avec la clé '
+         '<em>publique</em> et compare les condensats — plus robuste et plus <em>scalable</em>, au prix d’une <a href="/pages/pki-adcs">PKI</a>.</p>'
+         '<p><strong>Les deux phases d’IKE.</strong> <strong>IKE</strong> (Internet Key Exchange, aujourd’hui v2 ; c’est '
+         '<strong>ISAKMP</strong> qui gère le cadre des négociations et des SA) monte le tunnel en deux temps. '
+         '<em>Phase 1</em> : les pairs s’authentifient (PSK ou RSA) et établissent, via <strong>Diffie-Hellman</strong>, un secret '
+         'partagé d’où sont dérivées les clés — cela crée l’<strong>IKE SA</strong>. <em>Phase 2</em> : ils négocient les '
+         'algorithmes du trafic et échangent des <strong>clés de session temporaires</strong> renouvelées régulièrement — cela '
+         'crée les <strong>Child SA</strong> (ou IPsec SA) qui chiffrent enfin les données. Ce qui fait échouer 90 % des IPsec : '
+         'une <strong>proposition</strong> qui ne correspond pas des deux côtés (AES-256-GCM / SHA-256 / DH groupe 14…) ou des '
+         '<strong>réseaux locaux/distants</strong> mal déclarés en phase 2. Le pas-à-pas et le journal décodé : '
+         '<a href="/pages/vpn-site-a-site">le VPN site-à-site</a>.</p>'),
         ('WireGuard en un peu plus de détail',
          '<p>Chaque extrémité a une <strong>paire de clés</strong> (comme SSH). Un pair est défini par sa clé publique, son point '
          'd’entrée (adresse:port) et ses <strong>AllowedIPs</strong> : les adresses qui, en sortie, sont envoyées vers ce pair '
@@ -118,6 +136,23 @@ COMPRENDRE = '\n'.join([
          'les réseaux d’hôtel qui bloquent tout le reste. Interface <code>tun</code> (niveau 3, le cas normal) ou <code>tap</code> '
          '(niveau 2, pour faire passer des broadcasts — rare et lourd). Sa force : l’authentification riche (RADIUS, LDAP/AD, TOTP, '
          'certificats révocables par CRL). Sa faiblesse : la vitesse, et un client à déployer.</p>'),
+        ('Les autres familles qu’on croise encore',
+         '<p>Le trio IPsec / OpenVPN / WireGuard couvre l’essentiel aujourd’hui, mais quelques noms plus anciens '
+         'reviennent, surtout en migration :</p>'
+         '<ul class="proc-steps">'
+         '<li><strong>PPTP</strong> — le plus ancien, sans matériel dédié, mais au chiffrement <strong>cassé</strong> : '
+         'à considérer comme non sécurisé, on ne le déploie plus.</li>'
+         '<li><strong>L2TP/IPsec</strong> — L2TP monte le tunnel mais ne chiffre pas ; on le couple donc '
+         '<em>toujours</em> à IPsec pour la confidentialité et l’intégrité. Encore présent nativement sur d’anciens '
+         'clients, supplanté par IKEv2.</li>'
+         '<li><strong>MPLS</strong> — non pas un VPN chiffré mais un service de l’<strong>opérateur</strong> : il '
+         'relie plusieurs sites d’une même entreprise sur son réseau, souple et performant, mais dépendant du '
+         'fournisseur, coûteux et peu modifiable. La confidentialité repose sur l’isolation opérateur, pas sur du '
+         'chiffrement — on ajoute souvent IPsec par-dessus si nécessaire.</li>'
+         '<li><strong>SSL/TLS « portal »</strong> — un accès par le <strong>navigateur</strong> à quelques '
+         'applications publiées, sans client lourd ni accès à tout le réseau — l’ancêtre de l’idée '
+         '<a href="/pages/zero-trust-iam">ZTNA</a> (§7).</li>'
+         '</ul>'),
     ),
 
     '<h2>4) Split tunnel ou full tunnel</h2>',
