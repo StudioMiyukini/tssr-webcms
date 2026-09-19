@@ -21,3 +21,5 @@ __pycache__/
 *.avant.html
 .smoke-webdb/
 .smoke-bastion/
+.smoke-bind9/
+.smoke-users/
