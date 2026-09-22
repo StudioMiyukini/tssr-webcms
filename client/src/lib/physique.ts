@@ -32,6 +32,12 @@ export interface Materiel {
   modele: string;
   /** Nombre de ports. Un poste en a un, un switch d'accès vingt-quatre. */
   ports: number;
+  /**
+   * Un routeur marqué pare-feu : il route comme les autres, mais reçoit en plus
+   * une inspection à états (CBAC) et peut porter autant d'interfaces que voulu
+   * (nommées GigabitEthernet0/0, 0/1, …). N'a de sens que sur un `type` routeur.
+   */
+  pareFeu?: boolean;
 }
 
 export type Media = 'droit' | 'croise' | 'serie' | 'fibre' | 'console';

@@ -81,7 +81,7 @@ export function vlanOf(s: { vlan?: string }): number | null {
   const n = Number(String(s.vlan ?? '').trim());
   return Number.isInteger(n) && n >= 1 && n <= 4094 ? n : null;
 }
-export type RouterDef = { id: string; name: string; model: RouterModel; mod?: boolean };
+export type RouterDef = { id: string; name: string; model: RouterModel; mod?: boolean; pareFeu?: boolean; ports?: number };
 
 /**
  * Ce qu'une couche haute sait d'un equipement, et que la couche 1 ignore.
@@ -239,6 +239,7 @@ export function routeursDe(ctx: Ctx): RouterDef[] {
     id: m.id, name: m.nom,
     model: (MODELES_ROUTEUR as string[]).includes(m.modele) ? (m.modele as RouterModel) : '2911',
     mod: ctx.optRouteurs[m.id]?.mod,
+    pareFeu: m.pareFeu, ports: m.ports,
   }));
 }
 
@@ -418,6 +419,12 @@ export function migrateCtx(raw: unknown): Ctx {
 const ethBuiltin = (m: RouterModel): string[] => (m === '2811' ? ['FastEthernet0/0', 'FastEthernet0/1'] : ['GigabitEthernet0/0', 'GigabitEthernet0/1', 'GigabitEthernet0/2']);
 const ethModule = (m: RouterModel): string[] => (m === '2811' ? ['FastEthernet1/0', 'FastEthernet1/1'] : ['GigabitEthernet0/3/0', 'GigabitEthernet0/3/1']);
 const ethSlots = (m: RouterModel, mod?: boolean): string[] => (mod ? [...ethBuiltin(m), ...ethModule(m)] : ethBuiltin(m));
+// Un routeur pare-feu porte autant d'interfaces GigabitEthernet que déclaré :
+// GigabitEthernet0/0, 0/1, 0/2, … — pas de limite de modèle.
+const slotsRouteur = (r: RouterDef): string[] =>
+  r.pareFeu
+    ? Array.from({ length: Math.max(1, r.ports ?? 8) }, (_, i) => `GigabitEthernet0/${i}`)
+    : ethSlots(r.model, r.mod);
 const ethLabel = (m: RouterModel) => (m === '2811' ? 'FastEthernet' : 'GigabitEthernet');
 const SER_SLOTS = ['Serial0/0/0', 'Serial0/0/1', 'Serial0/1/0', 'Serial0/1/1'];
 // Abréviation courte pour le schéma : GigabitEthernet0/1 → Gig0/1, FastEthernet0/0 → Fa0/0, Serial0/0/0 → Se0/0/0.
@@ -427,6 +434,7 @@ const ifAbbr = (s: string) => s.replace('GigabitEthernet', 'Gig').replace('FastE
 function nomPortDe(ctx: Ctx, m: Materiel, p: number): string {
   if (m.type === 'switch' || m.type === 'multicouche') return p > PORTS_ACCES ? `Gig0/${p - PORTS_ACCES}` : `Fa0/${p}`;
   if (m.type === 'routeur') {
+    if (m.pareFeu) return ifAbbr(`GigabitEthernet0/${p - 1}`);
     const model = (m.modele === '2811' ? '2811' : '2911') as RouterModel;
     const noms = [...ethSlots(model, ctx.optRouteurs[m.id]?.mod), ...SER_SLOTS];
     return ifAbbr(noms[p - 1] ?? `Port ${p}`);
@@ -528,9 +536,10 @@ export function computePlan(ctx: Ctx): Plan {
   const usedIf = new Map<string, Set<string>>();
   routeursDe(ctx).forEach(r => usedIf.set(r.id, new Set<string>()));
   const nextEth = (r: RouterDef): string | null => {
-    const slots = ethSlots(r.model, r.mod); const u = usedIf.get(r.id)!;
+    const slots = slotsRouteur(r); const u = usedIf.get(r.id)!;
     const name = slots.find(x => !u.has(x));
     if (!name) {
+      if (r.pareFeu) { warnings.push(`${r.name} (pare-feu) : ${slots.length} interfaces déclarées, toutes prises — augmente le nombre d'interfaces dans sa configuration.`); return null; }
       const hint = r.mod ? '' : ` — active le module (slot 1) pour ajouter ${ifAbbr(ethModule(r.model)[0])}`;
       warnings.push(`${r.name} (${r.model}) : plus d'interface ${ethLabel(r.model)} libre (${slots.length} max)${hint}.`); return null;
     }
@@ -552,7 +561,7 @@ export function computePlan(ctx: Ctx): Plan {
   {
     const typeDe = (id: string) => ctx.materiels.find(mm => mm.id === id)?.type;
     const portEth = (r: RouterDef, port: number): string | null => {
-      const n = ethSlots(r.model, r.mod); return port >= 1 && port <= n.length ? n[port - 1] : null;
+      const n = slotsRouteur(r); return port >= 1 && port <= n.length ? n[port - 1] : null;
     };
     const cableVers = (r: RouterDef, ok: (id: string) => boolean): string | null => {
       for (const v of voisinsDe(ctx.cables, r.id).sort((a, b) => a.monPort - b.monPort)) {
@@ -958,6 +967,18 @@ export function buildRouterConfigs(ctx: Ctx, plan: Plan): { byRouter: RouterCfg[
       // Une sous-interface suit l'etat de sa porteuse : pas de `no shutdown`.
       if (!i.vlan) lines.push(' no shutdown');
       lines.push(' exit');
+    }
+
+    // Ports câblés mis en DHCP mais sans sous-réseau déclaré (lien FAI, ou
+    // serveur DHCP de la salle) : ils ne sont pas dans `myIf`, on les ajoute.
+    const dejaConfig = new Set(myIf.map(i => i.iface));
+    for (const [cle, actif] of Object.entries(ctx.ifaceDhcp || {})) {
+      if (actif !== true) continue;
+      const sep = cle.indexOf('|');
+      if (sep < 0 || cle.slice(0, sep) !== r.id) continue;
+      const ifname = cle.slice(sep + 1);
+      if (dejaConfig.has(ifname)) continue;
+      lines.push(`interface ${ifname}`, ' description Adresse par DHCP', ' ip address dhcp', ' no shutdown', ' exit');
     }
 
     // -- Sortie Internet (NAT/PAT) — routeur de bordure uniquement --
@@ -1491,6 +1512,78 @@ function configPortsMls(m: Materiel, ctx: Ctx, mlsPlan: MlsPlan, plan: Plan): st
   return ['enable', 'configure terminal', `hostname ${m.nom}`, '!', ...corps, 'end', 'write memory'].join('\n');
 }
 
+/** Les interfaces d'un routeur, telles que le plan les a adressées. */
+function ifacesDuRouteur(m: Materiel, ctx: Ctx, plan: Plan) {
+  return plan.ifaces
+    .filter(i => i.routerId === m.id)
+    .map(i => ({ iface: i.iface, target: i.target, ip: ipToStr(i.ip), cidr: i.cidr, role: i.role }));
+}
+
+/** L'interface « côté extérieur » : celle câblée vers un nuage (Internet). */
+function ifaceExterieure(m: Materiel, ctx: Ctx): string | null {
+  for (const v of voisinsDe(ctx.cables, m.id).sort((a, b) => a.monPort - b.monPort)) {
+    if (ctx.materiels.find(x => x.id === v.autreId)?.type === 'nuage') return nomPortDe(ctx, m, v.monPort);
+  }
+  return null;
+}
+
+/**
+ * Un pare-feu pfSense / OPNsense ne se configure pas en CLI : par l'interface
+ * web. On rappelle donc l'adressage calculé et on renvoie vers le configurateur
+ * du site, qui écrit le plan complet (interfaces, DHCP, alias, NAT, règles).
+ */
+function configFwWeb(m: Materiel, ctx: Ctx, plan: Plan): string {
+  const url = m.modele === 'OPNsense'
+    ? 'https://tssr.miyukini.com/pages/configurateur-opnsense'
+    : 'https://tssr.miyukini.com/pages/configurateur-pfsense';
+  const ext = ifaceExterieure(m, ctx);
+  const l: string[] = [
+    `! === ${m.nom} — ${m.modele} : configuration par l'interface web ===`,
+    `! ${m.modele} se configure dans un navigateur (pas de CLI IOS).`,
+    '! Interfaces à assigner puis adresser (Interfaces > Assignments) :',
+  ];
+  const ifs = ifacesDuRouteur(m, ctx, plan);
+  if (ifs.length) {
+    for (const i of ifs) l.push(`!   ${i.iface.padEnd(20)} ${i.role} — ${i.ip}/${i.cidr}  (${i.target})`);
+  } else {
+    l.push('!   (relie et adresse des sous-réseaux dans l\'atelier pour voir la liste ici)');
+  }
+  if (ext) l.push(`!   ${ext.padEnd(20)} WAN — la sortie vers le nuage (côté Internet)`);
+  l.push('!');
+  l.push('! Le plan pas à pas (menus + valeur de chaque champ) et, pour pfSense, le');
+  l.push(`! config.xml par zone à restaurer :  ${url}`);
+  return l.join('\n');
+}
+
+/**
+ * Un routeur Cisco marqué pare-feu : inspection à états (CBAC). Le LAN peut
+ * sortir ; l'extérieur n'entre que pour répondre à une session ouverte.
+ */
+function configPareFeuIos(m: Materiel, ctx: Ctx, plan: Plan): string {
+  const ext = ifaceExterieure(m, ctx) || '<interface_WAN>';
+  return [
+    "! === Pare-feu à états (inspection CBAC) sur " + m.nom + " ===",
+    "! « Dedans » sort librement ; « dehors » n'entre que pour répondre.",
+    'ip inspect name PARE-FEU tcp',
+    'ip inspect name PARE-FEU udp',
+    'ip inspect name PARE-FEU icmp',
+    '!',
+    '! Ce qui a le droit d\'ENTRER de l\'extérieur sans y avoir été invité : rien (sauf réponses ICMP utiles).',
+    'ip access-list extended DEHORS_IN',
+    ' permit icmp any any echo-reply',
+    ' permit icmp any any unreachable',
+    ' permit icmp any any time-exceeded',
+    ' deny   ip any any log',
+    '!',
+    `interface ${ext}`,
+    " description Cote exterieur (WAN)",
+    ' ip inspect PARE-FEU out',
+    ' ip access-group DEHORS_IN in',
+    '!',
+    "! L'inspection ouvre le retour des sessions parties du dedans ; l'ACL bloque le reste.",
+  ].join('\n');
+}
+
 export function buildTout(ctx: Ctx, plan: Plan): MaterielCmd[] {
   const rcfg = buildRouterConfigs(ctx, plan);
   const swcfg = buildSwitchConfigs(ctx, plan);
@@ -1508,16 +1601,23 @@ export function buildTout(ctx: Ctx, plan: Plan): MaterielCmd[] {
       [...ssh.routers, ...ssh.switches].find(s => s.name === nom);
 
     if (m.type === 'routeur') {
-      // Ordre demandé : config (interfaces, VLAN, branchement, route), puis les
-      // services — DHCP, SSH — et enfin le NAT de sortie.
-      const rc = rcfg.byRouter.find(b => b.routerId === m.id);
-      if (rc) blocs.push({ titre: 'Réinitialiser (si réemploi)', texte: reset });
-      if (rc) blocs.push({ titre: 'Configuration — interfaces, VLAN, routage', texte: rc.text });
-      const relay = dhcp.relays.find(r => r.routerId === m.id);
-      if (relay) blocs.push({ titre: 'Relais DHCP', texte: relay.text });
-      const s = ssh1(m.nom);
-      if (s) blocs.push({ titre: 'Accès SSH', texte: s.text });
-      if (nat && ctx.internetRouterId === m.id) blocs.push({ titre: 'NAT — sortie Internet', texte: nat.text });
+      // Un pare-feu pfSense / OPNsense se configure par le web, pas en IOS.
+      if (m.pareFeu && (m.modele === 'pfSense' || m.modele === 'OPNsense')) {
+        blocs.push({ titre: `Firewall / routeur ${m.modele} — configuration par l’interface web`, texte: configFwWeb(m, ctx, plan) });
+      } else {
+        // Ordre demandé : config (interfaces, VLAN, branchement, route), puis les
+        // services — DHCP, SSH — et enfin le NAT de sortie.
+        const rc = rcfg.byRouter.find(b => b.routerId === m.id);
+        if (rc) blocs.push({ titre: 'Réinitialiser (si réemploi)', texte: reset });
+        if (rc) blocs.push({ titre: 'Configuration — interfaces, VLAN, routage', texte: rc.text });
+        const relay = dhcp.relays.find(r => r.routerId === m.id);
+        if (relay) blocs.push({ titre: 'Relais DHCP', texte: relay.text });
+        const s = ssh1(m.nom);
+        if (s) blocs.push({ titre: 'Accès SSH', texte: s.text });
+        if (nat && ctx.internetRouterId === m.id) blocs.push({ titre: 'NAT — sortie Internet', texte: nat.text });
+        // Un routeur Cisco marqué pare-feu reçoit en plus l'inspection à états.
+        if (m.pareFeu) blocs.push({ titre: 'Pare-feu à états (inspection CBAC)', texte: configPareFeuIos(m, ctx, plan) });
+      }
     } else if (m.type === 'multicouche') {
       const mc = mlsPlan.multicouches.find(x => x.id === m.id || x.nom === m.nom);
       if (mc) {
@@ -1783,7 +1883,18 @@ const sansCle = <T,>(rec: Record<string, T>, k: string): Record<string, T> =>
 /** Les interfaces d'un routeur : chacune en IP fixe ou en client DHCP. */
 function RouteurInterfaces({ ctx, m, plan, onCtx }: { ctx: Ctx; m: Materiel; plan: Plan; onCtx: (p: Partial<Ctx>) => void }) {
   const ifs = plan.ifaces.filter(i => i.routerId === m.id);
-  if (!ifs.length) return (
+  // Les ports câblés qui n'appartiennent à aucun sous-réseau : ils n'ont pas
+  // d'adresse calculée, mais on les montre quand même — sinon un port relié
+  // « disparaît » et on croit qu'il manque des lignes.
+  const vus = new Set(ifs.map(i => i.iface));
+  const extra: { iface: string; voisin: string }[] = [];
+  for (const v of voisinsDe(ctx.cables, m.id).sort((a, b) => a.monPort - b.monPort)) {
+    const iface = nomPortDe(ctx, m, v.monPort);
+    if (vus.has(iface)) continue;
+    vus.add(iface);
+    extra.push({ iface, voisin: ctx.materiels.find(x => x.id === v.autreId)?.nom || '?' });
+  }
+  if (!ifs.length && !extra.length) return (
     <div className="meta" style={{ fontSize: 12.5 }}>
       Ce routeur n'a pas encore d'interface active : câble-le et donne-lui un sous-réseau (Adressage), ses ports apparaîtront ici.
     </div>
@@ -1832,6 +1943,32 @@ function RouteurInterfaces({ ctx, m, plan, onCtx }: { ctx: Ctx; m: Materiel; pla
           );
         })}
       </div>
+      {extra.length > 0 && (
+        <div style={{ display: 'grid', gap: 7, marginTop: 8 }}>
+          <div className="meta" style={{ fontSize: 11.5 }}>Ports câblés <strong>sans sous-réseau</strong> — pour une IP fixe, déclare un sous-réseau dans <em>Adressage</em> et affecte-le à ce routeur ; ou mets le port en DHCP.</div>
+          {extra.map(e => {
+            const cle = `${m.id}|${e.iface}`;
+            const dhcp = ctx.ifaceDhcp?.[cle] === true;
+            return (
+              <div key={e.iface} style={{ border: '1px dashed var(--border)', borderRadius: 8, padding: '8px 10px', background: 'var(--surface-2)' }}>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <span style={{ ...mono, fontSize: 12, fontWeight: 600 }}>{e.iface}</span>
+                  <span className="meta" style={{ fontSize: 11 }}>→ {e.voisin} · non adressé</span>
+                  <span style={{ marginLeft: 'auto', display: 'flex', gap: 6 }}>
+                    <button type="button"
+                      onClick={() => onCtx({ ifaceDhcp: sansCle(ctx.ifaceDhcp || {}, cle) })}
+                      style={{ ...smallBtn, ...(!dhcp ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}) }}>—</button>
+                    <button type="button"
+                      onClick={() => onCtx({ ifaceDhcp: { ...(ctx.ifaceDhcp || {}), [cle]: true } })}
+                      style={{ ...smallBtn, ...(dhcp ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}) }}>DHCP</button>
+                  </span>
+                </div>
+                <div className="meta" style={{ ...mono, fontSize: 11, marginTop: 6 }}>{dhcp ? 'ip address dhcp' : 'no ip address  (déclare un sous-réseau pour l’adresser)'}</div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </>
   );
 }
@@ -1883,12 +2020,13 @@ function PosteAdressage({ ctx, m, plan, onCtx }: { ctx: Ctx; m: Materiel; plan: 
 }
 
 /** La boîte de dialogue de configuration fine d'un équipement. */
-function DialogueMateriel({ ctx, m, mlsPlan, plan, onPatch, onPorts, onCtx, onRetirerCable, onClose }: {
+function DialogueMateriel({ ctx, m, mlsPlan, plan, onPatch, onPorts, onCtx, onRetirerCable, onSupprimer, onClose }: {
   ctx: Ctx; m: Materiel; mlsPlan: MlsPlan; plan: Plan;
   onPatch: (patch: Partial<Materiel>) => void;
   onPorts: (ports: AffectationPort[]) => void;
   onCtx: (patch: Partial<Ctx>) => void;
   onRetirerCable: (cableId: string) => void;
+  onSupprimer: () => void;
   onClose: () => void;
 }) {
   const [selPort, setSelPort] = useState<number | null>(null);
@@ -1898,7 +2036,7 @@ function DialogueMateriel({ ctx, m, mlsPlan, plan, onPatch, onPorts, onCtx, onRe
   const vlansPlan = mlsPlan.vlans.map(v => v.id);
   const vlansPort = etat.filter(e => e.vlan).map(e => e.vlan!);
   const vlans = [...new Set([...vlansPlan, ...vlansPort])].sort((a, b) => a - b);
-  const modeles = m.type === 'routeur' ? ['2911', '2811'] : m.type === 'switch' ? ['2960'] : m.type === 'multicouche' ? ['3560', '3750'] : [];
+  const modeles = m.type === 'routeur' ? (m.pareFeu ? ['pfSense', 'OPNsense', '2911'] : ['2911', '2811']) : m.type === 'switch' ? ['2960'] : m.type === 'multicouche' ? ['3560', '3750'] : [];
 
   const majPort = (port: number, val: { role: 'access' | 'trunk' | 'libre'; vlan?: number }) => {
     onPorts(definirPort(ctx, m, mlsPlan, port, val));
@@ -1916,10 +2054,12 @@ function DialogueMateriel({ ctx, m, mlsPlan, plan, onPatch, onPorts, onCtx, onRe
       <div onClick={e => e.stopPropagation()} role="dialog" aria-label={`Configurer ${m.nom}`}
         style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 14, padding: '16px 18px', maxWidth: 560, width: '100%', boxShadow: '0 18px 50px -20px rgba(0,0,0,.5)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-          <PictoMateriel type={m.type} taille={22} />
+          <PictoMateriel type={m.type} pareFeu={m.pareFeu} taille={22} />
           <strong style={{ fontSize: 16 }}>{m.nom}</strong>
           <span className="meta" style={{ fontSize: 12 }}>couche {COUCHE_DE[m.type]}</span>
-          <button type="button" onClick={onClose} style={{ ...smallBtn, marginLeft: 'auto' }}>Fermer</button>
+          <button type="button" onClick={() => { if (typeof window === 'undefined' || window.confirm(`Supprimer ${m.nom} ? Ses câbles seront retirés aussi.`)) onSupprimer(); }}
+            style={{ ...smallBtn, marginLeft: 'auto', borderColor: 'var(--danger)', color: 'var(--danger)' }}>🗑 Supprimer</button>
+          <button type="button" onClick={onClose} style={smallBtn}>Fermer</button>
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 14 }}>
@@ -1927,7 +2067,7 @@ function DialogueMateriel({ ctx, m, mlsPlan, plan, onPatch, onPorts, onCtx, onRe
             <input value={m.nom} style={{ ...field, marginTop: 3 }} onChange={e => onPatch({ nom: e.target.value })} />
           </label>
           <label style={{ fontSize: 12 }}>Ports
-            <input type="number" min={1} max={48} value={m.ports} style={{ ...field, marginTop: 3 }}
+            <input type="number" min={1} max={m.pareFeu ? 128 : 48} value={m.ports} style={{ ...field, marginTop: 3 }}
               onChange={e => onPatch({ ports: Math.max(1, Number(e.target.value) || 1) })} />
           </label>
           {!!modeles.length && (
@@ -1935,6 +2075,15 @@ function DialogueMateriel({ ctx, m, mlsPlan, plan, onPatch, onPorts, onCtx, onRe
               <select value={m.modele} style={{ ...field, marginTop: 3 }} onChange={e => onPatch({ modele: e.target.value })}>
                 {modeles.map(x => <option key={x} value={x}>{x}</option>)}
               </select>
+            </label>
+          )}
+          {m.type === 'routeur' && (
+            <label style={{ fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, alignSelf: 'end' }}>
+              <input type="checkbox" checked={!!m.pareFeu}
+                onChange={e => onPatch(e.target.checked
+                  ? { pareFeu: true, modele: (m.modele === 'pfSense' || m.modele === 'OPNsense') ? m.modele : 'pfSense' }
+                  : { pareFeu: false, modele: '2911' })} />
+              🛡️ Firewall / routeur
             </label>
           )}
         </div>
@@ -2581,6 +2730,14 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                     type: t, modele: '', ports: PORTS_TYPIQUES[t],
                   }] })}>+ {t}</button>
               ))}
+              {(['pfSense', 'OPNsense'] as const).map(fw => (
+                <button key={fw} type="button" style={smallBtn} title={`Firewall / routeur ${fw} : il route comme un routeur, se durcit en pare-feu, et porte autant d'interfaces que voulu`}
+                  onClick={() => set({ materiels: [...ctx.materiels, {
+                    id: 'mat' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+                    nom: 'FW-' + (ctx.materiels.filter(m => m.type === 'routeur' && m.pareFeu).length + 1),
+                    type: 'routeur' as TypeMateriel, modele: fw, ports: 6, pareFeu: true,
+                  }] })}>+ 🛡️ {fw}</button>
+              ))}
             </div>
             <SchemaAtelier
               materiels={ctx.materiels} cables={ctx.cables} positions={ctx.physPos}
@@ -2602,7 +2759,7 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
             return (
               <div key={t.id} style={group}>
                 <div style={legend}>
-                  <PictoMateriel type={m.type} /> {t.nom}
+                  <PictoMateriel type={m.type} pareFeu={m.pareFeu} /> {t.nom}
                   <span className="meta" style={{ fontSize: 11.5, fontWeight: 400 }}>
                     {m.type}{t.modele ? ' · ' + t.modele : ''} · {m.ports} ports
                   </span>
@@ -4602,6 +4759,14 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
                     type: t, modele: '', ports: PORTS_TYPIQUES[t],
                   }] })}>+ {t}</button>
               ))}
+              {(['pfSense', 'OPNsense'] as const).map(fw => (
+                <button key={fw} type="button" style={smallBtn} title={`Firewall / routeur ${fw} : il route comme un routeur, se durcit en pare-feu, et porte autant d'interfaces que voulu`}
+                  onClick={() => set({ materiels: [...ctx.materiels, {
+                    id: 'mat' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5),
+                    nom: 'FW-' + (ctx.materiels.filter(m => m.type === 'routeur' && m.pareFeu).length + 1),
+                    type: 'routeur' as TypeMateriel, modele: fw, ports: 6, pareFeu: true,
+                  }] })}>+ 🛡️ {fw}</button>
+              ))}
             </div>
 
             {ctx.materiels.length === 0 && (
@@ -4894,6 +5059,16 @@ export function NetworkWorkshop({ value, onChange, step: stepProp, onStep, showS
             onPorts={ports => set({ optSwitches: { ...ctx.optSwitches, [m.id]: { vlans: ctx.optSwitches[m.id]?.vlans ?? [], ports_: ports.length ? ports : undefined } } })}
             onCtx={patch => set(patch)}
             onRetirerCable={id => set({ cables: ctx.cables.filter(c => c.id !== id) })}
+            onSupprimer={() => {
+              set({
+                materiels: ctx.materiels.filter(x => x.id !== m.id),
+                cables: ctx.cables.filter(c => c.deId !== m.id && c.versId !== m.id),
+                services: ctx.services.map(s => ({ ...s, routerIds: (s.routerIds || []).filter(x => x !== m.id) })),
+                ...(ctx.internetRouterId === m.id ? { internetRouterId: '' } : {}),
+                physPos: Object.fromEntries(Object.entries(ctx.physPos).filter(([k]) => k !== m.id)),
+              });
+              setDialMat(null);
+            }}
             onClose={() => setDialMat(null)} />
         );
       })()}

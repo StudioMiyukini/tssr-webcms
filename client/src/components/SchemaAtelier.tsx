@@ -174,13 +174,13 @@ function Pictogramme({ p, x, y, cote, teinte }: { p: Picto; x: number; y: number
  * les mêmes six équipements, sur la même page, se lisent comme deux
  * nomenclatures différentes.
  */
-export function PictoMateriel({ type, taille = 20 }: { type: TypeMateriel; taille?: number }) {
-  const p = picto(PICTO_DE[type]);
+export function PictoMateriel({ type, taille = 20, pareFeu }: { type: TypeMateriel; taille?: number; pareFeu?: boolean }) {
+  const p = picto(pareFeu ? 'pare-feu' : PICTO_DE[type]);
   if (!p) return null;
   return (
     <svg width={taille} height={taille} viewBox={`0 0 ${taille} ${taille}`} aria-hidden
       style={{ flexShrink: 0, verticalAlign: '-0.15em' }}>
-      <Pictogramme p={p} x={0} y={0} cote={taille} teinte={TEINTE_DE[type]} />
+      <Pictogramme p={p} x={0} y={0} cote={taille} teinte={pareFeu ? '#c0392b' : TEINTE_DE[type]} />
     </svg>
   );
 }
@@ -626,8 +626,8 @@ export function SchemaAtelier({
           const b = boites.get(m.id);
           if (!b) return null;
           const choisi = depart === m.id;
-          const teinte = TEINTE_DE[m.type] ?? pal.accent;
-          const p = picto(PICTO_DE[m.type]);
+          const teinte = m.pareFeu ? '#c0392b' : (TEINTE_DE[m.type] ?? pal.accent);
+          const p = picto(m.pareFeu ? 'pare-feu' : PICTO_DE[m.type]);
           const virtuelles = virtuellesDe(m);
           return (
             <g key={m.id} style={{ cursor: presse?.id === m.id && presse.bouge ? 'grabbing' : 'pointer' }}
@@ -745,13 +745,13 @@ function DialogueBranchement({ a, b, cables, nomPort, onValider, onAnnuler }: {
   const MEDIAS: Media[] = ['droit', 'croise', 'serie', 'fibre', 'console'];
 
   const bloc = (m: Materiel, libres: number[], val: number, set: (n: number) => void): ReactNode => {
-    const p = picto(PICTO_DE[m.type]);
+    const p = picto(m.pareFeu ? 'pare-feu' : PICTO_DE[m.type]);
     return (
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ fontSize: 12, fontWeight: 700, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
           {p && (
             <svg width={18} height={18} viewBox="0 0 18 18" aria-hidden>
-              <Pictogramme p={p} x={0} y={0} cote={18} teinte={TEINTE_DE[m.type]} />
+              <Pictogramme p={p} x={0} y={0} cote={18} teinte={m.pareFeu ? '#c0392b' : TEINTE_DE[m.type]} />
             </svg>
           )}
           {m.nom}
