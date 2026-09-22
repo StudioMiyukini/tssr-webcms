@@ -1,0 +1,351 @@
+{
+  "slug": "linux-acl",
+  "title": "Les ACL : des droits au-delà de rwx",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Quel problème résolvent les ACL ?",
+          "options": [
+            "La lenteur",
+            "Le montage",
+            "Le chiffrement",
+            "Accorder des droits différents à plusieurs personnes sans créer un groupe pour l'occasion"
+          ],
+          "answer": 3,
+          "explain": "Une liste d'entrées nominatives, par utilisateur ou groupe."
+        },
+        {
+          "q": "Paquet à installer sur Debian :",
+          "options": [
+            "acl (getfacl, setfacl)",
+            "acl-tools",
+            "facl",
+            "posix"
+          ],
+          "answer": 0,
+          "explain": "sudo apt install acl."
+        },
+        {
+          "q": "Systèmes de fichiers qui gèrent les ACL :",
+          "options": [
+            "ext4 et xfs",
+            "ntfs",
+            "vfat, exfat",
+            "Tous"
+          ],
+          "answer": 0,
+          "explain": "FAT/exFAT/NTFS ne portent ni ACL ni droits Unix."
+        },
+        {
+          "q": "Commande pour lire une ACL :",
+          "options": [
+            "getfacl",
+            "ls -l",
+            "cat",
+            "stat"
+          ],
+          "answer": 0,
+          "explain": "ls -l ne montre qu'un + ."
+        },
+        {
+          "q": "Dans ls -l, une ACL se signale par :",
+          "options": [
+            "Un + après les droits",
+            "Rien",
+            "Un @",
+            "Un *"
+          ],
+          "answer": 0,
+          "explain": "-rw-rw-r--+ : il ne dit pas lesquelles."
+        },
+        {
+          "q": "setfacl -m u:bob:r rapport.txt :",
+          "options": [
+            "Change le propriétaire",
+            "Supprime le fichier",
+            "Retire bob",
+            "Ajoute ou modifie l'entrée de bob en lecture"
+          ],
+          "answer": 3,
+          "explain": "-m = modify."
+        },
+        {
+          "q": "setfacl -x u:bob rapport.txt :",
+          "options": [
+            "Exécute",
+            "Retire l'entrée de bob",
+            "Ajoute bob",
+            "Tout retire"
+          ],
+          "answer": 1,
+          "explain": "-b pour tout retirer."
+        },
+        {
+          "q": "setfacl -d :",
+          "options": [
+            "Supprime",
+            "Débogue",
+            "Désactive",
+            "ACL par défaut : l'héritage pour les fichiers créés ensuite"
+          ],
+          "answer": 3,
+          "explain": "Sur les répertoires seulement."
+        },
+        {
+          "q": "setfacl -R :",
+          "options": [
+            "Lecture seule",
+            "Sur le contenu existant, récursivement",
+            "Retire",
+            "Sur ce qui sera créé"
+          ],
+          "answer": 1,
+          "explain": "-d et -R ne font pas la même chose."
+        },
+        {
+          "q": "La règle avant de commencer :",
+          "options": [
+            "Si chmod et un bon groupe suffisent, pas d'ACL",
+            "Jamais de groupe",
+            "ACL partout",
+            "Toujours des ACL"
+          ],
+          "answer": 0,
+          "explain": "Une couche de plus qu'un ls -l ne montre pas."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "user::rwx dans getfacl est :",
+          "options": [
+            "Les autres",
+            "Le masque",
+            "Le propriétaire",
+            "Une entrée nommée"
+          ],
+          "answer": 2,
+          "explain": "user:bob:r-x est une entrée nommée."
+        },
+        {
+          "q": "Que fait le masque (mask) ?",
+          "options": [
+            "Plafonne toutes les entrées nommées et le groupe propriétaire",
+            "Cache le fichier",
+            "Chiffre",
+            "Définit le propriétaire"
+          ],
+          "answer": 0,
+          "explain": "Le concept le plus important et le plus mal compris."
+        },
+        {
+          "q": "user:bob:rw- avec mask::r-- : bob a réellement :",
+          "options": [
+            "---",
+            "r-- (effective)",
+            "rw-",
+            "rwx"
+          ],
+          "answer": 1,
+          "explain": "getfacl le dit lui-même : #effective."
+        },
+        {
+          "q": "chmod g=r sur un fichier porteur d'ACL :",
+          "options": [
+            "Supprime les ACL",
+            "Ne fait rien",
+            "Abaisse le MASQUE et plafonne toutes les entrées nommées",
+            "Change le groupe propriétaire"
+          ],
+          "answer": 2,
+          "explain": "Un droit disparaît sans que personne n'ait touché aux ACL."
+        },
+        {
+          "q": "Sur un fichier avec +, la position du groupe dans ls -l montre :",
+          "options": [
+            "Le masque",
+            "Les autres",
+            "Le groupe propriétaire",
+            "Le propriétaire"
+          ],
+          "answer": 0,
+          "explain": "Seul getfacl dit la vérité."
+        },
+        {
+          "q": "Sur un dossier déjà peuplé, pour poser l'héritage ET couvrir l'existant :",
+          "options": [
+            "-d seul",
+            "setfacl -R -d -m … puis setfacl -R -m … (ou les deux options)",
+            "-R seul",
+            "-b"
+          ],
+          "answer": 1,
+          "explain": "L'erreur la plus fréquente sur un partage repris en route."
+        },
+        {
+          "q": "Après setfacl -d -m u:bob:rw, getfacl affiche :",
+          "options": [
+            "Une entrée default",
+            "Une erreur",
+            "Rien",
+            "Cinq entrées default : le noyau complète le jeu"
+          ],
+          "answer": 3,
+          "explain": "Une ACL par défaut doit être complète."
+        },
+        {
+          "q": "setfacl -b :",
+          "options": [
+            "Bloque",
+            "Retire entrées nommées et masque, laisse les droits POSIX tels quels à cet instant",
+            "Remet les droits d'avant",
+            "Sauvegarde"
+          ],
+          "answer": 1,
+          "explain": "Vérifier au ls -l ensuite."
+        },
+        {
+          "q": "Vérifier que le système de fichiers accepte les ACL :",
+          "options": [
+            "findmnt -o TARGET,SOURCE,FSTYPE,OPTIONS /srv",
+            "du",
+            "df",
+            "ls -l"
+          ],
+          "answer": 0,
+          "explain": "Sur ext4/xfs récents c'est le défaut."
+        },
+        {
+          "q": "Équivalent Windows des ACL POSIX :",
+          "options": [
+            "Les partages",
+            "Le registre",
+            "Les permissions NTFS",
+            "Les GPO"
+          ],
+          "answer": 2,
+          "explain": "setfacl -d ≈ l'héritage (OI)(CI)."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Un prestataire doit lire un dossier sans rejoindre un groupe :",
+          "options": [
+            "chmod o+r",
+            "ACL sur l'utilisateur",
+            "Le mettre root",
+            "Copier le dossier"
+          ],
+          "answer": 1,
+          "explain": "Plutôt qu'élargir other."
+        },
+        {
+          "q": "Chaque personne a un niveau différent sur le même dossier :",
+          "options": [
+            "ACL : la seule solution",
+            "chmod 777",
+            "Un groupe suffit",
+            "Impossible"
+          ],
+          "answer": 0,
+          "explain": "Tableau du cours."
+        },
+        {
+          "q": "Après chaque chmod sur un fichier à ACL, on vérifie :",
+          "options": [
+            "stat",
+            "getfacl fichier | grep -E 'mask|effective'",
+            "ls -l",
+            "df"
+          ],
+          "answer": 1,
+          "explain": "Le masque a pu bouger."
+        },
+        {
+          "q": "Modifier le masque lui-même :",
+          "options": [
+            "chown",
+            "chmod",
+            "setfacl -b",
+            "setfacl -m m::rwx"
+          ],
+          "answer": 3,
+          "explain": "m:: = mask."
+        },
+        {
+          "q": "group:direction:rwx est :",
+          "options": [
+            "Une entrée nommée de groupe",
+            "Le groupe propriétaire",
+            "Le masque",
+            "Les autres"
+          ],
+          "answer": 0,
+          "explain": "group::r-x est le groupe propriétaire."
+        },
+        {
+          "q": "Poser une ACL sur une clé USB en FAT :",
+          "options": [
+            "Échoue, ou semble réussir sans rien conserver",
+            "Fonctionne",
+            "Formate",
+            "Chiffre"
+          ],
+          "answer": 0,
+          "explain": "FAT ne porte pas de droits Unix."
+        },
+        {
+          "q": "Sur Rocky, installer les ACL :",
+          "options": [
+            "apt install acl",
+            "rpm acl",
+            "dnf install acl",
+            "yum acl"
+          ],
+          "answer": 2,
+          "explain": "Même paquet, autre gestionnaire."
+        },
+        {
+          "q": "Diagnostiquer un partage à ACL en lisant ls -l :",
+          "options": [
+            "Recommandé",
+            "Suffit",
+            "Mène droit dans le mur",
+            "Fiable"
+          ],
+          "answer": 2,
+          "explain": "Le + change le sens de la colonne groupe."
+        },
+        {
+          "q": "Les entrées default s'appliquent :",
+          "options": [
+            "Au masque seulement",
+            "Aux fichiers existants",
+            "Au propriétaire",
+            "À ce qui sera créé dans le répertoire"
+          ],
+          "answer": 3,
+          "explain": "L'héritage."
+        },
+        {
+          "q": "Le prochain administrateur devra :",
+          "options": [
+            "Les supprimer",
+            "Les ignorer",
+            "Comprendre les ACL qu'un ls -l ne montre pas",
+            "Rien"
+          ],
+          "answer": 2,
+          "explain": "D'où la règle : ne pas en poser sans nécessité."
+        }
+      ]
+    }
+  ]
+}

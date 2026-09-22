@@ -1,0 +1,351 @@
+{
+  "slug": "le-wireshark",
+  "title": "Wireshark : capturer et analyser une trame",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Qu'est-ce que Wireshark ?",
+          "options": [
+            "Un pare-feu",
+            "Un serveur DNS",
+            "Un antivirus",
+            "Un analyseur de protocoles (sniffer) qui capture et décode les trames"
+          ],
+          "answer": 3,
+          "explain": "Il décode couche par couche."
+        },
+        {
+          "q": "Sur quel réseau peut-on capturer ?",
+          "options": [
+            "Uniquement un réseau qui t'appartient ou avec autorisation",
+            "N'importe lequel",
+            "Tous les réseaux publics",
+            "Celui du voisin"
+          ],
+          "answer": 0,
+          "explain": "Écouter le trafic d'autrui est illégal."
+        },
+        {
+          "q": "Les trois volets de l'interface :",
+          "options": [
+            "Capture, Filtre, Stop",
+            "Liste des paquets, Détails (arbre), Octets (hexa)",
+            "Fichiers, Édition, Aide",
+            "IP, MAC, Port"
+          ],
+          "answer": 1,
+          "explain": "De haut en bas."
+        },
+        {
+          "q": "Commande Windows pour relever MAC, IP, DHCP et passerelle :",
+          "options": [
+            "arp -a",
+            "ping",
+            "netstat",
+            "ipconfig /all"
+          ],
+          "answer": 3,
+          "explain": "Avant de capturer, connaître son poste."
+        },
+        {
+          "q": "Filtre d'affichage pour ne voir que le ping :",
+          "options": [
+            "ping",
+            "echo",
+            "ip.ping",
+            "icmp"
+          ],
+          "answer": 3,
+          "explain": "icmp ; arp, dns, udp.port == 53 sont d'autres exemples."
+        },
+        {
+          "q": "Filtre pour une adresse précise :",
+          "options": [
+            "host=192.168.50.254",
+            "ip.addr == 192.168.50.254",
+            "addr 192.168.50.254",
+            "ip == 192.168.50.254"
+          ],
+          "answer": 1,
+          "explain": "Combinable avec && et ||."
+        },
+        {
+          "q": "Différence filtre de capture / filtre d'affichage :",
+          "options": [
+            "Capture = après",
+            "Aucune",
+            "Affichage = avant",
+            "Capture = limite ce qui est enregistré ; affichage = limite ce qui est montré"
+          ],
+          "answer": 3,
+          "explain": "On utilise surtout le filtre d'affichage."
+        },
+        {
+          "q": "Format de fichier de sauvegarde :",
+          "options": [
+            ".log",
+            ".docx",
+            ".pcapng",
+            ".txt"
+          ],
+          "answer": 2,
+          "explain": "File → Save."
+        },
+        {
+          "q": "Que fait ARP dans un ping vers la passerelle ?",
+          "options": [
+            "Obtient la MAC correspondant à l'IP (Who has… ?)",
+            "Route",
+            "Résout le nom",
+            "Chiffre"
+          ],
+          "answer": 0,
+          "explain": "Il faut la MAC pour parler sur le réseau local."
+        },
+        {
+          "q": "MAC de destination d'une requête ARP « Who has » :",
+          "options": [
+            "ff:ff:ff:ff:ff:ff (broadcast)",
+            "Celle du DNS",
+            "00:00:00:00:00:00",
+            "Celle de la passerelle"
+          ],
+          "answer": 0,
+          "explain": "Envoyé à tout le monde, seule la machine concernée répond."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Combien de trames pour un ping vers la passerelle (cache ARP vidé) ?",
+          "options": [
+            "6",
+            "2",
+            "4 : ARP request, ARP reply, Echo request, Echo reply",
+            "1"
+          ],
+          "answer": 2,
+          "explain": "Cas n°1 du cours."
+        },
+        {
+          "q": "Pour pinguer un nom de domaine, quelles trames s'ajoutent ?",
+          "options": [
+            "Deux trames DNS (query A et response)",
+            "Deux trames DHCP",
+            "Deux trames FTP",
+            "Aucune"
+          ],
+          "answer": 0,
+          "explain": "Il faut traduire le nom en IP avant."
+        },
+        {
+          "q": "Vers un site hors du réseau local, la MAC de destination est :",
+          "options": [
+            "Celle du site",
+            "Celle du DNS",
+            "Broadcast",
+            "Celle de la passerelle (prochain saut)"
+          ],
+          "answer": 3,
+          "explain": "IP = destination finale, MAC = prochaine étape."
+        },
+        {
+          "q": "L'IP de destination vers un site distant :",
+          "options": [
+            "Change à chaque routeur",
+            "Est celle de la passerelle",
+            "Est privée",
+            "Reste celle du site de bout en bout"
+          ],
+          "answer": 3,
+          "explain": "Couche 3, ne change pas de A à Z."
+        },
+        {
+          "q": "Ordre d'encapsulation d'une requête DNS :",
+          "options": [
+            "DNS → UDP → IP → Ethernet dans la trame",
+            "Ethernet → IP → UDP → DNS",
+            "Ethernet → UDP → IP → DNS",
+            "IP → Ethernet → DNS"
+          ],
+          "answer": 1,
+          "explain": "Les poupées russes de l'arbre de détails."
+        },
+        {
+          "q": "ICMP est encapsulé :",
+          "options": [
+            "Dans UDP",
+            "Dans ARP",
+            "Dans TCP",
+            "Directement dans IP, sans couche transport"
+          ],
+          "answer": 3,
+          "explain": "Ethernet → IP → ICMP."
+        },
+        {
+          "q": "ARP est porté :",
+          "options": [
+            "Dans UDP",
+            "Dans DNS",
+            "Directement dans Ethernet",
+            "Dans IP"
+          ],
+          "answer": 2,
+          "explain": "Un cas à part : il ne passe pas par IP."
+        },
+        {
+          "q": "Port destination d'une requête DNS :",
+          "options": [
+            "53",
+            "80",
+            "22",
+            "443"
+          ],
+          "answer": 0,
+          "explain": "Port source = éphémère (> 1023)."
+        },
+        {
+          "q": "Dans la réponse DNS, les ports sont :",
+          "options": [
+            "Identiques",
+            "Tous à 53",
+            "Permutés (source 53, destination = le port éphémère du client)",
+            "Absents"
+          ],
+          "answer": 2,
+          "explain": "La réponse revient sur le même canal."
+        },
+        {
+          "q": "Pourquoi décocher le mode promiscuous ?",
+          "options": [
+            "Pour le DNS",
+            "Pour capturer plus",
+            "Pour chiffrer",
+            "Pour ne voir que son propre trafic"
+          ],
+          "answer": 3,
+          "explain": "Le mode promiscuous capturerait aussi les trames destinées à d'autres."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Commande pour vider le cache ARP (script du cours) :",
+          "options": [
+            "arp clear",
+            "arp -d *",
+            "arp -c",
+            "ipconfig /flushdns"
+          ],
+          "answer": 1,
+          "explain": "Pour repartir de zéro et voir la requête ARP."
+        },
+        {
+          "q": "Commande pour vider le cache DNS :",
+          "options": [
+            "dns -clear",
+            "nslookup /flush",
+            "arp -d *",
+            "ipconfig /flushdns"
+          ],
+          "answer": 3,
+          "explain": "Cas n°2 du cours."
+        },
+        {
+          "q": "Quelle couche OSI porte les ports source/destination ?",
+          "options": [
+            "4 — Transport (UDP/TCP)",
+            "7 — Application",
+            "2 — Liaison",
+            "3 — Réseau"
+          ],
+          "answer": 0,
+          "explain": "Tableau du cours."
+        },
+        {
+          "q": "Quelle couche porte les adresses MAC ?",
+          "options": [
+            "1",
+            "4",
+            "3",
+            "2 — Liaison (Ethernet, ARP)"
+          ],
+          "answer": 3,
+          "explain": "IP est en couche 3."
+        },
+        {
+          "q": "Cliquer un champ dans l'arbre de détails :",
+          "options": [
+            "Change le filtre",
+            "Envoie la trame",
+            "Surligne les octets correspondants dans le volet hexa",
+            "Supprime la trame"
+          ],
+          "answer": 2,
+          "explain": "Lien entre les volets."
+        },
+        {
+          "q": "Combiner deux conditions dans un filtre :",
+          "options": [
+            "+ et -",
+            "AND OR uniquement",
+            "&& (et), || (ou)",
+            "and / or"
+          ],
+          "answer": 2,
+          "explain": "ip.addr == x && dns par exemple."
+        },
+        {
+          "q": "La MAC de la passerelle est apprise :",
+          "options": [
+            "Par la réponse ARP « … is at aa:bb:cc… »",
+            "Par ICMP",
+            "Par DHCP",
+            "Par DNS"
+          ],
+          "answer": 0,
+          "explain": "Trame 2 du cas n°1."
+        },
+        {
+          "q": "Le résumé d'une ligne « Echo (ping) request » indique :",
+          "options": [
+            "Un paquet DNS",
+            "Une requête ARP",
+            "La demande de ping émise",
+            "Une réponse"
+          ],
+          "answer": 2,
+          "explain": "Trame 3 du cas n°1."
+        },
+        {
+          "q": "À quelle couche correspond « Segment » ?",
+          "options": [
+            "Réseau",
+            "Liaison",
+            "Transport",
+            "Application"
+          ],
+          "answer": 2,
+          "explain": "Trame (2), paquet (3), segment (4), données (7)."
+        },
+        {
+          "q": "Les 3 premiers octets d'une MAC vus dans Wireshark permettent :",
+          "options": [
+            "De trouver l'IP",
+            "De trouver le port",
+            "De décoder le DNS",
+            "D'identifier le constructeur (OUI)"
+          ],
+          "answer": 3,
+          "explain": "Wireshark affiche souvent le nom du fabricant."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,351 @@
+{
+  "slug": "hebergement",
+  "title": "L’hébergement web",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Qu'est-ce qu'un hébergement web ?",
+          "options": [
+            "Un navigateur",
+            "Un câble",
+            "Stocker un site sur un serveur connecté pour le rendre accessible 24h/24",
+            "Un nom de domaine"
+          ],
+          "answer": 2,
+          "explain": "Les fichiers sont sur un serveur mis à disposition par un hébergeur."
+        },
+        {
+          "q": "L'hébergeur assure généralement :",
+          "options": [
+            "Disponibilité, connectivité, sécurité, sauvegardes, électricité/climatisation, maintenance",
+            "Le référencement",
+            "Le contenu du site",
+            "Le design"
+          ],
+          "answer": 0,
+          "explain": "L'infrastructure, pas le contenu."
+        },
+        {
+          "q": "Hébergement mutualisé :",
+          "options": [
+            "Un serveur virtuel garanti",
+            "Du cloud",
+            "Un serveur entier",
+            "Un serveur partagé entre de nombreux sites"
+          ],
+          "answer": 3,
+          "explain": "Petits sites, budget serré."
+        },
+        {
+          "q": "VPS :",
+          "options": [
+            "Un CDN",
+            "Du mutualisé",
+            "Un serveur virtuel dédié avec ressources garanties",
+            "Un serveur physique dédié"
+          ],
+          "answer": 2,
+          "explain": "Bon compromis coût / contrôle."
+        },
+        {
+          "q": "Hébergement dédié :",
+          "options": [
+            "Virtuel",
+            "Partagé",
+            "Gratuit",
+            "Un serveur physique entier pour un seul client"
+          ],
+          "answer": 3,
+          "explain": "Performance et contrôle maximum."
+        },
+        {
+          "q": "Hébergement cloud :",
+          "options": [
+            "Fixe",
+            "Sans réseau",
+            "Ressources élastiques à la demande, facturées à l'usage",
+            "Sur un seul serveur"
+          ],
+          "answer": 2,
+          "explain": "Charge variable, montée en charge."
+        },
+        {
+          "q": "Que fait le DNS ?",
+          "options": [
+            "Traduit un nom de domaine en adresse IP",
+            "Chiffre le site",
+            "Héberge le mail",
+            "Stocke les pages"
+          ],
+          "answer": 0,
+          "explain": "L'annuaire d'Internet."
+        },
+        {
+          "q": "Enregistrement Nom → IPv4 :",
+          "options": [
+            "A",
+            "AAAA",
+            "MX",
+            "CNAME"
+          ],
+          "answer": 0,
+          "explain": "AAAA pour IPv6."
+        },
+        {
+          "q": "Enregistrement alias vers un autre nom :",
+          "options": [
+            "SOA",
+            "A",
+            "CNAME",
+            "NS"
+          ],
+          "answer": 2,
+          "explain": "CNAME = nom canonique."
+        },
+        {
+          "q": "Enregistrement serveur de messagerie :",
+          "options": [
+            "NS",
+            "PTR",
+            "MX",
+            "SRV"
+          ],
+          "answer": 2,
+          "explain": "Mail eXchanger."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Enregistrement NS :",
+          "options": [
+            "Adresse IPv6",
+            "Serveur DNS faisant autorité sur la zone",
+            "Nom du site",
+            "Alias"
+          ],
+          "answer": 1,
+          "explain": "Name Server."
+        },
+        {
+          "q": "Enregistrement SOA :",
+          "options": [
+            "Alias",
+            "IP → nom",
+            "Mail",
+            "Informations de la zone : admin, serveur primaire, numéro de série"
+          ],
+          "answer": 3,
+          "explain": "Start Of Authority."
+        },
+        {
+          "q": "Enregistrement PTR :",
+          "options": [
+            "Service",
+            "IP → nom (zone inversée)",
+            "Alias",
+            "Nom → IP"
+          ],
+          "answer": 1,
+          "explain": "Résolution inverse."
+        },
+        {
+          "q": "Enregistrement SRV :",
+          "options": [
+            "Un mail",
+            "Un alias",
+            "Localise un service (hôte + port), essentiel dans AD pour LDAP/Kerberos",
+            "Une IPv6"
+          ],
+          "answer": 2,
+          "explain": "Utilisé par Active Directory."
+        },
+        {
+          "q": "Un registrar est :",
+          "options": [
+            "Un hébergeur",
+            "Un serveur DNS racine",
+            "Un navigateur",
+            "Un bureau d'enregistrement qui réserve et gère les noms de domaine"
+          ],
+          "answer": 3,
+          "explain": "Ex. OVHcloud, GoDaddy, Namecheap."
+        },
+        {
+          "q": "Qui accrédite les registrars pour le .fr ?",
+          "options": [
+            "AFNIC",
+            "IANA",
+            "ICANN",
+            "RIPE"
+          ],
+          "answer": 0,
+          "explain": "ICANN au niveau mondial, AFNIC pour le .fr."
+        },
+        {
+          "q": "Un nom de domaine se loue :",
+          "options": [
+            "Gratuitement",
+            "Un jour",
+            "De 6 mois à 10 ans, avec renouvellement",
+            "Pour toujours"
+          ],
+          "answer": 2,
+          "explain": "Il doit être renouvelé pour être conservé."
+        },
+        {
+          "q": "FQDN signifie :",
+          "options": [
+            "File Qualified Domain Name",
+            "Fast Query Domain Name",
+            "Fully Qualified Domain Name",
+            "Full Query DNS Node"
+          ],
+          "answer": 2,
+          "explain": "Le nom complet d'une machine, ex. www.example.com."
+        },
+        {
+          "q": "On lit un FQDN :",
+          "options": [
+            "De droite à gauche : racine, TLD, domaine, hôte",
+            "De gauche à droite",
+            "Au milieu",
+            "Par le port"
+          ],
+          "answer": 0,
+          "explain": "Du point final (racine) à l'hôte."
+        },
+        {
+          "q": "Combien de serveurs racine d'origine ?",
+          "options": [
+            "100",
+            "13 (A à M)",
+            "3",
+            "1"
+          ],
+          "answer": 1,
+          "explain": "Répartis aujourd'hui sur des centaines d'instances."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Dans www.example.com, « com » est :",
+          "options": [
+            "Le domaine",
+            "Le TLD",
+            "La racine",
+            "L'hôte"
+          ],
+          "answer": 1,
+          "explain": "Top Level Domain."
+        },
+        {
+          "q": "Dans www.example.com, « www » est :",
+          "options": [
+            "Le TLD",
+            "La racine",
+            "Le registrar",
+            "L'hôte"
+          ],
+          "answer": 3,
+          "explain": "Le nom de machine."
+        },
+        {
+          "q": "Les serveurs racine font autorité sur :",
+          "options": [
+            "Les hôtes",
+            "Les mails",
+            "Les TLD (.com, .fr…)",
+            "Tous les sites"
+          ],
+          "answer": 2,
+          "explain": "Ils orientent vers les bons serveurs de zone."
+        },
+        {
+          "q": "Un site à charge très variable devrait choisir :",
+          "options": [
+            "Dédié",
+            "Cloud",
+            "VPS",
+            "Mutualisé"
+          ],
+          "answer": 1,
+          "explain": "Élasticité facturée à l'usage."
+        },
+        {
+          "q": "Un petit site vitrine avec budget serré :",
+          "options": [
+            "Mutualisé",
+            "Cloud",
+            "Dédié",
+            "Datacenter privé"
+          ],
+          "answer": 0,
+          "explain": "Serveur partagé, économique."
+        },
+        {
+          "q": "Sans DNS :",
+          "options": [
+            "Le site est plus rapide",
+            "Le mail marche mieux",
+            "Rien ne change",
+            "Il faudrait retenir les adresses IP de chaque site"
+          ],
+          "answer": 3,
+          "explain": "L'annuaire est indispensable."
+        },
+        {
+          "q": "Le point final d'un FQDN représente :",
+          "options": [
+            "Une erreur",
+            "L'hôte",
+            "La racine",
+            "Le TLD"
+          ],
+          "answer": 2,
+          "explain": "www.example.com. — souvent invisible."
+        },
+        {
+          "q": "Un enregistrement AAAA :",
+          "options": [
+            "Alias",
+            "Nom → IPv6",
+            "Nom → IPv4",
+            "Mail"
+          ],
+          "answer": 1,
+          "explain": "Quatre A pour 128 bits."
+        },
+        {
+          "q": "Que faire pour garder son nom de domaine ?",
+          "options": [
+            "Changer d'hébergeur",
+            "Le renouveler avant expiration",
+            "Créer un CNAME",
+            "Rien"
+          ],
+          "answer": 1,
+          "explain": "Un domaine expiré peut être repris par un tiers."
+        },
+        {
+          "q": "L'exemple d'IP du cours pour www.example.com :",
+          "options": [
+            "127.0.0.1",
+            "8.8.8.8",
+            "93.184.216.34",
+            "192.168.1.1"
+          ],
+          "answer": 2,
+          "explain": "Une adresse publique résolue par le DNS."
+        }
+      ]
+    }
+  ]
+}

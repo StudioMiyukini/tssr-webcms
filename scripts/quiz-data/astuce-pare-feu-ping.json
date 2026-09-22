@@ -1,0 +1,351 @@
+{
+  "slug": "astuce-pare-feu-ping",
+  "title": "Autoriser le ping (ICMP) dans le pare-feu",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Pourquoi une machine Windows ne répond-elle pas au ping par défaut ?",
+          "options": [
+            "Le DNS",
+            "L'IP",
+            "Le Pare-feu Windows Defender bloque les demandes d'écho ICMP entrantes",
+            "Le câble"
+          ],
+          "answer": 2,
+          "explain": "« Délai d'attente de la demande dépassé » alors que le réseau est bon."
+        },
+        {
+          "q": "Le ping repose sur :",
+          "options": [
+            "TCP",
+            "UDP",
+            "ARP",
+            "ICMP : Echo Request (type 8) et Echo Reply (type 0)"
+          ],
+          "answer": 3,
+          "explain": "Demande et réponse d'écho."
+        },
+        {
+          "q": "Où autoriser la demande d'écho ?",
+          "options": [
+            "Sur le switch",
+            "Sur la cible qui doit répondre",
+            "Sur le DNS",
+            "Sur la source"
+          ],
+          "answer": 1,
+          "explain": "À ouvrir sur la cible, pas sur la source."
+        },
+        {
+          "q": "Console du pare-feu avancé :",
+          "options": [
+            "dsa.msc",
+            "wf.msc",
+            "sysdm.cpl",
+            "gpmc.msc"
+          ],
+          "answer": 1,
+          "explain": "Pare-feu Windows Defender avec fonctions avancées de sécurité."
+        },
+        {
+          "q": "Dans quel volet trouver la règle ?",
+          "options": [
+            "Règles de trafic sortant",
+            "Connexions",
+            "Surveillance",
+            "Règles de trafic entrant"
+          ],
+          "answer": 3,
+          "explain": "Le ping entrant."
+        },
+        {
+          "q": "Nom de la règle à activer :",
+          "options": [
+            "Bureau à distance",
+            "Partage de fichiers et d'imprimantes (Demande d'écho - Trafic entrant ICMPv4)",
+            "DNS",
+            "Réseau de base"
+          ],
+          "answer": 1,
+          "explain": "Clic droit → Activer la règle."
+        },
+        {
+          "q": "Pastille verte dans la colonne Activée :",
+          "options": [
+            "Erreur",
+            "Règle activée",
+            "Règle désactivée",
+            "Profil public"
+          ],
+          "answer": 1,
+          "explain": "Visuel de confirmation."
+        },
+        {
+          "q": "Pour IPv6 :",
+          "options": [
+            "Activer aussi la règle ICMPv6",
+            "Rien",
+            "Impossible",
+            "Même règle"
+          ],
+          "answer": 0,
+          "explain": "Demande d'écho - ICMPv6 entrant."
+        },
+        {
+          "q": "Windows Server, 10 et 11 :",
+          "options": [
+            "Même pare-feu, même console, mêmes étapes",
+            "Windows 11 ne pingue pas",
+            "Trois méthodes",
+            "Server n'a pas de pare-feu"
+          ],
+          "answer": 0,
+          "explain": "Seul le profil actif change un peu."
+        },
+        {
+          "q": "Tester depuis une autre machine :",
+          "options": [
+            "tracert",
+            "nslookup",
+            "ipconfig",
+            "ping 192.168.10.11"
+          ],
+          "answer": 3,
+          "explain": "On doit voir des « Réponse de … »."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Le piège classique :",
+          "options": [
+            "Le mot de passe",
+            "Le câble",
+            "Les profils réseau : une règle ne s'applique qu'aux profils qu'elle couvre",
+            "IPv6"
+          ],
+          "answer": 2,
+          "explain": "Domaine / Privé / Public."
+        },
+        {
+          "q": "Un serveur joint au domaine utilise le profil :",
+          "options": [
+            "Domaine",
+            "Privé",
+            "Aucun",
+            "Public"
+          ],
+          "answer": 0,
+          "explain": "Autoriser sur ce profil, souvent par GPO."
+        },
+        {
+          "q": "La variante « (restrictif) » de la demande d'écho :",
+          "options": [
+            "Est la seule",
+            "Bloque tout",
+            "Est pour IPv6",
+            "Version limitée, souvent au sous-réseau local — à n'activer que si l'on sait pourquoi"
+          ],
+          "answer": 3,
+          "explain": "Plus bas dans la liste."
+        },
+        {
+          "q": "Groupe « Analyse de l'ordinateur virtuel » :",
+          "options": [
+            "Contient aussi des règles de demande d'écho, utiles sur une VM Hyper-V",
+            "Ne concerne pas le ping",
+            "Est Linux",
+            "Antivirus"
+          ],
+          "answer": 0,
+          "explain": "Il suffit qu'une règle d'écho entrant soit active pour le bon profil."
+        },
+        {
+          "q": "Pour annuler :",
+          "options": [
+            "Supprimer la règle",
+            "Réinstaller",
+            "Clic droit → Désactiver la règle",
+            "Redémarrer"
+          ],
+          "answer": 2,
+          "explain": "Réversible."
+        },
+        {
+          "q": "En entreprise, ces règles sont souvent :",
+          "options": [
+            "Manuelles",
+            "Absentes",
+            "Imposées par GPO",
+            "Dans le BIOS"
+          ],
+          "answer": 2,
+          "explain": "Stratégie de groupe."
+        },
+        {
+          "q": "Ping IPv6 par nom :",
+          "options": [
+            "ping nom --ipv6",
+            "ping -6 nom-de-la-machine",
+            "ping /6",
+            "ping6 nom"
+          ],
+          "answer": 1,
+          "explain": "Option -6."
+        },
+        {
+          "q": "Le ping échoue encore après activation :",
+          "options": [
+            "Réinstaller",
+            "Désactiver le pare-feu",
+            "Changer l'IP",
+            "Vérifier le profil actif de la connexion et la colonne Profil de la règle"
+          ],
+          "answer": 3,
+          "explain": "Paramètres → Réseau."
+        },
+        {
+          "q": "Sur Windows 10 en réseau « public » :",
+          "options": [
+            "IPv6 seulement",
+            "Le ping reste bloqué tant que la règle ne couvre pas ce profil",
+            "Pas de pare-feu",
+            "Le ping passe"
+          ],
+          "answer": 1,
+          "explain": "Tableau du cours."
+        },
+        {
+          "q": "Le groupe « Diagnostics de réseau de base » contient :",
+          "options": [
+            "DNS",
+            "L'écho entrant",
+            "L'écho ICMPv4 sortant (côté machine qui émet)",
+            "RDP"
+          ],
+          "answer": 2,
+          "explain": "Côté source."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Type ICMP d'une Echo Request :",
+          "options": [
+            "8",
+            "3",
+            "0",
+            "11"
+          ],
+          "answer": 0,
+          "explain": "Reply = type 0."
+        },
+        {
+          "q": "Autre chemin vers wf.msc :",
+          "options": [
+            "gpedit",
+            "cmd",
+            "Panneau de configuration → Système et sécurité → Pare-feu → Paramètres avancés",
+            "regedit"
+          ],
+          "answer": 2,
+          "explain": "Ou Win+R → wf.msc."
+        },
+        {
+          "q": "Pourquoi autoriser le ping en TP ?",
+          "options": [
+            "Par jeu",
+            "Pour Internet",
+            "Tests de connectivité dans les procédures AD et hébergement web",
+            "Obligatoire"
+          ],
+          "answer": 2,
+          "explain": "Liens du cours."
+        },
+        {
+          "q": "Désactiver tout le pare-feu pour le ping est :",
+          "options": [
+            "Une mauvaise pratique : on active la seule règle utile",
+            "Recommandé",
+            "Sans risque",
+            "Obligatoire"
+          ],
+          "answer": 0,
+          "explain": "Proprement."
+        },
+        {
+          "q": "La règle doit être activée pour :",
+          "options": [
+            "Le profil Public seulement",
+            "Le profil correspondant à ton réseau",
+            "Aucun",
+            "Tous les profils obligatoirement"
+          ],
+          "answer": 1,
+          "explain": "Colonne Profil."
+        },
+        {
+          "q": "Session nécessaire pour modifier le pare-feu :",
+          "options": [
+            "Administrateur",
+            "Service",
+            "Invité",
+            "Utilisateur standard"
+          ],
+          "answer": 0,
+          "explain": "Ouvre une session administrateur."
+        },
+        {
+          "q": "Le libellé de la règle peut apparaître comme :",
+          "options": [
+            "Echo-Out",
+            "ICMPv4 entrant / ICMPv4-In",
+            "Ping-In",
+            "Firewall-Ping"
+          ],
+          "answer": 1,
+          "explain": "Selon la langue et la version."
+        },
+        {
+          "q": "Équivalent Linux pour vérifier une règle ICMP :",
+          "options": [
+            "gpupdate",
+            "wf.msc",
+            "ipconfig",
+            "ufw status / iptables -L"
+          ],
+          "answer": 3,
+          "explain": "Pare-feu local Linux."
+        },
+        {
+          "q": "Le ping vers une machine Linux Debian par défaut :",
+          "options": [
+            "Impossible",
+            "Bloqué",
+            "Répond (pas de pare-feu actif par défaut)",
+            "IPv6 seulement"
+          ],
+          "answer": 2,
+          "explain": "Différence avec Windows."
+        },
+        {
+          "q": "Le ping répond mais le service HTTP non :",
+          "options": [
+            "Le réseau est cassé",
+            "ICMP",
+            "Le DNS",
+            "Le réseau va bien ; c'est le service ou son port qui bloque"
+          ],
+          "answer": 3,
+          "explain": "Un ping qui passe ne dit rien du service."
+        }
+      ]
+    }
+  ]
+}

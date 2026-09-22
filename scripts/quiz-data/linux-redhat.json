@@ -1,0 +1,351 @@
+{
+  "slug": "linux-redhat",
+  "title": "Rocky Linux et la famille Red Hat",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "RHEL est :",
+          "options": [
+            "Un clone",
+            "La version commerciale avec support payant",
+            "Gratuit sans support",
+            "Un laboratoire"
+          ],
+          "answer": 1,
+          "explain": "Version majeure ~3 ans, 10 ans de support."
+        },
+        {
+          "q": "Rocky Linux est :",
+          "options": [
+            "Une distribution Debian",
+            "L'avant-RHEL",
+            "Le laboratoire de Red Hat",
+            "Une reconstruction libre et gratuite de RHEL, binaire pour binaire"
+          ],
+          "answer": 3,
+          "explain": "Comme AlmaLinux."
+        },
+        {
+          "q": "Fedora est :",
+          "options": [
+            "Le laboratoire de Red Hat : 2 versions par an, jamais en production",
+            "Pour la production",
+            "Une SUSE",
+            "Un clone de RHEL"
+          ],
+          "answer": 0,
+          "explain": "Postes de développeurs."
+        },
+        {
+          "q": "CentOS Stream est :",
+          "options": [
+            "Fedora",
+            "L'avant-RHEL : ce qui deviendra la prochaine version mineure",
+            "Un clone de RHEL",
+            "Rocky"
+          ],
+          "answer": 1,
+          "explain": "En amont de RHEL, pas en aval."
+        },
+        {
+          "q": "Installer un paquet sur Rocky :",
+          "options": [
+            "pacman -S",
+            "zypper in",
+            "apt install",
+            "dnf install"
+          ],
+          "answer": 3,
+          "explain": "dnf remplace apt."
+        },
+        {
+          "q": "Équivalent de dpkg -l :",
+          "options": [
+            "dnf -l",
+            "yum list",
+            "rpm -l",
+            "rpm -qa"
+          ],
+          "answer": 3,
+          "explain": "rpm est le bas niveau, comme dpkg."
+        },
+        {
+          "q": "Groupe des administrateurs sur Rocky :",
+          "options": [
+            "root",
+            "sudo",
+            "admin",
+            "wheel"
+          ],
+          "answer": 3,
+          "explain": "sudo sur Debian."
+        },
+        {
+          "q": "Le serveur web s'appelle :",
+          "options": [
+            "web",
+            "nginx",
+            "httpd",
+            "apache2"
+          ],
+          "answer": 2,
+          "explain": "apache2 sur Debian."
+        },
+        {
+          "q": "Journal d'authentification sur Rocky :",
+          "options": [
+            "/var/log/auth.log",
+            "/var/log/syslog",
+            "/var/log/messages",
+            "/var/log/secure"
+          ],
+          "answer": 3,
+          "explain": "/var/log/messages pour le système."
+        },
+        {
+          "q": "Système de fichiers par défaut :",
+          "options": [
+            "btrfs",
+            "ext4",
+            "NTFS",
+            "XFS"
+          ],
+          "answer": 3,
+          "explain": "ext4 sur Debian."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Pourquoi Rocky existe-t-il ?",
+          "options": [
+            "Pour Oracle",
+            "Red Hat a arrêté CentOS 8 fin 2021 au profit de CentOS Stream ; Gregory Kurtzer a relancé un clone stable",
+            "Par mode",
+            "Pour concurrencer Debian"
+          ],
+          "answer": 1,
+          "explain": "La promesse de dix ans était rompue."
+        },
+        {
+          "q": "Équivalent d'apt update sur dnf :",
+          "options": [
+            "dnf update",
+            "Pas d'équivalent nécessaire : dnf rafraîchit ses métadonnées seul (48 h)",
+            "rpm update",
+            "dnf refresh"
+          ],
+          "answer": 1,
+          "explain": "Un dnf install suffit."
+        },
+        {
+          "q": "Ce qu'apt ne sait pas faire :",
+          "options": [
+            "Installer",
+            "Chercher",
+            "Supprimer",
+            "dnf history undo : annuler une transaction"
+          ],
+          "answer": 3,
+          "explain": "Une porte de sortie après une mise à jour qui casse."
+        },
+        {
+          "q": "Quel paquet a posé ce fichier ?",
+          "options": [
+            "rpm -ql",
+            "rpm -qf /chemin/fichier",
+            "dnf info",
+            "rpm -qa"
+          ],
+          "answer": 1,
+          "explain": "rpm -ql liste les fichiers d'un paquet."
+        },
+        {
+          "q": "Quel paquet fournit une commande ?",
+          "options": [
+            "apt-file",
+            "rpm -qa nom",
+            "dnf provides */nom",
+            "dnf search nom"
+          ],
+          "answer": 2,
+          "explain": "Équivalent d'apt-file search."
+        },
+        {
+          "q": "rpm -ivh paquet.rpm :",
+          "options": [
+            "Est recommandé",
+            "Résout les dépendances",
+            "Bas niveau : ne résout PAS les dépendances",
+            "Met à jour"
+          ],
+          "answer": 2,
+          "explain": "Préférer dnf install ./paquet.rpm."
+        },
+        {
+          "q": "Pare-feu sur Rocky :",
+          "options": [
+            "iptables seul",
+            "firewall-cmd, actif d'office",
+            "Aucun",
+            "ufw"
+          ],
+          "answer": 1,
+          "explain": "ufw souvent absent sur Debian."
+        },
+        {
+          "q": "Configuration réseau sur Rocky :",
+          "options": [
+            "netplan",
+            "ifconfig",
+            "nmcli",
+            "/etc/network/interfaces"
+          ],
+          "answer": 2,
+          "explain": "NetworkManager."
+        },
+        {
+          "q": "Sécurité renforcée sur Rocky :",
+          "options": [
+            "SELinux, bloquant",
+            "Aucune",
+            "AppArmor, discret",
+            "Windows Defender"
+          ],
+          "answer": 0,
+          "explain": "Un des trois mécanismes qui font échouer les TP."
+        },
+        {
+          "q": "Dépôts sur Rocky :",
+          "options": [
+            "/etc/apt/sources.list",
+            "/etc/dnf/repos",
+            "/etc/repos",
+            "/etc/yum.repos.d/*.repo"
+          ],
+          "answer": 3,
+          "explain": "Un fichier .repo par dépôt."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "« Rocky ou Alma ? » :",
+          "options": [
+            "Aucun ne marche",
+            "Alma est meilleur",
+            "Pas de bonne réponse technique : les deux se substituent à RHEL",
+            "Rocky est meilleur"
+          ],
+          "answer": 2,
+          "explain": "Savoir pourquoi ils existent compte plus."
+        },
+        {
+          "q": "Ce qui ne change pas entre Debian et Rocky :",
+          "options": [
+            "Tout change",
+            "systemctl, journalctl, ls, chmod, ssh, /etc/passwd, cron, ip a…",
+            "Le shell",
+            "Le noyau"
+          ],
+          "answer": 1,
+          "explain": "Presque tout."
+        },
+        {
+          "q": "htop, tree, fail2ban sur Rocky demandent :",
+          "options": [
+            "Le dépôt EPEL (dnf install epel-release)",
+            "Un .deb",
+            "SELinux off",
+            "Rien"
+          ],
+          "answer": 0,
+          "explain": "La priorité de RHEL est la stabilité, pas l'exhaustivité."
+        },
+        {
+          "q": "dnf history rollback 40 :",
+          "options": [
+            "Annule la 40",
+            "Supprime l'historique",
+            "Revient à l'état d'après la transaction 40",
+            "Réinstalle"
+          ],
+          "answer": 2,
+          "explain": "undo 42 annule la seule transaction 42."
+        },
+        {
+          "q": "Réglages par service sur Rocky :",
+          "options": [
+            "/etc/default/",
+            "/opt",
+            "/etc/sysconfig/",
+            "/etc/conf/"
+          ],
+          "answer": 2,
+          "explain": "/etc/default/ sur Debian."
+        },
+        {
+          "q": "Oracle Linux est :",
+          "options": [
+            "Une reconstruction de RHEL par Oracle",
+            "Une Debian",
+            "SUSE",
+            "Fedora"
+          ],
+          "answer": 0,
+          "explain": "Environnements Oracle Database."
+        },
+        {
+          "q": "En 2023, Red Hat a :",
+          "options": [
+            "Racheté Rocky",
+            "Libéré tout",
+            "Arrêté RHEL",
+            "Restreint l'accès public aux sources"
+          ],
+          "answer": 3,
+          "explain": "Alma privilégie désormais la compatibilité fonctionnelle."
+        },
+        {
+          "q": "rpm -qc httpd :",
+          "options": [
+            "Le cache",
+            "Seulement les fichiers de configuration du paquet",
+            "Tous les fichiers",
+            "La version"
+          ],
+          "answer": 1,
+          "explain": "-ql pour tous les fichiers."
+        },
+        {
+          "q": "dnf group install \"Development Tools\" :",
+          "options": [
+            "Un groupe de paquets d'un coup",
+            "Un dépôt",
+            "Un seul paquet",
+            "Rien"
+          ],
+          "answer": 0,
+          "explain": "dnf group list pour les voir."
+        },
+        {
+          "q": "Une distribution d'entreprise est :",
+          "options": [
+            "Un ensemble de logiciels seulement",
+            "Un engagement de durée (support 10 ans)",
+            "Fedora",
+            "Gratuite toujours"
+          ],
+          "answer": 1,
+          "explain": "Ce qui se dit en entretien."
+        }
+      ]
+    }
+  ]
+}

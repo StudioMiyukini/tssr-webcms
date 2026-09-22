@@ -1,0 +1,351 @@
+{
+  "slug": "cisco-nat",
+  "title": "NAT / PAT : la translation d’adresses",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Que fait le NAT ?",
+          "options": [
+            "Chiffre",
+            "Filtre",
+            "Route",
+            "Réécrit l'adresse IP d'un paquet qui traverse le routeur de bordure"
+          ],
+          "answer": 3,
+          "explain": "Privée → publique à la sortie, inverse au retour."
+        },
+        {
+          "q": "Pourquoi le NAT existe-t-il ?",
+          "options": [
+            "Pour la vitesse",
+            "Par tradition",
+            "Pour la sécurité",
+            "IPv4 n'a que ~4,3 milliards d'adresses, épuisées"
+          ],
+          "answer": 3,
+          "explain": "RFC 1918 + RFC 3022."
+        },
+        {
+          "q": "Plage privée /8 :",
+          "options": [
+            "10.0.0.0",
+            "192.168.0.0",
+            "169.254.0.0",
+            "172.16.0.0"
+          ],
+          "answer": 0,
+          "explain": "≈ 16,7 M d'adresses, grandes entreprises."
+        },
+        {
+          "q": "Plage privée /12 :",
+          "options": [
+            "192.168.0.0",
+            "172.16.0.0 → 172.31.255.255",
+            "10.0.0.0",
+            "224.0.0.0"
+          ],
+          "answer": 1,
+          "explain": "≈ 1 M, moyennes infras."
+        },
+        {
+          "q": "Inside local :",
+          "options": [
+            "IP de l'externe",
+            "IP publique de l'interne",
+            "IP privée réelle de la machine interne",
+            "IP du DNS"
+          ],
+          "answer": 2,
+          "explain": "Ex. 192.168.10.51."
+        },
+        {
+          "q": "Inside global :",
+          "options": [
+            "IP publique sous laquelle l'interne est vue dehors",
+            "Le masque",
+            "IP de l'externe",
+            "IP privée"
+          ],
+          "answer": 0,
+          "explain": "Ex. 203.0.113.10."
+        },
+        {
+          "q": "Avant tout NAT, on doit :",
+          "options": [
+            "Désigner les interfaces ip nat inside et ip nat outside",
+            "Redémarrer",
+            "Créer une ACL",
+            "Créer un pool"
+          ],
+          "answer": 0,
+          "explain": "Sans ça, aucune traduction."
+        },
+        {
+          "q": "Les trois types de NAT :",
+          "options": [
+            "Statique, dynamique, PAT/overload",
+            "Rapide, lent, moyen",
+            "Interne, externe, mixte",
+            "IPv4, IPv6, dual"
+          ],
+          "answer": 0,
+          "explain": "Tableau du cours."
+        },
+        {
+          "q": "NAT statique :",
+          "options": [
+            "Un pool",
+            "Correspondance fixe 1:1, bidirectionnelle — publier un serveur",
+            "Par port",
+            "Sortant seulement"
+          ],
+          "answer": 1,
+          "explain": "ip nat inside source static 192.168.10.51 203.0.113.10."
+        },
+        {
+          "q": "PAT / overload :",
+          "options": [
+            "1:1",
+            "Un pool sans partage",
+            "Interdit",
+            "Plusieurs privées → une seule publique, via le port : le cas courant"
+          ],
+          "answer": 3,
+          "explain": "Tout le LAN derrière l'IP du routeur/box."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "NAT dynamique :",
+          "options": [
+            "Statique",
+            "1:1 fixe",
+            "PAT",
+            "Un pool d'IP publiques prêtées à la volée, 1:1 temporaire"
+          ],
+          "answer": 3,
+          "explain": "ip nat pool PUB … puis ip nat inside source list 1 pool PUB."
+        },
+        {
+          "q": "Limite du NAT dynamique sans overload :",
+          "options": [
+            "Pas de retour",
+            "Plus d'hôtes actifs que d'IP dans le pool → les suivants n'ont plus de traduction",
+            "Aucune",
+            "Trop rapide"
+          ],
+          "answer": 1,
+          "explain": "En pratique on ajoute overload."
+        },
+        {
+          "q": "Coût d'un NAT statique :",
+          "options": [
+            "Rien",
+            "Un pool",
+            "Une IP publique entière par machine",
+            "Un port"
+          ],
+          "answer": 2,
+          "explain": "Réservé aux quelques serveurs à exposer."
+        },
+        {
+          "q": "Pour n'exposer qu'un port sans gaspiller une IP :",
+          "options": [
+            "Port forwarding (PAT entrant)",
+            "ACL",
+            "Pool",
+            "NAT statique"
+          ],
+          "answer": 0,
+          "explain": "Redirection de port."
+        },
+        {
+          "q": "Le NAT est-il un pare-feu ?",
+          "options": [
+            "Oui en statique",
+            "Oui en PAT",
+            "Oui",
+            "Non : le masquage est un effet de bord, pas un filtrage"
+          ],
+          "answer": 3,
+          "explain": "Il faut des ACL ou un vrai pare-feu."
+        },
+        {
+          "q": "Le NAT casse :",
+          "options": [
+            "Le DNS",
+            "Le routage",
+            "IPv4",
+            "Le principe bout-en-bout : une machine externe ne peut pas joindre spontanément une interne"
+          ],
+          "answer": 3,
+          "explain": "D'où le port forwarding."
+        },
+        {
+          "q": "Protocoles compliqués par le NAT :",
+          "options": [
+            "FTP actif, SIP, IPsec (IP dans les données) → ALG",
+            "ICMP",
+            "HTTP",
+            "DNS"
+          ],
+          "answer": 0,
+          "explain": "Application Layer Gateway."
+        },
+        {
+          "q": "IPv6 et le NAT :",
+          "options": [
+            "IPv6 supprime le besoin de NAT (adresses illimitées)",
+            "IPv6 en a plus besoin",
+            "Identique",
+            "Interdit"
+          ],
+          "answer": 0,
+          "explain": "Bout-en-bout retrouvé."
+        },
+        {
+          "q": "L'ACL dans le NAT dynamique sert à :",
+          "options": [
+            "Filtrer Internet",
+            "Router",
+            "Dire qui a le droit d'être traduit",
+            "Bloquer"
+          ],
+          "answer": 2,
+          "explain": "access-list 1 permit 192.168.10.0 0.0.0.255."
+        },
+        {
+          "q": "Commande pour voir les traductions :",
+          "options": [
+            "show translations",
+            "show ip nat translations",
+            "ip nat show",
+            "show nat"
+          ],
+          "answer": 1,
+          "explain": "Colonne Inside = local → global."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Configuration PAT sur l'interface de sortie :",
+          "options": [
+            "ip nat pat",
+            "ip nat inside source list 1 interface Gi0/1 overload",
+            "ip nat pool",
+            "ip nat static"
+          ],
+          "answer": 1,
+          "explain": "Le mot-clé overload fait le partage par port."
+        },
+        {
+          "q": "Outside global :",
+          "options": [
+            "IP publique réelle de la machine externe (ex. 8.8.8.8)",
+            "IP du pool",
+            "IP privée interne",
+            "IP du routeur"
+          ],
+          "answer": 0,
+          "explain": "Outside local est rare, souvent égale."
+        },
+        {
+          "q": "Changer de fournisseur avec le NAT :",
+          "options": [
+            "Impossible",
+            "Changer seulement l'IP publique : le LAN ne bouge pas",
+            "Changer le DNS",
+            "Réadresser tout le LAN"
+          ],
+          "answer": 1,
+          "explain": "Souplesse."
+        },
+        {
+          "q": "Combien d'adresses dans 192.168.0.0/16 ?",
+          "options": [
+            "256",
+            "65 536",
+            "16,7 M",
+            "1 M"
+          ],
+          "answer": 1,
+          "explain": "Box et petits réseaux."
+        },
+        {
+          "q": "Un paquet qui sort avec une source privée sans NAT :",
+          "options": [
+            "Est rejeté par les routeurs d'Internet, ne reviendrait jamais",
+            "Est routé",
+            "Est chiffré",
+            "Arrive"
+          ],
+          "answer": 0,
+          "explain": "Non routable."
+        },
+        {
+          "q": "La table de traduction sert à :",
+          "options": [
+            "Filtrer",
+            "Savoir à quelle machine interne renvoyer la réponse",
+            "Router",
+            "Chiffrer"
+          ],
+          "answer": 1,
+          "explain": "Mémorise la correspondance."
+        },
+        {
+          "q": "Pool 203.0.113.10–.20 avec 30 hôtes actifs sans overload :",
+          "options": [
+            "Overload automatique",
+            "Tous sortent",
+            "Erreur",
+            "11 sortent, les autres non"
+          ],
+          "answer": 3,
+          "explain": "Limite forte."
+        },
+        {
+          "q": "L'interface côté LAN reçoit :",
+          "options": [
+            "ip nat inside",
+            "ip nat outside",
+            "ip nat static",
+            "ip nat pool"
+          ],
+          "answer": 0,
+          "explain": "Gi0/0 inside, Gi0/1 outside."
+        },
+        {
+          "q": "Pour l'examen, la traduction courante porte sur :",
+          "options": [
+            "outside local → outside global",
+            "global → local",
+            "inside local → inside global",
+            "Rien"
+          ],
+          "answer": 2,
+          "explain": "On remplace l'IP privée par une publique en sortie."
+        },
+        {
+          "q": "Le NAT est aussi mis en œuvre sur :",
+          "options": [
+            "Un PC",
+            "Un hub",
+            "Un switch",
+            "OPNsense (Outbound, Port Forward, 1:1)"
+          ],
+          "answer": 3,
+          "explain": "Même usage, autre interface."
+        }
+      ]
+    }
+  ]
+}

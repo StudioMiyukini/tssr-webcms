@@ -20,10 +20,11 @@ const blocks: PageBlock[] = [
     '⑤ DHCP — scripts de relais (ip helper-address) à coller sur les routeurs + étendues à configurer sur le serveur DHCP.',
     '⑥ DNS — enregistrements A/PTR, résolution locale (ip host) et tests (nslookup/ping).',
     '⑦ SSH — configuration d’accès distant chiffré prête à coller pour chaque routeur et chaque switch (SVI de gestion inclus).',
+    '⑧ ACL — le filtrage : on compose les règles ligne à ligne, sources et destinations se piochent dans le plan (wildcard calculé), et l’outil signale les règles jamais lues, l’ACL qui bloque tout et les numéros hors plage.',
   ] }),
   note('green', '🎓 Se justifier sans l’outil', '<p>Pour un examen « Réalisation », tu dois savoir <strong>refaire à la main</strong> ce que cet assistant génère. Suis la procédure maîtresse : <a href="/pages/procedure-atelier-reseau-az">Construire un réseau multi-routeurs de A à Z</a> (elle renvoie à chaque procédure détaillée : interfaces, routes statiques, DHCP relais, DNS, SSH).</p>'),
   block('html', { html: '<div class="pb-dynamic" data-block="network-workshop"></div>' }),
-  note('blue', 'ℹ️ Comment ça marche', '<p>Renseigne les <strong>étapes 1 et 2</strong>, puis déroule les étapes 3 à 6 : le plan d’adressage, le schéma, les pools DHCP et le DNS se calculent en direct à partir du <strong>même contexte</strong> et sont <strong>copiables</strong>. Les avertissements signalent un manque de place dans le réseau de base ou un routeur à court d’interfaces. Outils liés : <a href="/pages/segmentation-reseau">segmentation VLSM/FLSM</a>, <a href="/pages/configurateur-routeur-cisco">configurateur routeur</a>, <a href="/pages/generateur-routes-statiques">routes statiques</a>, <a href="/pages/configurateur-dhcp-cisco">DHCP routeur</a>. Procédures : <a href="/pages/procedure-plan-adressage">plan d’adressage</a>, <a href="/pages/procedure-ssh-packet-tracer">SSH sur Packet Tracer</a>.</p>'),
+  note('blue', 'ℹ️ Comment ça marche', '<p>Renseigne les <strong>étapes 1 et 2</strong>, puis déroule les étapes 3 à 6 : le plan d’adressage, le schéma, les pools DHCP et le DNS se calculent en direct à partir du <strong>même contexte</strong> et sont <strong>copiables</strong>. Les avertissements signalent un manque de place dans le réseau de base ou un routeur à court d’interfaces. Cours lié à l’étape ACL : <a href="/pages/cisco-acl">les listes de contrôle d’accès</a>. Outils liés : <a href="/pages/segmentation-reseau">segmentation VLSM/FLSM</a>, <a href="/pages/configurateur-routeur-cisco">configurateur routeur</a>, <a href="/pages/generateur-routes-statiques">routes statiques</a>, <a href="/pages/configurateur-dhcp-cisco">DHCP routeur</a>. Procédures : <a href="/pages/procedure-plan-adressage">plan d’adressage</a>, <a href="/pages/procedure-ssh-packet-tracer">SSH sur Packet Tracer</a>.</p>'),
 ];
 
 function cookieFrom(res: Response): string {
@@ -37,7 +38,7 @@ async function main() {
   const h = { 'Content-Type': 'application/json', Cookie: cookie };
   const existing = await (await fetch(`${BASE}/api/admin/pages`, { headers: { Cookie: cookie } })).json() as Array<{ id: number; slug: string }>;
   const cur = existing.find(e => e.slug === 'atelier-reseau');
-  const body = JSON.stringify({ title: 'Atelier Réseau & Packet Tracer', slug: 'atelier-reseau', excerpt: 'Assistant guidé multi-étapes : contexte, préférences, segmentation VLSM multi-routeurs (2811/2911) avec attribution automatique des interfaces, schéma (blocs + SVG), pools DHCP par routeur et enregistrements DNS + tests.', content: renderPageBlocksToHtml(blocks), builder_json: serializePageBlocks(blocks), published: 1 });
+  const body = JSON.stringify({ title: 'Atelier Réseau & Packet Tracer', slug: 'atelier-reseau', excerpt: 'Assistant guidé multi-étapes : contexte, préférences, segmentation VLSM multi-routeurs (2811/2911) avec attribution automatique des interfaces, schéma (blocs + SVG), pools DHCP par routeur, enregistrements DNS, SSH et ACL de filtrage (wildcard calculé, règles masquées signalées).', content: renderPageBlocksToHtml(blocks), builder_json: serializePageBlocks(blocks), published: 1 });
   const res = cur
     ? await fetch(`${BASE}/api/admin/pages/${cur.id}`, { method: 'PUT', headers: h, body })
     : await fetch(`${BASE}/api/admin/pages`, { method: 'POST', headers: h, body });

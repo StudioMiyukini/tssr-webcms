@@ -1,0 +1,351 @@
+{
+  "slug": "ip-et-binaire",
+  "title": "IP et initiation au binaire",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Quels sont les deux seuls chiffres du binaire ?",
+          "options": [
+            "0 et 9",
+            "A et F",
+            "0 et 1",
+            "1 et 2"
+          ],
+          "answer": 2,
+          "explain": "Le binaire est en base 2 : uniquement 0 et 1, comme un interrupteur éteint/allumé."
+        },
+        {
+          "q": "Combien de bits forment un octet ?",
+          "options": [
+            "16",
+            "32",
+            "4",
+            "8"
+          ],
+          "answer": 3,
+          "explain": "Huit bits = un octet (byte). Une IPv4 = 4 octets."
+        },
+        {
+          "q": "Quels sont les poids des bits d'un octet, de gauche à droite ?",
+          "options": [
+            "1, 2, 3, 4, 5, 6, 7, 8",
+            "128, 64, 32, 16, 8, 4, 2, 1",
+            "10, 100, 1000…",
+            "256, 128, 64, 32, 16, 8, 4, 2"
+          ],
+          "answer": 1,
+          "explain": "Ce sont les puissances de 2, de 2⁷ = 128 à 2⁰ = 1."
+        },
+        {
+          "q": "Que vaut 10101000 en décimal ?",
+          "options": [
+            "184",
+            "160",
+            "172",
+            "168"
+          ],
+          "answer": 3,
+          "explain": "128 + 32 + 8 = 168."
+        },
+        {
+          "q": "Que vaut 192 en binaire ?",
+          "options": [
+            "11100000",
+            "10000000",
+            "11000000",
+            "10100000"
+          ],
+          "answer": 2,
+          "explain": "192 = 128 + 64 → 11000000."
+        },
+        {
+          "q": "Pourquoi un nombre d'une IP va-t-il de 0 à 255 ?",
+          "options": [
+            "Parce que 8 bits donnent 2⁸ = 256 combinaisons",
+            "Parce que le masque l'impose",
+            "Par convention historique",
+            "Parce que 255 est un nombre premier"
+          ],
+          "answer": 0,
+          "explain": "De 00000000 (0) à 11111111 (255) : 256 valeurs."
+        },
+        {
+          "q": "Combien de bits fait une adresse IPv4 ?",
+          "options": [
+            "32",
+            "8",
+            "64",
+            "16"
+          ],
+          "answer": 0,
+          "explain": "4 octets × 8 bits = 32 bits."
+        },
+        {
+          "q": "Dans un masque écrit en binaire, que représentent les 1 ?",
+          "options": [
+            "La partie réseau",
+            "La partie machine",
+            "Les bits inutilisés",
+            "Le broadcast"
+          ],
+          "answer": 0,
+          "explain": "Les 1 = réseau, les 0 = machine ; le /CIDR est le nombre de 1."
+        },
+        {
+          "q": "Que vaut 11111111 en décimal ?",
+          "options": [
+            "254",
+            "256",
+            "128",
+            "255"
+          ],
+          "answer": 3,
+          "explain": "Tous les poids additionnés : 128+64+32+16+8+4+2+1 = 255."
+        },
+        {
+          "q": "Quelle est l'analogie du bit dans le cours ?",
+          "options": [
+            "Une lettre",
+            "Un interrupteur (éteint = 0, allumé = 1)",
+            "Une clé",
+            "Un tiroir"
+          ],
+          "answer": 1,
+          "explain": "Une rangée d'interrupteurs permet de coder n'importe quel nombre."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Que vaut 11100000 en décimal ?",
+          "options": [
+            "240",
+            "192",
+            "224",
+            "248"
+          ],
+          "answer": 2,
+          "explain": "128 + 64 + 32 = 224."
+        },
+        {
+          "q": "Convertis 42 en binaire :",
+          "options": [
+            "00101010",
+            "00110010",
+            "00100110",
+            "01010100"
+          ],
+          "answer": 0,
+          "explain": "42 = 32 + 8 + 2 → 00101010."
+        },
+        {
+          "q": "Un masque /26 correspond dans le 4ᵉ octet à :",
+          "options": [
+            "11000000 = 192",
+            "10000000 = 128",
+            "11100000 = 224",
+            "11110000 = 240"
+          ],
+          "answer": 0,
+          "explain": "/26 = 24 bits + 2 bits dans le 4ᵉ octet → 11000000 = 192."
+        },
+        {
+          "q": "Quel est le nombre magique d'un octet de masque valant 224 ?",
+          "options": [
+            "64",
+            "16",
+            "224",
+            "32"
+          ],
+          "answer": 3,
+          "explain": "Nombre magique = 256 − 224 = 32."
+        },
+        {
+          "q": "Lesquelles sont les seules valeurs possibles d'un octet de masque ?",
+          "options": [
+            "0, 128, 192, 224, 240, 248, 252, 254, 255",
+            "1, 2, 4, 8, 16, 32, 64, 128",
+            "Toutes de 0 à 255",
+            "0, 64, 128, 192, 255"
+          ],
+          "answer": 0,
+          "explain": "Un masque a des 1 consécutifs à gauche : 9 valeurs possibles par octet."
+        },
+        {
+          "q": "Que vaut 01100100 en décimal ?",
+          "options": [
+            "100",
+            "108",
+            "96",
+            "104"
+          ],
+          "answer": 0,
+          "explain": "64 + 32 + 4 = 100."
+        },
+        {
+          "q": "Combien de bits à 1 dans l'octet 11111000 ?",
+          "options": [
+            "6",
+            "3",
+            "5",
+            "4"
+          ],
+          "answer": 2,
+          "explain": "11111000 = 5 bits à 1 = 248, nombre magique 8."
+        },
+        {
+          "q": "Pour convertir décimal → binaire, la méthode du cours consiste à :",
+          "options": [
+            "Retirer les puissances de 2 de la plus grande à la plus petite",
+            "Diviser par 10",
+            "Multiplier par 2",
+            "Additionner les chiffres"
+          ],
+          "answer": 0,
+          "explain": "On soustrait 128, 64, 32… si possible : bit à 1 quand on retire, à 0 sinon."
+        },
+        {
+          "q": "Que vaut 255.255.255.240 en CIDR ?",
+          "options": [
+            "/29",
+            "/28",
+            "/26",
+            "/27"
+          ],
+          "answer": 1,
+          "explain": "240 = 11110000 = 4 bits → 24 + 4 = /28."
+        },
+        {
+          "q": "Convertis 200 en binaire :",
+          "options": [
+            "11010000",
+            "10101000",
+            "11000100",
+            "11001000"
+          ],
+          "answer": 3,
+          "explain": "200 = 128 + 64 + 8 → 11001000."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Quel masque décimal correspond à /19 ?",
+          "options": [
+            "255.255.240.0",
+            "255.255.224.0",
+            "255.255.192.0",
+            "255.224.0.0"
+          ],
+          "answer": 1,
+          "explain": "/19 = 16 + 3 bits dans le 3ᵉ octet → 11100000 = 224 → 255.255.224.0."
+        },
+        {
+          "q": "L'IP 192.168.1.10 en binaire commence par :",
+          "options": [
+            "10101000.11000000",
+            "11000000.10100000",
+            "11100000.10101000",
+            "11000000.10101000"
+          ],
+          "answer": 3,
+          "explain": "192 = 11000000, 168 = 10101000."
+        },
+        {
+          "q": "Quel est le nombre magique de /29 ?",
+          "options": [
+            "16",
+            "2",
+            "4",
+            "8"
+          ],
+          "answer": 3,
+          "explain": "/29 → 248 dans le 4ᵉ octet → 256 − 248 = 8."
+        },
+        {
+          "q": "Que vaut 2⁷ ?",
+          "options": [
+            "256",
+            "512",
+            "64",
+            "128"
+          ],
+          "answer": 3,
+          "explain": "2⁷ = 128, le poids du bit le plus à gauche d'un octet."
+        },
+        {
+          "q": "Combien de combinaisons offrent 6 bits ?",
+          "options": [
+            "6",
+            "128",
+            "64",
+            "32"
+          ],
+          "answer": 2,
+          "explain": "2⁶ = 64, ce qui explique les 64 adresses d'un /26."
+        },
+        {
+          "q": "Un octet de masque à 254 en binaire est :",
+          "options": [
+            "11111110",
+            "11111100",
+            "11110000",
+            "11111111"
+          ],
+          "answer": 0,
+          "explain": "254 = 7 bits à 1 → 11111110, nombre magique 2."
+        },
+        {
+          "q": "Que vaut 10011001 en décimal ?",
+          "options": [
+            "145",
+            "153",
+            "157",
+            "161"
+          ],
+          "answer": 1,
+          "explain": "128 + 16 + 8 + 1 = 153."
+        },
+        {
+          "q": "Pourquoi la méthode du nombre magique évite-t-elle la conversion binaire complète ?",
+          "options": [
+            "Parce qu'on ne raisonne que sur l'octet « à cheval » entre réseau et machine",
+            "Parce qu'elle ne s'applique qu'aux classes C",
+            "Parce que le masque est toujours /24",
+            "Parce que le binaire est interdit"
+          ],
+          "answer": 0,
+          "explain": "Un seul octet est intéressant ; le magic donne la taille des blocs dans cet octet."
+        },
+        {
+          "q": "Le /CIDR d'un masque est :",
+          "options": [
+            "Le nombre de 1",
+            "Le nombre d'hôtes",
+            "Le nombre d'octets",
+            "Le nombre de 0"
+          ],
+          "answer": 0,
+          "explain": "/CIDR = nombre de bits à 1 (partie réseau)."
+        },
+        {
+          "q": "Convertis 173 en binaire :",
+          "options": [
+            "10110101",
+            "10011101",
+            "10101011",
+            "10101101"
+          ],
+          "answer": 3,
+          "explain": "173 = 128 + 32 + 8 + 4 + 1 → 10101101."
+        }
+      ]
+    }
+  ]
+}

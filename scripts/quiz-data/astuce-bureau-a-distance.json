@@ -1,0 +1,351 @@
+{
+  "slug": "astuce-bureau-a-distance",
+  "title": "Activer le Bureau à distance (RDP)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Que signifie RDP ?",
+          "options": [
+            "Remote Desktop Protocol",
+            "Rapid Desktop Process",
+            "Remote Data Protocol",
+            "Remote Domain Policy"
+          ],
+          "answer": 0,
+          "explain": "Prendre le contrôle graphique d'une machine à distance."
+        },
+        {
+          "q": "Port du Bureau à distance :",
+          "options": [
+            "443",
+            "5900",
+            "22",
+            "3389 TCP"
+          ],
+          "answer": 3,
+          "explain": "À ouvrir dans le pare-feu."
+        },
+        {
+          "q": "Où l'activer sous Windows 10/11 ?",
+          "options": [
+            "Paramètres → Système → Bureau à distance",
+            "Panneau de configuration → Programmes",
+            "regedit",
+            "gpmc"
+          ],
+          "answer": 0,
+          "explain": "Interrupteur sur Activé."
+        },
+        {
+          "q": "Où l'activer sur Windows Server ?",
+          "options": [
+            "DNS",
+            "Gestionnaire de serveur → Serveur local → Bureau à distance : Désactivé (cliquer)",
+            "AD",
+            "IIS"
+          ],
+          "answer": 1,
+          "explain": "Puis Propriétés système → Utilisation à distance."
+        },
+        {
+          "q": "Méthode commune à toutes les versions :",
+          "options": [
+            "wf.msc",
+            "ncpa.cpl",
+            "mstsc",
+            "Win+R → sysdm.cpl → onglet Utilisation à distance"
+          ],
+          "answer": 3,
+          "explain": "Propriétés système."
+        },
+        {
+          "q": "NLA signifie :",
+          "options": [
+            "No Login Allowed",
+            "New Login Access",
+            "Network Layer Address",
+            "Network Level Authentication : le client s'authentifie avant d'ouvrir la session"
+          ],
+          "answer": 3,
+          "explain": "À laisser coché."
+        },
+        {
+          "q": "Client pour se connecter :",
+          "options": [
+            "ping",
+            "wf.msc",
+            "sysdm.cpl",
+            "mstsc (Connexion Bureau à distance)"
+          ],
+          "answer": 3,
+          "explain": "Win+R → mstsc."
+        },
+        {
+          "q": "Par défaut, qui peut se connecter en RDP ?",
+          "options": [
+            "Personne",
+            "Tout le monde",
+            "Les invités",
+            "Seuls les administrateurs"
+          ],
+          "answer": 3,
+          "explain": "Bouton « Sélectionner des utilisateurs… » pour les autres."
+        },
+        {
+          "q": "Édition Windows sans Bureau à distance entrant :",
+          "options": [
+            "Famille",
+            "Éducation",
+            "Pro",
+            "Entreprise"
+          ],
+          "answer": 0,
+          "explain": "Toutes peuvent se connecter à une autre machine."
+        },
+        {
+          "q": "Activer par l'interface :",
+          "options": [
+            "Ferme le pare-feu",
+            "Ouvre automatiquement la règle de pare-feu",
+            "Désactive NLA",
+            "Ne touche pas au pare-feu"
+          ],
+          "answer": 1,
+          "explain": "Vérifier dans wf.msc si l'accès échoue."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Groupe local qui autorise des comptes non-admin :",
+          "options": [
+            "Invités",
+            "Utilisateurs du Bureau à distance",
+            "Utilisateurs",
+            "Opérateurs"
+          ],
+          "answer": 1,
+          "explain": "Ou le bouton Sélectionner des utilisateurs."
+        },
+        {
+          "q": "Exposer RDP directement sur Internet :",
+          "options": [
+            "Recommandé",
+            "Sans risque",
+            "À ne pas faire : réseau de confiance, mots de passe forts, NLA",
+            "Obligatoire"
+          ],
+          "answer": 2,
+          "explain": "Le port 3389 est scanné en continu."
+        },
+        {
+          "q": "Clé registre pour activer RDP en PowerShell :",
+          "options": [
+            "AllowRDP",
+            "RDPEnabled = 1",
+            "fDenyTSConnections = 0",
+            "fDenyTSConnections = 1"
+          ],
+          "answer": 2,
+          "explain": "Terminal Server → fDenyTSConnections à 0."
+        },
+        {
+          "q": "Exiger NLA en PowerShell :",
+          "options": [
+            "NLA = on",
+            "Set-NLA",
+            "UserAuthentication = 1 sous RDP-Tcp",
+            "UserAuthentication = 0"
+          ],
+          "answer": 2,
+          "explain": "WinStations\\RDP-Tcp."
+        },
+        {
+          "q": "Ouvrir le pare-feu en PowerShell :",
+          "options": [
+            "Enable-NetFirewallRule -DisplayGroup 'Bureau à distance'",
+            "ufw allow 3389",
+            "netsh open 3389",
+            "Allow-RDP"
+          ],
+          "answer": 0,
+          "explain": "« Remote Desktop » sur un Windows anglais."
+        },
+        {
+          "q": "Le libellé du groupe de pare-feu dépend :",
+          "options": [
+            "De la version",
+            "Du domaine",
+            "Du processeur",
+            "De la langue de Windows"
+          ],
+          "answer": 3,
+          "explain": "Adapter la commande."
+        },
+        {
+          "q": "Dans mstsc, on saisit :",
+          "options": [
+            "Le nom ou l'adresse IP de la machine cible",
+            "Le mot de passe seulement",
+            "Le nom de domaine seul",
+            "Le port 22"
+          ],
+          "answer": 0,
+          "explain": "Puis Connexion et authentification."
+        },
+        {
+          "q": "Format du compte de domaine :",
+          "options": [
+            "utilisateur.domaine",
+            "utilisateur@domaine seulement",
+            "domaine\\utilisateur (ou compte local)",
+            "domaine/utilisateur"
+          ],
+          "answer": 2,
+          "explain": "S'authentifier avec un compte autorisé."
+        },
+        {
+          "q": "Le RDP est utile pour :",
+          "options": [
+            "Le web",
+            "Administrer un serveur sans écran",
+            "Le mail",
+            "Le DNS"
+          ],
+          "answer": 1,
+          "explain": "Prendre la main à distance."
+        },
+        {
+          "q": "L'accès échoue malgré l'activation :",
+          "options": [
+            "Désactiver NLA",
+            "Vérifier dans wf.msc le groupe « Bureau à distance » pour le bon profil",
+            "Réinstaller",
+            "Changer le port"
+          ],
+          "answer": 1,
+          "explain": "Même logique que pour le ping."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Publier RDP depuis le WAN pour un poste précis (TP OPNsense) :",
+          "options": [
+            "Impossible",
+            "Redirection de port avec source restreinte à l'IP de l'hôte",
+            "Désactiver NLA",
+            "Ouvrir 3389 à tous"
+          ],
+          "answer": 1,
+          "explain": "Voir TP 1.3 NAT, bonus."
+        },
+        {
+          "q": "Deux machines à joindre en RDP derrière une seule IP publique :",
+          "options": [
+            "VPN obligatoire seulement",
+            "Impossible",
+            "Publier sur deux ports différents (3389 → A, 3390 → B)",
+            "Même port"
+          ],
+          "answer": 2,
+          "explain": "PAT."
+        },
+        {
+          "q": "Alternative sûre à l'exposition RDP :",
+          "options": [
+            "Telnet",
+            "Passer par un VPN puis RDP en interne",
+            "HTTP",
+            "FTP"
+          ],
+          "answer": 1,
+          "explain": "Ne pas exposer directement."
+        },
+        {
+          "q": "NLA protège contre :",
+          "options": [
+            "Le ping",
+            "L'ouverture d'une session graphique avant authentification (ressources, attaques)",
+            "Rien",
+            "Le DNS"
+          ],
+          "answer": 1,
+          "explain": "Le client s'authentifie d'abord."
+        },
+        {
+          "q": "Où vérifier le nom du PC pour se connecter ?",
+          "options": [
+            "Dans mstsc",
+            "Dans Paramètres → Système → Bureau à distance (nom affiché)",
+            "Dans wf.msc",
+            "Dans le BIOS"
+          ],
+          "answer": 1,
+          "explain": "Ou l'IP."
+        },
+        {
+          "q": "Gestion des accès RDP dans un domaine :",
+          "options": [
+            "Par DNS",
+            "Impossible",
+            "À la main sur chaque poste",
+            "Par GPO (groupe Utilisateurs du Bureau à distance)"
+          ],
+          "answer": 3,
+          "explain": "Centralisé."
+        },
+        {
+          "q": "Session RDP sur un Windows Server :",
+          "options": [
+            "Deux sessions administratives simultanées par défaut",
+            "Aucune",
+            "Illimité",
+            "Un seul utilisateur"
+          ],
+          "answer": 0,
+          "explain": "Au-delà : services Bureau à distance (licences)."
+        },
+        {
+          "q": "Où exécuter le raccourci PowerShell ?",
+          "options": [
+            "En administrateur sur la machine cible",
+            "Sur le client",
+            "Sur le DNS",
+            "Utilisateur standard"
+          ],
+          "answer": 0,
+          "explain": "Modifie le registre et le pare-feu."
+        },
+        {
+          "q": "Astuce liée dans le cours :",
+          "options": [
+            "VLAN",
+            "Samba",
+            "Autoriser le ping, procédure Active Directory",
+            "Apache"
+          ],
+          "answer": 2,
+          "explain": "À retenir."
+        },
+        {
+          "q": "Un mot de passe faible avec RDP exposé conduit à :",
+          "options": [
+            "Une compromission rapide par force brute",
+            "Rien",
+            "Une erreur DNS",
+            "Un ralentissement"
+          ],
+          "answer": 0,
+          "explain": "Sécurité."
+        }
+      ]
+    }
+  ]
+}

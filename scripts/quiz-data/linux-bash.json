@@ -1,0 +1,351 @@
+{
+  "slug": "linux-bash",
+  "title": "Linux : scripts Bash",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Le shebang recommandé :",
+          "options": [
+            "#!/bash",
+            "#!/usr/bin/env bash",
+            "#bash",
+            "#!/bin/sh"
+          ],
+          "answer": 1,
+          "explain": "Demande au système où se trouve bash : portable."
+        },
+        {
+          "q": "Sans chmod +x sur le script :",
+          "options": [
+            "Il s'efface",
+            "Il se compile",
+            "Il s'exécute",
+            "« Permission denied »"
+          ],
+          "answer": 3,
+          "explain": "Puis ./script.sh."
+        },
+        {
+          "q": "Pourquoi ./script.sh et pas script.sh ?",
+          "options": [
+            "Par style",
+            "Le dossier courant n'est pas dans le PATH, et c'est voulu",
+            "Pour root",
+            "Obligation de bash"
+          ],
+          "answer": 1,
+          "explain": "Sécurité."
+        },
+        {
+          "q": "Le mode strict :",
+          "options": [
+            "set -v",
+            "set -x",
+            "strict on",
+            "set -euo pipefail"
+          ],
+          "answer": 3,
+          "explain": "Les trois lignes qui changent tout."
+        },
+        {
+          "q": "set -e :",
+          "options": [
+            "Exporte",
+            "Arrête le script à la première erreur",
+            "Affiche tout",
+            "Édite"
+          ],
+          "answer": 1,
+          "explain": "Sinon l'effacement qui suit une sauvegarde ratée s'exécute quand même."
+        },
+        {
+          "q": "set -u :",
+          "options": [
+            "Update",
+            "Erreur sur une variable non définie",
+            "Met en majuscules",
+            "Unmount"
+          ],
+          "answer": 1,
+          "explain": "rm -rf \"$DEST/\" avec DEST vide devient rm -rf /."
+        },
+        {
+          "q": "Affectation correcte :",
+          "options": [
+            "$nom=\"Debian\"",
+            "set nom Debian",
+            "nom = \"Debian\"",
+            "nom=\"Debian\""
+          ],
+          "answer": 3,
+          "explain": "PAS d'espace autour du =."
+        },
+        {
+          "q": "$(date +%F) :",
+          "options": [
+            "Un commentaire",
+            "Une variable",
+            "Le résultat d'une commande",
+            "Un calcul"
+          ],
+          "answer": 2,
+          "explain": "$(( )) pour un calcul."
+        },
+        {
+          "q": "La faute la plus fréquente :",
+          "options": [
+            "Oublier les guillemets autour d'une variable",
+            "Oublier le shebang",
+            "Utiliser echo",
+            "Trop de commentaires"
+          ],
+          "answer": 0,
+          "explain": "rm $fichier avec « mon rapport.txt » supprime deux fichiers."
+        },
+        {
+          "q": "$1 désigne :",
+          "options": [
+            "Le premier argument",
+            "Le nom du script",
+            "Le code de retour",
+            "Le nombre d'arguments"
+          ],
+          "answer": 0,
+          "explain": "$0 = le script, $# = le nombre."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "set -o pipefail :",
+          "options": [
+            "Crée un tube",
+            "Ferme les fichiers",
+            "Ignore les tubes",
+            "Un tube échoue si un maillon échoue, pas seulement le dernier"
+          ],
+          "answer": 3,
+          "explain": "cmd_qui_rate | tee log serait sinon considéré réussi."
+        },
+        {
+          "q": "'$var' (simples quotes) :",
+          "options": [
+            "La valeur",
+            "La valeur protégée",
+            "Le texte littéral $var",
+            "Une erreur"
+          ],
+          "answer": 2,
+          "explain": "Les simples quotes n'interprètent rien."
+        },
+        {
+          "q": "\"${var:-defaut}\" :",
+          "options": [
+            "Supprime var",
+            "Une erreur",
+            "Le nom de var",
+            "La valeur, ou defaut si vide/absente"
+          ],
+          "answer": 3,
+          "explain": "Valeur par défaut."
+        },
+        {
+          "q": "\"$@\" :",
+          "options": [
+            "Tous les arguments, chacun protégé",
+            "Le premier argument",
+            "Le nombre",
+            "Le PID"
+          ],
+          "answer": 0,
+          "explain": "À préférer à $*."
+        },
+        {
+          "q": ">&2 envoie :",
+          "options": [
+            "Nulle part",
+            "Sur la sortie normale",
+            "Dans un fichier",
+            "Sur la sortie d'erreur (stderr)"
+          ],
+          "answer": 3,
+          "explain": "./script > resultat.txt garde le résultat propre."
+        },
+        {
+          "q": "exit 1 signifie :",
+          "options": [
+            "Pause",
+            "Succès",
+            "Échec (code non nul)",
+            "Redémarrer"
+          ],
+          "answer": 2,
+          "explain": "0 = succès, convention Unix."
+        },
+        {
+          "q": "[ -d \"$x\" ] est vrai si :",
+          "options": [
+            "Variable vide",
+            "Fichier ordinaire",
+            "C'est un dossier",
+            "Exécutable"
+          ],
+          "answer": 2,
+          "explain": "-f fichier, -z vide, -n non vide."
+        },
+        {
+          "q": "Comparer deux nombres :",
+          "options": [
+            "=",
+            "==",
+            "eq",
+            "-eq"
+          ],
+          "answer": 3,
+          "explain": "= compare des chaînes : [ \"10\" = \"10.0\" ] est faux."
+        },
+        {
+          "q": "cmd1 || cmd2 :",
+          "options": [
+            "cmd2 si cmd1 a ÉCHOUÉ",
+            "Les deux toujours",
+            "cmd2 si cmd1 réussit",
+            "Aucune"
+          ],
+          "answer": 0,
+          "explain": "&& = si réussi."
+        },
+        {
+          "q": "Pour plusieurs cas (start/stop/status) :",
+          "options": [
+            "while",
+            "case … esac",
+            "Une pile de elif",
+            "for"
+          ],
+          "answer": 1,
+          "explain": "Plus clair."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "for f in $(ls) :",
+          "options": [
+            "Plus rapide",
+            "Obligatoire",
+            "Recommandé",
+            "À ne pas apprendre : casse au premier nom avec espace"
+          ],
+          "answer": 3,
+          "explain": "for f in /chemin/* fait le même travail correctement."
+        },
+        {
+          "q": "Lire un fichier ligne par ligne :",
+          "options": [
+            "cat | for",
+            "read f",
+            "while IFS= read -r ligne; do …; done < fichier",
+            "for l in $(cat f)"
+          ],
+          "answer": 2,
+          "explain": "-r préserve les antislashs."
+        },
+        {
+          "q": "find … -print0 avec read -d '' :",
+          "options": [
+            "Une erreur",
+            "Compte",
+            "Affiche zéro",
+            "Sépare par un octet nul, seul caractère impossible dans un nom de fichier"
+          ],
+          "answer": 3,
+          "explain": "La seule forme récursive qui résiste à tout."
+        },
+        {
+          "q": "local nom=\"$1\" dans une fonction :",
+          "options": [
+            "Variable globale",
+            "La variable ne fuit pas hors de la fonction",
+            "Export",
+            "Constante"
+          ],
+          "answer": 1,
+          "explain": "Bonne pratique."
+        },
+        {
+          "q": "Le code de retour d'une fonction est :",
+          "options": [
+            "Aléatoire",
+            "Celui de sa dernière commande",
+            "Toujours 0",
+            "1"
+          ],
+          "answer": 1,
+          "explain": "systemctl is-active --quiet renvoie le code."
+        },
+        {
+          "q": "IFS=$'\\n\\t' sert à :",
+          "options": [
+            "Compter",
+            "Chiffrer",
+            "Afficher",
+            "Restreindre le découpage à tabulation et saut de ligne (plus l'espace)"
+          ],
+          "answer": 3,
+          "explain": "Les noms de fichiers avec espaces ne cassent plus."
+        },
+        {
+          "q": "{1..5} :",
+          "options": [
+            "La séquence 1 2 3 4 5",
+            "Un tableau vide",
+            "Une chaîne",
+            "Une erreur"
+          ],
+          "answer": 0,
+          "explain": "for i in {1..5}."
+        },
+        {
+          "q": "Pourquoi un script est-il plus dangereux qu'un humain ?",
+          "options": [
+            "Il continue après une erreur alors qu'un humain s'arrête pour regarder",
+            "Il est plus rapide",
+            "Il n'a pas de shebang",
+            "Il a root"
+          ],
+          "answer": 0,
+          "explain": "D'où le mode strict."
+        },
+        {
+          "q": "basename \"$0\" :",
+          "options": [
+            "Le chemin complet",
+            "Le dossier",
+            "L'extension",
+            "Le nom du script sans son chemin"
+          ],
+          "answer": 3,
+          "explain": "Pour un message Usage propre."
+        },
+        {
+          "q": "printf plutôt qu'echo pour un log :",
+          "options": [
+            "printf n'existe pas",
+            "Identiques",
+            "printf a un format prévisible ; echo varie selon les options et le shell",
+            "echo est mieux"
+          ],
+          "answer": 2,
+          "explain": "log() { printf '%s %s\\n' … >&2; }."
+        }
+      ]
+    }
+  ]
+}

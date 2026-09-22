@@ -57,9 +57,12 @@ export function renderQuiz(quiz: Quiz): PageBlock[] {
 /** Construit la page quiz complète d'un cours (style + hero + lien cours + les 3 quiz). */
 export function buildQuizPage(data: QuizData): PageBlock[] {
   const totalQ = data.quizzes.reduce((n, q) => n + q.questions.length, 0);
+  // Le <style> vient APRÈS le hero : DOMPurify parse le contenu comme un document HTML, et un
+  // <style> placé en tête est rangé dans <head> puis perdu — la page s'affichait alors sans
+  // aucune mise en forme, réponses visibles. Après un premier élément de corps, il reste.
   const blocks: PageBlock[] = [
-    block('html', { html: QUIZ_STYLE }),
     block('hero', { eyebrow: 'Exercices · Quiz', title: `Quiz — ${data.title}`, subtitle: `${data.quizzes.length} quiz, ${totalQ} questions. Coche tes réponses, puis clique « Afficher les réponses » en bas du quiz.` }),
+    block('html', { html: QUIZ_STYLE }),
     block('html', { html: `<p class="meta">📘 Cours associé : <a href="/pages/${data.slug}">${esc(data.title)}</a> · ↩️ <a href="/pages/exercices">Retour aux exercices</a></p>` }),
   ];
   for (const q of data.quizzes) blocks.push(...renderQuiz(q));

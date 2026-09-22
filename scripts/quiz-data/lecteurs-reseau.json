@@ -1,0 +1,351 @@
+{
+  "slug": "lecteurs-reseau",
+  "title": "Les lecteurs réseau",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Un lecteur réseau est :",
+          "options": [
+            "Un raccourci : une lettre qui pointe vers un dossier partagé ailleurs",
+            "Un VLAN",
+            "Un disque physique",
+            "Une copie locale"
+          ],
+          "answer": 0,
+          "explain": "Rien n'est copié : chaque ouverture passe par le réseau."
+        },
+        {
+          "q": "Dans \\\\SRV-FICHIERS\\Comptabilite\\Budgets, « Comptabilite » est :",
+          "options": [
+            "Le serveur",
+            "Le domaine",
+            "Le nom du PARTAGE",
+            "Le dossier réel"
+          ],
+          "answer": 2,
+          "explain": "Pas forcément le nom du dossier sur le disque du serveur."
+        },
+        {
+          "q": "Le nom du partage :",
+          "options": [
+            "Est la lettre",
+            "Est l'IP",
+            "Doit être celui du dossier",
+            "Peut différer du dossier réel (E:\\Donnees\\Compta publié en Comptabilite)"
+          ],
+          "answer": 3,
+          "explain": "On peut déplacer les données sans rien changer chez les utilisateurs."
+        },
+        {
+          "q": "Un partage terminé par $ :",
+          "options": [
+            "Est interdit",
+            "Est chiffré",
+            "Est une sécurité",
+            "N'apparaît pas dans la liste mais reste accessible par son chemin"
+          ],
+          "answer": 3,
+          "explain": "C'est du rangement ; ce qui protège, c'est le NTFS."
+        },
+        {
+          "q": "Commande historique pour monter S: :",
+          "options": [
+            "ln -s",
+            "mount S:",
+            "net use S: \\\\SRV-FICHIERS\\Comptabilite",
+            "map S:"
+          ],
+          "answer": 2,
+          "explain": "/persistent:yes pour le retrouver aux prochaines sessions."
+        },
+        {
+          "q": "Commande PowerShell équivalente :",
+          "options": [
+            "New-PSDrive -Name S -PSProvider FileSystem -Root '\\\\SRV\\Compta' -Persist",
+            "New-NetDrive",
+            "Mount-Drive",
+            "Add-Drive"
+          ],
+          "answer": 0,
+          "explain": "-Persist est indispensable pour l'Explorateur."
+        },
+        {
+          "q": "Sans -Persist, New-PSDrive crée :",
+          "options": [
+            "Un lecteur visible de PowerShell seulement, qui disparaît avec la console",
+            "Rien",
+            "Un lecteur système",
+            "Un vrai lecteur Windows"
+          ],
+          "answer": 0,
+          "explain": "Premier étonnement du débutant."
+        },
+        {
+          "q": "Commande pour démonter S: :",
+          "options": [
+            "net unmount S:",
+            "net use S: /delete",
+            "del S:",
+            "net use S: /off"
+          ],
+          "answer": 1,
+          "explain": "Ou Remove-PSDrive -Name S."
+        },
+        {
+          "q": "La méthode d'entreprise attendue aujourd'hui :",
+          "options": [
+            "Un script de 200 lignes",
+            "La préférence de stratégie de groupe (Mappages de lecteurs)",
+            "net use à la main",
+            "Le dossier de base"
+          ],
+          "answer": 1,
+          "explain": "On décrit le lecteur au lieu de le programmer."
+        },
+        {
+          "q": "Où se trouve la préférence dans la GPO ?",
+          "options": [
+            "Modèles d'administration",
+            "Sécurité",
+            "Configuration utilisateur → Préférences → Paramètres Windows → Mappages de lecteurs",
+            "Configuration ordinateur → Stratégies"
+          ],
+          "answer": 2,
+          "explain": "Côté utilisateur."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Action à choisir presque toujours :",
+          "options": [
+            "Mettre à jour",
+            "Supprimer",
+            "Créer",
+            "Remplacer"
+          ],
+          "answer": 0,
+          "explain": "Crée s'il manque, corrige s'il diffère."
+        },
+        {
+          "q": "Le piège de l'action « Créer » :",
+          "options": [
+            "Elle ne corrige jamais un lecteur existant : un changement de cible n'est pas pris en compte",
+            "Elle est lente",
+            "Elle supprime le lecteur",
+            "Elle demande un redémarrage"
+          ],
+          "answer": 0,
+          "explain": "Six mois plus tard, le lecteur pointe encore vers l'ancien serveur."
+        },
+        {
+          "q": "Action « Remplacer » :",
+          "options": [
+            "Supprime puis recrée à chaque application",
+            "Retire la lettre",
+            "Ne fait rien",
+            "Crée seulement"
+          ],
+          "answer": 0,
+          "explain": "Quand un lecteur a été bricolé à la main."
+        },
+        {
+          "q": "Le ciblage au niveau de l'élément permet :",
+          "options": [
+            "De choisir la lettre",
+            "De supprimer",
+            "De chiffrer",
+            "D'appliquer le lecteur seulement aux utilisateurs remplissant une condition (groupe, site, OS, IP…)"
+          ],
+          "answer": 3,
+          "explain": "Onglet Commun."
+        },
+        {
+          "q": "Grâce au ciblage, la même lettre S: peut :",
+          "options": [
+            "Être bloquée",
+            "Servir un seul service",
+            "Devenir P:",
+            "Servir plusieurs services : chacun voit la sienne"
+          ],
+          "answer": 3,
+          "explain": "Comptables → Comptabilite, Commerciaux → Commercial."
+        },
+        {
+          "q": "Le ciblage se fait sur un groupe :",
+          "options": [
+            "Universel",
+            "De domaine local",
+            "Local",
+            "Global (G_Comptables), qui décrit qui sont les gens"
+          ],
+          "answer": 3,
+          "explain": "Les droits sur le dossier passent par un groupe de domaine local (AGDLP)."
+        },
+        {
+          "q": "Lecteur personnel avec une seule règle :",
+          "options": [
+            "\\\\SRV-FICHIERS\\Perso$\\%username%",
+            "Un script",
+            "Impossible",
+            "Un lecteur par utilisateur créé à la main"
+          ],
+          "answer": 0,
+          "explain": "Grâce aux variables d'environnement."
+        },
+        {
+          "q": "Dossier de base vs préférence GPO :",
+          "options": [
+            "Le dossier de base est moins souple : pas de ciblage, pas de mise à jour",
+            "La GPO est obsolète",
+            "Identiques",
+            "Le dossier de base est mieux"
+          ],
+          "answer": 0,
+          "explain": "Préférence GPO à condition de créer les dossiers soi-même."
+        },
+        {
+          "q": "Un espace de noms DFS sert à :",
+          "options": [
+            "Sauvegarder",
+            "Créer des VLAN",
+            "Chiffrer",
+            "Publier un chemin logique (\\\\miyukini.lan\\Partages\\Compta) indépendant du serveur réel"
+          ],
+          "answer": 3,
+          "explain": "Changer de serveur devient une modification à un seul endroit."
+        },
+        {
+          "q": "Sans DFS, le nom du serveur est gravé :",
+          "options": [
+            "Dans le DNS seulement",
+            "Dans le BIOS",
+            "Dans la GPO, les raccourcis, les liens Office, les habitudes",
+            "Nulle part"
+          ],
+          "answer": 2,
+          "explain": "Tout est à reprendre au remplacement du serveur."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Le lecteur n'apparaît pas juste après l'ajout au groupe :",
+          "options": [
+            "Faire gpupdate /force suffit",
+            "Bug GPO",
+            "Redémarrer le serveur",
+            "Le jeton de session ne contient pas encore le groupe : fermer et rouvrir la session"
+          ],
+          "answer": 3,
+          "explain": "gpupdate ne recalcule pas le jeton."
+        },
+        {
+          "q": "Le lecteur n'apparaît toujours pas :",
+          "options": [
+            "Le serveur est éteint",
+            "La GPO est liée à l'OU des ordinateurs au lieu de celle des utilisateurs",
+            "Mauvaise lettre",
+            "Trop de lecteurs"
+          ],
+          "answer": 1,
+          "explain": "Les mappages sont en Configuration utilisateur."
+        },
+        {
+          "q": "Commande pour vérifier qu'une GPO est appliquée :",
+          "options": [
+            "whoami",
+            "gpupdate",
+            "net use",
+            "gpresult /h rapport.html"
+          ],
+          "answer": 3,
+          "explain": "Rapport HTML des stratégies appliquées."
+        },
+        {
+          "q": "Une croix rouge sur le lecteur :",
+          "options": [
+            "Le partage est supprimé",
+            "Un affichage : Windows marque « déconnecté » jusqu'au premier accès",
+            "Un quota",
+            "Un virus"
+          ],
+          "answer": 1,
+          "explain": "Souvent sans conséquence."
+        },
+        {
+          "q": "Trois raisons d'utiliser des lettres plutôt que des chemins :",
+          "options": [
+            "Obligation",
+            "Aucune",
+            "Vitesse, prix, sécurité",
+            "Les utilisateurs retiennent S:, les documents enregistrent des chemins stables, chacun ne voit que ce qui le concerne"
+          ],
+          "answer": 3,
+          "explain": "Introduction du cours."
+        },
+        {
+          "q": "Commande pour voir les lecteurs montés :",
+          "options": [
+            "dir",
+            "net use",
+            "ls",
+            "net share"
+          ],
+          "answer": 1,
+          "explain": "Ou Get-PSDrive -PSProvider FileSystem."
+        },
+        {
+          "q": "Pourquoi pas de script en entreprise ?",
+          "options": [
+            "Trop rapide",
+            "Interdit",
+            "Logique « qui a droit à quoi » en code, à maintenir et déboguer sans la voir",
+            "Pas de net use"
+          ],
+          "answer": 2,
+          "explain": "La GPO rend la règle lisible."
+        },
+        {
+          "q": "Une préférence de GPO se réapplique :",
+          "options": [
+            "Jamais",
+            "À chaque actualisation",
+            "Au redémarrage seulement",
+            "Une fois"
+          ],
+          "answer": 1,
+          "explain": "D'où l'intérêt de « Mettre à jour »."
+        },
+        {
+          "q": "Le premier élément d'un chemin UNC :",
+          "options": [
+            "Le partage",
+            "Le nom du serveur (ou IP, ou espace de noms DFS)",
+            "Le fichier",
+            "La lettre"
+          ],
+          "answer": 1,
+          "explain": "\\\\serveur\\partage\\chemin."
+        },
+        {
+          "q": "Reconnecter : coché signifie :",
+          "options": [
+            "Le lecteur est temporaire",
+            "Le lecteur est caché",
+            "Le lecteur est retrouvé aux prochaines ouvertures de session",
+            "Le lecteur est supprimé"
+          ],
+          "answer": 2,
+          "explain": "Équivalent de /persistent:yes."
+        }
+      ]
+    }
+  ]
+}

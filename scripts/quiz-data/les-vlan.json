@@ -1,0 +1,351 @@
+{
+  "slug": "les-vlan",
+  "title": "Les VLAN & le routage inter-VLAN",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Qu'est-ce qu'un VLAN ?",
+          "options": [
+            "Un câble virtuel",
+            "Un réseau Wi-Fi",
+            "Un type de routeur",
+            "Un découpage d'un switch physique en plusieurs réseaux logiques indépendants"
+          ],
+          "answer": 3,
+          "explain": "Deux machines sur des VLAN différents ne se voient pas directement, comme sur deux switches séparés."
+        },
+        {
+          "q": "Un port access :",
+          "options": [
+            "Relie un équipement final et appartient à un seul VLAN, sans étiquette",
+            "Est toujours désactivé",
+            "Relie deux switches",
+            "Transporte plusieurs VLAN"
+          ],
+          "answer": 0,
+          "explain": "PC, imprimante… les trames y circulent sans tag."
+        },
+        {
+          "q": "Un port trunk :",
+          "options": [
+            "Transporte plusieurs VLAN sur un seul câble en étiquetant les trames (802.1Q)",
+            "Appartient à un seul VLAN",
+            "Relie un PC",
+            "Ne transporte que le VLAN 1"
+          ],
+          "answer": 0,
+          "explain": "Entre deux switches, ou un switch et un routeur."
+        },
+        {
+          "q": "Quelle norme définit l'étiquetage des trames sur un trunk ?",
+          "options": [
+            "802.1X",
+            "802.11",
+            "802.3af",
+            "802.1Q"
+          ],
+          "answer": 3,
+          "explain": "Le tag 802.1Q contient le numéro de VLAN."
+        },
+        {
+          "q": "Quel VLAN circule sans étiquette sur un trunk ?",
+          "options": [
+            "Aucun",
+            "Le VLAN 10",
+            "Le VLAN natif (1 par défaut)",
+            "Tous"
+          ],
+          "answer": 2,
+          "explain": "C'est pourquoi il doit être identique des deux côtés."
+        },
+        {
+          "q": "Commande pour créer le VLAN 10 nommé Admin :",
+          "options": [
+            "interface vlan 10 / name Admin",
+            "switchport vlan 10 Admin",
+            "create vlan 10 Admin",
+            "vlan 10 / name Admin"
+          ],
+          "answer": 3,
+          "explain": "En mode de configuration globale : vlan 10, puis name Admin."
+        },
+        {
+          "q": "Commande pour placer Fa0/1 dans le VLAN 10 en access :",
+          "options": [
+            "vlan 10 access Fa0/1",
+            "switchport trunk vlan 10",
+            "switchport mode access + switchport access vlan 10",
+            "ip vlan 10"
+          ],
+          "answer": 2,
+          "explain": "Deux lignes sous l'interface."
+        },
+        {
+          "q": "Trois raisons de segmenter en VLAN :",
+          "options": [
+            "Sécurité/isolation, réduction du broadcast, souplesse",
+            "IPv6, DHCP, DNS",
+            "Wi-Fi, fibre, cuivre",
+            "Débit, prix, couleur"
+          ],
+          "answer": 0,
+          "explain": "Un utilisateur change de VLAN par configuration, pas par recâblage."
+        },
+        {
+          "q": "Par défaut, deux VLAN peuvent-ils communiquer ?",
+          "options": [
+            "Non : il faut un routeur ou un switch de niveau 3",
+            "Oui via le trunk",
+            "Oui",
+            "Oui via le DHCP"
+          ],
+          "answer": 0,
+          "explain": "Les VLAN sont cloisonnés : le routage inter-VLAN se fait en couche 3."
+        },
+        {
+          "q": "Commande pour vérifier les VLAN et leurs ports :",
+          "options": [
+            "show running-vlan",
+            "show vlan brief",
+            "show interfaces status",
+            "show ip route"
+          ],
+          "answer": 1,
+          "explain": "show vlan brief liste VLAN, noms et ports."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Qu'est-ce que le router-on-a-stick ?",
+          "options": [
+            "Un switch L3",
+            "Un routeur sans interface",
+            "Un seul trunk vers le routeur, une sous-interface par VLAN",
+            "Un routeur Wi-Fi"
+          ],
+          "answer": 2,
+          "explain": "Chaque sous-interface porte l'encapsulation 802.1Q et l'IP passerelle du VLAN."
+        },
+        {
+          "q": "Commande d'encapsulation sur la sous-interface Gi0/0.10 :",
+          "options": [
+            "encapsulation vlan 10",
+            "switchport trunk 10",
+            "ip vlan 10",
+            "encapsulation dot1Q 10"
+          ],
+          "answer": 3,
+          "explain": "encapsulation dot1Q 10, puis l'adresse IP."
+        },
+        {
+          "q": "Ligne à ne pas oublier sur l'interface physique en ROAS :",
+          "options": [
+            "encapsulation dot1Q",
+            "ip routing",
+            "switchport mode trunk",
+            "no shutdown"
+          ],
+          "answer": 3,
+          "explain": "Sans no shutdown sur Gi0/0, les sous-interfaces restent down."
+        },
+        {
+          "q": "Sur un switch multicouche, qu'est-ce qu'une SVI ?",
+          "options": [
+            "Une interface virtuelle (interface vlan X) qui porte la passerelle du VLAN",
+            "Un VLAN natif",
+            "Un trunk",
+            "Un port physique"
+          ],
+          "answer": 0,
+          "explain": "Switched Virtual Interface."
+        },
+        {
+          "q": "Commande indispensable pour router entre VLAN sur un switch L3 :",
+          "options": [
+            "ip routing",
+            "ip route",
+            "no switchport",
+            "router ospf"
+          ],
+          "answer": 0,
+          "explain": "Sans ip routing, rien ne passe entre VLAN."
+        },
+        {
+          "q": "Un PC du VLAN 10 prend comme passerelle :",
+          "options": [
+            "Le DNS",
+            "L'IP du switch",
+            "192.168.10.1, la sous-interface .10 ou la SVI vlan 10",
+            "192.168.20.1"
+          ],
+          "answer": 2,
+          "explain": "Le plan d'adressage est identique dans les deux méthodes."
+        },
+        {
+          "q": "Commande pour restreindre les VLAN d'un trunk :",
+          "options": [
+            "vlan allowed 10,20",
+            "trunk vlan 10 20",
+            "switchport trunk allowed vlan 10,20,99",
+            "switchport access vlan 10,20"
+          ],
+          "answer": 2,
+          "explain": "On n'autorise que les VLAN nécessaires."
+        },
+        {
+          "q": "Avantage du switch multicouche sur le ROAS :",
+          "options": [
+            "Pas de VLAN à créer",
+            "Moins cher",
+            "Le trafic inter-VLAN ne fait plus l'aller-retour par un lien unique : commutation matérielle",
+            "Pas d'IP"
+          ],
+          "answer": 2,
+          "explain": "ROAS : petit site, maquette, examen ; MLS : réseau d'entreprise."
+        },
+        {
+          "q": "Sur un 3560, avant switchport mode trunk il faut :",
+          "options": [
+            "ip routing",
+            "vlan 1",
+            "no shutdown",
+            "switchport trunk encapsulation dot1q"
+          ],
+          "answer": 3,
+          "explain": "Obligatoire sur 3560, absent du 2960."
+        },
+        {
+          "q": "DHCP unique pour plusieurs VLAN : que configurer sur chaque passerelle ?",
+          "options": [
+            "dhcp relay on",
+            "ip helper-address <IP du serveur DHCP>",
+            "ip dhcp pool",
+            "service dhcp"
+          ],
+          "answer": 1,
+          "explain": "Le relais DHCP sur chaque interface/sous-interface."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Une SVI reste down/down alors que la config semble juste :",
+          "options": [
+            "Bug",
+            "Trunk natif",
+            "Aucun port actif dans ce VLAN, ou VLAN inexistant, ou shutdown",
+            "Mauvais mot de passe"
+          ],
+          "answer": 2,
+          "explain": "Trois conditions : VLAN existe, un port actif, pas de shutdown."
+        },
+        {
+          "q": "Deux PC du même VLAN ne se voient pas :",
+          "options": [
+            "ip routing oublié",
+            "DHCP",
+            "Passerelle absente",
+            "Mauvais access vlan ou VLAN non créé"
+          ],
+          "answer": 3,
+          "explain": "Dépannage courant du cours."
+        },
+        {
+          "q": "Trunk KO :",
+          "options": [
+            "Trop de PC",
+            "Port access",
+            "VLAN natif différent des deux côtés, ou VLAN absent de la liste allowed",
+            "DNS"
+          ],
+          "answer": 2,
+          "explain": "Le natif doit être identique et les VLAN autorisés."
+        },
+        {
+          "q": "Commande pour voir les trunks actifs :",
+          "options": [
+            "show interfaces trunk",
+            "show trunk all",
+            "show vlan brief",
+            "show ip interface brief"
+          ],
+          "answer": 0,
+          "explain": "Liste les ports trunk, l'encapsulation, le natif et les VLAN autorisés."
+        },
+        {
+          "q": "Pas de communication inter-VLAN, VLAN et trunks OK :",
+          "options": [
+            "Wi-Fi",
+            "VLAN natif",
+            "Passerelle du PC absente/erronée, ou sous-interface/SVI mal configurée",
+            "Câble"
+          ],
+          "answer": 2,
+          "explain": "Vérifier show ip interface brief."
+        },
+        {
+          "q": "Sur ROAS, la sous-interface Gi0/0.20 doit avoir :",
+          "options": [
+            "encapsulation dot1Q 20 et 192.168.20.1/24",
+            "ip routing",
+            "switchport access vlan 20",
+            "no ip address"
+          ],
+          "answer": 0,
+          "explain": "L'IP passerelle du VLAN 20."
+        },
+        {
+          "q": "Chaque VLAN est un domaine de :",
+          "options": [
+            "Collision uniquement",
+            "Chiffrement",
+            "Routage",
+            "Broadcast distinct"
+          ],
+          "answer": 3,
+          "explain": "Moins de trafic parasite."
+        },
+        {
+          "q": "Pourquoi aligner le VLAN natif des deux côtés d'un trunk ?",
+          "options": [
+            "C'est esthétique",
+            "Pour le débit",
+            "Pour le DHCP",
+            "Il circule sans tag : un désaccord mélange les VLAN"
+          ],
+          "answer": 3,
+          "explain": "Sinon les trames non étiquetées atterrissent dans le mauvais VLAN."
+        },
+        {
+          "q": "interface range FastEthernet0/2 - 12 permet :",
+          "options": [
+            "De créer 11 VLAN",
+            "De configurer plusieurs ports d'un coup",
+            "De router",
+            "De créer un trunk"
+          ],
+          "answer": 1,
+          "explain": "Même configuration appliquée à la plage de ports."
+        },
+        {
+          "q": "Quel test valide le routage inter-VLAN ?",
+          "options": [
+            "ping entre deux PC du même VLAN",
+            "Un PC du VLAN 10 pingue un PC du VLAN 20 via la passerelle",
+            "write memory",
+            "show vlan"
+          ],
+          "answer": 1,
+          "explain": "Le ping traverse la passerelle."
+        }
+      ]
+    }
+  ]
+}

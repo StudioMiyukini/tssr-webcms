@@ -1,0 +1,351 @@
+{
+  "slug": "opnsense-segmentation",
+  "title": "OPNsense : segmenter le réseau (DMZ, VLAN, règles inter-zones)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Qu'est-ce que le mouvement latéral ?",
+          "options": [
+            "Le routage entre VLAN",
+            "Une intrusion initiale qui permet d'atteindre ensuite le reste du réseau",
+            "Le déplacement d'un câble",
+            "Le NAT"
+          ],
+          "answer": 1,
+          "explain": "Segmenter ne l'empêche pas — segmenter fait qu'il ne mène nulle part."
+        },
+        {
+          "q": "Qu'est-ce qui décide d'une zone ?",
+          "options": [
+            "Le niveau de confiance et ce que la zone doit pouvoir joindre",
+            "La couleur des câbles",
+            "Le nombre de ports",
+            "La technologie"
+          ],
+          "answer": 0,
+          "explain": "On sépare ce qu'on ne maîtrise pas, ce qui est exposé et ce qui est sensible."
+        },
+        {
+          "q": "Deux façons d'ajouter une zone :",
+          "options": [
+            "Un VPN ou un proxy",
+            "Un alias ou une règle",
+            "Une carte de plus ou des VLAN sur une carte",
+            "Un DNS ou un DHCP"
+          ],
+          "answer": 2,
+          "explain": "Le choix est matériel, pas conceptuel : chaque zone devient un onglet."
+        },
+        {
+          "q": "Une carte physique ajoutée apparaît d'abord comme :",
+          "options": [
+            "WAN2",
+            "DMZ",
+            "LAN2",
+            "OPT1"
+          ],
+          "answer": 3,
+          "explain": "Interfaces › Assignments : on l'ajoute, elle devient OPT1, puis on la renomme."
+        },
+        {
+          "q": "Une interface OPT activée sans règle :",
+          "options": [
+            "Devient LAN",
+            "Est une zone morte : rien n'en sort, c'est voulu",
+            "Bloque le WAN",
+            "Laisse tout passer"
+          ],
+          "answer": 1,
+          "explain": "Contrairement au LAN, une interface OPT ne reçoit aucune règle par défaut."
+        },
+        {
+          "q": "Où crée-t-on un VLAN ?",
+          "options": [
+            "Interfaces › Other Types › VLAN",
+            "System › Trust",
+            "Firewall › Rules",
+            "Services › DHCP"
+          ],
+          "answer": 0,
+          "explain": "Parent interface + VLAN tag + description, puis assignation."
+        },
+        {
+          "q": "Le VLAN tag doit correspondre à :",
+          "options": [
+            "Le CIDR",
+            "L'adresse IP",
+            "Un port TCP",
+            "Le numéro configuré sur le switch"
+          ],
+          "answer": 3,
+          "explain": "Exactement le même numéro des deux côtés."
+        },
+        {
+          "q": "Le port du switch vers OPNsense doit être en mode :",
+          "options": [
+            "Routé",
+            "Trunk",
+            "Access",
+            "Désactivé"
+          ],
+          "answer": 1,
+          "explain": "S'il est en accès, le pare-feu reçoit des trames sans étiquette et aucun VLAN ne fonctionne."
+        },
+        {
+          "q": "Qu'écrit-on avant la moindre règle ?",
+          "options": [
+            "La matrice de flux",
+            "Une sauvegarde",
+            "Un alias",
+            "Un VLAN"
+          ],
+          "answer": 0,
+          "explain": "Les règles n'en sont que la transcription."
+        },
+        {
+          "q": "Dans la matrice, une DMZ vers le LAN doit être :",
+          "options": [
+            "✘ bloquée",
+            "✔ tout",
+            "✔ DNS seul",
+            "◐ selon l'heure"
+          ],
+          "answer": 0,
+          "explain": "Un serveur web compromis qui ne mène à rien."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Sous Hyper-V, comment déclarer un trunk sur une carte de VM ?",
+          "options": [
+            "En PowerShell : Set-VMNetworkAdapterVlan -Trunk -AllowedVlanIdList",
+            "Impossible",
+            "Dans OPNsense",
+            "Dans l'interface graphique"
+          ],
+          "answer": 0,
+          "explain": "L'interface graphique ne propose qu'un VLAN unique par carte."
+        },
+        {
+          "q": "Le principe du VLAN sur OPNsense ressemble à :",
+          "options": [
+            "Le routeur sur un bâton (ROAS)",
+            "Le NAT 1:1",
+            "Le VPN",
+            "Le DHCP relais"
+          ],
+          "answer": 0,
+          "explain": "Un lien unique porte plusieurs VLAN étiquetés, une sous-interface par VLAN — sauf qu'OPNsense filtre en même temps."
+        },
+        {
+          "q": "Pourquoi « any » pose-t-il problème dans les règles de zone ?",
+          "options": [
+            "Il englobe aussi les réseaux voisins, pas seulement Internet",
+            "Il ralentit",
+            "Il est interdit",
+            "Il ne marche qu'en IPv6"
+          ],
+          "answer": 0,
+          "explain": "D'où l'alias RESEAUX_INTERNES à bloquer avant la règle de sortie."
+        },
+        {
+          "q": "Que contient l'alias RESEAUX_INTERNES ?",
+          "options": [
+            "Le WAN",
+            "10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16",
+            "8.8.8.8",
+            "Les ports 80 et 443"
+          ],
+          "answer": 1,
+          "explain": "Type Network(s) : toutes les plages privées."
+        },
+        {
+          "q": "Ordre correct des règles d'une zone :",
+          "options": [
+            "Pass any 80/443, puis Block RESEAUX_INTERNES",
+            "Peu importe",
+            "Block tout puis Pass tout",
+            "Pass DNS vers l'interface, Block This Firewall, Block RESEAUX_INTERNES, Pass any 80/443"
+          ],
+          "answer": 3,
+          "explain": "La règle 4 avant la 3 rend la 3 inatteignable."
+        },
+        {
+          "q": "À quoi sert « Block This Firewall » dans une zone ?",
+          "options": [
+            "À interdire l'accès à l'administration depuis cette zone",
+            "À couper le DNS",
+            "À bloquer Internet",
+            "À désactiver le NAT"
+          ],
+          "answer": 0,
+          "explain": "Seule l'administration depuis la zone d'admin est légitime."
+        },
+        {
+          "q": "Une DMZ de serveurs a-t-elle besoin d'une étendue DHCP ?",
+          "options": [
+            "Plutôt pas : les serveurs sont en adresse fixe",
+            "Oui toujours",
+            "Oui pour le DNS",
+            "Non car interdit"
+          ],
+          "answer": 0,
+          "explain": "Services › DHCP › [DMZ] : une étendue si la zone en a besoin."
+        },
+        {
+          "q": "Limite d'une zone par VLAN par rapport à une carte dédiée :",
+          "options": [
+            "La bande passante du lien unique, partagée, et une isolation logique qui vaut la config du switch",
+            "Aucune",
+            "Le nombre de règles",
+            "L'IPv6"
+          ],
+          "answer": 0,
+          "explain": "Une carte = isolation physique, limitée par les ports du boîtier."
+        },
+        {
+          "q": "Un réseau IOT dans la matrice ne doit voir :",
+          "options": [
+            "La DMZ",
+            "Rien d'autre qu'Internet (selon les objets) et DNS/DHCP",
+            "Tout le LAN",
+            "L'administration"
+          ],
+          "answer": 1,
+          "explain": "Une caméra vulnérable reste un problème de caméra."
+        },
+        {
+          "q": "Quelle adresse le cours donne-t-il à l'interface DMZ ?",
+          "options": [
+            "192.168.20.254/24",
+            "172.16.0.254/16",
+            "192.168.1.1/24",
+            "10.0.0.1/8"
+          ],
+          "answer": 0,
+          "explain": "Static IPv4 sur OPT1 renommée DMZ."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Que tester après avoir créé une zone ?",
+          "options": [
+            "Rien",
+            "Seulement ce qui doit marcher",
+            "Le débit",
+            "Ce qui doit marcher ET ce qui doit échouer"
+          ],
+          "answer": 3,
+          "explain": "Un test qui échoue prouve que la zone fait son travail."
+        },
+        {
+          "q": "Les trames étiquetées sont jetées avant d'atteindre la VM : où est l'erreur ?",
+          "options": [
+            "Dans le DNS",
+            "Dans OPNsense",
+            "Dans le commutateur virtuel Hyper-V (pas de trunk déclaré)",
+            "Dans le DHCP"
+          ],
+          "answer": 2,
+          "explain": "On cherche l'erreur dans OPNsense, où il n'y en a pas."
+        },
+        {
+          "q": "Trois zones bien choisies valent mieux que…",
+          "options": [
+            "Aucune",
+            "Deux",
+            "Dix mal découpées",
+            "Une seule"
+          ],
+          "answer": 2,
+          "explain": "Découper sans logique de confiance complique sans protéger."
+        },
+        {
+          "q": "Comment nommer une interface OPT1 en DMZ ?",
+          "options": [
+            "Firewall › Aliases",
+            "System › Wizard",
+            "Services › DHCP",
+            "Interfaces › [OPT1] : Enable, description DMZ"
+          ],
+          "answer": 3,
+          "explain": "Le nom se retrouve dans les onglets de règles."
+        },
+        {
+          "q": "Le réseau INVITES dans la matrice :",
+          "options": [
+            "Web seulement vers Internet, DNS/DHCP vers le pare-feu, rien d'autre",
+            "Voit le LAN",
+            "Voit la DMZ",
+            "Administre le pare-feu"
+          ],
+          "answer": 0,
+          "explain": "Les visiteurs ne voient que la sortie."
+        },
+        {
+          "q": "Pourquoi lire la colonne plutôt que la ligne de la matrice ?",
+          "options": [
+            "Les croix (interdictions) sont le cœur du dispositif",
+            "Pour le NAT",
+            "Par habitude",
+            "Pour compter les ports"
+          ],
+          "answer": 0,
+          "explain": "Ce qu'une zone ne peut pas joindre définit sa sécurité."
+        },
+        {
+          "q": "Que fait la règle « Pass, cette interface, port 53 » en tête de liste ?",
+          "options": [
+            "Laisse le DNS du pare-feu répondre à la zone",
+            "Autorise Internet",
+            "Bloque le DNS",
+            "Crée un VLAN"
+          ],
+          "answer": 0,
+          "explain": "Sans elle, la zone ne résout plus rien."
+        },
+        {
+          "q": "Une règle Pass any placée au-dessus de Block RESEAUX_INTERNES :",
+          "options": [
+            "Est sans effet",
+            "Génère une alerte",
+            "Fait que la zone voit tout le reste sans que rien ne le signale",
+            "Bloque Internet"
+          ],
+          "answer": 2,
+          "explain": "La première qui correspond décide."
+        },
+        {
+          "q": "Combien de zones peut-on créer par VLAN sur une seule carte ?",
+          "options": [
+            "Quatre",
+            "Une",
+            "Deux",
+            "Autant que le switch en porte, limitées par la bande passante du lien"
+          ],
+          "answer": 3,
+          "explain": "Dès qu'il y en a plusieurs, ou en maquette, les VLAN sont le bon choix."
+        },
+        {
+          "q": "Un VLAN créé se comporte ensuite comme :",
+          "options": [
+            "Un tunnel",
+            "Une carte : on l'assigne, on l'active, on lui donne son adresse",
+            "Une règle",
+            "Un alias"
+          ],
+          "answer": 1,
+          "explain": "Même parcours qu'une carte physique."
+        }
+      ]
+    }
+  ]
+}

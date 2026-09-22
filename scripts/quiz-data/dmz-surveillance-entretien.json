@@ -1,0 +1,351 @@
+{
+  "slug": "dmz-surveillance-entretien",
+  "title": "Surveiller et entretenir une DMZ",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Pourquoi une DMZ « dérive »-t-elle ?",
+          "options": [
+            "Correctifs, règles temporaires, certificats, serveurs retirés mais pas leur redirection",
+            "Le matériel vieillit",
+            "Le DNS change",
+            "Le VLAN se déplace"
+          ],
+          "answer": 0,
+          "explain": "Et personne ne le voit parce que le site continue de répondre."
+        },
+        {
+          "q": "Quel est le signal le plus fort dans le journal du pare-feu ?",
+          "options": [
+            "LAN → Internet passé",
+            "DMZ → LAN bloqué",
+            "DHCP",
+            "WAN → DMZ bloqué"
+          ],
+          "answer": 1,
+          "explain": "Un serveur de la DMZ n'a aucune raison d'essayer : erreur de config ou machine compromise."
+        },
+        {
+          "q": "Les milliers de blocs WAN → DMZ par jour sont :",
+          "options": [
+            "Un bug",
+            "Une attaque grave",
+            "Le bruit de fond normal d'Internet",
+            "Le DNS"
+          ],
+          "answer": 2,
+          "explain": "Ce qui compte : un port publié soudain en block, ou un pic depuis une seule adresse."
+        },
+        {
+          "q": "Une règle Pass sans journalisation :",
+          "options": [
+            "Journalise quand même",
+            "Bloque",
+            "Est refusée",
+            "Est invisible : aucune trace"
+          ],
+          "answer": 3,
+          "explain": "La case Log doit être cochée sur les exceptions et les blocages."
+        },
+        {
+          "q": "Où envoyer les journaux du boîtier ?",
+          "options": [
+            "Nulle part",
+            "Sur Internet",
+            "Vers la DMZ",
+            "Vers un serveur syslog dans le LAN"
+          ],
+          "answer": 3,
+          "explain": "Ils ont une durée de vie courte et disparaissent avec le boîtier."
+        },
+        {
+          "q": "Sur quelle interface activer Suricata pour la DMZ ?",
+          "options": [
+            "L'interface DMZ (et le WAN)",
+            "Aucune",
+            "Uniquement le LAN",
+            "Le tunnel VPN"
+          ],
+          "answer": 0,
+          "explain": "Trois serveurs et cinq flux : chaque alerte mérite un regard."
+        },
+        {
+          "q": "Trois niveaux de supervision :",
+          "options": [
+            "CPU, RAM, disque",
+            "Jour, semaine, mois",
+            "Rouge, orange, vert",
+            "Le service vu de dehors, la machine, le flux"
+          ],
+          "answer": 3,
+          "explain": "On commence par le premier : une sonde HTTP externe."
+        },
+        {
+          "q": "Un certificat échu :",
+          "options": [
+            "N'a pas d'effet",
+            "Prévient la veille",
+            "Ne casse rien la veille et tout le lendemain matin",
+            "Se renouvelle seul toujours"
+          ],
+          "answer": 2,
+          "explain": "Sonde à 14 jours, ou renouvellement ACME — et on surveille quand même."
+        },
+        {
+          "q": "À quelle fréquence refaire le scan d'exposition ?",
+          "options": [
+            "Une fois par mois, depuis l'extérieur",
+            "Jamais",
+            "Une fois par an",
+            "Chaque heure"
+          ],
+          "answer": 0,
+          "explain": "Comparé au résultat de référence."
+        },
+        {
+          "q": "Un serveur exposé se met à jour :",
+          "options": [
+            "Jamais",
+            "Après les autres",
+            "Avant les autres",
+            "Une fois par an"
+          ],
+          "answer": 2,
+          "explain": "Un correctif en retard est trouvé par un scanner avant la fin de la semaine."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Rythme de mise à jour des applications exposées (CMS, proxy, MTA) ?",
+          "options": [
+            "Annuel",
+            "Dès qu'un correctif de sécurité sort — sous une semaine",
+            "Mensuel",
+            "Jamais"
+          ],
+          "answer": 1,
+          "explain": "Un CMS avec ses extensions est le cas le plus critique."
+        },
+        {
+          "q": "Avant de mettre à jour le pare-feu :",
+          "options": [
+            "Sauvegarde de la configuration, créneau annoncé",
+            "Couper la DMZ",
+            "Redémarrer le LAN",
+            "Rien"
+          ],
+          "answer": 0,
+          "explain": "La version précédente reste disponible."
+        },
+        {
+          "q": "La revue des règles se fait :",
+          "options": [
+            "Jamais",
+            "Chaque heure",
+            "Chaque trimestre, avec la matrice de flux à côté",
+            "Chaque jour"
+          ],
+          "answer": 2,
+          "explain": "Ligne à ligne."
+        },
+        {
+          "q": "Une règle à zéro depuis trois mois :",
+          "options": [
+            "Se journalise",
+            "Se duplique",
+            "Se désactive, puis se supprime au trimestre suivant",
+            "Se garde"
+          ],
+          "answer": 2,
+          "explain": "OPNsense affiche les compteurs par règle."
+        },
+        {
+          "q": "Une règle sans description :",
+          "options": [
+            "Est refusée",
+            "Est plus rapide",
+            "Est journalisée",
+            "Est une règle que personne n'osera supprimer"
+          ],
+          "answer": 3,
+          "explain": "Dans six mois, personne ne saura pourquoi le port 8443 est ouvert."
+        },
+        {
+          "q": "Les sauvegardes des serveurs DMZ :",
+          "options": [
+            "Vont sur Internet",
+            "Restent en DMZ",
+            "Poussent vers le LAN",
+            "Sont tirées depuis le LAN : le serveur de sauvegarde vient chercher"
+          ],
+          "answer": 3,
+          "explain": "La DMZ ne pousse pas vers le LAN."
+        },
+        {
+          "q": "Une sauvegarde jamais restaurée :",
+          "options": [
+            "N'existe pas : restauration d'essai au moins une fois par an",
+            "Suffit",
+            "Est fiable",
+            "Est chiffrée"
+          ],
+          "answer": 0,
+          "explain": "Reconstruire un serveur sur une VM à part et vérifier que le site s'affiche."
+        },
+        {
+          "q": "Une règle « temporaire » doit avoir :",
+          "options": [
+            "Un log",
+            "Un nom court",
+            "Rien",
+            "Une date de fin dans sa description et un rappel"
+          ],
+          "answer": 3,
+          "explain": "Sinon elle est permanente."
+        },
+        {
+          "q": "Quand changer les mots de passe des comptes de service ?",
+          "options": [
+            "Quand une personne qui les connaissait part, et au moins une fois par an",
+            "Chaque jour",
+            "Jamais",
+            "Uniquement après incident"
+          ],
+          "answer": 0,
+          "explain": "Rotation des secrets."
+        },
+        {
+          "q": "Shodan / Censys servent à :",
+          "options": [
+            "Sauvegarder",
+            "Voir ce qu'Internet voit de son adresse",
+            "Router",
+            "Chiffrer"
+          ],
+          "answer": 1,
+          "explain": "Ils scannent tout Internet en continu — gratuit et instructif."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Serveur DMZ compromis : première action ?",
+          "options": [
+            "Prévenir Internet",
+            "L'éteindre",
+            "L'isoler : désactiver sa redirection et sa règle de sortie, sans éteindre",
+            "Le réinstaller"
+          ],
+          "answer": 2,
+          "explain": "Éteindre efface la mémoire et ce qu'elle contient d'utile."
+        },
+        {
+          "q": "Que fait-on après l'isolement ?",
+          "options": [
+            "On nettoie",
+            "On change le VLAN",
+            "On redémarre",
+            "On fige les preuves : instantané VM, copie des journaux"
+          ],
+          "answer": 3,
+          "explain": "Avant toute autre action."
+        },
+        {
+          "q": "Un serveur compromis se :",
+          "options": [
+            "Nettoie",
+            "Restaure depuis la sauvegarde d'hier",
+            "Laisse en l'état",
+            "Reconstruit depuis zéro, depuis un système à jour"
+          ],
+          "answer": 3,
+          "explain": "La sauvegarde d'hier contient peut-être déjà la porte dérobée ; les données seules sont restaurées après vérification."
+        },
+        {
+          "q": "Les block DMZ → LAN pendant l'incident prouvent :",
+          "options": [
+            "Un bug",
+            "Que la zone a tenu",
+            "Rien",
+            "Que le LAN est compromis"
+          ],
+          "answer": 1,
+          "explain": "Un pass inattendu dirait l'inverse et changerait l'échelle."
+        },
+        {
+          "q": "Après reconstruction, on change :",
+          "options": [
+            "Rien",
+            "Tous les secrets que la machine connaissait",
+            "Le VLAN",
+            "Le nom du serveur"
+          ],
+          "answer": 1,
+          "explain": "Compte de base de données, clés, certificats, mots de passe des comptes connectés."
+        },
+        {
+          "q": "Procédure de changement : combien d'étapes ?",
+          "options": [
+            "3",
+            "1",
+            "7 : écrire, sauvegarder, prévenir, appliquer, tester, revenir en arrière si besoin, documenter",
+            "12"
+          ],
+          "answer": 2,
+          "explain": "Une seule modification à la fois."
+        },
+        {
+          "q": "Chaque jour, on regarde :",
+          "options": [
+            "Les règles",
+            "La sauvegarde annuelle",
+            "Alertes de supervision, blocks DMZ → LAN des 24 h, alertes IDS hautes",
+            "Le scan nmap"
+          ],
+          "answer": 2,
+          "explain": "Calendrier du § 5."
+        },
+        {
+          "q": "Chaque année :",
+          "options": [
+            "Une mise à jour",
+            "Rien",
+            "Un scan",
+            "Restauration d'essai, rotation des secrets, test d'intrusion, schéma et matrice remis à jour"
+          ],
+          "answer": 3,
+          "explain": "Même modeste, le test d'intrusion externe compte."
+        },
+        {
+          "q": "Un WAN → DMZ « pass » sur un port hors {25, 80, 443} :",
+          "options": [
+            "Est l'IDS",
+            "Ne doit jamais exister : une règle a été ajoutée — par qui ?",
+            "Est le bruit d'Internet",
+            "Est normal"
+          ],
+          "answer": 1,
+          "explain": "La revue trimestrielle et le journal le révèlent."
+        },
+        {
+          "q": "Pourquoi un IDS sur la DMZ est-il plus lisible que sur le LAN ?",
+          "options": [
+            "Il voit le TLS",
+            "Il est plus rapide",
+            "Il bloque",
+            "Peu de serveurs et de flux : chaque alerte mérite un regard"
+          ],
+          "answer": 3,
+          "explain": "Sur le LAN il se noie dans le trafic des postes."
+        }
+      ]
+    }
+  ]
+}

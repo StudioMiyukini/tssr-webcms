@@ -1,0 +1,351 @@
+{
+  "slug": "tp2-virtualisation-hyperv",
+  "title": "TP2 — Virtualisation Hyper-V (notes & corrigé)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Deux gestes obligatoires dès qu'une VM est installée :",
+          "options": [
+            "Créer un snapshot et un clone",
+            "Renommer l'OS avec un nom normalisé et fixer une IP statique",
+            "Installer un antivirus et Office",
+            "Activer le Wi-Fi"
+          ],
+          "answer": 1,
+          "explain": "Sinon les machines tombent en APIPA et ne se pingent pas."
+        },
+        {
+          "q": "Commande PowerShell pour renommer le PC :",
+          "options": [
+            "Rename-Computer -NewName \"W10-TSSR-01\" -Restart",
+            "Set-Name",
+            "Rename-PC",
+            "hostname W10"
+          ],
+          "answer": 0,
+          "explain": "Ou Paramètres → Système → Renommer ce PC."
+        },
+        {
+          "q": "Longueur maximale d'un nom de machine :",
+          "options": [
+            "64",
+            "8",
+            "32",
+            "15 caractères (limite NetBIOS)"
+          ],
+          "answer": 3,
+          "explain": "A–Z, 0–9 et tiret uniquement."
+        },
+        {
+          "q": "Préfixe proposé pour un contrôleur de domaine :",
+          "options": [
+            "SRV-",
+            "HV-",
+            "PC-",
+            "DC"
+          ],
+          "answer": 3,
+          "explain": "DC01, DC02."
+        },
+        {
+          "q": "Cmdlet pour fixer une IP :",
+          "options": [
+            "Set-IP",
+            "Add-IP",
+            "New-NetIPAddress -InterfaceAlias \"Ethernet\" -IPAddress … -PrefixLength 24",
+            "ipconfig /set"
+          ],
+          "answer": 2,
+          "explain": "Puis Set-DnsClientServerAddress pour le DNS."
+        },
+        {
+          "q": "Que faut-il côté processeur pour Hyper-V ?",
+          "options": [
+            "Intel VT-x ou AMD-V, activé dans le BIOS/UEFI",
+            "8 cœurs",
+            "Un GPU",
+            "Rien"
+          ],
+          "answer": 0,
+          "explain": "Gestionnaire des tâches → Performances → Virtualisation : Activée."
+        },
+        {
+          "q": "Édition Windows 10 sans Hyper-V :",
+          "options": [
+            "Éducation",
+            "Pro",
+            "Entreprise",
+            "Famille"
+          ],
+          "answer": 3,
+          "explain": "Hyper-V n'existe pas en édition Famille."
+        },
+        {
+          "q": "Commande pour activer Hyper-V :",
+          "options": [
+            "hyperv on",
+            "Install-HyperV",
+            "Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V -All",
+            "Enable-VM"
+          ],
+          "answer": 2,
+          "explain": "Un redémarrage est demandé."
+        },
+        {
+          "q": "RAM minimale officielle pour Windows 10 64 bits :",
+          "options": [
+            "2 Go",
+            "4 Go",
+            "8 Go",
+            "1 Go"
+          ],
+          "answer": 0,
+          "explain": "CPU 1 GHz, 20 à 32 Go de disque, DirectX 9."
+        },
+        {
+          "q": "Ctrl + Alt + Fin sert à :",
+          "options": [
+            "Éteindre la VM",
+            "Envoyer Ctrl + Alt + Suppr à l'intérieur de la VM",
+            "Copier",
+            "Prendre un snapshot"
+          ],
+          "answer": 1,
+          "explain": "Le vrai Ctrl+Alt+Suppr est capté par l'hôte."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Génération 2 apporte :",
+          "options": [
+            "BIOS hérité et IDE",
+            "Compatibilité 32 bits",
+            "UEFI + Secure Boot, démarrage SCSI/PXE, pour OS 64 bits récents",
+            "Rien"
+          ],
+          "answer": 2,
+          "explain": "La génération se choisit à la création et ne change plus."
+        },
+        {
+          "q": "Génération 1 convient à :",
+          "options": [
+            "Rien",
+            "Linux uniquement",
+            "Vieux OS (32 bits, anciennes versions)",
+            "Windows 11 seulement"
+          ],
+          "answer": 2,
+          "explain": "Firmware BIOS, démarrage IDE."
+        },
+        {
+          "q": "RAM dynamique :",
+          "options": [
+            "Illimitée",
+            "Démarre au minimum et Hyper-V ajuste entre mini et maxi selon les besoins",
+            "Fixe",
+            "Réservée"
+          ],
+          "answer": 1,
+          "explain": "Mutualise la RAM entre VM."
+        },
+        {
+          "q": "La VM a-t-elle Internet ?",
+          "options": [
+            "Jamais",
+            "Toujours",
+            "Seulement en Gen 2",
+            "Avec le Default Switch (NAT) ou un commutateur externe : oui ; interne ou privé : non"
+          ],
+          "answer": 3,
+          "explain": "Dépend du commutateur affecté."
+        },
+        {
+          "q": "Modifier la RAM statique ou la taille du disque :",
+          "options": [
+            "VM éteinte en général ; exceptions Gen 2 (RAM dynamique à chaud, disque SCSI à chaud)",
+            "Seulement en Gen 1",
+            "Impossible",
+            "VM allumée"
+          ],
+          "answer": 0,
+          "explain": "Question 10 du TP."
+        },
+        {
+          "q": "VM avec 128 Mo de RAM :",
+          "options": [
+            "Refuse de démarrer : bien en dessous du minimum Windows",
+            "Démarre lentement",
+            "Passe en Gen 1",
+            "Démarre normalement"
+          ],
+          "answer": 0,
+          "explain": "Erreur de mémoire insuffisante."
+        },
+        {
+          "q": "Ajouter un 2ᵉ disque de 25 Go partitionné U: et V: :",
+          "options": [
+            "Créer un VHDX, l'attacher en SCSI, puis Gestion des disques → initialiser → deux volumes",
+            "Copier le VHDX",
+            "Impossible",
+            "Via le BIOS"
+          ],
+          "answer": 0,
+          "explain": "Question 14."
+        },
+        {
+          "q": "Éjecter un ISO VM allumée :",
+          "options": [
+            "Après snapshot",
+            "Possible : changer ou éjecter l'image à chaud",
+            "Impossible",
+            "Seulement en Gen 1"
+          ],
+          "answer": 1,
+          "explain": "Paramètres du lecteur DVD."
+        },
+        {
+          "q": "Le glisser-déposer de fichiers hôte → VM sous Hyper-V :",
+          "options": [
+            "Fonctionne",
+            "N'est pas pris en charge (contrairement à VMware) : dossier réseau ou presse-papier",
+            "Fonctionne en Gen 2",
+            "Nécessite un VLAN"
+          ],
+          "answer": 1,
+          "explain": "Le copier-coller de texte fonctionne via le mode session améliorée."
+        },
+        {
+          "q": "Mode d'arrêt « Enregistrer » (Save state) :",
+          "options": [
+            "Fige l'état en mémoire/disque pour reprendre plus tard",
+            "Coupe brutalement",
+            "Éteint proprement",
+            "Redémarre"
+          ],
+          "answer": 0,
+          "explain": "Arrêter = propre ; Éteindre = brutal ; Suspendre = pause."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Emplacement par défaut des fichiers de configuration des VM :",
+          "options": [
+            "C:\\Users\\Public",
+            "C:\\Hyper-V",
+            "C:\\VM",
+            "C:\\ProgramData\\Microsoft\\Windows\\Hyper-V\\"
+          ],
+          "answer": 3,
+          "explain": "Fichiers .vmcx, .vmrs et points de contrôle."
+        },
+        {
+          "q": "Emplacement par défaut des disques durs virtuels :",
+          "options": [
+            "C:\\ProgramData",
+            "C:\\VHD",
+            "D:\\",
+            "C:\\Users\\Public\\Documents\\Hyper-V\\Virtual Hard Disks\\"
+          ],
+          "answer": 3,
+          "explain": "Les .vhdx."
+        },
+        {
+          "q": "Pourquoi APIPA sur un commutateur interne/privé ?",
+          "options": [
+            "Aucun serveur DHCP ne répond : Windows s'auto-attribue 169.254.x.x",
+            "Le VLAN",
+            "Bug",
+            "Le Wi-Fi"
+          ],
+          "answer": 0,
+          "explain": "D'où l'IP fixe obligatoire."
+        },
+        {
+          "q": "Plan d'adressage de la maquette : la VM Serveur 2019 :",
+          "options": [
+            "10.0.0.1",
+            "192.168.10.254",
+            "192.168.10.10",
+            "192.168.10.1"
+          ],
+          "answer": 3,
+          "explain": "W10-TSSR-01 en .10, passerelle .254 si besoin."
+        },
+        {
+          "q": "Convention : un serveur DHCP se nomme :",
+          "options": [
+            "DHCP",
+            "SRV-DHCP01",
+            "HV-DHCP",
+            "PC-DHCP"
+          ],
+          "answer": 1,
+          "explain": "SRV-<rôle> + numéro sur 2 chiffres."
+        },
+        {
+          "q": "Convention : un portable de la direction :",
+          "options": [
+            "SRV-DIR",
+            "DIR-01",
+            "PC-DIR-01",
+            "LT-DIR-01"
+          ],
+          "answer": 3,
+          "explain": "LT- pour laptop."
+        },
+        {
+          "q": "Caractères interdits dans un nom de machine :",
+          "options": [
+            "Les majuscules",
+            "Les chiffres",
+            "Le tiret",
+            "Espaces, accents, caractères spéciaux"
+          ],
+          "answer": 3,
+          "explain": "Uniquement A–Z, 0–9 et « - »."
+        },
+        {
+          "q": "Où ajouter un lecteur DVD en Gen 1 ?",
+          "options": [
+            "Réseau",
+            "Contrôleur SCSI",
+            "USB",
+            "Contrôleur IDE"
+          ],
+          "answer": 3,
+          "explain": "En Gen 2, sur le SCSI."
+        },
+        {
+          "q": "Cmdlet pour le DNS de la carte :",
+          "options": [
+            "New-DnsServer",
+            "ipconfig /dns",
+            "Set-DNS",
+            "Set-DnsClientServerAddress -InterfaceAlias \"Ethernet\" -ServerAddresses 192.168.10.1"
+          ],
+          "answer": 3,
+          "explain": "Complète New-NetIPAddress."
+        },
+        {
+          "q": "Vérifier la virtualisation avec :",
+          "options": [
+            "gpupdate",
+            "net use",
+            "systeminfo ou Gestionnaire des tâches → Performances",
+            "ipconfig"
+          ],
+          "answer": 2,
+          "explain": "Ligne « Virtualisation : Activée »."
+        }
+      ]
+    }
+  ]
+}

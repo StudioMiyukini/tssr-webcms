@@ -1,0 +1,351 @@
+{
+  "slug": "linux-droits",
+  "title": "Linux : utilisateurs, droits et sudo",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Chaque fichier Linux porte :",
+          "options": [
+            "Un SID",
+            "Deux étiquettes : un propriétaire et un groupe",
+            "Une liste d'utilisateurs",
+            "Un mot de passe"
+          ],
+          "answer": 1,
+          "explain": "Pas de liste, pas d'exceptions — c'est ce que les ACL ajoutent."
+        },
+        {
+          "q": "Les trois catégories :",
+          "options": [
+            "Lecture, écriture, exécution",
+            "Propriétaire (u), groupe (g), autres (o)",
+            "Root, sudo, autres",
+            "Admin, user, guest"
+          ],
+          "answer": 1,
+          "explain": "Tout le monde tombe dans une seule catégorie."
+        },
+        {
+          "q": "Les trois droits :",
+          "options": [
+            "Voir, modifier, partager",
+            "Lire (r), écrire (w), exécuter (x)",
+            "Ouvrir, fermer, copier",
+            "Créer, supprimer, renommer"
+          ],
+          "answer": 1,
+          "explain": "Chaque catégorie les a ou ne les a pas."
+        },
+        {
+          "q": "Dans -rw-r----- jean compta, marie (membre de compta) peut :",
+          "options": [
+            "Lire seulement",
+            "Lire et écrire",
+            "Rien",
+            "Tout"
+          ],
+          "answer": 0,
+          "explain": "Groupe = r--."
+        },
+        {
+          "q": "Dans -rw-r----- jean compta, paul (aucun lien) peut :",
+          "options": [
+            "Lire",
+            "Écrire",
+            "Rien",
+            "Exécuter"
+          ],
+          "answer": 2,
+          "explain": "Autres = ---."
+        },
+        {
+          "q": "Le premier caractère « d » de ls -l signifie :",
+          "options": [
+            "Disque",
+            "Dossier",
+            "Default",
+            "Droit"
+          ],
+          "answer": 1,
+          "explain": "- fichier, l lien, b/c périphérique."
+        },
+        {
+          "q": "Sur un dossier, w permet :",
+          "options": [
+            "Créer, renommer, supprimer des entrées — quel que soit leur propriétaire",
+            "Lire les fichiers",
+            "Rien",
+            "Exécuter les fichiers"
+          ],
+          "answer": 0,
+          "explain": "Un dossier n'est qu'une liste."
+        },
+        {
+          "q": "Sur un dossier, x permet :",
+          "options": [
+            "Supprimer",
+            "Traverser : entrer dedans, atteindre ce qu'il contient",
+            "Écrire",
+            "Lister"
+          ],
+          "answer": 1,
+          "explain": "Un dossier sans x bloque tout ce qu'il contient."
+        },
+        {
+          "q": "Sur un dossier, r permet :",
+          "options": [
+            "Lister les noms qu'il contient",
+            "Exécuter",
+            "Traverser",
+            "Écrire"
+          ],
+          "answer": 0,
+          "explain": "Voir la liste."
+        },
+        {
+          "q": "Le propriétaire bloqué en r-- peut-il se débloquer ?",
+          "options": [
+            "Seulement root",
+            "Oui : chmod u+w, le propriétaire peut toujours changer les droits",
+            "Non",
+            "Jamais"
+          ],
+          "answer": 1,
+          "explain": "Consolation du cours."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Pourquoi Linux « s'arrête au premier » ?",
+          "options": [
+            "Il prend la plus généreuse",
+            "Par bug",
+            "Il cumule comme Windows",
+            "Il applique la première catégorie qui correspond, sans regarder les autres, même plus généreuses"
+          ],
+          "answer": 3,
+          "explain": "Le propriétaire peut avoir moins de droits que le groupe."
+        },
+        {
+          "q": "Peut-on supprimer un fichier qu'on ne peut pas lire ?",
+          "options": [
+            "Oui, si l'on a w sur le dossier : supprimer = retirer une ligne de la liste",
+            "Non",
+            "Seulement root",
+            "Jamais"
+          ],
+          "answer": 0,
+          "explain": "C'est ce que corrige le sticky bit, d'où /tmp."
+        },
+        {
+          "q": "Un dossier en --x :",
+          "options": [
+            "S'écrit",
+            "Se traverse mais ne se liste pas : cat marche si l'on connaît le nom",
+            "Se liste",
+            "Est inutilisable"
+          ],
+          "answer": 1,
+          "explain": "Équivalent du « Traverser le dossier » Windows."
+        },
+        {
+          "q": "Première cause de « Permission denied » sur un chemin :",
+          "options": [
+            "Un dossier du chemin non traversable (sans x)",
+            "Le groupe",
+            "Le réseau",
+            "Le fichier"
+          ],
+          "answer": 0,
+          "explain": "namei -l pour le diagnostiquer."
+        },
+        {
+          "q": "Positions de ls -l : rwxr-x--- :",
+          "options": [
+            "u=rwx, g=r-x, o=---",
+            "u=r-x, g=rwx, o=---",
+            "u=---, g=r-x, o=rwx",
+            "Tous rwx"
+          ],
+          "answer": 0,
+          "explain": "Neuf caractères, groupés par trois, dans l'ordre u g o."
+        },
+        {
+          "q": "Sous Windows, les autorisations :",
+          "options": [
+            "Sont r/w/x",
+            "S'arrêtent au premier",
+            "N'existent pas",
+            "Se cumulent : jean dans deux catégories obtient le total"
+          ],
+          "answer": 3,
+          "explain": "Différence clé avec Linux."
+        },
+        {
+          "q": "Que compare Linux pour déterminer la catégorie ?",
+          "options": [
+            "Le mot de passe",
+            "Es-tu le propriétaire ? sinon membre du groupe ? sinon autres",
+            "L'heure",
+            "Le shell"
+          ],
+          "answer": 1,
+          "explain": "Dans cet ordre."
+        },
+        {
+          "q": "Que fait sudo ?",
+          "options": [
+            "Crée root",
+            "Exécute une commande avec les droits de root (ou d'un autre)",
+            "Supprime les droits",
+            "Change d'utilisateur définitivement"
+          ],
+          "answer": 1,
+          "explain": "Déléguer sans tout donner."
+        },
+        {
+          "q": "Le contenu d'un fichier est stocké :",
+          "options": [
+            "Ailleurs ; le dossier n'a que le nom et l'emplacement",
+            "Dans le dossier",
+            "Dans le groupe",
+            "Dans le nom"
+          ],
+          "answer": 0,
+          "explain": "Un dossier = une liste."
+        },
+        {
+          "q": "Trois catégories, c'est simple mais :",
+          "options": [
+            "Sans limite",
+            "Trop lent",
+            "« compta en écriture et l'auditeur en lecture » n'a pas de solution avec un seul groupe → ACL",
+            "Trop"
+          ],
+          "answer": 2,
+          "explain": "Section 8 : les ACL."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "chmod 750 fichier donne :",
+          "options": [
+            "rwxrw----",
+            "rwxrwx---",
+            "rwxr-x---",
+            "rw-r-----"
+          ],
+          "answer": 2,
+          "explain": "7 = rwx, 5 = r-x, 0 = ---."
+        },
+        {
+          "q": "chmod 644 fichier donne :",
+          "options": [
+            "rw-rw-rw-",
+            "r--r--r--",
+            "rw-r--r--",
+            "rwxr--r--"
+          ],
+          "answer": 2,
+          "explain": "6 = rw-, 4 = r--."
+        },
+        {
+          "q": "Pour changer le propriétaire et le groupe :",
+          "options": [
+            "chmod jean:compta",
+            "usermod",
+            "chgrp jean",
+            "chown jean:compta fichier"
+          ],
+          "answer": 3,
+          "explain": "chgrp pour le groupe seul."
+        },
+        {
+          "q": "Le sticky bit sur /tmp :",
+          "options": [
+            "Rend /tmp lecture seule",
+            "Exécute",
+            "Empêche de supprimer les fichiers des autres même avec w sur le dossier",
+            "Chiffre"
+          ],
+          "answer": 2,
+          "explain": "Chacun ne supprime que les siens."
+        },
+        {
+          "q": "Pourquoi le serveur web ne doit-il pas fouiller les dossiers personnels ?",
+          "options": [
+            "Il est root",
+            "Il est lent",
+            "Séparation des droits : il tourne sous son propre compte sans accès à /home",
+            "Il n'a pas de groupe"
+          ],
+          "answer": 2,
+          "explain": "Le problème que les droits résolvent."
+        },
+        {
+          "q": "Publier /home/jean/public sans exposer /home/jean :",
+          "options": [
+            "chmod 000",
+            "Tout en 777",
+            "Impossible",
+            "/home/jean en --x pour les autres, public en r-x"
+          ],
+          "answer": 3,
+          "explain": "Traverser sans voir."
+        },
+        {
+          "q": "namei -l /chemin/fichier :",
+          "options": [
+            "Affiche les droits de chaque élément du chemin",
+            "Supprime",
+            "Renomme",
+            "Crée"
+          ],
+          "answer": 0,
+          "explain": "Pour trouver le dossier bloquant."
+        },
+        {
+          "q": "Le modèle à trois catégories a traversé :",
+          "options": [
+            "Cinquante ans",
+            "Un an",
+            "Il est nouveau",
+            "Cinq ans"
+          ],
+          "answer": 0,
+          "explain": "Il tient en neuf caractères."
+        },
+        {
+          "q": "-rw-r----- 1 jean compta 4096 … : « 1 » est :",
+          "options": [
+            "La taille",
+            "L'UID",
+            "Le groupe",
+            "Le nombre de liens"
+          ],
+          "answer": 3,
+          "explain": "4096 est la taille."
+        },
+        {
+          "q": "Les ACL servent quand :",
+          "options": [
+            "Toujours",
+            "Jamais",
+            "Root manque",
+            "Trois catégories ne suffisent plus"
+          ],
+          "answer": 3,
+          "explain": "Voir le cours dédié aux ACL."
+        }
+      ]
+    }
+  ]
+}

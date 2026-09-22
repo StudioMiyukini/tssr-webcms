@@ -44,6 +44,8 @@ const btnStyle: React.CSSProperties = { padding: '8px 12px', border: '1px solid 
 export function VmConfigurator() {
   const [type, setType] = useState<'Client' | 'SRV'>('SRV');
   const [num, setNum] = useState('01');
+  // Nom libre : la convention (Client_xx / SRV_rôle_xx) sert de proposition, pas d'obligation.
+  const [nomLibre, setNomLibre] = useState('');
   const [vcpu, setVcpu] = useState('2');
   const [ramGo, setRamGo] = useState('4');
   const [roles, setRoles] = useState<string[]>(['AD', 'DNS']);
@@ -78,7 +80,12 @@ export function VmConfigurator() {
 
   const num2 = (num || '01').padStart(2, '0');
   const primaryKey = type === 'SRV' ? (roles.includes(primary) ? primary : (roles[0] || 'SRV')) : '';
-  const vmName = type === 'Client' ? `Client_${num2}` : `SRV_${primaryKey || 'ROLE'}_${num2}`;
+  const nomConvention = type === 'Client' ? `Client_${num2}` : `SRV_${primaryKey || 'ROLE'}_${num2}`;
+  const vmName = nomLibre.trim() || nomConvention;
+  // Ce que Windows accepte comme nom de machine : 15 caractères max (NetBIOS), lettres, chiffres, tiret ; l'underscore passe mais n'est pas recommandé.
+  const nomSouci = vmName.length > 15 ? `${vmName.length} caractères : Windows tronque le nom NetBIOS à 15 (Rename-Computer avertit, certains services le refusent).`
+    : !/^[A-Za-z0-9_-]+$/.test(vmName) ? 'Lettres, chiffres, tiret (et underscore) seulement : pas d’espace ni d’accent dans un nom de machine.'
+    : /^[0-9]+$/.test(vmName) ? 'Un nom de machine ne peut pas être uniquement numérique.' : '';
   const effectiveGw = gwAuto ? (gatewayFromIp(ip) || gw) : gw;
   const toggleRole = (k: string) => setRoles(rs => rs.includes(k) ? rs.filter(x => x !== k) : [...rs, k]);
 
@@ -254,10 +261,12 @@ export function VmConfigurator() {
               <input style={fieldStyle} value={num} onChange={e => setNum(e.target.value.replace(/\D/g, '').slice(0, 3))} placeholder="01" />
             </div>
             <div>
-              <label style={labelStyle}>Nom obtenu</label>
-              <input style={{ ...fieldStyle, fontFamily: 'ui-monospace,monospace', fontWeight: 700, color: 'var(--accent)' }} value={vmName} readOnly />
+              <label style={labelStyle}>Nom de la VM {nomLibre.trim() ? <span className="meta" style={{ fontWeight: 400 }}>(libre)</span> : <span className="meta" style={{ fontWeight: 400 }}>(convention — modifiable)</span>}</label>
+              <input style={{ ...fieldStyle, fontFamily: 'ui-monospace,monospace', fontWeight: 700, color: 'var(--accent)' }} value={nomLibre} onChange={e => setNomLibre(e.target.value)} placeholder={nomConvention} title="Vide : la convention Client_xx / SRV_rôle_xx. Sinon : le nom que tu tapes, pour la VM Hyper-V et pour Windows (Rename-Computer)." />
+              {nomLibre.trim() && <button type="button" onClick={() => setNomLibre('')} style={{ ...btnStyle, padding: '3px 9px', fontSize: 11.5, marginTop: 6 }}>↩ Revenir à la convention</button>}
             </div>
           </div>
+          {nomSouci && <div style={{ fontSize: 12, marginTop: 8, color: '#d97706' }}>⚠️ {nomSouci}</div>}
         </div>
 
         {/* Ressources */}

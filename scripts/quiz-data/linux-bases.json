@@ -1,0 +1,351 @@
+{
+  "slug": "linux-bases",
+  "title": "Linux : les bases (Debian)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Que désigne précisément le mot « Linux » ?",
+          "options": [
+            "L'éditeur",
+            "Le noyau",
+            "La distribution",
+            "Le shell"
+          ],
+          "answer": 1,
+          "explain": "Ce qu'on installe est GNU/Linux : le noyau entouré des outils GNU."
+        },
+        {
+          "q": "Invite d'un utilisateur normal / de root :",
+          "options": [
+            "% / &",
+            "> / <",
+            "$ / #",
+            "# / $"
+          ],
+          "answer": 2,
+          "explain": "$ pour l'utilisateur, # pour root."
+        },
+        {
+          "q": "Pour élever ses droits sur une commande :",
+          "options": [
+            "root",
+            "elevate",
+            "sudo",
+            "admin"
+          ],
+          "answer": 2,
+          "explain": "sudo devant la commande."
+        },
+        {
+          "q": "Linux est-il sensible à la casse ?",
+          "options": [
+            "Seulement pour root",
+            "Non",
+            "Seulement dans /etc",
+            "Oui : Fichier ≠ fichier"
+          ],
+          "answer": 3,
+          "explain": "Pour les fichiers comme pour les options."
+        },
+        {
+          "q": "Commande pour la version du noyau :",
+          "options": [
+            "lsb",
+            "uname -r",
+            "kernel -v",
+            "cat /etc/os-release"
+          ],
+          "answer": 1,
+          "explain": "cat /etc/os-release donne la distribution, ce qui est différent."
+        },
+        {
+          "q": "Qui a lancé le projet GNU en 1984 ?",
+          "options": [
+            "Ken Thompson",
+            "Ian Murdock",
+            "Richard Stallman",
+            "Linus Torvalds"
+          ],
+          "answer": 2,
+          "explain": "GNU is Not Unix ; Torvalds écrit le noyau en 1991."
+        },
+        {
+          "q": "La mascotte Tux est :",
+          "options": [
+            "Un gnou",
+            "Un chat",
+            "Un manchot pygmée (Torvalds UniX)",
+            "Un pingouin géant"
+          ],
+          "answer": 2,
+          "explain": "Choisi en 1996 face au géant Unix."
+        },
+        {
+          "q": "Famille de Debian, Ubuntu, Mint :",
+          "options": [
+            "Red Hat",
+            "Arch",
+            "SUSE",
+            "Debian (.deb, apt)"
+          ],
+          "answer": 3,
+          "explain": "Debian stable est la référence en entreprise."
+        },
+        {
+          "q": "Gestionnaire de paquets de la famille Red Hat :",
+          "options": [
+            "pacman",
+            "zypper",
+            "dnf (.rpm)",
+            "apt"
+          ],
+          "answer": 2,
+          "explain": "zypper = SUSE, pacman = Arch."
+        },
+        {
+          "q": "Que fait le noyau ?",
+          "options": [
+            "Gère processus, mémoire, matériel (pilotes), fichiers et droits",
+            "Édite les fichiers",
+            "Affiche le bureau",
+            "Compile les programmes"
+          ],
+          "answer": 0,
+          "explain": "Le seul à accéder directement au matériel."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Pourquoi ne pas monter un serveur sur une distribution de bureau ?",
+          "options": [
+            "Pas de réseau",
+            "Pas de shell",
+            "Cycle court, support de quelques mois : à réinstaller souvent ou sans correctifs",
+            "Trop chère"
+          ],
+          "answer": 2,
+          "explain": "Une version serveur privilégie la durée : 5 ans de correctifs ou plus."
+        },
+        {
+          "q": "D'où viennent les noms de code de Debian ?",
+          "options": [
+            "Des planètes",
+            "Des villes",
+            "De Toy Story (Buzz, Bookworm…)",
+            "Des animaux"
+          ],
+          "answer": 2,
+          "explain": "Bruce Perens travaillait chez Pixar en 1996."
+        },
+        {
+          "q": "Debian 12 a pour nom de code :",
+          "options": [
+            "Bookworm",
+            "Trixie",
+            "Buster",
+            "Bullseye"
+          ],
+          "answer": 0,
+          "explain": "Sur un serveur, on parle souvent de « bookworm »."
+        },
+        {
+          "q": "Un .deb sur une Red Hat :",
+          "options": [
+            "S'installe avec dnf",
+            "Se convertit seul",
+            "S'installe",
+            "Ne s'installe pas : les paquets ne se mélangent pas entre familles"
+          ],
+          "answer": 3,
+          "explain": "Un dépôt Ubuntu sur une Debian casse aussi les dépendances."
+        },
+        {
+          "q": "Qui a fondé Debian en 1993 ?",
+          "options": [
+            "Linus Torvalds",
+            "Bruce Perens",
+            "Richard Stallman",
+            "Ian Murdock"
+          ],
+          "answer": 3,
+          "explain": "Avec le soutien de la Free Software Foundation."
+        },
+        {
+          "q": "Le noyau de Windows :",
+          "options": [
+            "Unix",
+            "Mach",
+            "NT",
+            "Linux"
+          ],
+          "answer": 2,
+          "explain": "Mach pour macOS, dérivé d'Unix."
+        },
+        {
+          "q": "« Tout est fichier » signifie :",
+          "options": [
+            "Pas de réseau",
+            "Seuls les documents existent",
+            "Pas de dossiers",
+            "Périphériques, processus, configuration sont accessibles comme des fichiers"
+          ],
+          "answer": 3,
+          "explain": "Repère du cours."
+        },
+        {
+          "q": "Pourquoi Linux domine-t-il les serveurs ?",
+          "options": [
+            "Office",
+            "Stable, léger, administrable à distance, sans licence par machine",
+            "Jeux",
+            "Interface graphique"
+          ],
+          "answer": 1,
+          "explain": "Tableau du cours."
+        },
+        {
+          "q": "uname -a affiche :",
+          "options": [
+            "La distribution",
+            "Les disques",
+            "Noyau, architecture, nom de machine",
+            "Les utilisateurs"
+          ],
+          "answer": 2,
+          "explain": "uname -r pour la seule version."
+        },
+        {
+          "q": "Debian est portée par :",
+          "options": [
+            "Canonical",
+            "Une entreprise",
+            "Red Hat",
+            "Une communauté de développeurs indépendants"
+          ],
+          "answer": 3,
+          "explain": "D'où sa réputation de stabilité."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Deux distributions différentes peuvent-elles faire tourner le même noyau ?",
+          "options": [
+            "Seulement Debian",
+            "Seulement Red Hat",
+            "Non",
+            "Oui"
+          ],
+          "answer": 3,
+          "explain": "Noyau et distribution ne se confondent pas."
+        },
+        {
+          "q": "Distribution pour l'industrie et SAP :",
+          "options": [
+            "Mint",
+            "SUSE (SLES)",
+            "Arch",
+            "Fedora"
+          ],
+          "answer": 1,
+          "explain": "rpm · zypper."
+        },
+        {
+          "q": "En TSSR, où rencontre-t-on Linux ?",
+          "options": [
+            "Nulle part",
+            "Sur les serveurs, équipements et VM",
+            "Sur les postes utilisateurs",
+            "Sur les imprimantes"
+          ],
+          "answer": 1,
+          "explain": "D'où le travail en ligne de commande."
+        },
+        {
+          "q": "1969 :",
+          "options": [
+            "Linux",
+            "Première version d'Unix par Ken Thompson",
+            "MS-DOS",
+            "GNU"
+          ],
+          "answer": 1,
+          "explain": "MS-DOS en 1981, GNU en 1984, Linux en 1991."
+        },
+        {
+          "q": "Logiciel libre signifie :",
+          "options": [
+            "Code lisible, modifiable et redistribuable",
+            "Gratuit seulement",
+            "Sans support",
+            "Sans licence"
+          ],
+          "answer": 0,
+          "explain": "Du téléphone au superordinateur."
+        },
+        {
+          "q": "Un système d'exploitation :",
+          "options": [
+            "Est une application",
+            "Est le shell",
+            "Se place entre le matériel et les applications",
+            "Est le BIOS"
+          ],
+          "answer": 2,
+          "explain": "Distribue processeur et mémoire, parle aux disques et cartes."
+        },
+        {
+          "q": "Combien de paquets Debian environ ?",
+          "options": [
+            "500",
+            "1 million",
+            "Plus de 59 000",
+            "5 000"
+          ],
+          "answer": 2,
+          "explain": "Une dizaine d'architectures de processeurs."
+        },
+        {
+          "q": "Pourquoi les commandes du cours marchent-elles souvent sur Mac ?",
+          "options": [
+            "Mac utilise Linux",
+            "Mac utilise NT",
+            "Hasard",
+            "macOS a un noyau dérivé d'Unix"
+          ],
+          "answer": 3,
+          "explain": "Mach dérivé d'Unix."
+        },
+        {
+          "q": "Commande pour la distribution et sa version :",
+          "options": [
+            "cat /etc/os-release",
+            "distro",
+            "version",
+            "uname -r"
+          ],
+          "answer": 0,
+          "explain": "Répond « Debian 12 »."
+        },
+        {
+          "q": "Où le cours renvoie-t-il pour SSH, Apache, Samba ?",
+          "options": [
+            "Nulle part",
+            "Vers le glossaire",
+            "Vers des cours dédiés",
+            "Vers Windows"
+          ],
+          "answer": 2,
+          "explain": "Ce cours donne les fondations."
+        }
+      ]
+    }
+  ]
+}

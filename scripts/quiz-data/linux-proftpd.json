@@ -1,0 +1,351 @@
+{
+  "slug": "linux-proftpd",
+  "title": "FTP : le serveur ProFTPd",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "FTP utilise :",
+          "options": [
+            "Une connexion",
+            "Deux canaux : commandes (21) et données (20 ou port haut)",
+            "Trois ports",
+            "UDP"
+          ],
+          "answer": 1,
+          "explain": "La source de la plupart de ses ennuis."
+        },
+        {
+          "q": "Port du canal de commandes :",
+          "options": [
+            "20",
+            "22",
+            "21",
+            "990"
+          ],
+          "answer": 2,
+          "explain": "Connexion, identifiants, LIST, CWD."
+        },
+        {
+          "q": "En mode actif, qui ouvre le canal de données ?",
+          "options": [
+            "Le pare-feu",
+            "Le serveur vers le client (depuis le port 20)",
+            "Le client",
+            "Personne"
+          ],
+          "answer": 1,
+          "explain": "Le pare-feu du client jette la connexion entrante."
+        },
+        {
+          "q": "Mode recommandé aujourd'hui :",
+          "options": [
+            "Actif",
+            "Passif",
+            "Aucun",
+            "Mixte"
+          ],
+          "answer": 1,
+          "explain": "Le client ouvre vers le serveur ; il faut une plage de ports côté serveur."
+        },
+        {
+          "q": "Connexion réussie mais listing vide ou figé :",
+          "options": [
+            "Mot de passe",
+            "DNS",
+            "Problème de mode ou de pare-feu sur le canal de données",
+            "Disque"
+          ],
+          "answer": 2,
+          "explain": "Jamais un problème de mot de passe."
+        },
+        {
+          "q": "Paquet sur Debian 12 :",
+          "options": [
+            "vsftpd",
+            "proftpd-basic",
+            "proftpd-core",
+            "proftpd"
+          ],
+          "answer": 2,
+          "explain": "proftpd-basic sur Debian 11 : apt search ^proftpd."
+        },
+        {
+          "q": "Fichier de configuration :",
+          "options": [
+            "/var/proftpd",
+            "/etc/proftpd.conf",
+            "/etc/proftpd/proftpd.conf",
+            "/etc/ftp/conf"
+          ],
+          "answer": 2,
+          "explain": "Une instruction par ligne, lignes commentées par #."
+        },
+        {
+          "q": "DefaultRoot ~ :",
+          "options": [
+            "Le dossier racine",
+            "Cloisonne l'utilisateur dans son dossier personnel",
+            "Rend root",
+            "Désactive"
+          ],
+          "answer": 1,
+          "explain": "Le réglage de sécurité."
+        },
+        {
+          "q": "Contrôler la syntaxe avant redémarrage :",
+          "options": [
+            "proftpd -c",
+            "testparm",
+            "sudo proftpd -t",
+            "ftp -t"
+          ],
+          "answer": 2,
+          "explain": "Puis systemctl restart proftpd."
+        },
+        {
+          "q": "Client FTP courant :",
+          "options": [
+            "FileZilla, MobaXterm, la commande ftp",
+            "nginx",
+            "Apache",
+            "Samba"
+          ],
+          "answer": 0,
+          "explain": "Le serveur : ProFTPd, vsftpd."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "PassivePorts 49152 65534 :",
+          "options": [
+            "Ports bloqués",
+            "Ports SSH",
+            "La plage où le serveur pioche pour le canal de données",
+            "Ports de commandes"
+          ],
+          "answer": 2,
+          "explain": "À ouvrir sur le pare-feu."
+        },
+        {
+          "q": "Sans DefaultRoot :",
+          "options": [
+            "Chiffré",
+            "L'utilisateur remonte vers /home puis / et voit tout le serveur",
+            "Rien ne marche",
+            "Accès refusé"
+          ],
+          "answer": 1,
+          "explain": "Il ne modifiera pas grand-chose, mais il verra tout."
+        },
+        {
+          "q": "DefaultRoot /var/www webadmins puis DefaultRoot ~ :",
+          "options": [
+            "Erreur",
+            "Conflit",
+            "Règle particulière d'abord, générale ensuite : webadmins → /var/www, les autres chez eux",
+            "Seule la dernière compte"
+          ],
+          "answer": 2,
+          "explain": "Les lignes sont examinées dans l'ordre."
+        },
+        {
+          "q": "RequireValidShell :",
+          "options": [
+            "Exige bash",
+            "Chiffre",
+            "Désactive",
+            "ProFTPd refuse les comptes dont le shell n'est pas dans /etc/shells (nologin)"
+          ],
+          "answer": 3,
+          "explain": "RequireValidShell off, ou ajouter nologin à /etc/shells."
+        },
+        {
+          "q": "Le bloc <Anonymous ~ftp> :",
+          "options": [
+            "Ouvre le serveur à tous avec l'identifiant anonymous",
+            "Est obligatoire",
+            "Chiffre",
+            "Bloque"
+          ],
+          "answer": 0,
+          "explain": "Commenté d'origine."
+        },
+        {
+          "q": "~ftp désigne :",
+          "options": [
+            "/home/ftp",
+            "Le dossier personnel de l'utilisateur système ftp (/srv/ftp)",
+            "/var/ftp",
+            "/"
+          ],
+          "answer": 1,
+          "explain": "getent passwd ftp le montre."
+        },
+        {
+          "q": "<Limit WRITE> DenyAll :",
+          "options": [
+            "Chiffre",
+            "Inutile",
+            "Bloque la lecture",
+            "Empêche n'importe qui de déposer des fichiers en anonyme"
+          ],
+          "answer": 3,
+          "explain": "Un FTP anonyme en écriture devient un entrepôt de robots."
+        },
+        {
+          "q": "Déplacer le point d'arrivée de l'anonyme :",
+          "options": [
+            "Chemin en dur à la place de ~ftp, ou usermod -d /srv/depot ftp",
+            "smbpasswd",
+            "chmod",
+            "Impossible"
+          ],
+          "answer": 0,
+          "explain": "Deux façons."
+        },
+        {
+          "q": "Modifier proftpd.conf.old et redémarrer :",
+          "options": [
+            "Chiffre",
+            "Ne change rien : ProFTPd lit proftpd.conf",
+            "Casse",
+            "Applique"
+          ],
+          "answer": 1,
+          "explain": "On sauvegarde la copie, on modifie l'original."
+        },
+        {
+          "q": "TimeoutIdle 1200 :",
+          "options": [
+            "Port",
+            "Vitesse",
+            "Déconnexion après 20 min d'inactivité",
+            "1200 connexions"
+          ],
+          "answer": 2,
+          "explain": "Secondes."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "FTP circule :",
+          "options": [
+            "Chiffré",
+            "En TLS toujours",
+            "En clair : identifiants visibles dans Wireshark sur le port 21",
+            "En SSH"
+          ],
+          "answer": 2,
+          "explain": "Usage interne ou dépôt public seulement."
+        },
+        {
+          "q": "FTPS est :",
+          "options": [
+            "SFTP",
+            "SSH",
+            "FTP enveloppé dans TLS (TLSEngine on), ports 21/990",
+            "HTTP"
+          ],
+          "answer": 2,
+          "explain": "Distinct de SFTP."
+        },
+        {
+          "q": "SFTP est :",
+          "options": [
+            "Un transfert de fichiers dans SSH (port 22), rien à voir avec FTP",
+            "FTPS",
+            "FTP sécurisé",
+            "TFTP"
+          ],
+          "answer": 0,
+          "explain": "Disponible dès qu'OpenSSH tourne — le choix par défaut."
+        },
+        {
+          "q": "MaxInstances 30 :",
+          "options": [
+            "30 fichiers",
+            "30 connexions simultanées",
+            "30 ports",
+            "30 secondes"
+          ],
+          "answer": 1,
+          "explain": "Directive du cours."
+        },
+        {
+          "q": "Vérifier que le serveur écoute :",
+          "options": [
+            "ftp -l",
+            "sudo ss -tlnp | grep :21",
+            "ping",
+            "ls"
+          ],
+          "answer": 1,
+          "explain": "Après systemctl status proftpd."
+        },
+        {
+          "q": "Journal ProFTPd :",
+          "options": [
+            "journalctl seulement",
+            "/var/log/proftpd/proftpd.log",
+            "/etc/proftpd/log",
+            "/var/log/ftp"
+          ],
+          "answer": 1,
+          "explain": "tail -f."
+        },
+        {
+          "q": "ServerName \"FTP Miyukini\" :",
+          "options": [
+            "Le nom annoncé aux clients à la connexion",
+            "Le DNS",
+            "Le port",
+            "L'utilisateur"
+          ],
+          "answer": 0,
+          "explain": "Visible dans FileZilla."
+        },
+        {
+          "q": "Activer une option dans proftpd.conf, c'est souvent :",
+          "options": [
+            "Retirer le dièse de commentaire",
+            "Réinstaller",
+            "Ajouter un fichier",
+            "Recompiler"
+          ],
+          "answer": 0,
+          "explain": "Les lignes commentées documentent celles qui suivent."
+        },
+        {
+          "q": "Un compte de service sain a pour shell :",
+          "options": [
+            "/usr/sbin/nologin",
+            "/bin/bash",
+            "/bin/zsh",
+            "/bin/sh"
+          ],
+          "answer": 0,
+          "explain": "D'où le piège RequireValidShell."
+        },
+        {
+          "q": "Pour un FTP anonyme, l'identifiant est :",
+          "options": [
+            "guest",
+            "root",
+            "ftp seulement",
+            "anonymous, avec n'importe quel mot de passe (par convention un e-mail)"
+          ],
+          "answer": 3,
+          "explain": "UserAlias anonymous ftp."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,351 @@
+{
+  "slug": "linux-archivage",
+  "title": "Linux : archivage et compression",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Archiver, c'est :",
+          "options": [
+            "Supprimer",
+            "Réunir plusieurs fichiers en un seul",
+            "Chiffrer",
+            "Réduire la taille"
+          ],
+          "answer": 1,
+          "explain": "La taille ne change pas (elle augmente même un peu)."
+        },
+        {
+          "q": "Compresser, c'est :",
+          "options": [
+            "Lister",
+            "Réduire la taille d'un fichier",
+            "Copier",
+            "Réunir"
+          ],
+          "answer": 1,
+          "explain": "gzip, bzip2, xz."
+        },
+        {
+          "q": "Outil pour archiver :",
+          "options": [
+            "gzip",
+            "cp",
+            "tar",
+            "zip"
+          ],
+          "answer": 2,
+          "explain": "gzip pour compresser."
+        },
+        {
+          "q": "Pourquoi tar avant gzip ?",
+          "options": [
+            "Par habitude",
+            "gzip ne traite qu'un fichier à la fois",
+            "gzip est lent",
+            "tar compresse"
+          ],
+          "answer": 1,
+          "explain": ".tar.gz se lit de gauche à droite : archivé, puis compressé."
+        },
+        {
+          "q": "Créer doc.tar avec trois fichiers :",
+          "options": [
+            "gzip doc.tar",
+            "tar -xf doc.tar doc1 doc2 doc3",
+            "tar doc.tar",
+            "tar -cf doc.tar doc1 doc2 doc3"
+          ],
+          "answer": 3,
+          "explain": "-c = create, -f = file."
+        },
+        {
+          "q": "Lister sans extraire :",
+          "options": [
+            "tar -rf",
+            "tar -cf",
+            "tar -xf",
+            "tar -tf doc.tar"
+          ],
+          "answer": 3,
+          "explain": "-t = list ; -tvf avec détails."
+        },
+        {
+          "q": "-c, -x et -t :",
+          "options": [
+            "S'excluent : exactement un des trois",
+            "Sont identiques",
+            "Sont facultatifs",
+            "Se combinent"
+          ],
+          "answer": 0,
+          "explain": "Les trois verbes de tar."
+        },
+        {
+          "q": "Pourquoi -cvf et pas -cfv ?",
+          "options": [
+            "-f doit être en dernier : c'est lui qui annonce le nom de l'archive",
+            "Esthétique",
+            "Aucune différence",
+            "-v est obligatoire"
+          ],
+          "answer": 0,
+          "explain": "-cfv prendrait v pour le nom."
+        },
+        {
+          "q": "gzip doc.tar produit :",
+          "options": [
+            "Rien",
+            "doc.tar.gz, l'original disparaît",
+            "doc.tar et doc.tar.gz",
+            "doc.gz"
+          ],
+          "answer": 1,
+          "explain": "-k pour garder l'original."
+        },
+        {
+          "q": "Extraire dans un dossier précis :",
+          "options": [
+            "tar -xf doc.tar > dossier",
+            "cd puis tar",
+            "tar -xvf doc.tar -C extraction/",
+            "tar -xf dossier doc.tar"
+          ],
+          "answer": 2,
+          "explain": "-C = se placer dans ce dossier avant d'agir."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "tar -xf sans -C extrait :",
+          "options": [
+            "Dans ~",
+            "Dans /",
+            "Dans le dossier courant",
+            "Dans /tmp"
+          ],
+          "answer": 2,
+          "explain": "Avec cent fichiers, ils se mélangent à tout."
+        },
+        {
+          "q": "Une tar bomb est :",
+          "options": [
+            "Une grosse archive",
+            "Une archive dont le contenu n'est pas rangé dans un dossier",
+            "Une archive chiffrée",
+            "Un virus"
+          ],
+          "answer": 1,
+          "explain": "Toujours lister avant d'extraire."
+        },
+        {
+          "q": "Ajouter doc4 à doc.tar :",
+          "options": [
+            "tar -rvf doc.tar doc4",
+            "gzip doc4",
+            "tar -cf doc.tar doc4",
+            "tar -af"
+          ],
+          "answer": 0,
+          "explain": "-r = append."
+        },
+        {
+          "q": "tar -rvf doc.tar.gz doc4 :",
+          "options": [
+            "Décompresse",
+            "Fonctionne",
+            "Échoue : Cannot update compressed archives",
+            "Crée une nouvelle archive"
+          ],
+          "answer": 2,
+          "explain": "Décompresser, ajouter, recompresser."
+        },
+        {
+          "q": "Commande qui dit la vérité sur un fichier :",
+          "options": [
+            "ls",
+            "stat",
+            "file",
+            "cat"
+          ],
+          "answer": 2,
+          "explain": "Linux n'utilise pas d'extensions."
+        },
+        {
+          "q": "gzip -9 :",
+          "options": [
+            "Niveau 9 de chiffrement",
+            "9 fichiers",
+            "Compression maximale, plus lente",
+            "9 copies"
+          ],
+          "answer": 2,
+          "explain": "gzip -l montre le taux obtenu."
+        },
+        {
+          "q": "Pourquoi un .tar.gz est souvent plus petit qu'un .zip ?",
+          "options": [
+            "Le compresseur trouve plus de répétitions sur un seul gros fichier que sur cent fichiers séparés",
+            "tar compresse",
+            "gzip est meilleur",
+            "Hasard"
+          ],
+          "answer": 0,
+          "explain": "Compresser après avoir réuni."
+        },
+        {
+          "q": "Ce que le .zip fait mieux :",
+          "options": [
+            "Compresse mieux",
+            "Rien",
+            "Ajouter un fichier sans toucher aux autres",
+            "Archive mieux"
+          ],
+          "answer": 2,
+          "explain": "Chaque fichier y est compressé séparément."
+        },
+        {
+          "q": "tar -czf site.tar.gz site/ :",
+          "options": [
+            "Liste",
+            "Crée et compresse en gzip au passage",
+            "Ajoute",
+            "Extrait"
+          ],
+          "answer": 1,
+          "explain": "-z = gzip."
+        },
+        {
+          "q": "gunzip doc.tar.gz produit :",
+          "options": [
+            "doc",
+            "doc.tar.gz conservé",
+            "doc.tar, le .gz disparaît",
+            "Rien"
+          ],
+          "answer": 2,
+          "explain": "Miroir de gzip."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Bien archiver, c'est :",
+          "options": [
+            "Compresser d'abord",
+            "Utiliser zip",
+            "Lister les fichiers",
+            "Archiver un dossier, pour que l'extraction le recrée"
+          ],
+          "answer": 3,
+          "explain": "tar -cf doc.tar doc/."
+        },
+        {
+          "q": "tar -cf doc doc1 doc2 (sans .tar) :",
+          "options": [
+            "Échoue",
+            "Fonctionne : produit un fichier nommé doc",
+            "Compresse",
+            "Crée doc.tar"
+          ],
+          "answer": 1,
+          "explain": "Le point est un caractère comme un autre."
+        },
+        {
+          "q": "tar -tvf montre :",
+          "options": [
+            "Les noms seulement",
+            "Le contenu des fichiers",
+            "Droits, propriétaire, taille et date",
+            "La compression"
+          ],
+          "answer": 2,
+          "explain": "-v = verbose."
+        },
+        {
+          "q": "Deux réflexes avant d'extraire :",
+          "options": [
+            "gzip, gunzip",
+            "chmod, chown",
+            "tar -tf d'abord, puis extraire dans un dossier neuf avec -C",
+            "Renommer, copier"
+          ],
+          "answer": 2,
+          "explain": "Deux secondes qui évitent le mélange."
+        },
+        {
+          "q": "Pourquoi le shell colore-t-il doc.tar en rouge ?",
+          "options": [
+            "Convention d'affichage des archives, basée sur le nom",
+            "Fichier corrompu",
+            "Erreur",
+            "Droits"
+          ],
+          "answer": 0,
+          "explain": "C'est une convention, pas une règle."
+        },
+        {
+          "q": "Ordre à la sortie d'un .tar.gz :",
+          "options": [
+            "Décompresser puis extraire",
+            "Extraire puis décompresser",
+            "Peu importe",
+            "Simultané impossible"
+          ],
+          "answer": 0,
+          "explain": "L'inverse de l'entrée — tar -xzf le fait d'un coup."
+        },
+        {
+          "q": "Alternatives à gzip :",
+          "options": [
+            "zip, rar",
+            "tar, cpio",
+            "cp, mv",
+            "bzip2, xz"
+          ],
+          "answer": 3,
+          "explain": "Compresseurs Unix."
+        },
+        {
+          "q": "Le point commun de tar et zip côté extraction :",
+          "options": [
+            "Aucun",
+            "Tar crée un dossier",
+            "Une archive en vrac éparpille les fichiers dans le dossier courant",
+            "Zip range toujours"
+          ],
+          "answer": 2,
+          "explain": "De ce point de vue, un .zip se comporte pareil."
+        },
+        {
+          "q": "gzip -k doc.tar :",
+          "options": [
+            "Supprime doc.tar",
+            "Garde l'original à côté de doc.tar.gz",
+            "Liste",
+            "Compresse 2 fois"
+          ],
+          "answer": 1,
+          "explain": "-k = keep."
+        },
+        {
+          "q": "Pour ouvrir un .zip sous Linux :",
+          "options": [
+            "cat",
+            "tar -xf",
+            "gzip -d",
+            "unzip (tar ne le fait pas)"
+          ],
+          "answer": 3,
+          "explain": "Paquet unzip."
+        }
+      ]
+    }
+  ]
+}

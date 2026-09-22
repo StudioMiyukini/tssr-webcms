@@ -1,0 +1,351 @@
+{
+  "slug": "la-messagerie",
+  "title": "La messagerie électronique (mail)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Quel protocole sert à l'envoi et au transfert entre serveurs ?",
+          "options": [
+            "HTTP",
+            "SMTP",
+            "IMAP",
+            "POP3"
+          ],
+          "answer": 1,
+          "explain": "SMTP, port 25 (587 en soumission, 465 chiffré)."
+        },
+        {
+          "q": "Port par défaut de SMTP entre serveurs :",
+          "options": [
+            "110",
+            "143",
+            "25",
+            "993"
+          ],
+          "answer": 2,
+          "explain": "587 pour la soumission client, 465 chiffré."
+        },
+        {
+          "q": "POP3 :",
+          "options": [
+            "Télécharge les mails et les retire souvent du serveur",
+            "Envoie les mails",
+            "Laisse les mails sur le serveur",
+            "Résout les noms"
+          ],
+          "answer": 0,
+          "explain": "Port 110 (995 chiffré) — un seul appareil."
+        },
+        {
+          "q": "IMAP :",
+          "options": [
+            "Envoie les mails",
+            "Consulte les mails en les laissant sur le serveur (synchro multi-appareils)",
+            "Supprime les mails",
+            "Chiffre le DNS"
+          ],
+          "answer": 1,
+          "explain": "Port 143 (993 chiffré) — quasi toujours utilisé aujourd'hui."
+        },
+        {
+          "q": "Port IMAP chiffré :",
+          "options": [
+            "993",
+            "143",
+            "995",
+            "465"
+          ],
+          "answer": 0,
+          "explain": "143 en clair, 993 chiffré."
+        },
+        {
+          "q": "Quel enregistrement DNS indique le serveur de mail d'un domaine ?",
+          "options": [
+            "MX",
+            "TXT",
+            "A",
+            "CNAME"
+          ],
+          "answer": 0,
+          "explain": "MX = Mail eXchanger, avec une priorité."
+        },
+        {
+          "q": "Le client (Outlook) envoie le mail à son serveur via :",
+          "options": [
+            "SMTP",
+            "IMAP",
+            "POP3",
+            "DNS"
+          ],
+          "answer": 0,
+          "explain": "Étape 1 du trajet."
+        },
+        {
+          "q": "Le destinataire lit son mail via :",
+          "options": [
+            "SMTP",
+            "MX",
+            "IMAP (ou POP3)",
+            "FTP"
+          ],
+          "answer": 2,
+          "explain": "Étape 4 du trajet."
+        },
+        {
+          "q": "Serveur de messagerie côté Microsoft :",
+          "options": [
+            "Exchange Server / Microsoft 365",
+            "Postfix",
+            "Sendmail",
+            "Dovecot"
+          ],
+          "answer": 0,
+          "explain": "Souvent couplé à AD."
+        },
+        {
+          "q": "Côté Linux, SMTP + IMAP/POP typiques :",
+          "options": [
+            "Samba + NFS",
+            "Exchange + Outlook",
+            "Postfix + Dovecot",
+            "Apache + BIND"
+          ],
+          "answer": 2,
+          "explain": "Postfix (SMTP), Dovecot (IMAP/POP)."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Qu'est-ce qu'un open relay ?",
+          "options": [
+            "Un serveur mal configuré qui relaie le mail de n'importe qui — exploité pour le spam",
+            "Un relais DNS",
+            "Un serveur rapide",
+            "Un serveur IMAP"
+          ],
+          "answer": 0,
+          "explain": "À éviter absolument."
+        },
+        {
+          "q": "SPF sert à :",
+          "options": [
+            "Définir la priorité MX",
+            "Chiffrer IMAP",
+            "Déclarer quels serveurs ont le droit d'envoyer pour le domaine",
+            "Signer les mails"
+          ],
+          "answer": 2,
+          "explain": "Un enregistrement DNS."
+        },
+        {
+          "q": "DKIM sert à :",
+          "options": [
+            "Recevoir les mails",
+            "Signer cryptographiquement les mails",
+            "Définir le MX",
+            "Lister les serveurs"
+          ],
+          "answer": 1,
+          "explain": "Preuve d'authenticité du message."
+        },
+        {
+          "q": "DMARC sert à :",
+          "options": [
+            "Envoyer",
+            "Chiffrer",
+            "Nommer le serveur",
+            "Définir la politique (que faire en cas d'échec SPF/DKIM) et recevoir des rapports"
+          ],
+          "answer": 3,
+          "explain": "Sans SPF/DKIM/DMARC, les mails partent souvent en spam."
+        },
+        {
+          "q": "Port POP3 chiffré :",
+          "options": [
+            "110",
+            "587",
+            "995",
+            "993"
+          ],
+          "answer": 2,
+          "explain": "110 en clair, 995 chiffré."
+        },
+        {
+          "q": "Port de soumission SMTP client :",
+          "options": [
+            "25",
+            "587",
+            "143",
+            "110"
+          ],
+          "answer": 1,
+          "explain": "587 pour les clients, 25 entre serveurs."
+        },
+        {
+          "q": "Le serveur d'envoi trouve le serveur du destinataire en :",
+          "options": [
+            "Demandant à Google",
+            "Pingant le domaine",
+            "Interrogeant le DNS pour l'enregistrement MX du domaine",
+            "Lisant le certificat"
+          ],
+          "answer": 2,
+          "explain": "Étape 2 du trajet."
+        },
+        {
+          "q": "Pourquoi IMAP a-t-il remplacé POP3 ?",
+          "options": [
+            "Plusieurs appareils synchronisés, dossiers et états sur le serveur",
+            "Il est plus rapide",
+            "Il est plus ancien",
+            "Il est gratuit"
+          ],
+          "answer": 0,
+          "explain": "POP = un seul appareil, mails en local."
+        },
+        {
+          "q": "Combien de protocoles distincts pour envoi et réception ?",
+          "options": [
+            "Trois pour l'envoi",
+            "Aucun",
+            "Un seul",
+            "Deux familles : SMTP pour l'envoi, POP3/IMAP pour la réception"
+          ],
+          "answer": 3,
+          "explain": "C'est la première idée du cours."
+        },
+        {
+          "q": "La priorité MX :",
+          "options": [
+            "Le plus grand nombre gagne",
+            "N'existe pas",
+            "Le plus petit nombre est essayé en premier",
+            "Est le port"
+          ],
+          "answer": 2,
+          "explain": "Plusieurs MX = redondance."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Un mail part en spam chez les destinataires : première vérification ?",
+          "options": [
+            "Le port IMAP",
+            "Les enregistrements SPF, DKIM, DMARC du domaine",
+            "Le MX",
+            "Le mot de passe"
+          ],
+          "answer": 1,
+          "explain": "Ils protègent le domaine et améliorent la délivrabilité."
+        },
+        {
+          "q": "Un utilisateur voit ses mails sur PC mais pas sur téléphone :",
+          "options": [
+            "Le PC est en POP3 et a rapatrié les mails",
+            "IMAP",
+            "DNS",
+            "SMTP"
+          ],
+          "answer": 0,
+          "explain": "POP retire souvent les mails du serveur."
+        },
+        {
+          "q": "Le serveur destinataire range le mail :",
+          "options": [
+            "Dans le DNS",
+            "Dans la boîte du destinataire",
+            "Chez l'expéditeur",
+            "Dans le MX"
+          ],
+          "answer": 1,
+          "explain": "Étape 3 du trajet."
+        },
+        {
+          "q": "Dans une DMZ, le relais mail reçoit :",
+          "options": [
+            "SMTP 25 depuis Internet",
+            "IMAP 993",
+            "POP 110",
+            "HTTP"
+          ],
+          "answer": 0,
+          "explain": "Puis remet au serveur interne."
+        },
+        {
+          "q": "Port SMTP chiffré (SMTPS) :",
+          "options": [
+            "993",
+            "465",
+            "25",
+            "587"
+          ],
+          "answer": 1,
+          "explain": "465 chiffré, 587 soumission (STARTTLS)."
+        },
+        {
+          "q": "Exchange s'appuie souvent sur :",
+          "options": [
+            "Samba",
+            "BIND9",
+            "Postfix",
+            "Active Directory"
+          ],
+          "answer": 3,
+          "explain": "Comptes et annuaire."
+        },
+        {
+          "q": "Sans enregistrement MX :",
+          "options": [
+            "Le mail arrive quand même",
+            "Le DNS échoue",
+            "IMAP ne marche plus",
+            "Les serveurs d'envoi ne savent pas où livrer le courrier du domaine"
+          ],
+          "answer": 3,
+          "explain": "Le MX est indispensable à la réception."
+        },
+        {
+          "q": "Quel protocole ne sert PAS à lire les mails ?",
+          "options": [
+            "Aucun des trois",
+            "SMTP",
+            "IMAP",
+            "POP3"
+          ],
+          "answer": 1,
+          "explain": "SMTP = envoi et transfert."
+        },
+        {
+          "q": "Les dossiers et l'état lu/non lu restent sur le serveur avec :",
+          "options": [
+            "MX",
+            "IMAP",
+            "SMTP",
+            "POP3"
+          ],
+          "answer": 1,
+          "explain": "C'est la synchronisation multi-appareils."
+        },
+        {
+          "q": "Le cours renvoie aux ports dans :",
+          "options": [
+            "TCP & UDP",
+            "Linux",
+            "Le VPN",
+            "Le pare-feu"
+          ],
+          "answer": 0,
+          "explain": "Liens : DNS (MX), TCP & UDP, Notions clés."
+        }
+      ]
+    }
+  ]
+}

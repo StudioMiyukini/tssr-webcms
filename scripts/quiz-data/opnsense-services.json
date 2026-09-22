@@ -1,0 +1,351 @@
+{
+  "slug": "opnsense-services",
+  "title": "OPNsense : DHCP, DNS et les services du boîtier",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Quels trois services le boîtier rend-il en plus du filtrage ?",
+          "options": [
+            "DHCP, DNS et l'heure",
+            "Sauvegarde, antivirus, proxy",
+            "AD, GPO, DFS",
+            "Web, FTP, mail"
+          ],
+          "answer": 0,
+          "explain": "Il distribue les adresses, résout les noms, donne l'heure."
+        },
+        {
+          "q": "Le DHCP se configure :",
+          "options": [
+            "Par interface : Services › DHCP › [LAN]",
+            "Dans Firewall › Rules",
+            "Dans System › Trust",
+            "Globalement pour tout le pare-feu"
+          ],
+          "answer": 0,
+          "explain": "Chaque zone a son étendue."
+        },
+        {
+          "q": "Que doit exclure la plage (Range) distribuée ?",
+          "options": [
+            "Les adresses fixes des serveurs et imprimantes",
+            "Rien",
+            "La passerelle uniquement",
+            "Les adresses paires"
+          ],
+          "answer": 0,
+          "explain": "Ex. 192.168.10.100 → .200, les serveurs étant en dessous."
+        },
+        {
+          "q": "Gateway laissé vide dans l'étendue DHCP signifie :",
+          "options": [
+            "8.8.8.8",
+            "Pas de passerelle",
+            "L'adresse de l'interface est distribuée",
+            "La box"
+          ],
+          "answer": 2,
+          "explain": "On la renseigne seulement quand la passerelle n'est pas le pare-feu."
+        },
+        {
+          "q": "Qu'est-ce qu'une réservation DHCP ?",
+          "options": [
+            "Un bail court",
+            "Un VLAN",
+            "Une IP fixe configurée sur la machine",
+            "L'association d'une MAC à une adresse fixe distribuée par le DHCP"
+          ],
+          "answer": 3,
+          "explain": "La machine reçoit toujours la même adresse, sans configuration locale."
+        },
+        {
+          "q": "Quel est le résolveur DNS d'OPNsense ?",
+          "options": [
+            "Windows DNS",
+            "Unbound DNS",
+            "BIND9",
+            "dnsmasq seulement"
+          ],
+          "answer": 1,
+          "explain": "Services › Unbound DNS, actif par défaut."
+        },
+        {
+          "q": "Un résolveur récursif :",
+          "options": [
+            "Interroge lui-même les serveurs racine puis de proche en proche",
+            "Ne résout rien",
+            "Bloque les publicités",
+            "Transmet à 1.1.1.1"
+          ],
+          "answer": 0,
+          "explain": "Indépendant : personne d'autre ne voit les questions ; premières résolutions plus lentes."
+        },
+        {
+          "q": "Où se configure l'heure ?",
+          "options": [
+            "Firewall › Aliases",
+            "Services › Network Time",
+            "System › Backups",
+            "Interfaces › WAN"
+          ],
+          "answer": 1,
+          "explain": "OPNsense se synchronise sur des serveurs publics et peut servir l'heure."
+        },
+        {
+          "q": "Le Domain name de l'étendue DHCP sert à :",
+          "options": [
+            "Ajouter un suffixe aux noms courts (ping srv-web → srv-web.miyukini.lan)",
+            "Chiffrer le DNS",
+            "Créer un domaine AD",
+            "Nommer le pare-feu"
+          ],
+          "answer": 0,
+          "explain": "C'est le suffixe DNS distribué aux postes."
+        },
+        {
+          "q": "Quelle commande force un nouveau bail sous Windows ?",
+          "options": [
+            "ipconfig /release puis /renew",
+            "w32tm /resync",
+            "nslookup",
+            "ipconfig /flushdns"
+          ],
+          "answer": 0,
+          "explain": "Un changement d'étendue ne s'applique qu'au renouvellement du bail."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Deux serveurs DHCP sur le même réseau (pare-feu + box) provoquent :",
+          "options": [
+            "Rien",
+            "Des postes qui marchent ou pas selon qui répond le plus vite",
+            "Une panne du DNS",
+            "Un doublement du débit"
+          ],
+          "answer": 1,
+          "explain": "Un seul serveur DHCP par domaine de diffusion : couper celui de la box."
+        },
+        {
+          "q": "Pourquoi réserver plutôt que fixer sur la machine ?",
+          "options": [
+            "C'est plus rapide",
+            "C'est obligatoire",
+            "Le plan d'adressage se lit au même endroit, et un poste remplacé reprend son adresse en changeant une ligne",
+            "Pour l'IPv6"
+          ],
+          "answer": 2,
+          "explain": "Réserver les serveurs, imprimantes, points d'accès ; laisser les postes en dynamique."
+        },
+        {
+          "q": "Le mode redirecteur (forwarding) d'Unbound :",
+          "options": [
+            "Transmet les questions aux DNS configurés (FAI, 1.1.1.1…)",
+            "Sert l'heure",
+            "Bloque tout",
+            "Interroge les racines"
+          ],
+          "answer": 0,
+          "explain": "Plus rapide au démarrage, mais le fournisseur choisi voit tout le trafic DNS."
+        },
+        {
+          "q": "Que chiffre DNS over TLS ?",
+          "options": [
+            "Les baux DHCP",
+            "Les journaux",
+            "Les requêtes d'Unbound vers l'extérieur",
+            "Les règles"
+          ],
+          "answer": 2,
+          "explain": "Cela suppose le mode redirecteur : un déplacement de la confiance, pas une disparition."
+        },
+        {
+          "q": "Les listes de blocage d'Unbound :",
+          "options": [
+            "Chiffrent le DNS",
+            "Refusent de résoudre des noms (pub, traqueurs), pour tout le réseau, sans agent",
+            "Sont un antivirus",
+            "Bloquent les IP"
+          ],
+          "answer": 1,
+          "explain": "Un filtrage par le nom : ne bloque rien qui utilise directement une IP."
+        },
+        {
+          "q": "Un Host Override sert à :",
+          "options": [
+            "Bloquer un domaine",
+            "Créer un alias",
+            "Répondre soi-même pour un nom précis (ex. www → adresse interne)",
+            "Renvoyer tout un domaine vers un autre DNS"
+          ],
+          "answer": 2,
+          "explain": "C'est le DNS partagé."
+        },
+        {
+          "q": "Un Domain Override sert à :",
+          "options": [
+            "Répondre pour un nom",
+            "Fixer l'heure",
+            "Renvoyer tout un domaine vers un autre serveur DNS (ex. le contrôleur AD)",
+            "Bloquer un pays"
+          ],
+          "answer": 2,
+          "explain": "Utile pour cohabiter avec un annuaire."
+        },
+        {
+          "q": "Postes membres d'un domaine AD : quel DNS ?",
+          "options": [
+            "8.8.8.8",
+            "Le contrôleur de domaine, obligatoirement",
+            "La box",
+            "OPNsense"
+          ],
+          "answer": 1,
+          "explain": "Il publie les enregistrements _ldap, _kerberos… sans lesquels session, GPO et jonction échouent."
+        },
+        {
+          "q": "Symptôme : les postes pinguent Internet mais la jonction au domaine échoue :",
+          "options": [
+            "IPv6 actif",
+            "Le DHCP distribue l'adresse d'OPNsense comme DNS au lieu du DC",
+            "Bogon",
+            "Câble défectueux"
+          ],
+          "answer": 1,
+          "explain": "Le champ DNS servers de l'étendue doit pointer vers le contrôleur."
+        },
+        {
+          "q": "Quel écart d'heure Kerberos refuse-t-il ?",
+          "options": [
+            "Aucun",
+            "Plus d'une heure",
+            "Plus de 5 minutes",
+            "Plus de 30 secondes"
+          ],
+          "answer": 2,
+          "explain": "Au-delà, l'ouverture de session échoue."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Pourquoi l'heure est-elle un sujet de sécurité ?",
+          "options": [
+            "Pour le débit",
+            "Pour le DHCP",
+            "Pour les thèmes",
+            "Kerberos, validité des certificats TLS, cohérence des journaux"
+          ],
+          "answer": 3,
+          "explain": "Des journaux non concordants ne servent à rien le jour d'un incident."
+        },
+        {
+          "q": "Dans un domaine AD, qui fait référence pour l'heure des membres ?",
+          "options": [
+            "Internet",
+            "La box",
+            "OPNsense",
+            "Le contrôleur de domaine"
+          ],
+          "answer": 3,
+          "explain": "Le DC est la référence de temps de ses membres."
+        },
+        {
+          "q": "Sur un grand parc, enregistrer tous les baux DHCP dans le DNS :",
+          "options": [
+            "Est recommandé",
+            "Chiffre le DNS",
+            "Est impossible",
+            "Remplit le DNS de noms qui changent : on n'enregistre que les réservations"
+          ],
+          "answer": 3,
+          "explain": "Option distincte pour les réservations seules."
+        },
+        {
+          "q": "nslookup www.miyukini.fr depuis le LAN avec le DNS partagé doit répondre :",
+          "options": [
+            "L'adresse interne",
+            "127.0.0.1",
+            "Rien",
+            "L'adresse publique"
+          ],
+          "answer": 0,
+          "explain": "Le même nom donne deux réponses selon d'où l'on demande."
+        },
+        {
+          "q": "Après un changement de DNS, quelle commande vide le cache local Windows ?",
+          "options": [
+            "ipconfig /renew",
+            "arp -d",
+            "ipconfig /flushdns",
+            "nslookup /clear"
+          ],
+          "answer": 2,
+          "explain": "Sinon le cache répond encore l'ancienne adresse."
+        },
+        {
+          "q": "Quelle commande montre l'heure et sa source sous Windows ?",
+          "options": [
+            "date",
+            "w32tm /query /status",
+            "ntpq",
+            "time /t"
+          ],
+          "answer": 1,
+          "explain": "w32tm interroge le service de temps Windows."
+        },
+        {
+          "q": "Le menu DHCP peut s'appeler, selon la version :",
+          "options": [
+            "BIND, Unbound, dnsmasq",
+            "DHCP Server 1, 2, 3",
+            "Toujours ISC",
+            "DHCPv4 (ISC), Kea DHCP ou Dnsmasq DNS & DHCP"
+          ],
+          "answer": 3,
+          "explain": "ISC est en voie de retrait au profit de Kea ; les champs sont les mêmes."
+        },
+        {
+          "q": "Sur un réseau d'invités, la durée de bail devrait être :",
+          "options": [
+            "Infinie",
+            "Nulle",
+            "Courte, car les machines passent",
+            "Longue"
+          ],
+          "answer": 2,
+          "explain": "Long sur un parc stable, court là où les machines passent."
+        },
+        {
+          "q": "OPNsense lui-même doit résoudre des noms du domaine AD : que configure-t-on ?",
+          "options": [
+            "Rien",
+            "Un Domain Override sur miyukini.lan vers le DC",
+            "Un Host Override",
+            "Un alias"
+          ],
+          "answer": 1,
+          "explain": "Tableau du § 5 : OPNsense interroge ses redirecteurs, avec un Domain Override pour le domaine."
+        },
+        {
+          "q": "Le moyen le plus rapide de fixer l'adresse d'une imprimante qu'on vient de brancher :",
+          "options": [
+            "La configurer à la main",
+            "Créer un VLAN",
+            "Changer le masque",
+            "Transformer son bail en réservation d'un clic depuis la liste des baux"
+          ],
+          "answer": 3,
+          "explain": "La liste des baux en cours permet la réservation directe."
+        }
+      ]
+    }
+  ]
+}

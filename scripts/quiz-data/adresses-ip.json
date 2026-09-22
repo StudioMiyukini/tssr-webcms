@@ -1,0 +1,351 @@
+{
+  "slug": "adresses-ip",
+  "title": "Les adresses IP",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Combien de nombres composent une adresse IPv4 ?",
+          "options": [
+            "6",
+            "2",
+            "4",
+            "8"
+          ],
+          "answer": 2,
+          "explain": "Une IPv4 s'écrit avec 4 nombres de 0 à 255 séparés par des points, soit 4 octets = 32 bits."
+        },
+        {
+          "q": "Quelle est la plage de valeurs de chaque nombre d'une IPv4 ?",
+          "options": [
+            "0 à 100",
+            "1 à 256",
+            "0 à 255",
+            "0 à 999"
+          ],
+          "answer": 2,
+          "explain": "Chaque nombre tient sur 8 bits, donc de 0 à 255 (256 valeurs)."
+        },
+        {
+          "q": "Sur combien de bits est codée une adresse IPv4 ?",
+          "options": [
+            "32 bits",
+            "128 bits",
+            "8 bits",
+            "16 bits"
+          ],
+          "answer": 0,
+          "explain": "4 octets × 8 bits = 32 bits. L'IPv6, elle, fait 128 bits."
+        },
+        {
+          "q": "Quelle analogie le cours utilise-t-il pour l'adresse IP ?",
+          "options": [
+            "Le nom de famille",
+            "Le numéro de téléphone",
+            "L'adresse postale (rue + numéro)",
+            "La plaque d'immatriculation"
+          ],
+          "answer": 2,
+          "explain": "L'adresse postale : pour qu'une lettre arrive, il faut l'adresse complète — et elle change si on déménage."
+        },
+        {
+          "q": "Que délimite le masque de sous-réseau ?",
+          "options": [
+            "Le fabricant de la carte",
+            "La coupure entre partie réseau et partie machine",
+            "Le nombre de câbles",
+            "La vitesse du réseau"
+          ],
+          "answer": 1,
+          "explain": "Le masque indique où couper : avec 255.255.255.0, les 3 premiers nombres = réseau, le dernier = machine."
+        },
+        {
+          "q": "Comment note-t-on le masque 255.255.255.0 en CIDR ?",
+          "options": [
+            "/32",
+            "/16",
+            "/24",
+            "/8"
+          ],
+          "answer": 2,
+          "explain": "/24 = 24 bits à 1 pour la partie réseau, soit 255.255.255.0."
+        },
+        {
+          "q": "Laquelle de ces adresses est privée ?",
+          "options": [
+            "192.168.1.10",
+            "88.12.34.56",
+            "8.8.8.8",
+            "1.1.1.1"
+          ],
+          "answer": 0,
+          "explain": "Les plages privées sont 10.x, 172.16–31.x et 192.168.x.y : utilisées en LAN, invisibles depuis Internet."
+        },
+        {
+          "q": "Que désigne 127.0.0.1 ?",
+          "options": [
+            "La passerelle par défaut",
+            "Une adresse APIPA",
+            "Le serveur DNS de Google",
+            "La machine elle-même (boucle locale)"
+          ],
+          "answer": 3,
+          "explain": "127.0.0.1 est l'adresse de boucle locale : la machine se parle à elle-même (tests en local)."
+        },
+        {
+          "q": "Quelle commande affiche l'adresse IP sous Windows ?",
+          "options": [
+            "ipconfig",
+            "ifconfig",
+            "getip",
+            "ip a"
+          ],
+          "answer": 0,
+          "explain": "ipconfig sous Windows ; ip a (ou ifconfig) sous Linux/macOS."
+        },
+        {
+          "q": "Qu'est-ce qu'une IP dynamique ?",
+          "options": [
+            "Une IP attribuée automatiquement par le DHCP",
+            "Une IP qui change de classe",
+            "Une IP publique",
+            "Une IP configurée à la main"
+          ],
+          "answer": 0,
+          "explain": "Dynamique = attribuée par le DHCP à chaque connexion ; fixe = configurée à la main (serveur, imprimante)."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Une adresse commençant par 172.20 appartient historiquement à quelle classe ?",
+          "options": [
+            "Classe A",
+            "Classe B",
+            "Classe C",
+            "Classe D"
+          ],
+          "answer": 1,
+          "explain": "Classe B : premier octet de 128 à 191, masque par défaut /16."
+        },
+        {
+          "q": "Quel est le masque par défaut d'une adresse de classe A ?",
+          "options": [
+            "255.0.0.0",
+            "255.255.0.0",
+            "255.255.255.0",
+            "255.255.255.255"
+          ],
+          "answer": 0,
+          "explain": "Classe A (1–126) : masque /8 = 255.0.0.0, ≈ 16 millions d'hôtes par réseau."
+        },
+        {
+          "q": "Pourquoi la classe A s'arrête-t-elle à 126 ?",
+          "options": [
+            "Parce que 127 est réservé au multicast",
+            "Par simple convention esthétique",
+            "Parce que 127 est une adresse publique",
+            "Parce que 127.x.x.x est réservé à la boucle locale"
+          ],
+          "answer": 3,
+          "explain": "127.x.x.x est mis de côté pour la boucle locale (loopback)."
+        },
+        {
+          "q": "À quoi sert la classe D (224–239) ?",
+          "options": [
+            "Aux réseaux privés",
+            "Au multicast (diffusion à un groupe)",
+            "Aux serveurs DNS",
+            "À la recherche"
+          ],
+          "answer": 1,
+          "explain": "La classe D est réservée au multicast : envoyer un même flux à un groupe d'appareils."
+        },
+        {
+          "q": "Que signifie une adresse 169.254.x.y sur un poste ?",
+          "options": [
+            "Le poste est un serveur",
+            "Le poste est en IPv6",
+            "Le poste a une IP publique",
+            "Le DHCP n'a pas répondu : adresse APIPA auto-attribuée"
+          ],
+          "answer": 3,
+          "explain": "APIPA = auto-attribuée quand le DHCP ne répond pas — souvent un câble débranché ou un serveur DHCP en panne."
+        },
+        {
+          "q": "Combien d'hôtes utilisables offre un réseau de classe C par défaut ?",
+          "options": [
+            "256",
+            "128",
+            "254",
+            "255"
+          ],
+          "answer": 2,
+          "explain": "/24 → 256 adresses moins réseau et broadcast = 254 hôtes."
+        },
+        {
+          "q": "Qui attribue les blocs d'adresses IP au niveau mondial ?",
+          "options": [
+            "Le RIPE seul",
+            "L'IANA (composante de l'ICANN)",
+            "Google",
+            "Microsoft"
+          ],
+          "answer": 1,
+          "explain": "L'IANA attribue adresses, noms et numéros, puis délègue à des registres régionaux comme le RIPE NCC (Europe)."
+        },
+        {
+          "q": "Grâce à quel mécanisme tous les appareils privés sortent-ils derrière une seule IP publique ?",
+          "options": [
+            "L'ARP",
+            "Le NAT",
+            "Le DNS",
+            "Le VLAN"
+          ],
+          "answer": 1,
+          "explain": "Le NAT (traduction d'adresses) fait sortir tout le LAN derrière l'IP publique fournie par le FAI."
+        },
+        {
+          "q": "Comment s'écrit une adresse IPv6 ?",
+          "options": [
+            "En hexadécimal, ex. 2001:0db8::1",
+            "En décimal pointé",
+            "En binaire pur",
+            "En lettres"
+          ],
+          "answer": 0,
+          "explain": "L'IPv6 (128 bits) s'écrit en hexadécimal séparé par des deux-points."
+        },
+        {
+          "q": "Quelle affirmation sur les classes est vraie aujourd'hui ?",
+          "options": [
+            "Avec le CIDR, c'est le masque qui fait foi, pas la classe",
+            "Seule la classe C existe encore",
+            "Elles déterminent l'IP publique",
+            "Elles sont obligatoires"
+          ],
+          "answer": 0,
+          "explain": "Les classes sont surtout historiques ; le CIDR permet des masques sur mesure (ex. /26)."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Quel est le registre régional qui répartit les adresses IP en Europe ?",
+          "options": [
+            "RIPE NCC",
+            "ARIN",
+            "LACNIC",
+            "APNIC"
+          ],
+          "answer": 0,
+          "explain": "Le RIPE NCC couvre l'Europe ; il reçoit ses blocs de l'IANA et les répartit aux FAI."
+        },
+        {
+          "q": "Quelle plage privée couvre 172.16.0.0 à 172.31.255.255 ?",
+          "options": [
+            "Un /24",
+            "Un /12",
+            "Un /8",
+            "Un /16"
+          ],
+          "answer": 1,
+          "explain": "172.16.0.0/12 regroupe les 16 réseaux 172.16 à 172.31."
+        },
+        {
+          "q": "Deux appareils peuvent se parler directement s'ils :",
+          "options": [
+            "Sont en IPv6",
+            "Ont la même passerelle uniquement",
+            "Partagent la même partie réseau",
+            "Ont la même adresse MAC"
+          ],
+          "answer": 2,
+          "explain": "Même partie réseau (définie par le masque) = même « quartier » = communication directe sans routeur."
+        },
+        {
+          "q": "Un serveur ou une imprimante devrait avoir :",
+          "options": [
+            "Une IP dynamique",
+            "Une adresse APIPA",
+            "Pas d'adresse",
+            "Une IP fixe"
+          ],
+          "answer": 3,
+          "explain": "Les équipements qu'on doit joindre à une adresse connue reçoivent une IP fixe ; les PC restent en DHCP."
+        },
+        {
+          "q": "Combien d'adresses environ offre l'IPv4 ?",
+          "options": [
+            "Illimité",
+            "4 milliards",
+            "4 millions",
+            "400 milliards"
+          ],
+          "answer": 1,
+          "explain": "2^32 ≈ 4,3 milliards d'adresses, presque épuisées — d'où l'IPv6."
+        },
+        {
+          "q": "Une adresse 224.0.0.5 est :",
+          "options": [
+            "Expérimentale (classe E)",
+            "De boucle locale",
+            "Multicast (classe D)",
+            "Privée"
+          ],
+          "answer": 2,
+          "explain": "224–239 = classe D, multicast."
+        },
+        {
+          "q": "Quel est le masque par défaut de la classe B ?",
+          "options": [
+            "255.255.0.0",
+            "255.255.255.128",
+            "255.255.255.0",
+            "255.0.0.0"
+          ],
+          "answer": 0,
+          "explain": "Classe B : /16 = 255.255.0.0, ≈ 65 000 hôtes par réseau."
+        },
+        {
+          "q": "Pourquoi plusieurs box peuvent-elles utiliser 192.168.1.x sans conflit ?",
+          "options": [
+            "Parce que ces adresses privées ne sont pas routées sur Internet",
+            "Parce que le DNS les renomme",
+            "Parce que l'IANA les coordonne",
+            "Parce qu'elles sont en IPv6"
+          ],
+          "answer": 0,
+          "explain": "Les adresses privées sont invisibles depuis Internet ; chaque LAN peut réutiliser la même plage."
+        },
+        {
+          "q": "Sous Linux, quelle commande moderne remplace ifconfig ?",
+          "options": [
+            "ip a",
+            "ipconfig",
+            "netstat",
+            "route"
+          ],
+          "answer": 0,
+          "explain": "ip a (ip address) est la commande actuelle ; ifconfig est l'ancienne."
+        },
+        {
+          "q": "Que fait le CIDR /26 par rapport à /24 ?",
+          "options": [
+            "Agrandit le réseau",
+            "Découpe le /24 en 4 sous-réseaux de 64 adresses",
+            "Rend l'adresse publique",
+            "Supprime la passerelle"
+          ],
+          "answer": 1,
+          "explain": "2 bits de plus pour le réseau → 4 sous-réseaux de 64 adresses (62 hôtes)."
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,351 @@
+{
+  "slug": "vlan-voix",
+  "title": "Le VLAN voix (téléphonie IP)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Comment brancher PC et téléphone IP sur une seule prise ?",
+          "options": [
+            "Deux câbles",
+            "Le Wi-Fi",
+            "Le PC se branche derrière le téléphone, qui a un switch intégré",
+            "Un hub"
+          ],
+          "answer": 2,
+          "explain": "Un seul câble, deux appareils, deux VLAN."
+        },
+        {
+          "q": "Qui étiquette les trames de la voix ?",
+          "options": [
+            "Le téléphone lui-même (802.1Q)",
+            "Le DHCP",
+            "Le routeur",
+            "Le PC"
+          ],
+          "answer": 0,
+          "explain": "Le PC ignore tout des VLAN : ses trames partent sans étiquette."
+        },
+        {
+          "q": "Le port du bureau reste en mode :",
+          "options": [
+            "Shutdown",
+            "Access, avec en plus un voice vlan",
+            "Trunk",
+            "Dynamic"
+          ],
+          "answer": 1,
+          "explain": "Un « mini-trunk » : show interfaces trunk ne l'affiche pas."
+        },
+        {
+          "q": "Commande pour le VLAN voix sur le port :",
+          "options": [
+            "switchport trunk voice 30",
+            "switchport voice vlan 30",
+            "vlan voice 30",
+            "voice 30"
+          ],
+          "answer": 1,
+          "explain": "Avec switchport access vlan 20 pour le PC."
+        },
+        {
+          "q": "Pourquoi spanning-tree portfast sur le port du téléphone ?",
+          "options": [
+            "Pour le trunk",
+            "Pour le PoE",
+            "Pour la QoS",
+            "Sans, le port attend ~30 s et le téléphone n'a pas son bail DHCP à temps"
+          ],
+          "answer": 3,
+          "explain": "Jamais sur un lien entre switches."
+        },
+        {
+          "q": "Comment le téléphone apprend-il son VLAN ?",
+          "options": [
+            "Par DHCP",
+            "Par DNS",
+            "Il est configuré à la main",
+            "Par CDP ou LLDP-MED annoncés par le switch"
+          ],
+          "answer": 3,
+          "explain": "CDP = Cisco ; LLDP-MED = standard, à activer."
+        },
+        {
+          "q": "Que signifie PoE ?",
+          "options": [
+            "Port of Ethernet",
+            "Protocol over Ethernet",
+            "Power over Ethernet",
+            "Phone on Ethernet"
+          ],
+          "answer": 2,
+          "explain": "Le téléphone est alimenté par le câble réseau."
+        },
+        {
+          "q": "Norme PoE de base et sa puissance :",
+          "options": [
+            "802.1Q ≈ 30 W",
+            "802.3af ≈ 15,4 W",
+            "802.3at ≈ 15 W",
+            "802.3bt ≈ 15 W"
+          ],
+          "answer": 1,
+          "explain": "802.3at (PoE+) ≈ 30 W, 802.3bt (PoE++) 60–90 W."
+        },
+        {
+          "q": "Pourquoi séparer voix et données ?",
+          "options": [
+            "Pour le Wi-Fi",
+            "C'est obligatoire",
+            "Qualité (priorisation), adressage dédié, sécurité, lisibilité",
+            "Pour le prix"
+          ],
+          "answer": 2,
+          "explain": "La voix ne supporte ni la latence ni la perte."
+        },
+        {
+          "q": "Commande pour voir le budget PoE :",
+          "options": [
+            "show power inline",
+            "show interfaces power",
+            "show poe",
+            "show energy"
+          ],
+          "answer": 0,
+          "explain": "Budget total et consommation par port."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Option DHCP Cisco qui indique l'IPBX/TFTP au téléphone :",
+          "options": [
+            "Option 66",
+            "Option 150",
+            "Option 6",
+            "Option 3"
+          ],
+          "answer": 1,
+          "explain": "Les constructeurs standards utilisent plutôt l'option 66."
+        },
+        {
+          "q": "Téléphone avec IP mais bloqué sur « Registering » :",
+          "options": [
+            "Problème de VLAN",
+            "PoE insuffisant",
+            "Presque toujours un problème d'option 66/150",
+            "Câble"
+          ],
+          "answer": 2,
+          "explain": "Il ne trouve pas son serveur d'appels."
+        },
+        {
+          "q": "Commandes pour activer LLDP-MED :",
+          "options": [
+            "voice lldp on",
+            "lldp med",
+            "cdp enable",
+            "lldp run + lldp transmit/receive sur le port"
+          ],
+          "answer": 3,
+          "explain": "Indispensable avec des téléphones non-Cisco (Yealink, Snom…)."
+        },
+        {
+          "q": "Latence aller simple acceptable pour la voix :",
+          "options": [
+            "< 30 ms",
+            "< 500 ms",
+            "< 150 ms",
+            "< 1 s"
+          ],
+          "answer": 2,
+          "explain": "Au-delà, on se coupe la parole."
+        },
+        {
+          "q": "Gigue acceptable :",
+          "options": [
+            "< 1 s",
+            "< 150 ms",
+            "< 1 %",
+            "< 30 ms"
+          ],
+          "answer": 3,
+          "explain": "Au-delà : voix hachée, robotique."
+        },
+        {
+          "q": "Perte de paquets acceptable :",
+          "options": [
+            "< 10 %",
+            "< 5 %",
+            "< 1 %",
+            "0 % obligatoire"
+          ],
+          "answer": 2,
+          "explain": "Au-delà, syllabes manquantes."
+        },
+        {
+          "q": "Que fait mls qos trust device cisco-phone ?",
+          "options": [
+            "Active le PoE",
+            "Respecte les priorités seulement si un téléphone Cisco est détecté par CDP",
+            "Crée le VLAN",
+            "Bloque le PC"
+          ],
+          "answer": 1,
+          "explain": "Sinon un PC pourrait marquer son trafic prioritaire."
+        },
+        {
+          "q": "Un switch 48 ports « PoE » avec budget 370 W :",
+          "options": [
+            "Alimente 48 appareils à pleine charge",
+            "Alimente 100 appareils",
+            "Peut ne pas alimenter les derniers branchés, sans message clair",
+            "N'alimente rien"
+          ],
+          "answer": 2,
+          "explain": "Le budget est global."
+        },
+        {
+          "q": "Séquence de démarrage : après CDP/LLDP, le téléphone :",
+          "options": [
+            "Contacte le PC",
+            "Contacte le DNS",
+            "Redémarre",
+            "Émet un DHCP DISCOVER étiqueté VLAN 30"
+          ],
+          "answer": 3,
+          "explain": "Puis reçoit IP, masque, passerelle et option 66/150."
+        },
+        {
+          "q": "Commande pour voir le téléphone détecté (Cisco) :",
+          "options": [
+            "show cdp neighbors",
+            "show phones",
+            "show lldp all",
+            "show voice"
+          ],
+          "answer": 0,
+          "explain": "show lldp neighbors pour les non-Cisco."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "show mac address-table interface Fa0/5 doit montrer :",
+          "options": [
+            "Aucune",
+            "Une MAC",
+            "Deux MAC : une par VLAN (PC en 20, téléphone en 30)",
+            "Trois MAC"
+          ],
+          "answer": 2,
+          "explain": "La vérification qui résume tout."
+        },
+        {
+          "q": "show interfaces Fa0/5 switchport doit afficher :",
+          "options": [
+            "Access Mode VLAN 20 et Voice VLAN 30",
+            "VLAN 1",
+            "Trunk",
+            "Dynamic auto"
+          ],
+          "answer": 0,
+          "explain": "Le mode access avec le voice VLAN."
+        },
+        {
+          "q": "Le port voix apparaît-il dans show interfaces trunk ?",
+          "options": [
+            "Seulement avec CDP",
+            "Non, il reste en mode access",
+            "Oui",
+            "Seulement en LLDP"
+          ],
+          "answer": 1,
+          "explain": "Point important au dépannage."
+        },
+        {
+          "q": "Norme PoE pour un point d'accès Wi-Fi récent (~30 W) :",
+          "options": [
+            "802.3bt",
+            "802.1X",
+            "802.3at (PoE+)",
+            "802.3af"
+          ],
+          "answer": 2,
+          "explain": "PoE++ (bt) pour écrans, bornes, éclairage."
+        },
+        {
+          "q": "Pourquoi les téléphones ont-ils leur propre DHCP/plage ?",
+          "options": [
+            "Par hasard",
+            "Adressage dédié avec les options qui pointent vers l'IPBX",
+            "Pour le PoE",
+            "Pour le Wi-Fi"
+          ],
+          "answer": 1,
+          "explain": "Et un poste compromis côté données ne voit pas la signalisation."
+        },
+        {
+          "q": "Le raisonnement « ne jamais faire confiance à ce que le terminal déclare » s'applique aussi à :",
+          "options": [
+            "Le PoE",
+            "Le DHCP",
+            "Le DNS",
+            "Le VLAN natif (Sécuriser les VLAN)"
+          ],
+          "answer": 3,
+          "explain": "Même logique de sécurité."
+        },
+        {
+          "q": "CDP est :",
+          "options": [
+            "À activer",
+            "Propriétaire Cisco, actif par défaut",
+            "Un protocole de routage",
+            "Standard IEEE"
+          ],
+          "answer": 1,
+          "explain": "LLDP-MED = IEEE 802.1AB."
+        },
+        {
+          "q": "Un téléphone qui affiche « Configuring IP » en boucle :",
+          "options": [
+            "Trunk",
+            "Pas de bail DHCP à temps : portfast manquant, ou VLAN voix non annoncé",
+            "PoE++",
+            "Option 150"
+          ],
+          "answer": 1,
+          "explain": "Il réessaie après le délai spanning-tree."
+        },
+        {
+          "q": "switchport nonegotiate sur le port du téléphone sert à :",
+          "options": [
+            "Fixer la QoS",
+            "Empêcher la négociation DTP",
+            "Activer CDP",
+            "Activer le PoE"
+          ],
+          "answer": 1,
+          "explain": "Même bonne pratique que pour tout port utilisateur."
+        },
+        {
+          "q": "Le VLAN voix est un critère de tri pour :",
+          "options": [
+            "Le routage",
+            "Le DHCP",
+            "Le DNS",
+            "La QoS : tout ce qui en vient est prioritaire"
+          ],
+          "answer": 3,
+          "explain": "Sans trier paquet par paquet."
+        }
+      ]
+    }
+  ]
+}

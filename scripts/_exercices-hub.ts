@@ -10,7 +10,7 @@ export type ExCategory = { icon: string; name: string; intro: string; soon: stri
 
 export const EX_CATEGORIES: ExCategory[] = [
   {
-    icon: '📝', name: 'Quiz', intro: 'Des QCM pour t’auto-évaluer, thème par thème. Touche un domaine pour dérouler ses quiz.',
+    icon: '📝', name: 'Quiz', intro: 'Un quiz par cours — 3 séries de questions, correction immédiate. Touche un domaine pour dérouler ses quiz.',
     soon: 'Les premiers quiz arrivent bientôt.',
     items: [],
   },
@@ -19,6 +19,10 @@ export const EX_CATEGORIES: ExCategory[] = [
     soon: 'D’autres exercices arrivent bientôt.',
     items: [
       { href: '/pages/jeu-binaire', title: 'Le jeu du binaire', desc: 'Active les bits pour atteindre le nombre cible (façon Cisco).' },
+      { href: '/pages/jeu-adressage-ip', title: 'Adressage IP : même réseau ?', desc: '10 cas : sous-réseaux, nombre magique, VLSM, APIPA, wildcard.' },
+      { href: '/pages/jeu-linux-droits', title: 'Linux : lis les droits', desc: '10 sorties de ls -l / getfacl : qui peut quoi, quel chmod, masque des ACL.' },
+      { href: '/pages/jeu-dmz-flux', title: 'DMZ : autorisé ou bloqué ?', desc: '10 flux à trancher avec la matrice de flux d’une DMZ.' },
+      { href: '/pages/jeu-cisco-erreur', title: 'Cisco : où est l’erreur ?', desc: '10 extraits de CLI à corriger : interfaces, routes, NAT, ACL, VLAN.' },
     ],
   },
   {
@@ -28,16 +32,27 @@ export const EX_CATEGORIES: ExCategory[] = [
       { href: '/pages/jeu-schema-reseau', title: 'Trouve le bon schéma réseau', desc: '10 diapos : choisis le bon schéma parmi trois.' },
       { href: '/pages/jeu-reconnaitre-materiel', title: 'Reconnais le matériel', desc: '8 photos : identifie le composant PC ou réseau.' },
       { href: '/pages/jeu-incidents-tssr', title: 'Visual novel : Incidents TSSR', desc: '7 cas pratiques (1 par couche OSI), bons/mauvais choix.' },
+      { href: '/pages/jeu-lire-schema-reseau', title: 'Lis le schéma réseau', desc: '10 schémas : zones, équipements et flux à reconnaître (pare-feu, DMZ, VLAN).' },
+      { href: '/pages/jeu-vlan-ports', title: 'VLAN : quel port, quel mode ?', desc: '10 cas : access/trunk, natif, allowed, VTP, port-security, VLAN voix.' },
+      { href: '/pages/jeu-opnsense-regles', title: 'OPNsense : la règle qui manque', desc: '10 écrans : ordre des règles, bon onglet, NAT et règle associée.' },
+      { href: '/pages/jeu-linux-commande', title: 'Linux : la bonne commande', desc: '10 situations en terminal : services, réseau, disques, journaux.' },
+      { href: '/pages/jeu-lire-capture', title: 'Lis la capture (Wireshark)', desc: '10 captures : ARP, DNS, ICMP, TLS, SMTP, SSH, DHCP, RADIUS, FTP.' },
+      { href: '/pages/jeu-windows-ad', title: 'Windows & AD : quel outil, quelle étape ?', desc: '10 écrans : GPO, NTFS, profils, lecteurs réseau, RDP, quotas, FSMO.' },
     ],
   },
 ];
 
 // Regroupement des quiz par domaine (pour un affichage mobile clair, repliable)
-const QUIZ_DOMAINS: Array<[string, string[]]> = [
+export const QUIZ_DOMAINS: Array<[string, string[]]> = [
   ['🔧 Hardware', ['hardware', 'les-form-factor', 'carte-mere', 'ports-arriere-carte-mere', 'le-chipset', 'le-processeur', 'le-raid']],
-  ['💾 Software', ['histoire-de-windows', 'le-systeme-exploitation', 'demarrage-bios-uefi', 'systemes-de-fichiers', 'msconfig-configuration-systeme', 'gestion-ordinateur-windows', 'base-de-registre', 'cmd-et-powershell', 'windows-server', 'roles-windows-server', 'gestionnaire-de-serveurs', 'virtualisation']],
-  ['🌐 Réseau', ['bases-du-reseau', 'le-routeur', 'le-switch', 'le-pare-feu', 'tcp-et-udp', 'schemas-infrastructure', 'reseau-entreprise', 'tp1-presentation-cybercafe']],
-  ['🛠️ Maintenance', ['les-7-couches-osi', 'le-ticketing']],
+  ['💾 Software', ['histoire-de-windows', 'le-systeme-exploitation', 'demarrage-bios-uefi', 'systemes-de-fichiers', 'msconfig-configuration-systeme', 'gestion-ordinateur-windows', 'base-de-registre', 'cmd-et-powershell', 'windows-server', 'roles-windows-server', 'gestionnaire-de-serveurs', 'virtualisation', 'virtualisation-theorie', 'tp2-virtualisation-hyperv']],
+  ['🪟 Windows Server & Active Directory', ['vocabulaire-active-directory', 'administration-domaine-ad', 'cours-gpo', 'permissions-partage-ntfs', 'gestion-avancee-utilisateurs', 'lecteurs-reseau', 'profils-itinerants', 'hebergement', 'hebergement-web', 'astuce-pare-feu-ping', 'astuce-bureau-a-distance']],
+  ['🌐 Réseau', ['bases-du-reseau', 'adresses-ip', 'ip-et-binaire', 'calcul-ip-masque', 'segmentation-sous-reseaux', 'trouver-plage-ip-cidr', 'adresses-mac', 'notions-complementaires', 'le-routeur', 'le-switch', 'les-vlan', 'vlan-securite', 'vlan-vtp', 'vlan-voix', 'tcp-et-udp', 'le-ssh', 'la-messagerie', 'le-vpn', 'radius-8021x', 'le-wireshark', 'schemas-infrastructure', 'reseau-entreprise', 'tp1-presentation-cybercafe']],
+  ['🧱 Pare-feu, OPNsense & DMZ', ['le-pare-feu', 'opnsense', 'opnsense-nat', 'opnsense-services', 'opnsense-segmentation', 'opnsense-vpn-ids', 'dmz', 'dmz-mise-en-place', 'dmz-surveillance-entretien']],
+  ['🖧 Cisco Packet Tracer', ['cisco-routeur-cli', 'cisco-route-statique', 'cisco-nat', 'cisco-acl']],
+  ['🐧 Linux', ['linux-bases', 'linux-redhat', 'linux-commandes-base', 'linux-paquets-essentiels', 'linux-droits', 'linux-acl', 'linux-bash', 'linux-disques', 'linux-archivage', 'linux-systemd', 'linux-cron-logs', 'linux-reseau', 'linux-ssh', 'linux-apache', 'linux-apache-virtualhosts', 'linux-samba', 'linux-proftpd']],
+  ['🛠️ Maintenance & exploitation', ['les-7-couches-osi', 'le-ticketing', 'supervision']],
+  ['🗣️ Anglais', ['anglais-professionnel']],
 ];
 const slugOf = (href: string) => href.replace(/^\/pages\/quiz-/, '');
 const esc = (s = '') => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

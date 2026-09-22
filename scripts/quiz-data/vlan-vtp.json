@@ -1,0 +1,351 @@
+{
+  "slug": "vlan-vtp",
+  "title": "VTP : propager les VLAN entre switches",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Que signifie VTP ?",
+          "options": [
+            "Virtual Tag Protocol",
+            "VLAN Trunking Protocol",
+            "VLAN Transfer Protocol",
+            "Virtual Trunk Port"
+          ],
+          "answer": 1,
+          "explain": "Propriétaire Cisco : on crée le VLAN sur un switch, il apparaît sur les autres."
+        },
+        {
+          "q": "Que synchronise VTP ?",
+          "options": [
+            "Les adresses IP",
+            "L'affectation des ports",
+            "La base de données VLAN (numéros + noms)",
+            "Les mots de passe"
+          ],
+          "answer": 2,
+          "explain": "Le switchport access vlan reste à faire port par port."
+        },
+        {
+          "q": "Sur quels liens circulent les annonces VTP ?",
+          "options": [
+            "Le port console",
+            "Tous les ports",
+            "Uniquement les trunks",
+            "Les ports access"
+          ],
+          "answer": 2,
+          "explain": "Pas de trunk vers un switch : il ne reçoit rien."
+        },
+        {
+          "q": "Le domaine VTP est :",
+          "options": [
+            "Une adresse IP",
+            "Un port",
+            "Un numéro de VLAN",
+            "Une chaîne de caractères, sensible à la casse, identique partout"
+          ],
+          "answer": 3,
+          "explain": "vtp domain ENTREPRISE."
+        },
+        {
+          "q": "Mode VTP par défaut :",
+          "options": [
+            "transparent",
+            "client",
+            "off",
+            "server"
+          ],
+          "answer": 3,
+          "explain": "Server peut créer/supprimer, applique et retransmet."
+        },
+        {
+          "q": "Le mode client :",
+          "options": [
+            "Ne peut pas créer de VLAN mais applique et retransmet",
+            "Peut créer des VLAN",
+            "N'existe pas",
+            "Ignore tout"
+          ],
+          "answer": 0,
+          "explain": "Il participe pleinement aux annonces."
+        },
+        {
+          "q": "Le mode transparent :",
+          "options": [
+            "Applique ce qu'il reçoit",
+            "Crée en local seulement, n'applique pas, fait suivre",
+            "Ne retransmet rien",
+            "Est le défaut"
+          ],
+          "answer": 1,
+          "explain": "Indépendant : garde sa propre liste de VLAN."
+        },
+        {
+          "q": "Quelle règle décide entre deux bases VLAN ?",
+          "options": [
+            "Le plus ancien switch",
+            "Le numéro de révision le plus élevé gagne et écrase l'autre",
+            "Le mode server",
+            "Le plus de VLAN"
+          ],
+          "answer": 1,
+          "explain": "Peu importe le mode, l'ancienneté ou qui a raison."
+        },
+        {
+          "q": "Commande de vérification principale :",
+          "options": [
+            "show vtp status",
+            "show vlan",
+            "show vtp domain",
+            "show trunk"
+          ],
+          "answer": 0,
+          "explain": "Domaine, mode, version, révision, nombre de VLAN."
+        },
+        {
+          "q": "À quoi sert le mot de passe VTP ?",
+          "options": [
+            "À rien",
+            "À distinguer un switch de l'entreprise d'un switch branché par n'importe qui",
+            "À se connecter en SSH",
+            "À chiffrer les VLAN"
+          ],
+          "answer": 1,
+          "explain": "Identique sur tous les membres."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Le scénario catastrophe du cours :",
+          "options": [
+            "Un VLAN natif",
+            "Un câble coupé",
+            "Un switch de labo en révision 87 rebranché en production (révision 12) efface les VLAN de tout le réseau",
+            "Un DHCP en double"
+          ],
+          "answer": 2,
+          "explain": "Tous les ports affectés basculent en inactive."
+        },
+        {
+          "q": "Comment remettre la révision à zéro (méthode 1) ?",
+          "options": [
+            "Passer en vtp mode transparent puis revenir en client",
+            "vtp reset",
+            "Supprimer les VLAN",
+            "reload"
+          ],
+          "answer": 0,
+          "explain": "Le passage par transparent remet le compteur à 0."
+        },
+        {
+          "q": "Méthode 2 pour remettre la révision à zéro :",
+          "options": [
+            "Changer de version",
+            "Changer le mot de passe",
+            "Éteindre 5 min",
+            "Changer de domaine puis revenir"
+          ],
+          "answer": 3,
+          "explain": "vtp domain TEMPORAIRE puis vtp domain ENTREPRISE."
+        },
+        {
+          "q": "Quand vérifier la révision d'un switch ?",
+          "options": [
+            "Après une semaine",
+            "Après l'avoir branché",
+            "AVANT de connecter le lien trunk",
+            "Jamais"
+          ],
+          "answer": 2,
+          "explain": "La seule règle du cours à retenir par cœur."
+        },
+        {
+          "q": "Le mode client protège :",
+          "options": [
+            "Le switch contre l'administrateur, pas le réseau contre le switch",
+            "Rien",
+            "Le réseau contre le switch",
+            "Tout"
+          ],
+          "answer": 0,
+          "explain": "Il peut émettre des annonces et écraser la base des autres."
+        },
+        {
+          "q": "Le pruning VTP :",
+          "options": [
+            "Bloque les trunks",
+            "Crée des VLAN",
+            "Élague le broadcast des VLAN vers les switches qui n'ont aucun port dedans",
+            "Supprime les VLAN"
+          ],
+          "answer": 2,
+          "explain": "vtp pruning sur le serveur, se propage au domaine."
+        },
+        {
+          "q": "Pruning vs allowed vlan :",
+          "options": [
+            "allowed = manuel et permanent (sécurité) ; pruning = automatique et dynamique (bande passante)",
+            "Pruning est manuel",
+            "allowed est automatique",
+            "Identiques"
+          ],
+          "answer": 0,
+          "explain": "Ils se complètent."
+        },
+        {
+          "q": "Le mode off existe en :",
+          "options": [
+            "Toutes",
+            "VTPv2",
+            "VTPv3",
+            "VTPv1"
+          ],
+          "answer": 2,
+          "explain": "Off : local, n'applique pas, ne retransmet pas."
+        },
+        {
+          "q": "Un switch ne reçoit rien en VTP :",
+          "options": [
+            "Mode server",
+            "Pruning",
+            "Domaine différent (casse), mot de passe différent, ou pas de trunk vers lui",
+            "Trop de VLAN"
+          ],
+          "answer": 2,
+          "explain": "Dépannage courant."
+        },
+        {
+          "q": "Commande pour voir les annonces émises/reçues :",
+          "options": [
+            "show vtp counters",
+            "debug vtp",
+            "show vtp status",
+            "show vlan brief"
+          ],
+          "answer": 0,
+          "explain": "Utile en dépannage."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Faut-il encore utiliser VTP ?",
+          "options": [
+            "De moins en moins : beaucoup passent en transparent partout",
+            "Jamais",
+            "Toujours",
+            "Seulement en labo"
+          ],
+          "answer": 0,
+          "explain": "Le gain est faible, le risque permanent."
+        },
+        {
+          "q": "Argument contre VTP :",
+          "options": [
+            "Trop rapide",
+            "Trop cher",
+            "Les VLAN se créent rarement et les configs sont déployées par des outils (Ansible)",
+            "Pas de trunk"
+          ],
+          "answer": 2,
+          "explain": "La propagation automatique n'a plus d'intérêt."
+        },
+        {
+          "q": "Que se passe-t-il pour un port dont le VLAN a disparu ?",
+          "options": [
+            "Il devient inactive",
+            "Il passe en VLAN 1",
+            "Rien",
+            "Il devient trunk"
+          ],
+          "answer": 0,
+          "explain": "D'où le réseau qui tombe."
+        },
+        {
+          "q": "Le mode server est souvent :",
+          "options": [
+            "Un PC",
+            "Le switch d'accès",
+            "Le switch cœur, de référence",
+            "Le routeur"
+          ],
+          "answer": 2,
+          "explain": "Les switches d'accès en client."
+        },
+        {
+          "q": "vtp version 2 :",
+          "options": [
+            "Est obligatoire",
+            "N'existe pas",
+            "Est une version courante ; la 3 ajoute le mode off",
+            "Supprime le pruning"
+          ],
+          "answer": 2,
+          "explain": "vtp version 2 dans l'exemple du cours."
+        },
+        {
+          "q": "Un switch en transparent avec des VLAN locaux :",
+          "options": [
+            "Les propage",
+            "Les efface",
+            "Les garde pour lui et fait suivre les annonces des autres",
+            "Devient server"
+          ],
+          "answer": 2,
+          "explain": "Il ne s'applique pas ce qu'il reçoit."
+        },
+        {
+          "q": "Deux lignes à lire dans show vtp status avant insertion :",
+          "options": [
+            "Domain et Password",
+            "Configuration Revision : 0 et VTP Operating Mode",
+            "Pruning et Version",
+            "Ports et VLAN"
+          ],
+          "answer": 1,
+          "explain": "La révision doit être à 0, le mode celui voulu."
+        },
+        {
+          "q": "Un switch prêté par un collègue doit :",
+          "options": [
+            "Être branché tel quel",
+            "Être vérifié (révision) avant connexion du trunk",
+            "Être mis en server",
+            "Être reloadé"
+          ],
+          "answer": 1,
+          "explain": "Dix secondes qui évitent une heure de panne."
+        },
+        {
+          "q": "Sans pruning, un trunk transporte :",
+          "options": [
+            "Le broadcast de tous les VLAN autorisés, même inutiles pour le switch d'en face",
+            "Rien",
+            "Le natif seulement",
+            "Un seul VLAN"
+          ],
+          "answer": 0,
+          "explain": "Bande passante gaspillée."
+        },
+        {
+          "q": "Quel est le sens de « la règle qui coûte cher » ?",
+          "options": [
+            "Le mode client est payant",
+            "Le numéro de révision le plus élevé gagne, sans nuance",
+            "Le prix des switches",
+            "Le pruning coûte"
+          ],
+          "answer": 1,
+          "explain": "Peu importe qui a raison."
+        }
+      ]
+    }
+  ]
+}

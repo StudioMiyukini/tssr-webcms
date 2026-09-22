@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import { Link } from '@tanstack/react-router';
 import { useTheme } from '@/lib/theme';
 import { NetworkWorkshop, DEFAULT_CTX, migrateCtx, computePlan, routeursDe, type Ctx, type Plan } from '@/components/NetworkWorkshop';
+import { verifier as verifierAcl } from '@/lib/acl';
 import { apiPut } from '@/api/client';
 import {
   useAtelierMe, useAtelierProjects, useAtelierProject,
@@ -38,6 +39,7 @@ const NAV: { title: string; items: NavItem[] }[] = [
     { key: 'routeurs', icon: '📟', label: 'Routeurs & reset', step: 4, s4: 'routeurs' },
     { key: 'mls', icon: '🗼', label: 'Switch multicouche (SVI)', step: 10 },
     { key: 'nat', icon: '🌍', label: 'Internet / NAT', step: 4, s4: 'nat' },
+    { key: 'acl', icon: '🚦', label: 'ACL (filtrage)', step: 14 },
   ] },
   { title: 'Couches 4-7 — Services', items: [
     { key: 'dhcp', icon: '📶', label: 'DHCP', step: 5 },
@@ -76,6 +78,20 @@ function statusesOf(ctx: Ctx, plan: Plan): Record<string, Status> {
     'dns-dhcp-linux': (ctx.domaine.trim() || dhcpAny) ? 'ok' : 'empty',
     ssh: routeursDe(ctx).length ? 'ok' : 'empty',
     nat: ctx.internetRouterId ? 'ok' : 'empty',
+    /*
+     * La pastille des ACL lit les regles, elle ne compte pas les listes.
+     *
+     * Une ACL ecrite mais qui bloque tout, ou dont une regle ne sera jamais
+     * lue, est pire qu'une absence d'ACL : elle donne l'impression que le
+     * filtrage est fait. Le menu doit donc dire « a verifier », pas « ok ».
+     */
+    acl: (() => {
+      const listes = ctx.acls ?? [];
+      if (!listes.length) return 'empty';
+      const avis = listes.flatMap(a => verifierAcl(a));
+      if (avis.some(x => x.gravite === 'erreur')) return 'error';
+      return avis.length ? 'warn' : 'ok';
+    })(),
     tests: plan.subs.length ? 'ok' : 'empty',
   };
 }

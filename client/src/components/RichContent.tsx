@@ -36,6 +36,12 @@ const BLOCKS: Record<string, BlockDef> = {
   'dhcp-configurator': { load: () => named(import('./DhcpConfigurator'), 'DhcpConfigurator') },
   'static-route-generator': { load: () => named(import('./StaticRouteGenerator'), 'StaticRouteGenerator') },
   'ssh-configurator': { load: () => named(import('./SshConfigurator'), 'SshConfigurator') },
+  'web-db-configurator': { load: () => named(import('./WebDbConfigurator'), 'WebDbConfigurator') },
+  'bastion-configurator': { load: () => named(import('./BastionConfigurator'), 'BastionConfigurator') },
+  'bind9-configurator': { load: () => named(import('./Bind9Configurator'), 'Bind9Configurator') },
+  'users-configurator': { load: () => named(import('./UsersConfigurator'), 'UsersConfigurator') },
+  'opnsense-configurator': { load: () => named(import('./OpnsenseConfigurator'), 'OpnsenseConfigurator') },
+  'pfsense-configurator': { load: () => named(import('./PfsenseConfigurator'), 'PfsenseConfigurator') },
   'network-workshop': { load: () => named(import('./NetworkWorkshop'), 'NetworkWorkshop') },
   'hex-converter': { load: () => named(import('./HexConverter'), 'HexConverter') },
   'realisation1-trainer': { load: () => named(import('./Realisation1Trainer'), 'Realisation1Trainer') },
@@ -74,7 +80,8 @@ const GLOSS_MAP: Record<string, string> = (() => {
 const GLOSS_KEYS = Object.keys(GLOSS_MAP).sort((a, b) => b.length - a.length);
 const escRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&');
 const GLOSS_SRC = GLOSS_KEYS.length ? `(?<![\\w/])(${GLOSS_KEYS.map(escRe).join('|')})(?![\\w])` : '';
-const SKIP_TAGS = new Set(['A', 'CODE', 'PRE', 'KBD', 'MARK', 'BUTTON', 'SELECT', 'TEXTAREA', 'OPTION', 'SCRIPT', 'STYLE']);
+// LABEL : un libellé de quiz ou de jeu est une zone cliquable — un lien glossaire au milieu ferait quitter la page au lieu de cocher.
+const SKIP_TAGS = new Set(['A', 'CODE', 'PRE', 'KBD', 'MARK', 'BUTTON', 'SELECT', 'TEXTAREA', 'OPTION', 'SCRIPT', 'STYLE', 'LABEL']);
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const BLOCK_SEL = 'p,li,td,th,dd,dt,figcaption,caption,h1,h2,h3,h4,h5,h6,blockquote,summary,aside,div';
 

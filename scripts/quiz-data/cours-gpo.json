@@ -1,0 +1,351 @@
+{
+  "slug": "cours-gpo",
+  "title": "Les GPO (stratégies de groupe)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Que signifie GPO ?",
+          "options": [
+            "Group Permission Object",
+            "Group Policy Object",
+            "Global Protection Option",
+            "General Policy Order"
+          ],
+          "answer": 1,
+          "explain": "Un ensemble de réglages appliqués automatiquement aux ordinateurs et/ou utilisateurs."
+        },
+        {
+          "q": "Console de gestion des GPO :",
+          "options": [
+            "regedit",
+            "domain.msc",
+            "gpmc.msc",
+            "dsa.msc"
+          ],
+          "answer": 2,
+          "explain": "Gestion des stratégies de groupe."
+        },
+        {
+          "q": "Les deux GPO par défaut :",
+          "options": [
+            "Aucune",
+            "Default User Policy et Default PC Policy",
+            "Password Policy et Admin Policy",
+            "Default Domain Policy et Default Domain Controllers Policy"
+          ],
+          "answer": 3,
+          "explain": "Bonne pratique : ne pas les surcharger, créer ses propres GPO."
+        },
+        {
+          "q": "Une GPO se lie à :",
+          "options": [
+            "Un utilisateur",
+            "Un ordinateur",
+            "Une OU, un site ou le domaine — jamais un groupe",
+            "Un groupe"
+          ],
+          "answer": 2,
+          "explain": "Pour restreindre à un groupe : filtrage de sécurité."
+        },
+        {
+          "q": "Supprimer une GPO depuis une OU :",
+          "options": [
+            "Supprime toutes les GPO",
+            "Supprime l'objet",
+            "Ne supprime que le lien ; l'objet reste dans « Objets de stratégie de groupe »",
+            "Est impossible"
+          ],
+          "answer": 2,
+          "explain": "Lien ≠ objet."
+        },
+        {
+          "q": "Ordre d'application LSDOU :",
+          "options": [
+            "OU, Domaine, Site, Local",
+            "Local, Site, Domaine, OU",
+            "Site, Local, OU, Domaine",
+            "Local, Domaine, Site, OU"
+          ],
+          "answer": 1,
+          "explain": "La plus proche de l'objet est appliquée en dernier et gagne."
+        },
+        {
+          "q": "En cas de conflit, quelle GPO l'emporte ?",
+          "options": [
+            "Celle liée à l'OU la plus profonde (dernière appliquée)",
+            "La plus ancienne",
+            "Celle du domaine",
+            "La locale"
+          ],
+          "answer": 0,
+          "explain": "Entre deux GPO du même conteneur : l'ordre des liens (n°1 gagne)."
+        },
+        {
+          "q": "Deux moitiés d'une GPO :",
+          "options": [
+            "Configuration ordinateur et Configuration utilisateur",
+            "Sécurité et Réseau",
+            "Local et Domaine",
+            "Stratégies et Préférences"
+          ],
+          "answer": 0,
+          "explain": "Chacune avec Stratégies et Préférences."
+        },
+        {
+          "q": "Commande pour forcer l'application :",
+          "options": [
+            "gpresult",
+            "gpupdate /force",
+            "gpedit",
+            "rsop"
+          ],
+          "answer": 1,
+          "explain": "Recharge toutes les stratégies."
+        },
+        {
+          "q": "Mapper un lecteur réseau se fait via :",
+          "options": [
+            "Le registre",
+            "Le DNS",
+            "Une Stratégie",
+            "Une Préférence (Configuration utilisateur → Préférences → Mappages de lecteurs)"
+          ],
+          "answer": 3,
+          "explain": "À ne pas confondre."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Rafraîchissement automatique en arrière-plan :",
+          "options": [
+            "Jamais",
+            "Environ toutes les 90 min + 0 à 30 min aléatoires",
+            "Toutes les 24 h",
+            "Toutes les 5 min"
+          ],
+          "answer": 1,
+          "explain": "≈ 5 min sur les contrôleurs de domaine."
+        },
+        {
+          "q": "Configuration ordinateur s'applique :",
+          "options": [
+            "Au démarrage de la machine",
+            "Toutes les heures",
+            "Jamais",
+            "À l'ouverture de session"
+          ],
+          "answer": 0,
+          "explain": "Configuration utilisateur à l'ouverture de session."
+        },
+        {
+          "q": "Qu'est-ce qu'un chemin UNC ?",
+          "options": [
+            "C:\\dossier",
+            "\\\\serveur\\partage\\sous-dossier",
+            "http://serveur",
+            "D:\\share"
+          ],
+          "answer": 1,
+          "explain": "Toujours un UNC dans une GPO, jamais un chemin local du serveur."
+        },
+        {
+          "q": "Un partage terminé par $ est :",
+          "options": [
+            "Masqué",
+            "Chiffré",
+            "Interdit",
+            "Public"
+          ],
+          "answer": 0,
+          "explain": "Ex. \\\\srvad\\gpo$."
+        },
+        {
+          "q": "Le lecteur apparaît mais reste inaccessible :",
+          "options": [
+            "GPO mal liée",
+            "Droits NTFS/partage insuffisants pour le groupe",
+            "gpupdate manquant",
+            "Mauvais UNC"
+          ],
+          "answer": 1,
+          "explain": "La GPO monte le lecteur, l'accès dépend des droits."
+        },
+        {
+          "q": "Pour créer et lier une GPO à une OU :",
+          "options": [
+            "regedit",
+            "dsa.msc → Nouvel utilisateur",
+            "Clic droit sur l'OU → Créer un objet GPO dans ce domaine, et le lier ici",
+            "Clic droit sur le domaine → Nouveau groupe"
+          ],
+          "answer": 2,
+          "explain": "Puis Modifier pour ouvrir l'éditeur."
+        },
+        {
+          "q": "Certains réglages (logiciels, redirection de dossiers) exigent :",
+          "options": [
+            "Une forêt",
+            "Un nouveau DC",
+            "Rien",
+            "Un redémarrage ou une nouvelle ouverture de session"
+          ],
+          "answer": 3,
+          "explain": "gpupdate /force peut proposer de fermer la session."
+        },
+        {
+          "q": "L'onglet Héritage de stratégie de groupe d'une OU montre :",
+          "options": [
+            "Les utilisateurs",
+            "Le DNS",
+            "Les partages",
+            "Tout ce qui s'applique, classé par priorité (la n°1 gagne)"
+          ],
+          "answer": 3,
+          "explain": "Ex. sur l'OU Usine_3."
+        },
+        {
+          "q": "Ordre d'exécution vs priorité :",
+          "options": [
+            "Sans lien",
+            "Inverses : la dernière exécutée (OU la plus profonde) a la priorité 1",
+            "Identiques",
+            "Aléatoires"
+          ],
+          "answer": 1,
+          "explain": "Point 🔁 du cours."
+        },
+        {
+          "q": "Une même GPO peut être liée à :",
+          "options": [
+            "Un utilisateur",
+            "Plusieurs OU",
+            "Un groupe",
+            "Une seule OU"
+          ],
+          "answer": 1,
+          "explain": "L'objet existe une fois, les liens sont des raccourcis."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Pour restreindre une GPO à un groupe précis :",
+          "options": [
+            "Renommer la GPO",
+            "Créer une forêt",
+            "La lier au groupe",
+            "Le filtrage de sécurité (ou ciblage d'élément pour une préférence)"
+          ],
+          "answer": 3,
+          "explain": "Une GPO ne se lie jamais à un groupe."
+        },
+        {
+          "q": "Où est liée la politique de mot de passe ?",
+          "options": [
+            "Au domaine (Default Domain Policy)",
+            "Sur chaque OU",
+            "Sur les postes",
+            "Sur le site"
+          ],
+          "answer": 0,
+          "explain": "Default Domain Policy."
+        },
+        {
+          "q": "Default Domain Controllers Policy est liée à :",
+          "options": [
+            "L'OU Domain Controllers",
+            "Le domaine",
+            "Chaque utilisateur",
+            "Le site"
+          ],
+          "answer": 0,
+          "explain": "Les DC ont leur OU dédiée."
+        },
+        {
+          "q": "Les fichiers d'une GPO sont stockés dans :",
+          "options": [
+            "NTDS.dit",
+            "Le registre du DC",
+            "C:\\Users",
+            "SYSVOL"
+          ],
+          "answer": 3,
+          "explain": "Répliqué entre DC."
+        },
+        {
+          "q": "Message d'application réussie sur le client :",
+          "options": [
+            "Policy loaded",
+            "GPO OK",
+            "Done",
+            "Computer Policy update has completed successfully / User Policy update has completed successfully"
+          ],
+          "answer": 3,
+          "explain": "Après gpupdate /force."
+        },
+        {
+          "q": "Dans l'exemple, la GPO « lecteur K: » est liée à :",
+          "options": [
+            "L'OU Domain Controllers",
+            "Le site",
+            "L'OU Service_production",
+            "Le domaine adrar.lan"
+          ],
+          "answer": 2,
+          "explain": "Préférence de mappage de lecteur vers \\\\SRVAD\\share_ADRAR\\Service_production."
+        },
+        {
+          "q": "Action recommandée pour un mappage de lecteur :",
+          "options": [
+            "Supprimer",
+            "Créer",
+            "Mettre à jour",
+            "Remplacer toujours"
+          ],
+          "answer": 2,
+          "explain": "Onglet Général : Action « Mettre à jour », Reconnecter coché."
+        },
+        {
+          "q": "Un chemin local C:\\… du serveur dans une GPO :",
+          "options": [
+            "Est plus rapide",
+            "Fonctionne",
+            "Est recommandé",
+            "Ne fonctionne pas : les clients ne le voient pas"
+          ],
+          "answer": 3,
+          "explain": "Toujours un UNC."
+        },
+        {
+          "q": "Stratégies vs Préférences :",
+          "options": [
+            "Préférences = ordinateur",
+            "Identiques",
+            "Stratégies = utilisateur",
+            "Les stratégies imposent ; les préférences configurent (ex. lecteurs, raccourcis) et peuvent être modifiées"
+          ],
+          "answer": 3,
+          "explain": "Deux familles dans chaque moitié de GPO."
+        },
+        {
+          "q": "Prérequis d'une GPO de lecteur réseau :",
+          "options": [
+            "Le partage existe et le groupe a les droits NTFS/partage voulus",
+            "Aucun",
+            "Un second DC",
+            "Un site AD"
+          ],
+          "answer": 0,
+          "explain": "Voir Partage & NTFS."
+        }
+      ]
+    }
+  ]
+}

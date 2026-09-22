@@ -1,0 +1,351 @@
+{
+  "slug": "cisco-acl",
+  "title": "Les ACL : filtrer le trafic (listes de contrôle d’accès)",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Une ACL est :",
+          "options": [
+            "Un VLAN",
+            "Un pool NAT",
+            "Une liste de règles permit/deny appliquée à une interface dans un sens",
+            "Une route"
+          ],
+          "answer": 2,
+          "explain": "Lue de haut en bas, arrêt à la première correspondance."
+        },
+        {
+          "q": "Le deny any implicite :",
+          "options": [
+            "N'existe pas",
+            "Est au début",
+            "Se cache à la fin de toute ACL : tout ce qui n'est pas autorisé est rejeté",
+            "Est optionnel"
+          ],
+          "answer": 2,
+          "explain": "Il faut au moins un permit."
+        },
+        {
+          "q": "Sur quelles couches OSI travaille une ACL ?",
+          "options": [
+            "Toutes",
+            "3 (IP) et 4 (TCP/UDP)",
+            "1 et 2",
+            "7"
+          ],
+          "answer": 1,
+          "explain": "Qui parle à qui, pour faire quoi."
+        },
+        {
+          "q": "Une ACE est :",
+          "options": [
+            "Un port",
+            "Un masque",
+            "Une règle de la liste, avec son numéro d'ordre",
+            "Une liste"
+          ],
+          "answer": 2,
+          "explain": "Access Control Entry."
+        },
+        {
+          "q": "ACL standard : numéros",
+          "options": [
+            "1–99 et 1300–1999",
+            "100–199",
+            "2000–2699",
+            "0–9"
+          ],
+          "answer": 0,
+          "explain": "Filtre sur l'IP source uniquement."
+        },
+        {
+          "q": "ACL étendue : numéros",
+          "options": [
+            "1300–1999",
+            "1–99",
+            "100–199 et 2000–2699",
+            "500–599"
+          ],
+          "answer": 2,
+          "explain": "Source + destination + protocole + port."
+        },
+        {
+          "q": "Où placer une ACL standard ?",
+          "options": [
+            "N'importe où",
+            "Au plus près de la source",
+            "Sur le switch",
+            "Au plus près de la destination"
+          ],
+          "answer": 3,
+          "explain": "Elle ne connaît que la source."
+        },
+        {
+          "q": "Où placer une ACL étendue ?",
+          "options": [
+            "Au milieu",
+            "Sur le WAN",
+            "Au plus près de la destination",
+            "Au plus près de la source"
+          ],
+          "answer": 3,
+          "explain": "Elle sait exactement ce qu'elle bloque."
+        },
+        {
+          "q": "Le wildcard se calcule :",
+          "options": [
+            "masque × 2",
+            "255.255.255.255 − masque",
+            "= CIDR",
+            "= masque"
+          ],
+          "answer": 1,
+          "explain": "Bit à 0 = doit correspondre, 1 = peu importe."
+        },
+        {
+          "q": "Wildcard d'un /24 :",
+          "options": [
+            "0.0.0.255",
+            "0.0.0.0",
+            "0.255.255.255",
+            "255.255.255.0"
+          ],
+          "answer": 0,
+          "explain": "192.168.1.0 0.0.0.255."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Wildcard d'un /27 :",
+          "options": [
+            "0.0.0.255",
+            "0.0.0.31",
+            "0.0.0.63",
+            "0.0.0.15"
+          ],
+          "answer": 1,
+          "explain": "255 − 224 = 31."
+        },
+        {
+          "q": "Une seule machine :",
+          "options": [
+            "host 172.16.10.20 (ou … 0.0.0.0)",
+            "172.16.10.20 0.0.0.255",
+            "any",
+            "all"
+          ],
+          "answer": 0,
+          "explain": "Wildcard 0.0.0.0."
+        },
+        {
+          "q": "Tout le monde :",
+          "options": [
+            "host all",
+            "*",
+            "any (ou 0.0.0.0 255.255.255.255)",
+            "0.0.0.0 0.0.0.0"
+          ],
+          "answer": 2,
+          "explain": "Mot-clé any."
+        },
+        {
+          "q": "Écrire 255.255.255.0 au lieu de 0.0.0.255 :",
+          "options": [
+            "Corrigé",
+            "Erreur affichée",
+            "Accepté sans erreur, mais filtre autre chose",
+            "Refusé"
+          ],
+          "answer": 2,
+          "explain": "Seul contrôle : relire ou compter les correspondances."
+        },
+        {
+          "q": "Les trois restrictions d'application :",
+          "options": [
+            "Une par VLAN",
+            "Une par routeur",
+            "Une ACL par interface, par sens (in/out), par protocole (IPv4/IPv6)",
+            "Illimité"
+          ],
+          "answer": 2,
+          "explain": "Une seconde dans le même sens remplace la première."
+        },
+        {
+          "q": "Structure d'une ACE étendue :",
+          "options": [
+            "Action, destination, source",
+            "Port, IP, action",
+            "Autorisation, protocole, source, port src, destination, port dest",
+            "Protocole seul"
+          ],
+          "answer": 2,
+          "explain": "De gauche à droite."
+        },
+        {
+          "q": "gt 1023 en port source décrit :",
+          "options": [
+            "Un port fermé",
+            "Un serveur",
+            "Le port éphémère d'un client (requête sortante normale)",
+            "Une erreur"
+          ],
+          "answer": 2,
+          "explain": "La forme normale d'une requête."
+        },
+        {
+          "q": "eq 80 et eq www :",
+          "options": [
+            "Seul eq 80 marche",
+            "Erreur",
+            "Différents",
+            "La même règle"
+          ],
+          "answer": 3,
+          "explain": "IOS accepte numéro ou mot-clé."
+        },
+        {
+          "q": "Une règle large placée trop haut :",
+          "options": [
+            "Rien",
+            "Erreur",
+            "Rend muettes toutes celles du dessous : la panne la plus silencieuse",
+            "Est déplacée"
+          ],
+          "answer": 2,
+          "explain": "Ordre = tout."
+        },
+        {
+          "q": "Une ACL nommée :",
+          "options": [
+            "Interdite",
+            "Standard seulement",
+            "Alphanumérique, sans espace : se relit six mois plus tard",
+            "Numérotée"
+          ],
+          "answer": 2,
+          "explain": "Un nom se relit, un numéro non."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Port de SSH :",
+          "options": [
+            "23",
+            "22",
+            "25",
+            "21"
+          ],
+          "answer": 1,
+          "explain": "Telnet = 23, à bloquer."
+        },
+        {
+          "q": "DNS utilise :",
+          "options": [
+            "tcp 53 seulement",
+            "udp 67",
+            "tcp 80",
+            "udp 53 (mot-clé domain)"
+          ],
+          "answer": 3,
+          "explain": "domain."
+        },
+        {
+          "q": "DHCP serveur / client :",
+          "options": [
+            "udp 67 / 68 (bootps / bootpc)",
+            "udp 53",
+            "tcp 67",
+            "tcp 68"
+          ],
+          "answer": 0,
+          "explain": "bootps serveur, bootpc client."
+        },
+        {
+          "q": "SNMP :",
+          "options": [
+            "tcp 389",
+            "udp 161 / 162 (snmptrap)",
+            "udp 514",
+            "tcp 161"
+          ],
+          "answer": 1,
+          "explain": "Supervision / alertes."
+        },
+        {
+          "q": "Ce qu'une ACL ne voit pas :",
+          "options": [
+            "Le protocole",
+            "Les ports",
+            "Le contenu, l'utilisateur, l'application réelle derrière le port",
+            "Les IP"
+          ],
+          "answer": 2,
+          "explain": "Un serveur web sur 8080 passe une règle écrite pour 80."
+        },
+        {
+          "q": "Une ACL est un pare-feu :",
+          "options": [
+            "Sans état",
+            "Applicatif",
+            "Complet",
+            "À états"
+          ],
+          "answer": 0,
+          "explain": "Pour le reste, un vrai pare-feu."
+        },
+        {
+          "q": "Commande qui dit quelle ACL est réellement en place :",
+          "options": [
+            "show access",
+            "show acl",
+            "show running",
+            "show ip interface"
+          ],
+          "answer": 3,
+          "explain": "Après un remplacement silencieux."
+        },
+        {
+          "q": "permit tcp 192.168.1.0 0.0.0.255 gt 1023 host 172.16.10.20 eq 443 signifie :",
+          "options": [
+            "Bloquer 443",
+            "Autoriser tout",
+            "Bloquer le web",
+            "Autoriser le réseau 192.168.1.0/24 (ports clients) vers 172.16.10.20 en HTTPS"
+          ],
+          "answer": 3,
+          "explain": "Lecture de gauche à droite."
+        },
+        {
+          "q": "range en port :",
+          "options": [
+            "Différent de",
+            "Plus grand que",
+            "Entre deux ports, bornes comprises",
+            "Un seul port"
+          ],
+          "answer": 2,
+          "explain": "neq = différent, lt/gt = plus petit/grand."
+        },
+        {
+          "q": "Wildcard d'un /29 (192.168.10.72) :",
+          "options": [
+            "0.0.0.7",
+            "0.0.0.3",
+            "0.0.0.15",
+            "0.0.0.31"
+          ],
+          "answer": 0,
+          "explain": "255 − 248 = 7."
+        }
+      ]
+    }
+  ]
+}

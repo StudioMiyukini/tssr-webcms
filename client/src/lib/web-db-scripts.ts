@@ -1,0 +1,928 @@
+/**
+ * Génération des scripts du configurateur « duo web + base » (deux VM Debian
+ * clonées : nginx + Node.js d'un côté, MariaDB de l'autre).
+ *
+ * Séparé de l'îlot React pour être testable hors navigateur : un harnais Node
+ * génère les scripts et les joue dans des conteneurs Debian (systemd), ce que
+ * l'interface ne permet pas.
+ *
+ * Ce qui a été appris en les faisant tourner, et qui explique leur forme :
+ * - lancé en SSH, le changement d'IP coupe la session et tue le script à
+ *   mi-chemin : il se détache donc de lui-même et journalise ;
+ * - un master n'a pas toujours Internet une fois sur le commutateur du labo :
+ *   on installe d'abord si le réseau courant sort, sinon on adresse d'abord ;
+ * - le réseau d'un Debian est géré par ifupdown, NetworkManager ou
+ *   systemd-networkd selon l'installation : on détecte, on n'impose pas ;
+ * - deux clones partagent machine-id et clés SSH : on les régénère.
+ */
+
+export const MDP = 'Azerty77';
+
+export type Hyperviseur = 'hyperv' | 'proxmox';
+
+export type Params = {
+  hv: Hyperviseur;
+  master: string;
+  masterId: string;
+  exportPath: string;
+  vhdDir: string;
+  sw: string;
+  copierFichiers: boolean;
+  vmWeb: string;
+  vmBdd: string;
+  idWeb: string;
+  idBdd: string;
+  vcpu: string;
+  ram: string;
+  ipWeb: string;
+  cidrWeb: string;
+  gwWeb: string;
+  dnsWeb: string;
+  ipBdd: string;
+  cidrBdd: string;
+  gwBdd: string;
+  dnsBdd: string;
+  iface: string;
+  bdd: string;
+  utilisateur: string;
+  nodeSource: boolean;
+  mdpSysteme: boolean;
+  // Messagerie en DMZ (optionnelle) : Postfix + Dovecot + Roundcube, comptes et webmail dans MariaDB.
+  mail: boolean;
+  vmMail: string;
+  idMail: string;
+  ipMail: string;
+  cidrMail: string;
+  gwMail: string;
+  dnsMail: string;
+  domaineMail: string;
+  boites: string;          // « alice, bob » : une boite par nom, @domaineMail
+  // GLPI sur la VM web (optionnel), base glpi sur la VM base.
+  glpi: boolean;
+};
+
+export type Reseau = { ip: string; cidr: string; gw: string; dns: string };
+export const reseauWeb = (p: Params): Reseau => ({ ip: p.ipWeb, cidr: p.cidrWeb, gw: p.gwWeb, dns: p.dnsWeb });
+export const reseauMail = (p: Params): Reseau => ({ ip: p.ipMail, cidr: p.cidrMail, gw: p.gwMail, dns: p.dnsMail });
+export const listeBoites = (p: Params | string) => Array.from(new Set((typeof p === 'string' ? p : p.boites).split(/[,\s;]+/).map(b => b.trim().toLowerCase()).filter(b => /^[a-z0-9._-]+$/.test(b))));
+export const reseauBdd = (p: Params): Reseau => ({ ip: p.ipBdd, cidr: p.cidrBdd, gw: p.gwBdd, dns: p.dnsBdd });
+
+export type Section = { id: 'hote' | 'bdd' | 'web' | 'mail' | 'verif'; titre: string; code: string; fichier: string };
+
+// Un nom de VM peut porter des majuscules et des underscores ; un nom d'hôte, non.
+export const nomHote = (vm: string) => vm.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '') || 'debian';
+
+// ---------------------------------------------------------------- bash commun --
+
+export function entete(titre: string, nomVm: string): string[] {
+  return [
+    '#!/usr/bin/env bash',
+    `# ${titre}`,
+    `# A executer DANS LA VM ${nomVm}, en root :  sudo bash ce-script.sh`,
+    '# Variables acceptees :  SANS_RESEAU=1 (ne pas toucher au reseau)   IFACE=eth0 (forcer la carte)',
+    '# Genere par le configurateur du site TSSR - environnement de formation : le mot de passe du labo est partout.',
+    'set -euo pipefail',
+    '[ "$(id -u)" -eq 0 ] || { echo "Lance-moi en root :  sudo bash $0"; exit 1; }',
+    'export DEBIAN_FRONTEND=noninteractive',
+    'JOURNAL=/var/log/config-vm.log',
+    '',
+    '# Lance depuis SSH, le changement d\'adresse couperait la session et tuerait le script a mi-chemin :',
+    '# il se relance detache, journalise, et on le suit apres reconnexion sur la nouvelle adresse.',
+    'if [ -n "${SSH_CONNECTION:-}" ] && [ -z "${DETACHE:-}" ] && [ -z "${SANS_RESEAU:-}" ]; then',
+    '    echo "Session SSH detectee : le script continue en arriere-plan, journal dans $JOURNAL."',
+    '    echo "Quand la connexion tombera, reconnecte-toi sur la nouvelle adresse puis :  tail -f $JOURNAL"',
+    '    DETACHE=1 setsid nohup bash "$0" >"$JOURNAL" 2>&1 </dev/null &',
+    '    sleep 1; tail -f "$JOURNAL" || true',
+    '    exit 0',
+    'fi',
+    '',
+    'etape() { echo; echo "==== $*"; }',
+    '# Un miroir qui repond mal une fois ne doit pas faire echouer toute la mise en service : trois essais.',
+    'apt_essais() { local i; for i in 1 2 3; do "$@" && return 0; echo "apt : echec, nouvel essai dans 10 s ($i/3)"; sleep 10; done; return 1; }',
+    'internet_ok() { timeout 5 bash -c \'exec 3<>/dev/tcp/deb.debian.org/80\' 2>/dev/null; }',
+  ];
+}
+
+export type Hote = [ip: string, noms: string];
+
+/** Nom de machine, /etc/hosts, identite neuve du clone, mot de passe du labo. Fonction bash `identite`. */
+export function identiteGenerique(nom: string, hotes: Hote[], mdpSysteme: boolean): string[] {
+  const r: string[] = [];
+  r.push('identite() {');
+  r.push(`    etape "Nom de machine : ${nom}"`);
+  r.push(`    hostnamectl set-hostname ${nom} 2>/dev/null || { echo ${nom} > /etc/hostname; hostname ${nom}; }`);
+  // Pas de sed -i sur /etc/hosts : sur certains systemes (conteneurs) c'est un montage a part, et le renommage echoue.
+  r.push(`    if grep -q '^127\\.0\\.1\\.1' /etc/hosts; then H=$(sed "s/^127\\.0\\.1\\.1.*/127.0.1.1\\t${nom}/" /etc/hosts); printf '%s\\n' "$H" > /etc/hosts; else printf '127.0.1.1\\t%s\\n' '${nom}' >> /etc/hosts; fi`);
+  for (const [ip, noms] of hotes) {
+    const premier = noms.split(' ')[0];
+    r.push(`    grep -q '\\b${premier}\\b' /etc/hosts || printf '%s\\t%s\\n' '${ip}' '${noms}' >> /etc/hosts`);
+  }
+  r.push('    # Un clone garde l\'identite du master : on la regenere (machine-id, cles SSH).');
+  r.push('    if [ -z "${DEJA_CLONE_PREPARE:-}" ] && [ ! -f /etc/.clone-prepare ]; then');
+  r.push('        rm -f /etc/machine-id /var/lib/dbus/machine-id; systemd-machine-id-setup 2>/dev/null || true');
+  r.push('        if [ -d /etc/ssh ] && ls /etc/ssh/ssh_host_*_key >/dev/null 2>&1; then rm -f /etc/ssh/ssh_host_*; dpkg-reconfigure -f noninteractive openssh-server 2>/dev/null || ssh-keygen -A; fi');
+  r.push('        touch /etc/.clone-prepare');
+  r.push('    fi');
+  if (mdpSysteme) {
+    r.push(`    # Mot de passe du labo sur root, et sur l'utilisateur 1000 s'il existe`);
+    r.push(`    echo "root:${MDP}" | chpasswd`);
+    r.push(`    U=$(getent passwd 1000 | cut -d: -f1 || true); [ -n "$U" ] && echo "$U:${MDP}" | chpasswd || true`);
+  }
+  r.push('}');
+  return r;
+}
+
+function identite(p: Params, nom: string): string[] {
+  const hotes: Hote[] = [[p.ipWeb, nomHote(p.vmWeb)], [p.ipBdd, nomHote(p.vmBdd)]];
+  if (p.mail) hotes.push([p.ipMail, `mail.${p.domaineMail} ${nomHote(p.vmMail)}`]);
+  return identiteGenerique(nom, hotes, p.mdpSysteme);
+}
+
+/** Adresse fixe selon le gestionnaire reseau en place. Fonction bash `reseau`. */
+export function reseauGenerique(n: Reseau, ifaceForcee: string): string[] {
+  const { ip, cidr, gw, dns } = n;
+  const r: string[] = [];
+  r.push('reseau() {');
+  // Premiere carte qui n'est pas lo ; le suffixe @ifNN (interfaces virtuelles) n'appartient pas au nom.
+  r.push(`    IFACE=\${IFACE:-${ifaceForcee || "$(ip -o link show | awk -F': ' '$2!=\"lo\"{print $2; exit}' | cut -d@ -f1)"}}`);
+  r.push(`    etape "Adresse fixe ${ip}/${cidr} sur $IFACE (passerelle ${gw}, DNS ${dns})"`);
+  r.push('    if systemctl is-active --quiet NetworkManager 2>/dev/null; then');
+  r.push('        # --- NetworkManager (installation avec bureau) ---');
+  r.push('        CON=$(nmcli -g NAME,DEVICE connection show --active 2>/dev/null | awk -F: -v d="$IFACE" \'$2==d{print $1; exit}\')');
+  r.push('        [ -n "$CON" ] || { nmcli connection add type ethernet ifname "$IFACE" con-name "$IFACE" >/dev/null; CON=$IFACE; }');
+  r.push(`        nmcli connection modify "$CON" ipv4.method manual ipv4.addresses "${ip}/${cidr}" ipv4.gateway "${gw}" ipv4.dns "${dns}" ipv6.method ignore`);
+  r.push('        nmcli connection up "$CON" >/dev/null');
+  r.push('    elif command -v ifup >/dev/null && [ -f /etc/network/interfaces ]; then');
+  r.push('        # --- ifupdown (installation Debian par defaut) ---');
+  r.push('        cp -n /etc/network/interfaces /etc/network/interfaces.avant-config-vm || true');
+  r.push('        if grep -qs "$IFACE" /etc/network/interfaces.d/* 2>/dev/null; then mkdir -p /etc/network/interfaces.d.avant && mv /etc/network/interfaces.d/* /etc/network/interfaces.d.avant/; fi');
+  r.push('        cat > /etc/network/interfaces <<EOF');
+  r.push('source /etc/network/interfaces.d/*');
+  r.push('');
+  r.push('auto lo');
+  r.push('iface lo inet loopback');
+  r.push('');
+  r.push('auto $IFACE');
+  r.push('iface $IFACE inet static');
+  r.push(`    address ${ip}/${cidr}`);
+  r.push(`    gateway ${gw}`);
+  r.push(`    dns-nameservers ${dns}`);
+  r.push('EOF');
+  r.push('        ifdown --force "$IFACE" 2>/dev/null || true');
+  r.push('        pkill -f "dhclient.*$IFACE" 2>/dev/null || true');
+  r.push('        ip addr flush dev "$IFACE"; ip route flush dev "$IFACE" 2>/dev/null || true');
+  r.push('        ifup "$IFACE"');
+  r.push(`        if systemctl is-active --quiet systemd-resolved 2>/dev/null; then resolvectl dns "$IFACE" ${dns}; else [ -L /etc/resolv.conf ] && rm -f /etc/resolv.conf; printf 'nameserver ${dns}\\n' > /etc/resolv.conf; fi`);
+  r.push('    elif systemctl is-active --quiet systemd-networkd 2>/dev/null; then');
+  r.push('        # --- systemd-networkd (images cloud) ---');
+  r.push('        cat > "/etc/systemd/network/10-$IFACE.network" <<EOF');
+  r.push('[Match]');
+  r.push('Name=$IFACE');
+  r.push('[Network]');
+  r.push(`Address=${ip}/${cidr}`);
+  r.push(`Gateway=${gw}`);
+  r.push(`DNS=${dns}`);
+  r.push('EOF');
+  r.push('        rm -f /etc/systemd/network/*dhcp* 2>/dev/null || true');
+  r.push('        networkctl reload && networkctl reconfigure "$IFACE"');
+  r.push('    else');
+  r.push('        echo "ERREUR: aucun gestionnaire reseau reconnu (ifupdown, NetworkManager, systemd-networkd)"; exit 1');
+  r.push('    fi');
+  r.push('    sleep 2');
+  r.push(`    ip -4 addr show "$IFACE" | grep -q " ${ip}/" && echo "IP ${ip} appliquee sur $IFACE" || { echo "ERREUR: ${ip} n'est pas sur $IFACE"; ip -4 addr show "$IFACE"; exit 1; }`);
+  r.push(`    ping -c 2 -W 2 ${gw} >/dev/null 2>&1 && echo "Passerelle ${gw} joignable" || echo "AVERTISSEMENT: passerelle ${gw} injoignable"`);
+  r.push('}');
+  return r;
+}
+
+function reseau(p: Params, n: Reseau): string[] {
+  return reseauGenerique(n, p.iface);
+}
+
+// L'ordre : installer avec le reseau courant s'il sort sur Internet, sinon adresser d'abord.
+export function sequenceReseau(paquets: string): string[] {
+  return [
+    'RESEAU_FAIT=0',
+    'if [ -z "${SANS_RESEAU:-}" ] && ! internet_ok; then',
+    '    echo "Pas d\'acces a Internet avec la configuration actuelle : on applique d\'abord l\'adresse fixe."',
+    '    reseau; RESEAU_FAIT=1',
+    'fi',
+    `# Sans Internet, apt ne peut rien installer - sauf si les paquets sont deja la (rejeu du script).`,
+    `if ! dpkg -s ${paquets} >/dev/null 2>&1; then internet_ok || { echo "ERREUR: deb.debian.org injoignable - apt ne pourra rien installer. Verifie passerelle, DNS et commutateur (les VM ont besoin d'Internet pendant l'installation)."; exit 1; }; fi`,
+  ];
+}
+
+export const finReseau = () => ['[ -n "${SANS_RESEAU:-}" ] || [ "$RESEAU_FAIT" = 1 ] || reseau'];
+
+// ---------------------------------------------------------------- les scripts --
+
+function scriptHote(p: Params): string {
+  const h: string[] = [];
+  const hoteWeb = nomHote(p.vmWeb), hoteBdd = nomHote(p.vmBdd);
+  if (p.hv === 'hyperv') {
+    h.push('# ============================================================');
+    h.push(`#  Clonage Hyper-V : ${p.master}  ->  ${p.vmWeb} (nginx + Node), ${p.vmBdd} (MariaDB)${p.mail ? `, ${p.vmMail} (messagerie DMZ)` : ''}`);
+    h.push(`#  ${p.vcpu} vCPU - ${p.ram} Go RAM - commutateur ${p.sw}`);
+    h.push(`#  ${p.vmWeb} : ${p.ipWeb}/${p.cidrWeb} via ${p.gwWeb}   |   ${p.vmBdd} : ${p.ipBdd}/${p.cidrBdd} via ${p.gwBdd}`);
+    h.push("#  A executer SUR L'HOTE Hyper-V (PowerShell admin)");
+    h.push('# ============================================================');
+    h.push(`$Source  = '${p.master}'`);
+    h.push(`$Export  = '${p.exportPath}'`);
+    h.push(`$VhdDir  = '${p.vhdDir}'`);
+    h.push(`$Switch  = '${p.sw}'`);
+    h.push(`$Clones  = @('${p.vmWeb}', '${p.vmBdd}'${p.mail ? `, '${p.vmMail}'` : ''})`);
+    h.push('$Ici     = if ($PSScriptRoot) { $PSScriptRoot } else { (Get-Location).Path }   # ou se trouvent les .sh telecharges');
+    h.push('');
+    h.push('if (-not (Get-VM -Name $Source -ErrorAction SilentlyContinue)) { throw "VM source $Source introuvable (Get-VM pour lister)" }');
+    h.push("if (-not (Get-VMSwitch -Name $Switch -ErrorAction SilentlyContinue)) { New-VMSwitch -Name $Switch -SwitchType Private | Out-Null; Write-Warning \"Commutateur $Switch cree en PRIVE : sans passerelle, les VM n'auront pas Internet\" }");
+    h.push("if ((Get-VM -Name $Source).State -ne 'Off') { Stop-VM -Name $Source -Force }   # un master s'exporte eteint");
+    h.push('New-Item -ItemType Directory -Force -Path $Export, $VhdDir | Out-Null');
+    h.push('');
+    h.push('foreach ($Clone in $Clones) {');
+    h.push('    if (Get-VM -Name $Clone -ErrorAction SilentlyContinue) { Write-Warning "$Clone existe deja, ignoree"; continue }');
+    h.push('    Write-Output "Clonage de $Source vers $Clone..."');
+    h.push('    $ExportDir = Join-Path $Export "$Source-vers-$Clone"');
+    h.push('    if (Test-Path $ExportDir) { Remove-Item -Path $ExportDir -Recurse -Force }   # reste d\'un essai precedent');
+    h.push('    Export-VM -Name $Source -Path $ExportDir');
+    h.push('    $Vmcx = Get-ChildItem -Path (Join-Path $ExportDir "$Source\\Virtual Machines") -Filter *.vmcx | Select-Object -First 1');
+    h.push('    $ConfigDir = Join-Path $VhdDir $Clone');
+    h.push("    $New = Import-VM -Path $Vmcx.FullName -Copy -GenerateNewId -VirtualMachinePath $ConfigDir -VhdDestinationPath (Join-Path $ConfigDir 'VHDX')");
+    h.push('    Rename-VM -VM $New -NewName $Clone');
+    h.push('    Set-VM          -Name $Clone -Notes "Clone de $Source - $(Get-Date -Format yyyy-MM-dd)"');
+    h.push(`    Set-VMProcessor -VMName $Clone -Count ${p.vcpu || '2'}`);
+    h.push(`    Set-VMMemory    -VMName $Clone -StartupBytes ${p.ram || '2'}GB`);
+    h.push('    Get-VMNetworkAdapter -VMName $Clone | Connect-VMNetworkAdapter -SwitchName $Switch');
+    h.push("    Enable-VMIntegrationService -VMName $Clone -Name 'Guest Service Interface'");
+    h.push('    Remove-Item -Path $ExportDir -Recurse -Force');
+    h.push('    Start-VM -Name $Clone');
+    h.push('    Write-Output "Clone pret : $Clone"');
+    h.push('}');
+    if (p.copierFichiers) {
+      h.push('');
+      h.push("# --- Deposer les scripts (2) et (3) dans les VM sans reseau, par les services d'integration ---");
+      h.push('#     Necessite hyperv-daemons dans le master (service hv-fcopy-daemon). Sinon : copie par scp, ou');
+      h.push("#     coller le script dans la console :  cat > /root/web.sh <<'FIN'  ...  FIN");
+      h.push('Write-Output "Attente du demarrage des VM (60 s)..."; Start-Sleep -Seconds 60');
+      h.push(`$Fichiers = @{ '${p.vmBdd}' = @('bdd-${hoteBdd}.sh', '/root/bdd.sh'); '${p.vmWeb}' = @('web-${hoteWeb}.sh', '/root/web.sh')${p.mail ? `; '${p.vmMail}' = @('mail-${nomHote(p.vmMail)}.sh', '/root/mail.sh')` : ''} }`);
+      h.push('foreach ($Clone in $Fichiers.Keys) {');
+      h.push('    $Src = Join-Path $Ici $Fichiers[$Clone][0]');
+      h.push('    if (-not (Test-Path $Src)) { Write-Warning "$Src introuvable : telecharge le .sh depuis la page, dans le dossier du script"; continue }');
+      h.push('    try {');
+      h.push('        Copy-VMFile -Name $Clone -SourcePath $Src -DestinationPath $Fichiers[$Clone][1] -FileSource Host -CreateFullPath -Force -ErrorAction Stop');
+      h.push('        Write-Output "$($Fichiers[$Clone][0]) depose dans $Clone : $($Fichiers[$Clone][1])"');
+      h.push('    } catch { Write-Warning "Copie vers $Clone impossible ($($_.Exception.Message)) : hv-fcopy-daemon absent ? Copie le script par scp ou colle-le dans la console." }');
+      h.push('}');
+      h.push('Write-Output "Puis, dans chaque VM :  sudo bash /root/bdd.sh   (d\'abord)   et   sudo bash /root/web.sh"');
+    }
+  } else {
+    h.push('# ============================================================');
+    h.push(`#  Clonage Proxmox VE : ${p.master} (VMID ${p.masterId})  ->  ${hoteWeb} (${p.idWeb})  et  ${hoteBdd} (${p.idBdd})`);
+    h.push(`#  ${p.vcpu} vCPU - ${p.ram} Go RAM - pont ${p.sw}`);
+    h.push(`#  ${hoteWeb} : ${p.ipWeb}/${p.cidrWeb} via ${p.gwWeb}   |   ${hoteBdd} : ${p.ipBdd}/${p.cidrBdd} via ${p.gwBdd}`);
+    h.push("#  A executer SUR L'HOTE Proxmox (shell root). Les noms de VM Proxmox sont des noms DNS : pas d'underscore.");
+    h.push('# ============================================================');
+    h.push('set -e');
+    h.push(`qm status ${p.masterId} >/dev/null 2>&1 || { echo "VMID ${p.masterId} (master) introuvable : qm list"; exit 1; }`);
+    h.push(`[ "$(qm status ${p.masterId} | awk '{print $2}')" = stopped ] || qm shutdown ${p.masterId} --timeout 60   # un master se clone eteint`);
+    const clones: [string, string][] = [[hoteWeb, p.idWeb], [hoteBdd, p.idBdd]];
+    if (p.mail) clones.push([nomHote(p.vmMail), p.idMail]);
+    for (const [nom, id] of clones) {
+      h.push(`qm status ${id} >/dev/null 2>&1 && { echo "VMID ${id} existe deja"; exit 1; }`);
+      h.push(`qm clone ${p.masterId} ${id} --name ${nom} --full`);
+      h.push(`qm set ${id} --cores ${p.vcpu || '2'} --memory ${(Number(p.ram) || 2) * 1024} --net0 virtio,bridge=${p.sw}`);
+      h.push(`qm start ${id}`);
+    }
+    h.push('echo "Clones prets. Console de chaque VM (ou scp des .sh), puis :  sudo bash /root/bdd.sh  et  sudo bash /root/web.sh"');
+  }
+  return h.join('\n');
+}
+
+function scriptBdd(p: Params): string {
+  const hoteBdd = nomHote(p.vmBdd);
+  const b: string[] = [
+    ...entete(`VM base de donnees : ${p.vmBdd} (${p.ipBdd}) - MariaDB`, p.vmBdd),
+    ...identite(p, hoteBdd),
+    ...reseau(p, reseauBdd(p)),
+    '',
+    'identite',
+    ...sequenceReseau('mariadb-server'),
+    '',
+    'etape "Installation de MariaDB"',
+    'apt_essais apt-get update -q && apt_essais apt-get install -y -q mariadb-server',
+    'systemctl enable --now mariadb',
+    '',
+    "etape \"MariaDB ecoute sur le reseau (par defaut : 127.0.0.1 seulement)\"",
+    "CNF=/etc/mysql/mariadb.conf.d/50-server.cnf",
+    "grep -q '^bind-address' \"$CNF\" && sed -i 's/^bind-address\\s*=.*/bind-address = 0.0.0.0/' \"$CNF\" || printf '[mysqld]\\nbind-address = 0.0.0.0\\n' >> \"$CNF\"",
+    'systemctl restart mariadb',
+    '',
+    ...(p.glpi ? [
+      'etape "Fuseaux horaires dans MariaDB (GLPI en a besoin)"',
+      'TZ2SQL=$(command -v mariadb-tzinfo-to-sql || command -v mysql_tzinfo_to_sql)',
+      'MYSQL0=$(command -v mariadb || command -v mysql)',
+      `"$TZ2SQL" /usr/share/zoneinfo 2>/dev/null | { "$MYSQL0" mysql 2>/dev/null || "$MYSQL0" -u root -p'${MDP}' mysql; } || echo "AVERTISSEMENT: fuseaux horaires non charges (GLPI le signalera, sans bloquer)"`,
+      '',
+    ] : []),
+    `etape "Compte root, base ${p.bdd}, utilisateur ${p.utilisateur} autorise depuis ${p.ipWeb} seulement"`,
+    // Premier passage : root entre par le socket ; rejeu apres un ancien script : par le mot de passe.
+    "# Debian 13 (MariaDB 11) n'installe plus la commande mysql : le client s'appelle mariadb.",
+    'MYSQL=$(command -v mariadb || command -v mysql)',
+    `if "$MYSQL" -e 'SELECT 1' >/dev/null 2>&1; then MY=("$MYSQL"); else MY=("$MYSQL" -u root -p'${MDP}'); fi`,
+    '"${MY[@]}" <<SQL',
+    // root garde l'acces par socket (sudo mysql, et le rejeu du script) ET recoit le mot de passe du labo.
+    `ALTER USER 'root'@'localhost' IDENTIFIED VIA unix_socket OR mysql_native_password USING PASSWORD('${MDP}');`,
+    "DROP USER IF EXISTS ''@'localhost';",
+    'DROP DATABASE IF EXISTS test;',
+    `CREATE DATABASE IF NOT EXISTS \\\`${p.bdd}\\\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;`,
+    `CREATE USER IF NOT EXISTS '${p.utilisateur}'@'${p.ipWeb}' IDENTIFIED BY '${MDP}';`,
+    `ALTER USER '${p.utilisateur}'@'${p.ipWeb}' IDENTIFIED BY '${MDP}';`,
+    `GRANT ALL PRIVILEGES ON \\\`${p.bdd}\\\`.* TO '${p.utilisateur}'@'${p.ipWeb}';`,
+    `USE \\\`${p.bdd}\\\`;`,
+    'CREATE TABLE IF NOT EXISTS messages (id INT AUTO_INCREMENT PRIMARY KEY, texte VARCHAR(200) NOT NULL UNIQUE, cree_le TIMESTAMP DEFAULT CURRENT_TIMESTAMP);',
+    `INSERT IGNORE INTO messages (texte) VALUES ('Bonjour depuis ${hoteBdd} (${p.ipBdd})'), ('La connexion moteur -> base fonctionne');`,
+    ...(p.mail ? sqlMessagerie(p) : []),
+    ...(p.glpi ? sqlGlpi(p) : []),
+    'FLUSH PRIVILEGES;',
+    'SQL',
+    '',
+    `etape "Pare-feu (seulement si ufw est installe) : 3306 depuis ${p.ipWeb}${p.mail ? ` et ${p.ipMail}` : ''}, SSH"`,
+    `if command -v ufw >/dev/null; then ufw allow from ${p.ipWeb} to any port 3306 proto tcp; ${p.mail ? `ufw allow from ${p.ipMail} to any port 3306 proto tcp; ` : ''}ufw allow 22/tcp; ufw --force enable; fi`,
+    '',
+    ...finReseau(),
+    '',
+    'etape "Verification"',
+    `"$MYSQL" -u root -p'${MDP}' -e "SELECT User, Host FROM mysql.user WHERE User='${p.utilisateur}'; SELECT COUNT(*) AS lignes FROM \\\`${p.bdd}\\\`.messages;"`,
+    "ss -tlnp | grep -q '0.0.0.0:3306' && echo \"MariaDB ecoute sur 3306\" || { echo \"ERREUR: MariaDB n'ecoute pas sur le reseau\"; ss -tlnp | grep 3306 || true; exit 1; }",
+    ...(p.glpi ? [`"$MYSQL" -u root -p'${MDP}' -e "SELECT User, Host FROM mysql.user WHERE User='glpi'; SELECT COUNT(*) AS fuseaux FROM mysql.time_zone_name;"`] : []),
+    ...(p.mail ? [`"$MYSQL" -u root -p'${MDP}' -e "SELECT email FROM maildb.virtual_users; SELECT User, Host FROM mysql.user WHERE User IN ('mailuser','roundcube');"`] : []),
+    `echo "VM base prete : ${hoteBdd} (${p.ipBdd}). Joue maintenant le script web sur ${p.vmWeb}${p.mail ? `, puis le script messagerie sur ${p.vmMail}` : ''}."`,
+  ];
+  return b.join('\n');
+}
+
+// Comptes de messagerie et webmail dans MariaDB : Postfix et Dovecot lisent virtual_*, Roundcube a sa base.
+// Le mot de passe est stocke au format Dovecot {SHA512} = base64(sha512(mot de passe)), calculable en SQL.
+function sqlMessagerie(p: Params): string[] {
+  const d = p.domaineMail;
+  const boites = listeBoites(p);
+  const q: string[] = [];
+  q.push('-- ---- Messagerie : domaines, boites, alias (lus par Postfix et Dovecot depuis la DMZ) ----');
+  q.push('CREATE DATABASE IF NOT EXISTS maildb CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;');
+  q.push(`CREATE USER IF NOT EXISTS 'mailuser'@'${p.ipMail}' IDENTIFIED BY '${MDP}';`);
+  q.push(`ALTER USER 'mailuser'@'${p.ipMail}' IDENTIFIED BY '${MDP}';`);
+  q.push(`GRANT SELECT ON maildb.* TO 'mailuser'@'${p.ipMail}';`);
+  q.push('USE maildb;');
+  q.push('CREATE TABLE IF NOT EXISTS virtual_domains (id INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(100) NOT NULL UNIQUE);');
+  q.push('CREATE TABLE IF NOT EXISTS virtual_users (id INT AUTO_INCREMENT PRIMARY KEY, domain_id INT NOT NULL, email VARCHAR(120) NOT NULL UNIQUE, password VARCHAR(160) NOT NULL, FOREIGN KEY (domain_id) REFERENCES virtual_domains(id) ON DELETE CASCADE);');
+  q.push('CREATE TABLE IF NOT EXISTS virtual_aliases (id INT AUTO_INCREMENT PRIMARY KEY, domain_id INT NOT NULL, source VARCHAR(120) NOT NULL, destination VARCHAR(120) NOT NULL, UNIQUE KEY (source, destination), FOREIGN KEY (domain_id) REFERENCES virtual_domains(id) ON DELETE CASCADE);');
+  q.push(`INSERT IGNORE INTO virtual_domains (name) VALUES ('${d}');`);
+  for (const b of boites) {
+    q.push(`INSERT INTO virtual_users (domain_id, email, password) SELECT id, '${b}@${d}', CONCAT('{SHA512}', TO_BASE64(UNHEX(SHA2('${MDP}', 512)))) FROM virtual_domains WHERE name='${d}' ON DUPLICATE KEY UPDATE password=VALUES(password);`);
+  }
+  if (boites.length) {
+    q.push(`INSERT IGNORE INTO virtual_aliases (domain_id, source, destination) SELECT id, 'postmaster@${d}', '${boites[0]}@${d}' FROM virtual_domains WHERE name='${d}';`);
+    q.push(`INSERT IGNORE INTO virtual_aliases (domain_id, source, destination) SELECT id, 'contact@${d}', '${boites[0]}@${d}' FROM virtual_domains WHERE name='${d}';`);
+  }
+  q.push('-- ---- Roundcube (webmail) : sa propre base, schema cree par le serveur de messagerie ----');
+  q.push('CREATE DATABASE IF NOT EXISTS roundcube CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;');
+  q.push(`CREATE USER IF NOT EXISTS 'roundcube'@'${p.ipMail}' IDENTIFIED BY '${MDP}';`);
+  q.push(`ALTER USER 'roundcube'@'${p.ipMail}' IDENTIFIED BY '${MDP}';`);
+  q.push(`GRANT ALL PRIVILEGES ON roundcube.* TO 'roundcube'@'${p.ipMail}';`);
+  return q;
+}
+
+// GLPI : sa base, un compte depuis la VM web, et les fuseaux horaires (GLPI les lit dans mysql.time_zone_name).
+function sqlGlpi(p: Params): string[] {
+  return [
+    '-- ---- GLPI (sur la VM web) ----',
+    'CREATE DATABASE IF NOT EXISTS glpi CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;',
+    `CREATE USER IF NOT EXISTS 'glpi'@'${p.ipWeb}' IDENTIFIED BY '${MDP}';`,
+    `ALTER USER 'glpi'@'${p.ipWeb}' IDENTIFIED BY '${MDP}';`,
+    `GRANT ALL PRIVILEGES ON glpi.* TO 'glpi'@'${p.ipWeb}';`,
+    `GRANT SELECT ON mysql.time_zone_name TO 'glpi'@'${p.ipWeb}';`,
+  ];
+}
+
+// ---------------------------------------------------------------- messagerie --
+
+function scriptMail(p: Params): string {
+  const d = p.domaineMail;
+  const hote = nomHote(p.vmMail);
+  const boites = listeBoites(p);
+  const premier = boites[0] || 'alice', second = boites[1] || boites[0] || 'alice';
+  const m: string[] = [
+    ...entete(`VM messagerie (DMZ) : ${p.vmMail} (${p.ipMail}) - Postfix + Dovecot + Roundcube, comptes dans ${nomHote(p.vmBdd)} (${p.ipBdd})`, p.vmMail),
+    ...identite(p, hote),
+    ...reseau(p, reseauMail(p)),
+    '',
+    'identite',
+    ...sequenceReseau('postfix dovecot-imapd roundcube'),
+    '',
+    `etape "Le flux vers la base ${p.ipBdd}:3306 (depuis la DMZ : le pare-feu doit l'autoriser)"`,
+    `timeout 3 bash -c 'exec 3<>/dev/tcp/${p.ipBdd}/3306' 2>/dev/null && echo "3306 joignable" || { echo "ERREUR: ${p.ipBdd}:3306 injoignable depuis la DMZ. Script base joue ? Regle pare-feu DMZ -> LAN : TCP 3306 de ${p.ipMail} vers ${p.ipBdd} ?"; exit 1; }`,
+    '',
+    'etape "Installation : Postfix, Dovecot (IMAP, LMTP, SQL), Roundcube, Apache, outils de test"',
+    `echo "postfix postfix/main_mailer_type select Internet Site" | debconf-set-selections`,
+    `echo "postfix postfix/mailname string mail.${d}" | debconf-set-selections`,
+    'echo "roundcube-core roundcube/dbconfig-install boolean false" | debconf-set-selections',
+    'apt_essais apt-get update -q',
+    'apt_essais apt-get install -y -q postfix postfix-mysql dovecot-core dovecot-imapd dovecot-lmtpd dovecot-mysql mariadb-client swaks curl',
+    'apt_essais apt-get install -y -q roundcube roundcube-mysql apache2',
+    '',
+    "# L'adresse fixe maintenant : la base n'accepte mailuser et roundcube que depuis l'adresse DMZ prevue.",
+    ...finReseau(),
+    '',
+    'etape "Utilisateur vmail : toutes les boites lui appartiennent (/var/mail/vhosts)"',
+    'getent group vmail >/dev/null || groupadd -g 5000 vmail',
+    'getent passwd vmail >/dev/null || useradd -u 5000 -g vmail -d /var/mail/vhosts -s /usr/sbin/nologin -M vmail',
+    `install -d -o vmail -g vmail -m 770 /var/mail/vhosts /var/mail/vhosts/${d}`,
+    '',
+    'etape "Postfix : domaines, boites et alias lus dans MariaDB ; remise a Dovecot par LMTP ; SASL par Dovecot"',
+    `for f in domains users aliases; do case $f in domains) Q="SELECT 1 FROM virtual_domains WHERE name='%s'";; users) Q="SELECT 1 FROM virtual_users WHERE email='%s'";; aliases) Q="SELECT destination FROM virtual_aliases WHERE source='%s'";; esac`,
+    '    cat > /etc/postfix/mysql-$f.cf <<EOF',
+    `user = mailuser`,
+    `password = ${MDP}`,
+    `hosts = ${p.ipBdd}`,
+    'dbname = maildb',
+    'query = $Q',
+    'EOF',
+    'done; chmod 640 /etc/postfix/mysql-*.cf; chgrp postfix /etc/postfix/mysql-*.cf',
+    `postconf -e "myhostname = mail.${d}" "mydomain = ${d}" "myorigin = ${d}" \\`,
+    `    "mydestination = localhost" "mynetworks = 127.0.0.0/8 ${reseauCidr(p.ipWeb, p.cidrWeb)} ${reseauCidr(p.ipBdd, p.cidrBdd)} ${reseauCidr(p.ipMail, p.cidrMail)}" \\`,
+    '    "virtual_mailbox_domains = mysql:/etc/postfix/mysql-domains.cf" "virtual_mailbox_maps = mysql:/etc/postfix/mysql-users.cf" "virtual_alias_maps = mysql:/etc/postfix/mysql-aliases.cf" \\',
+    '    "virtual_transport = lmtp:unix:private/dovecot-lmtp" \\',
+    '    "smtpd_sasl_type = dovecot" "smtpd_sasl_path = private/auth" "smtpd_sasl_auth_enable = yes" \\',
+    '    "smtpd_recipient_restrictions = permit_mynetworks, permit_sasl_authenticated, reject_unauth_destination" \\',
+    '    "smtpd_tls_security_level = may" "smtp_tls_security_level = may" "inet_interfaces = all" "inet_protocols = ipv4" "message_size_limit = 26214400"',
+    '# Soumission authentifiee sur 587 (les clients de messagerie)',
+    "grep -q '^submission inet' /etc/postfix/master.cf || cat >> /etc/postfix/master.cf <<'EOF'",
+    'submission inet n       -       y       -       -       smtpd',
+    '  -o syslog_name=postfix/submission',
+    '  -o smtpd_tls_security_level=may',
+    '  -o smtpd_sasl_auth_enable=yes',
+    '  -o smtpd_client_restrictions=permit_sasl_authenticated,reject',
+    'EOF',
+    'if postmap -q "' + premier + '@' + d + '" mysql:/etc/postfix/mysql-users.cf 2>/tmp/postmap.err | grep -q 1; then echo "Postfix lit les boites dans MariaDB"; else',
+    '    echo "ERREUR: Postfix ne trouve pas ' + premier + '@' + d + ' dans maildb."; cat /tmp/postmap.err',
+    `    grep -q 'not allowed to connect' /tmp/postmap.err && echo " -> la base refuse cette adresse source ($(hostname -I)) : mailuser est autorise depuis ${p.ipMail} seulement. La VM a-t-elle bien ${p.ipMail} (SANS_RESEAU ?), le script base a-t-il ete genere avec cette adresse ?"`,
+    `    grep -q 'not allowed to connect' /tmp/postmap.err || echo " -> script base joue avec la messagerie cochee ? ($MYSQL -h ${p.ipBdd} -u mailuser -p'${MDP}' maildb -e 'SELECT email FROM virtual_users')"`,
+    '    exit 1; fi',
+    '',
+    'etape "Dovecot : authentification SQL, boites Maildir, LMTP et SASL pour Postfix"',
+    'DOVECOT_VERSION=$(dovecot --version | cut -d. -f1-2)',
+    'if [ "${DOVECOT_VERSION}" = "2.3" ]; then',
+    '# ---- Dovecot 2.3 (Debian 12) ----',
+    "cat > /etc/dovecot/dovecot-sql.conf.ext <<EOF",
+    'driver = mysql',
+    `connect = host=${p.ipBdd} dbname=maildb user=mailuser password=${MDP}`,
+    'default_pass_scheme = SHA512',
+    "password_query = SELECT email AS user, password FROM virtual_users WHERE email='%u'",
+    'EOF',
+    'chmod 640 /etc/dovecot/dovecot-sql.conf.ext',
+    "cat > /etc/dovecot/local.conf <<'EOF'",
+    '# Configuration du labo (prend le dessus sur conf.d/*)',
+    'protocols = imap lmtp',
+    'mail_location = maildir:/var/mail/vhosts/%d/%n',
+    'mail_uid = vmail',
+    'mail_gid = vmail',
+    'first_valid_uid = 5000',
+    'last_valid_uid = 5000',
+    'disable_plaintext_auth = no      # labo : IMAP en clair sur le LAN accepte ; en production, TLS obligatoire',
+    'auth_mechanisms = plain login',
+    'passdb {',
+    '  driver = sql',
+    '  args = /etc/dovecot/dovecot-sql.conf.ext',
+    '}',
+    'userdb {',
+    '  driver = static',
+    '  args = uid=vmail gid=vmail home=/var/mail/vhosts/%d/%n',
+    '}',
+    'service lmtp {',
+    '  unix_listener /var/spool/postfix/private/dovecot-lmtp {',
+    '    mode = 0600',
+    '    user = postfix',
+    '    group = postfix',
+    '  }',
+    '}',
+    'service auth {',
+    '  unix_listener /var/spool/postfix/private/auth {',
+    '    mode = 0660',
+    '    user = postfix',
+    '    group = postfix',
+    '  }',
+    '}',
+    'EOF',
+    'else',
+    '# ---- Dovecot 2.4 (Debian 13) : nouvelle syntaxe (mail_path, passdb sql { query }, %{user | domain}) ----',
+    "cat > /etc/dovecot/local.conf <<EOF",
+    '# Configuration du labo (prend le dessus sur conf.d/*)',
+    'protocols = imap lmtp',
+    'mail_driver = maildir',
+    'mail_path = /var/mail/vhosts/%{user | domain}/%{user | username}',
+    'mail_home = /var/mail/vhosts/%{user | domain}/%{user | username}',
+    "mail_inbox_path = /var/mail/vhosts/%{user | domain}/%{user | username}   # Debian le met dans /var/mail/%{user} (mbox) ; ici INBOX = le Maildir lui-meme",
+    'mail_uid = vmail',
+    'mail_gid = vmail',
+    'first_valid_uid = 5000',
+    'last_valid_uid = 5000',
+    'auth_allow_cleartext = yes      # labo : IMAP en clair sur le LAN accepte ; en production, TLS obligatoire',
+    'auth_mechanisms = plain login',
+    '# Debian retire le domaine des adresses en LMTP (conf.d/20-lmtp.conf) : nos boites sont des adresses completes',
+    'protocol lmtp {',
+    '  auth_username_format = %{user | lower}',
+    '}',
+    'sql_driver = mysql',
+    `mysql ${p.ipBdd} {`,
+    '  user = mailuser',
+    `  password = ${MDP}`,
+    '  dbname = maildb',
+    '}',
+    'passdb sql {',
+    '  query = SELECT password FROM virtual_users WHERE email = \'%{user}\'',
+    '}',
+    'userdb static {',
+    '  fields {',
+    '    uid = vmail',
+    '    gid = vmail',
+    '    home = /var/mail/vhosts/%{user | domain}/%{user | username}',
+    '  }',
+    '}',
+    'service lmtp {',
+    '  unix_listener /var/spool/postfix/private/dovecot-lmtp {',
+    '    mode = 0600',
+    '    user = postfix',
+    '    group = postfix',
+    '  }',
+    '}',
+    'service auth {',
+    '  unix_listener /var/spool/postfix/private/auth {',
+    '    mode = 0660',
+    '    user = postfix',
+    '    group = postfix',
+    '  }',
+    '}',
+    'EOF',
+    'chmod 640 /etc/dovecot/local.conf',
+    'fi',
+    "# Les passdb/userdb par defaut de Debian (PAM, systeme) genent : on les neutralise",
+    "sed -i 's/^!include auth-system.conf.ext/#!include auth-system.conf.ext/' /etc/dovecot/conf.d/10-auth.conf 2>/dev/null || true",
+    '# Le fichier local.conf doit etre lu : Debian l\'inclut en fin de dovecot.conf (sinon on l\'ajoute)',
+    "grep -q 'local.conf' /etc/dovecot/dovecot.conf || echo '!include_try local.conf' >> /etc/dovecot/dovecot.conf",
+    'doveconf -n >/dev/null || { echo "ERREUR: configuration Dovecot invalide (version $DOVECOT_VERSION) :"; doveconf -n 2>&1 | tail -5; exit 1; }',
+    "# Postfix d'abord : c'est lui qui cree /var/spool/postfix/private, ou Dovecot pose ses sockets LMTP et auth",
+    'systemctl enable --now postfix && systemctl restart postfix',
+    'systemctl enable --now dovecot && systemctl restart dovecot',
+    `doveadm auth test ${premier}@${d} ${MDP} >/dev/null && echo "Dovecot authentifie ${premier}@${d} contre MariaDB" || { echo "ERREUR: Dovecot n'authentifie pas ${premier}@${d} : doveadm auth test ${premier}@${d} ${MDP} ; journalctl -u dovecot -n 20"; exit 1; }`,
+    '',
+    `etape "Roundcube (webmail) : base roundcube sur ${p.ipBdd}, IMAP et SMTP locaux"`,
+    'MYSQL=$(command -v mariadb || command -v mysql)',
+    `if ! "$MYSQL" -h ${p.ipBdd} -u roundcube -p'${MDP}' roundcube -e 'SELECT 1 FROM users LIMIT 1' >/dev/null 2>&1; then "$MYSQL" -h ${p.ipBdd} -u roundcube -p'${MDP}' roundcube < /usr/share/roundcube/SQL/mysql.initial.sql && echo "Schema Roundcube cree"; fi`,
+    "DES_KEY=$(od -An -tx1 -N 12 /dev/urandom | tr -d ' \\n')    # 24 caracteres hexadecimaux, sans SIGPIPE (pipefail)",
+    "cat > /etc/roundcube/config.inc.php <<'EOF'",
+    '<?php',
+    '\$config = [];',
+    `\$config['db_dsnw'] = 'mysql://roundcube:${MDP}@${p.ipBdd}/roundcube';`,
+    "\$config['imap_host'] = 'localhost:143';",
+    "\$config['smtp_host'] = 'localhost:25';",
+    "\$config['smtp_user'] = '';",
+    "\$config['smtp_pass'] = '';",
+    "\$config['support_url'] = '';",
+    `\$config['product_name'] = 'Webmail ${d}';`,
+    "$config['des_key'] = 'DES_KEY_A_REMPLACER';",
+    "\$config['plugins'] = ['archive', 'zipdownload'];",
+    "\$config['language'] = 'fr_FR';",
+    "\$config['skin'] = 'elastic';",
+    "\$config['log_dir'] = '/var/log/roundcube/';",
+    "\$config['temp_dir'] = '/var/lib/roundcube/temp/';",
+    'EOF',
+    'sed -i "s/DES_KEY_A_REMPLACER/$DES_KEY/" /etc/roundcube/config.inc.php',
+    'chown root:www-data /etc/roundcube/config.inc.php && chmod 640 /etc/roundcube/config.inc.php',
+    "# Le paquet Debian livre l'alias /roundcube commente : on l'active, a la racine du site",
+    "cat > /etc/apache2/conf-available/webmail.conf <<'EOF'",
+    'Alias /roundcube /var/lib/roundcube/public_html',
+    '<Directory /var/lib/roundcube/public_html>',
+    '    Options +FollowSymLinks',
+    '    AllowOverride All',
+    '    Require all granted',
+    '</Directory>',
+    'RedirectMatch ^/$ /roundcube/',
+    'EOF',
+    'a2enconf webmail >/dev/null && a2enmod rewrite >/dev/null; systemctl enable --now apache2 && systemctl reload apache2',
+    '',
+    `if command -v ufw >/dev/null; then for port in 22 25 587 143 993 80; do ufw allow $port/tcp; done; ufw --force enable; fi`,
+    '',
+    'etape "Verification : un message de ' + second + ' vers ' + premier + ', puis le webmail"',
+    `swaks --server 127.0.0.1:587 --auth-user ${second}@${d} --auth-password ${MDP} --from ${second}@${d} --to ${premier}@${d} --header "Subject: Test messagerie ${d}" --body "Message de test envoye par le script de mise en service." --quit-after . >/dev/null 2>&1 || swaks --server 127.0.0.1:587 --auth-user ${second}@${d} --auth-password ${MDP} --from ${second}@${d} --to ${premier}@${d} --header "Subject: Test messagerie ${d}" --body "Message de test." >/dev/null 2>&1 || { echo "ERREUR: envoi SMTP authentifie refuse : journalctl -u postfix -n 30"; exit 1; }`,
+    'sleep 3',
+    `N=$(doveadm mailbox status -u ${premier}@${d} messages INBOX 2>/dev/null | sed 's/.*messages=//' || echo 0); N=\${N:-0}`,
+    `[ "$N" -ge 1 ] && echo "Message remis dans la boite de ${premier}@${d} ($N message(s) dans INBOX)" || { echo "ERREUR: INBOX de ${premier}@${d} vide : journalctl -u postfix -u dovecot -n 40"; exit 1; }`,
+    "CODE=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1/roundcube/ || echo 000)",
+    `[ "$CODE" = 200 ] && echo "Webmail : http://${p.ipMail}/roundcube/ (compte ${premier}@${d} / ${MDP})" || { echo "ERREUR: Roundcube repond $CODE : tail /var/log/roundcube/errors.log ; apache2ctl configtest"; exit 1; }`,
+    `echo "VM messagerie prete : ${hote} (${p.ipMail}). Clients : IMAP ${p.ipMail}:143, SMTP ${p.ipMail}:587 (authentifie), identifiant = adresse complete."`,
+  ];
+  return m.join('\n');
+}
+
+// GLPI sur la VM web : PHP-FPM + nginx, code dans /var/www/glpi, base sur la VM base, installation par la console GLPI.
+// Servi sur le port 8080 (le port 80 reste a l'application de test) et, sur le port 80, sous le nom glpi.<domaine>.
+function blocGlpi(p: Params): string[] {
+  const d = p.mail ? p.domaineMail : 'entreprise.lan';
+  const w: string[] = [];
+  w.push('');
+  w.push(`etape "GLPI : PHP, telechargement de la derniere version, installation sur la base glpi de ${p.ipBdd}"`);
+  w.push('apt_essais apt-get install -y -q php-fpm php-mysql php-gd php-intl php-curl php-xml php-mbstring php-zip php-bz2 php-ldap php-apcu php-bcmath jq');
+  w.push('PHPV=$(php -r \'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;\')');
+  w.push('# Reglages PHP exiges par GLPI');
+  w.push("sed -i 's/^;\\?session.cookie_httponly\\s*=.*/session.cookie_httponly = On/; s/^;\\?session.cookie_samesite\\s*=.*/session.cookie_samesite = Lax/; s/^upload_max_filesize\\s*=.*/upload_max_filesize = 20M/; s/^post_max_size\\s*=.*/post_max_size = 20M/; s/^memory_limit\\s*=.*/memory_limit = 256M/' /etc/php/$PHPV/fpm/php.ini");
+  w.push('systemctl enable --now php$PHPV-fpm && systemctl restart php$PHPV-fpm');
+  w.push('if [ ! -f /var/www/glpi/bin/console ]; then');
+  w.push('    URL=$(curl -fsSL https://api.github.com/repos/glpi-project/glpi/releases/latest | jq -r \'.assets[] | select(.name | test("^glpi-[0-9.]+\\\\.tgz$")) | .browser_download_url\')');
+  w.push('    [ -n "$URL" ] || { echo "ERREUR: impossible de trouver l\'archive GLPI sur GitHub (Internet ? api.github.com joignable ?)"; exit 1; }');
+  w.push('    echo "Telechargement : $URL"');
+  w.push('    curl -fL -o /tmp/glpi.tgz "$URL" && install -d /var/www && tar -xzf /tmp/glpi.tgz -C /var/www && rm -f /tmp/glpi.tgz');
+  w.push('fi');
+  w.push('chown -R www-data:www-data /var/www/glpi');
+  w.push('cd /var/www/glpi');
+  w.push('# Installation par la ligne de commande (pas d\'assistant web), idempotente : deja installe = on passe');
+  w.push(`if ! runuser -u www-data -- php bin/console db:check_schema_integrity >/dev/null 2>&1 && ! runuser -u www-data -- php bin/console glpi:database:check_schema_integrity >/dev/null 2>&1 && [ ! -f config/config_db.php ]; then`);
+  w.push(`    runuser -u www-data -- php bin/console db:install --db-host=${p.ipBdd} --db-port=3306 --db-name=glpi --db-user=glpi --db-password='${MDP}' --default-language=fr_FR --no-interaction --force \\`);
+  w.push(`        || { echo "ERREUR: installation GLPI refusee (base glpi sur ${p.ipBdd} ? compte glpi@${p.ipWeb} ? script base rejoue avec GLPI coche ?)"; exit 1; }`);
+  w.push('fi');
+  w.push('runuser -u www-data -- php bin/console db:enable_timezones --no-interaction >/dev/null 2>&1 || true');
+  w.push("[ -f install/install.php ] && mv install/install.php install/install.php.desactive || true   # GLPI le demande apres installation");
+  w.push('# nginx : GLPI sur 8080 (acces par IP) et sur 80 sous le nom glpi.' + d);
+  w.push("SOCK=$(ls /run/php/php*-fpm.sock | head -1)");
+  w.push("cat > /etc/nginx/sites-available/glpi <<'EOF'");
+  w.push('server {');
+  w.push('    listen 8080 default_server;');
+  w.push('    listen 80;');
+  w.push(`    server_name glpi.${d};`);
+  w.push('    root /var/www/glpi/public;');
+  w.push('    index index.php;');
+  w.push('    client_max_body_size 20M;');
+  w.push('    location / {');
+  w.push('        try_files \$uri /index.php\$is_args\$args;');
+  w.push('    }');
+  w.push('    location ~ ^/index\\.php {');
+  w.push('        fastcgi_pass unix:SOCK_PHP;');
+  w.push('        fastcgi_split_path_info ^(.+\\.php)(/.*)\$;');
+  w.push('        include fastcgi_params;');
+  w.push('        fastcgi_param SCRIPT_FILENAME \$document_root\$fastcgi_script_name;');
+  w.push('        fastcgi_param PATH_INFO \$fastcgi_path_info;');
+  w.push('    }');
+  w.push('}');
+  w.push('EOF');
+  w.push('sed -i "s#SOCK_PHP#$SOCK#" /etc/nginx/sites-available/glpi');
+  w.push('ln -sf /etc/nginx/sites-available/glpi /etc/nginx/sites-enabled/glpi');
+  w.push('nginx -t && systemctl reload nginx');
+  w.push("CODE=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8080/ || echo 000)");
+  w.push(`case "$CODE" in 200|302) echo "GLPI repond : http://${p.ipWeb}:8080/ (comptes par defaut glpi/glpi, tech/tech, normal/normal, post-only/postonly - a changer)";; *) echo "ERREUR: GLPI repond $CODE : tail /var/log/nginx/error.log ; tail /var/www/glpi/files/_log/php-errors.log"; exit 1;; esac`);
+  return w;
+}
+
+// Reseau d'une VM en notation CIDR (adresse reseau/masque), pour mynetworks.
+export function reseauCidr(ip: string, cidr: string): string {
+  const c = Number(cidr) || 24;
+  const n = ip.split('.').map(Number).reduce((a, b) => (a << 8) + b, 0) >>> 0;
+  const masque = c === 0 ? 0 : (0xffffffff << (32 - c)) >>> 0;
+  const r = (n & masque) >>> 0;
+  return [24, 16, 8, 0].map(s => (r >>> s) & 255).join('.') + '/' + c;
+}
+
+function scriptWeb(p: Params): string {
+  const hoteWeb = nomHote(p.vmWeb), hoteBdd = nomHote(p.vmBdd);
+  const w: string[] = [
+    ...entete(`VM web : ${p.vmWeb} (${p.ipWeb}) - nginx + Node.js, reliee a ${hoteBdd} (${p.ipBdd})`, p.vmWeb),
+    ...identite(p, hoteWeb),
+    ...reseau(p, reseauWeb(p)),
+    '',
+    'identite',
+    ...sequenceReseau(p.glpi ? 'nginx nodejs npm php-fpm php-mysql' : 'nginx nodejs npm'),
+    '',
+    'etape "Installation de nginx, Node.js, npm"',
+    'apt_essais apt-get update -q && apt_essais apt-get install -y -q nginx curl ca-certificates',
+  ];
+  if (p.nodeSource) {
+    w.push('curl -fsSL https://deb.nodesource.com/setup_22.x | bash -    # Node.js 22 LTS (NodeSource)');
+    w.push('apt_essais apt-get install -y -q nodejs');
+  } else {
+    w.push('apt_essais apt-get install -y -q nodejs npm                             # Node.js des depots Debian (18 sur Debian 12)');
+  }
+  w.push('node -v && npm -v');
+  w.push('');
+  w.push('etape "Application de test dans /srv/app"');
+  w.push('install -d /srv/app');
+  w.push("cat > /srv/app/package.json <<'EOF'");
+  w.push('{ "name": "test-web-bdd", "private": true, "type": "module", "main": "server.js",');
+  w.push('  "dependencies": { "express": "^4.19.2", "mysql2": "^3.11.0" } }');
+  w.push('EOF');
+  w.push('cat > /srv/app/.env <<EOF');
+  w.push(`DB_HOST=${p.ipBdd}`);
+  w.push('DB_PORT=3306');
+  w.push(`DB_NAME=${p.bdd}`);
+  w.push(`DB_USER=${p.utilisateur}`);
+  w.push(`DB_PASS=${MDP}`);
+  w.push('PORT=3000');
+  w.push('EOF');
+  w.push("cat > /srv/app/server.js <<'EOF'");
+  w.push(...SERVEUR_JS.split('\n'));
+  w.push('EOF');
+  w.push('cd /srv/app && npm install --omit=dev --no-audit --no-fund --loglevel=error');
+  w.push('chown -R www-data:www-data /srv/app && chmod 640 /srv/app/.env');
+  w.push('');
+  w.push("# L'adresse fixe maintenant : MariaDB n'accepte l'application que depuis elle. Tout ce qui suit ne demande plus Internet.");
+  w.push(...finReseau());
+  w.push('');
+  w.push('etape "Service systemd (les identifiants restent dans .env, lisible par www-data seul)"');
+  w.push("cat > /etc/systemd/system/app.service <<'EOF'");
+  w.push('[Unit]');
+  w.push('Description=Application de test web -> base');
+  w.push('After=network-online.target');
+  w.push('Wants=network-online.target');
+  w.push('');
+  w.push('[Service]');
+  w.push('User=www-data');
+  w.push('Group=www-data');
+  w.push('WorkingDirectory=/srv/app');
+  w.push('EnvironmentFile=/srv/app/.env');
+  w.push('ExecStart=/usr/bin/node /srv/app/server.js');
+  w.push('Restart=on-failure');
+  w.push('RestartSec=3');
+  w.push('');
+  w.push('[Install]');
+  w.push('WantedBy=multi-user.target');
+  w.push('EOF');
+  w.push('systemctl daemon-reload && systemctl enable --now app && systemctl restart app');
+  w.push('');
+  w.push('etape "nginx en mandataire inverse vers Node (127.0.0.1:3000)"');
+  w.push("cat > /etc/nginx/sites-available/app <<'EOF'");
+  w.push('server {');
+  w.push('    listen 80 default_server;');
+  w.push('    listen [::]:80 default_server;');
+  w.push(`    server_name ${hoteWeb} ${p.ipWeb} _;`);
+  w.push('    location / {');
+  w.push('        proxy_pass http://127.0.0.1:3000;');
+  w.push('        proxy_http_version 1.1;');
+  w.push('        proxy_set_header Host $host;');
+  w.push('        proxy_set_header X-Real-IP $remote_addr;');
+  w.push('        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;');
+  w.push('    }');
+  w.push('}');
+  w.push('EOF');
+  w.push('ln -sf /etc/nginx/sites-available/app /etc/nginx/sites-enabled/app && rm -f /etc/nginx/sites-enabled/default');
+  w.push('nginx -t && systemctl enable --now nginx && systemctl reload nginx');
+  if (p.glpi) w.push(...blocGlpi(p));
+  w.push(`if command -v ufw >/dev/null; then ufw allow 80/tcp; ${p.glpi ? 'ufw allow 8080/tcp; ' : ''}ufw allow 22/tcp; ufw --force enable; fi`);
+  w.push('');
+  w.push(`etape "Verification : le flux vers la base (${p.ipBdd}:3306), puis l'application"`);
+  w.push(`if timeout 3 bash -c 'exec 3<>/dev/tcp/${p.ipBdd}/3306' 2>/dev/null; then echo "Port 3306 de ${p.ipBdd} joignable"; else`);
+  w.push(`    echo "AVERTISSEMENT: ${p.ipBdd}:3306 injoignable depuis cette VM."`);
+  w.push(`    if ! command -v ping >/dev/null; then echo " -> (ping absent : apt install iputils-ping pour affiner)"; elif ping -c 1 -W 2 ${p.ipBdd} >/dev/null 2>&1; then echo " -> la VM base repond au ping mais pas sur 3306 : MariaDB n'ecoute pas (script base joue ?) ou pare-feu local";`);
+  w.push(`    else echo " -> la VM base ne repond meme pas au ping : VM eteinte, ou routage/pare-feu entre ${p.ipWeb} et ${p.ipBdd} (deux reseaux differents ? il faut une regle qui laisse passer TCP 3306 de ${p.ipWeb} vers ${p.ipBdd})"; fi`);
+  w.push('fi');
+  w.push('etape "Verification : l\'application, puis la base a travers elle"');
+  w.push('for i in 1 2 3 4 5; do sleep 2; systemctl is-active --quiet app && break; done');
+  w.push("systemctl is-active --quiet app || { echo \"ERREUR: le service app ne demarre pas :\"; journalctl -u app -n 20 --no-pager; exit 1; }");
+  w.push("CODE=$(curl -s -o /tmp/sante.json -w '%{http_code}' http://127.0.0.1/api/sante || echo 000)");
+  w.push('cat /tmp/sante.json 2>/dev/null; echo');
+  w.push('case "$CODE" in');
+  w.push(`    200) echo "OK : affichage et connexion a la base. Ouvre http://${p.ipWeb}/ depuis un poste du reseau."${p.glpi ? `; echo "GLPI : http://${p.ipWeb}:8080/  (glpi / glpi, puis changer les mots de passe des comptes par defaut)"` : ''} ;;`);
+  w.push(`    503) DETAIL=$(grep -o '"detail":"[^"]*"' /tmp/sante.json | cut -d'"' -f4)`);
+  w.push(`         echo "Affichage OK, mais la base ${p.ipBdd} ne repond pas ($DETAIL)."`);
+  w.push('         case "$DETAIL" in');
+  w.push(`             ER_HOST_NOT_PRIVILEGED|ER_ACCESS_DENIED*) echo " -> la base n'autorise pas ${p.utilisateur} depuis cette adresse : le script base a-t-il ete genere avec l'IP web ${p.ipWeb} et joue ?" ;;`);
+  w.push(`             ECONNREFUSED) echo " -> MariaDB n'ecoute pas sur le reseau : sur la base, ss -tlnp | grep 3306 (bind-address)" ;;`);
+  w.push(`             ETIMEDOUT|EHOSTUNREACH|ENETUNREACH) echo " -> la VM base est injoignable : ping ${p.ipBdd}, meme sous-reseau, VM allumee ?" ;;`);
+  w.push(`             ER_BAD_DB_ERROR) echo " -> la base ${p.bdd} n'existe pas : le script base a-t-il ete joue ?" ;;`);
+  w.push('             *) echo " -> journalctl -u app -n 20 pour le detail" ;;');
+  w.push('         esac; exit 2 ;;');
+  w.push('    *)   echo "ERREUR: nginx ou l\'application ne repondent pas (HTTP $CODE) : nginx -t ; systemctl status app ; journalctl -u app -n 30"; exit 1 ;;');
+  w.push('esac');
+  return w.join('\n');
+}
+
+function scriptVerif(p: Params): string {
+  const v: string[] = [];
+  v.push('# Depuis un poste (Windows ou Linux) qui route vers les deux reseaux');
+  v.push(`ping ${p.ipWeb}`);
+  v.push(`ping ${p.ipBdd}`);
+  v.push(`curl http://${p.ipWeb}/api/sante        # {"affichage":"ok","base":"ok", ...}`);
+  v.push(`# Navigateur : http://${p.ipWeb}/  -> la page de test, verte si la base repond`);
+  v.push('');
+  v.push("# Depuis la VM web, a la main (le meme chemin que l'application) :");
+  v.push(`mariadb -h ${p.ipBdd} -u ${p.utilisateur} -p'${MDP}' ${p.bdd} -e 'SELECT * FROM messages;'   # apt install mariadb-client si absent (mysql sur Debian 12)`);
+  v.push('journalctl -u app -n 30                 # si la page dit "base : erreur"');
+  v.push('tail -f /var/log/config-vm.log          # si le script a ete lance en SSH (il tourne detache)');
+  v.push('');
+  v.push(`# Depuis la VM web : le flux vers la base passe-t-il ? (si les VM sont dans deux reseaux, le routeur/pare-feu doit laisser TCP 3306 de ${p.ipWeb} vers ${p.ipBdd})`);
+  v.push(`ping ${p.ipBdd} ; timeout 3 bash -c 'exec 3<>/dev/tcp/${p.ipBdd}/3306' && echo "3306 ouvert" || echo "3306 bloque"`);
+  v.push('');
+  if (p.mail) {
+    const d = p.domaineMail, b = listeBoites(p);
+    v.push(`# Messagerie (DMZ ${p.ipMail}) : webmail, IMAP, SMTP`);
+    v.push(`# Navigateur : http://${p.ipMail}/roundcube/   compte ${b[0] || 'alice'}@${d} / ${MDP}`);
+    v.push(`# Client (Thunderbird, Outlook) : IMAP ${p.ipMail} port 143 (ou 993), SMTP ${p.ipMail} port 587, identifiant = l'adresse complete`);
+    v.push(`# Depuis la VM messagerie :  doveadm auth test ${b[0] || 'alice'}@${d} ${MDP}   ;   doveadm mailbox status -u ${b[0] || 'alice'}@${d} messages INBOX`);
+    v.push(`# Regles pare-feu (OPNsense) : LAN -> DMZ ${p.ipMail} TCP 25,587,143,993,80 ; DMZ ${p.ipMail} -> LAN ${p.ipBdd} TCP 3306 ; DMZ -> Internet 80/443 (apt) ; WAN -> DMZ ${p.ipMail} TCP 25 si courrier entrant`);
+    v.push(`# DNS interne (Unbound) : A mail.${d} -> ${p.ipMail} ; MX ${d} -> mail.${d}`);
+    v.push('');
+  }
+  if (p.glpi) {
+    v.push(`# GLPI : http://${p.ipWeb}:8080/  (ou http://glpi.${p.mail ? p.domaineMail : 'entreprise.lan'}/ si le DNS interne le connait) - glpi / glpi`);
+    v.push('# Depuis la VM web :  runuser -u www-data -- php /var/www/glpi/bin/console glpi:system:check_requirements');
+    v.push('');
+  }
+  v.push('# Depuis la VM base : qui est connecte, et depuis ou');
+  v.push(`mariadb -u root -p'${MDP}' -e 'SHOW PROCESSLIST;'      # ou mysql sur Debian 12`);
+  return v.join('\n');
+}
+
+/** Le script pret a coller dans un terminal : il s'enregistre dans /root puis se lance. */
+export function pourConsole(sec: Section): string {
+  if (sec.id === 'verif' || sec.id === 'hote') return sec.code;
+  const cible = `~/${sec.id}.sh`;   // dossier de l'utilisateur connecte, pas /root : on fera sudo
+  return `cat > ${cible} <<'FIN_SCRIPT_TSSR'\n${sec.code}\nFIN_SCRIPT_TSSR\nsudo bash ${cible}`;
+}
+
+// Tout le corps dans une fonction, appelee seulement si le script est un fichier : colle tel quel
+// dans un terminal, il ne fait que definir la fonction et dire comment s'en servir — au lieu
+// d'appliquer `set -e` au shell interactif et de le fermer au premier `exit`.
+export function enFichier(code: string, cible: string): string {
+  const lignes = code.split('\n');
+  const debut = lignes.findIndex(l => l.startsWith('set -euo pipefail'));
+  return [
+    ...lignes.slice(0, debut),
+    'principal() {',
+    ...lignes.slice(debut),
+    '}',
+    'if [ -f "${0:-}" ] && [ "$(basename "$0")" != bash ]; then',
+    '    principal "$@"',
+    'else',
+    `    echo "Ce script se lance depuis un fichier, pas colle dans le terminal :  sudo bash ${cible}"`,
+    '    echo "Sur la page, le bouton « Pour la console » copie une version qui s\'enregistre et se lance toute seule."',
+    'fi',
+  ].join('\n');
+}
+
+export function genererScripts(p: Params): Section[] {
+  const hoteWeb = nomHote(p.vmWeb), hoteBdd = nomHote(p.vmBdd);
+  return [
+    { id: 'hote', titre: p.hv === 'hyperv' ? '① Sur l’hôte Hyper-V — cloner les deux VM' : '① Sur l’hôte Proxmox — cloner les deux VM', code: scriptHote(p), fichier: p.hv === 'hyperv' ? 'clone-web-bdd.ps1' : 'clone-web-bdd.sh' },
+    { id: 'bdd', titre: `② Dans ${p.vmBdd} — MariaDB`, code: enFichier(scriptBdd(p), '~/bdd.sh'), fichier: `bdd-${hoteBdd}.sh` },
+    { id: 'web', titre: `③ Dans ${p.vmWeb} — nginx + Node.js + page de test`, code: enFichier(scriptWeb(p), '~/web.sh'), fichier: `web-${hoteWeb}.sh` },
+    ...(p.mail ? [{ id: 'mail' as const, titre: `④ Dans ${p.vmMail} (DMZ) — Postfix + Dovecot + Roundcube`, code: enFichier(scriptMail(p), '~/mail.sh'), fichier: `mail-${nomHote(p.vmMail)}.sh` }] : []),
+    { id: 'verif', titre: p.mail ? '⑤ Vérifier' : '④ Vérifier', code: scriptVerif(p), fichier: 'verif.txt' },
+  ];
+}
+
+// L'application de test, telle qu'elle est écrite dans /srv/app/server.js.
+// Elle ne fait qu'une chose : dire si elle s'affiche, et si la base répond.
+export const SERVEUR_JS = `import express from 'express';
+import mysql from 'mysql2/promise';
+import os from 'node:os';
+
+const { DB_HOST, DB_PORT = 3306, DB_NAME, DB_USER, DB_PASS, PORT = 3000 } = process.env;
+const pool = mysql.createPool({ host: DB_HOST, port: Number(DB_PORT), database: DB_NAME, user: DB_USER, password: DB_PASS, connectTimeout: 3000, waitForConnections: true, connectionLimit: 5 });
+const app = express();
+const html = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+async function etatBase() {
+  const debut = Date.now();
+  try {
+    const [[infos]] = await pool.query('SELECT NOW() AS heure, VERSION() AS version, DATABASE() AS base, USER() AS utilisateur');
+    const [lignes] = await pool.query('SELECT id, texte, cree_le FROM messages ORDER BY id');
+    return { ok: true, ms: Date.now() - debut, infos, lignes };
+  } catch (e) {
+    return { ok: false, ms: Date.now() - debut, erreur: e.code || e.message };
+  }
+}
+
+app.get('/api/sante', async (_req, res) => {
+  const b = await etatBase();
+  res.status(b.ok ? 200 : 503).json({ affichage: 'ok', base: b.ok ? 'ok' : 'erreur', serveur: os.hostname(), hote_base: DB_HOST, delai_ms: b.ms, detail: b.ok ? b.infos : b.erreur });
+});
+
+app.get('/', async (_req, res) => {
+  const b = await etatBase();
+  const couleur = b.ok ? '#16a34a' : '#dc2626';
+  const lignes = b.ok ? b.lignes.map(l => '<tr><td>' + l.id + '</td><td>' + html(l.texte) + '</td><td>' + new Date(l.cree_le).toLocaleString('fr-FR') + '</td></tr>').join('') : '';
+  res.type('html').send(\`<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Test web -> base</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>body{font-family:system-ui,sans-serif;max-width:720px;margin:40px auto;padding:0 16px;color:#111;background:#fff}h1{font-size:1.5rem}
+.etat{display:flex;gap:12px;flex-wrap:wrap}.carte{flex:1;min-width:200px;border:1px solid #ddd;border-radius:10px;padding:14px 16px}
+.carte b{display:block;font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:#666;margin-bottom:6px}.ok{color:#16a34a}
+table{border-collapse:collapse;width:100%;margin-top:14px}td,th{border:1px solid #ddd;padding:6px 10px;text-align:left;font-size:.95rem}
+code{background:#f3f4f6;padding:1px 5px;border-radius:4px}</style></head><body>
+<h1>Page de test — moteur web → base de données</h1>
+<div class="etat">
+  <div class="carte"><b>Affichage</b><span class="ok">✔ nginx → Node.js répondent</span><br><small>serveur : <code>\${html(os.hostname())}</code></small></div>
+  <div class="carte"><b>Connexion à la base</b><span style="color:\${couleur}">\${b.ok ? '✔ connecté à ' + html(DB_HOST) : '✘ échec : ' + html(b.erreur)}</span><br><small>\${b.ms} ms · base <code>\${html(DB_NAME)}</code> · utilisateur <code>\${html(DB_USER)}</code></small></div>
+</div>
+\${b.ok ? '<p>Heure de la base : <code>' + html(b.infos.heure) + '</code> — MariaDB ' + html(b.infos.version) + '</p><table><tr><th>id</th><th>texte</th><th>créé le</th></tr>' + lignes + '</table>'
+      : '<p>Vérifier : la VM base est allumée, MariaDB écoute sur 0.0.0.0:3306 (<code>ss -tlnp</code>), l’utilisateur est autorisé depuis cette adresse, le pare-feu laisse passer 3306. Journal : <code>journalctl -u app -n 30</code>.</p>'}
+<p><small>Données brutes : <a href="/api/sante">/api/sante</a></small></p>
+</body></html>\`);
+});
+
+app.listen(Number(PORT), '127.0.0.1', () => console.log('Application de test sur http://127.0.0.1:' + PORT + ' -> base ' + DB_HOST));
+`;

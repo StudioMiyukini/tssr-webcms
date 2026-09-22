@@ -1,0 +1,351 @@
+{
+  "slug": "opnsense",
+  "title": "OPNsense : le pare-feu open source",
+  "quizzes": [
+    {
+      "title": "Quiz 1 — Les bases",
+      "questions": [
+        {
+          "q": "Sur quel système d'exploitation repose OPNsense ?",
+          "options": [
+            "Linux Debian",
+            "OpenWrt",
+            "Windows Server",
+            "FreeBSD"
+          ],
+          "answer": 3,
+          "explain": "OPNsense est un système dédié sur base FreeBSD, administré par le web."
+        },
+        {
+          "q": "Avec quel compte lance-t-on l'installation depuis le système vivant ?",
+          "options": [
+            "root / root",
+            "installer / opnsense",
+            "admin / admin",
+            "opnsense / installer"
+          ],
+          "answer": 1,
+          "explain": "Le compte installer (mot de passe opnsense) lance l'assistant d'installation."
+        },
+        {
+          "q": "Pourquoi choisir le clavier French dès l'installation ?",
+          "options": [
+            "Pour la langue de l'interface web",
+            "Pour activer l'IPv6",
+            "Pour ne pas taper les mots de passe en QWERTY sans le voir",
+            "C'est obligatoire"
+          ],
+          "answer": 2,
+          "explain": "Sans ça, le mot de passe root saisi ensuite serait tapé en QWERTY."
+        },
+        {
+          "q": "Combien de cartes réseau au minimum pour une maquette OPNsense ?",
+          "options": [
+            "Trois",
+            "Deux (WAN et LAN)",
+            "Une",
+            "Quatre"
+          ],
+          "answer": 1,
+          "explain": "Une carte par zone : WAN sur le commutateur externe, LAN sur un commutateur privé."
+        },
+        {
+          "q": "Quelle est l'étape « qui décide de tout le reste » ?",
+          "options": [
+            "Le choix de ZFS ou UFS",
+            "L'assignation des interfaces (quelle carte est WAN, laquelle est LAN)",
+            "La création d'un alias",
+            "Le choix du thème"
+          ],
+          "answer": 1,
+          "explain": "Assign interfaces : on identifie chaque carte par son adresse MAC."
+        },
+        {
+          "q": "Comment identifier de façon fiable quelle carte virtuelle est em0 ou em1 ?",
+          "options": [
+            "Par son adresse IP",
+            "Par l'ordre d'affichage",
+            "Par sa couleur",
+            "Par son adresse MAC, comparée à celle affichée par l'hyperviseur"
+          ],
+          "answer": 3,
+          "explain": "L'ordre n'est pas garanti ; la MAC est le seul lien fiable."
+        },
+        {
+          "q": "Quelle adresse LAN le cours recommande-t-il pour la maquette ?",
+          "options": [
+            "192.168.10.254",
+            "192.168.1.1",
+            "172.16.0.1",
+            "10.0.0.1"
+          ],
+          "answer": 0,
+          "explain": ".254 est la convention du site ; 192.168.1.1 (valeur d'usine) entre souvent en conflit avec la box."
+        },
+        {
+          "q": "Sous Hyper-V, quelle génération de VM le cours conseille-t-il ?",
+          "options": [
+            "Génération 1",
+            "Génération 2 avec Secure Boot",
+            "Génération 3",
+            "Peu importe"
+          ],
+          "answer": 0,
+          "explain": "La génération 2 demande de désactiver le démarrage sécurisé, sinon l'ISO refuse de s'amorcer."
+        },
+        {
+          "q": "Pourquoi le navigateur affiche-t-il un avertissement au premier accès HTTPS ?",
+          "options": [
+            "Le mot de passe est faux",
+            "L'IP est privée",
+            "Le port est fermé",
+            "Le certificat est auto-signé"
+          ],
+          "answer": 3,
+          "explain": "OPNsense génère son propre certificat, que personne n'a signé."
+        },
+        {
+          "q": "Où exporter toute la configuration en un fichier XML ?",
+          "options": [
+            "Interfaces › Assignments",
+            "Firewall › Aliases",
+            "Services › DHCP",
+            "System › Configuration › Backups"
+          ],
+          "answer": 3,
+          "explain": "Le réflexe : exporter avant chaque changement important et avant une mise à jour."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 2 — Intermédiaire",
+      "questions": [
+        {
+          "q": "Comment les règles sont-elles rangées dans Firewall › Rules ?",
+          "options": [
+            "Par protocole",
+            "Par date",
+            "Par ordre alphabétique",
+            "Par interface (un onglet par zone)"
+          ],
+          "answer": 3,
+          "explain": "On écrit une règle sur une interface, pas « dans le pare-feu »."
+        },
+        {
+          "q": "Dans quel sens une règle s'applique-t-elle ?",
+          "options": [
+            "Au trafic qui entre par l'interface",
+            "Au trafic du WAN seulement",
+            "Aux deux sens",
+            "Au trafic qui sort par l'interface"
+          ],
+          "answer": 0,
+          "explain": "Pour autoriser le LAN vers Internet, la règle se pose sur l'onglet LAN — là où le paquet entre."
+        },
+        {
+          "q": "Que se passe-t-il si aucune règle ne correspond ?",
+          "options": [
+            "Il est envoyé au WAN",
+            "Le paquet est mis en attente",
+            "Le paquet passe",
+            "Un refus implicite jette le paquet"
+          ],
+          "answer": 3,
+          "explain": "Le refus implicite est invisible dans la liste mais toujours présent."
+        },
+        {
+          "q": "La règle « Default allow LAN to any » :",
+          "options": [
+            "Protège le WAN",
+            "Laisse le LAN sortir partout — confortable mais trop large",
+            "N'existe pas",
+            "Bloque tout le LAN"
+          ],
+          "answer": 1,
+          "explain": "Elle est posée d'usine sur l'onglet LAN uniquement."
+        },
+        {
+          "q": "Que fait la règle Anti-Lockout ?",
+          "options": [
+            "Empêche les VLAN",
+            "Bloque les attaques par force brute",
+            "Garantit l'accès à l'interface web depuis le LAN",
+            "Ferme le port 443"
+          ],
+          "answer": 2,
+          "explain": "Elle n'apparaît pas dans la liste et évite de se verrouiller dehors."
+        },
+        {
+          "q": "Que fait « Block private networks » sur le WAN ?",
+          "options": [
+            "Interdit l'accès web",
+            "Jette ce qui arrive du WAN avec une adresse source privée (RFC 1918)",
+            "Bloque le LAN",
+            "Bloque le DHCP"
+          ],
+          "answer": 1,
+          "explain": "Une source privée venant d'Internet est usurpée — sauf sur une maquette où le WAN est un réseau privé."
+        },
+        {
+          "q": "Faut-il écrire une règle pour le trafic de retour ?",
+          "options": [
+            "Oui, sur le WAN",
+            "Non : le pare-feu est à états",
+            "Oui, sur les deux interfaces",
+            "Seulement pour UDP"
+          ],
+          "answer": 1,
+          "explain": "La connexion sortante est mémorisée ; la réponse revient sans règle."
+        },
+        {
+          "q": "Une règle enregistrée mais non appliquée :",
+          "options": [
+            "Ne fait rien tant qu'on n'a pas cliqué Apply changes",
+            "Fonctionne immédiatement",
+            "Bloque tout",
+            "Est supprimée au redémarrage"
+          ],
+          "answer": 0,
+          "explain": "Save puis Apply changes."
+        },
+        {
+          "q": "Que trouve-t-on dans le menu System ?",
+          "options": [
+            "Les VLAN",
+            "Les baux DHCP",
+            "Les règles NAT",
+            "Comptes, certificats, mises à jour, sauvegardes"
+          ],
+          "answer": 3,
+          "explain": "Interfaces = cartes ; Firewall = règles/alias/NAT ; Services = DHCP, DNS… ; VPN ; System = le boîtier lui-même."
+        },
+        {
+          "q": "Avec quel compte se connecte-t-on à l'interface web après l'installation ?",
+          "options": [
+            "root, avec le mot de passe défini à l'installation",
+            "installer",
+            "opnsense / opnsense",
+            "admin / changeme"
+          ],
+          "answer": 0,
+          "explain": "root et le mot de passe choisi pendant l'installation."
+        }
+      ]
+    },
+    {
+      "title": "Quiz 3 — Approfondissement",
+      "questions": [
+        {
+          "q": "Une règle posée sur le mauvais onglet :",
+          "options": [
+            "Provoque une erreur",
+            "Bloque tout le trafic",
+            "S'enregistre sans erreur et ne fait strictement rien",
+            "Est déplacée automatiquement"
+          ],
+          "answer": 2,
+          "explain": "D'où la question à se poser : « par quelle interface ce paquet entre-t-il ? »."
+        },
+        {
+          "q": "Pourquoi le client de test ne doit-il pas avoir de seconde carte ?",
+          "options": [
+            "Pour économiser la RAM",
+            "Sinon il sort par là sans traverser le pare-feu et on croit que les règles marchent",
+            "Pour l'IPv6",
+            "Hyper-V l'interdit"
+          ],
+          "answer": 1,
+          "explain": "Une seule carte, sur le LAN, et rien d'autre."
+        },
+        {
+          "q": "Que doit-on faire avant de désactiver la règle anti-lockout ?",
+          "options": [
+            "Rien",
+            "Redémarrer",
+            "Changer le mot de passe root",
+            "Vérifier qu'une autre règle autorise l'accès à l'interface web"
+          ],
+          "answer": 3,
+          "explain": "Sinon on perd la main et il faut repasser par la console — ou se déplacer sur un boîtier distant."
+        },
+        {
+          "q": "Un blocage ne prend pas effet sur une connexion en cours :",
+          "options": [
+            "Il faut redémarrer le poste",
+            "Un état encore ouvert : on peut le vider dans Firewall › Diagnostics › States",
+            "Bug d'OPNsense",
+            "La règle est mal écrite"
+          ],
+          "answer": 1,
+          "explain": "Un changement de règle ne coupe pas les connexions déjà établies."
+        },
+        {
+          "q": "Que jette « Block bogon networks » ?",
+          "options": [
+            "Les adresses privées",
+            "Les plages non attribuées à personne",
+            "Le multicast",
+            "Les adresses IPv6"
+          ],
+          "answer": 1,
+          "explain": "Rien de légitime ne vient de ces plages."
+        },
+        {
+          "q": "ZFS plutôt qu'UFS à l'installation apporte :",
+          "options": [
+            "Un thème sombre",
+            "Instantanés et sommes de contrôle, utile en production",
+            "L'IPv6",
+            "Plus de vitesse réseau"
+          ],
+          "answer": 1,
+          "explain": "UFS suffit pour une maquette."
+        },
+        {
+          "q": "Quel widget du tableau de bord est le premier à lire quand « ça ne marche plus » ?",
+          "options": [
+            "La météo",
+            "L'état des interfaces, les passerelles, les dernières lignes du journal de filtrage",
+            "Les licences",
+            "Les thèmes"
+          ],
+          "answer": 1,
+          "explain": "Le tableau de bord montre interfaces, charge, passerelles, services et journal."
+        },
+        {
+          "q": "Où se rejoue l'assistant de configuration initial ?",
+          "options": [
+            "Lobby › Setup",
+            "Firewall › Wizard",
+            "System › Wizard",
+            "Interfaces › Wizard"
+          ],
+          "answer": 2,
+          "explain": "Il demande nom, domaine, DNS, fuseau et confirme WAN/LAN."
+        },
+        {
+          "q": "Que doit-on faire de l'ISO avant de redémarrer après « Complete install » ?",
+          "options": [
+            "La copier sur le disque",
+            "La graver",
+            "Rien",
+            "La retirer du lecteur, sinon on repart sur le système vivant"
+          ],
+          "answer": 3,
+          "explain": "Sinon la VM redémarre sur l'image d'installation."
+        },
+        {
+          "q": "Comment restaurer un pare-feu à l'identique sur une machine neuve ?",
+          "options": [
+            "Copier les alias",
+            "Cloner le disque",
+            "Réinstaller et tout retaper",
+            "Importer le fichier XML de sauvegarde"
+          ],
+          "answer": 3,
+          "explain": "C'est ce qui rend le matériel remplaçable."
+        }
+      ]
+    }
+  ]
+}
