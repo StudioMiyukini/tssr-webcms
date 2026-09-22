@@ -99,9 +99,9 @@ CORPS = '\n'.join([
               ['<strong>OPT1</strong>', 'CLIENT (DHCP)', '<code>10.180.20.254/24</code> · bail .100–.200', '<code>10.160.20.254/24</code> · bail .100–.200'],
               ['<strong>OPT2</strong>', 'DMZ', '<code>10.180.30.254/24</code>', '<code>10.160.30.254/24</code>'],
           ])
-          + '<p>Repères pour les machines : AD/DNS <span class="bx">10.180.10.10</span> / '
-          '<span class="tl">10.160.10.10</span> ; serveur web DMZ <span class="bx">10.180.30.10</span> '
-          '/ <span class="tl">10.160.30.10</span> ; les postes clients en DHCP sur OPT1.</p>'
+          + '<p>Repères pour les machines : AD/DNS <span class="bx">10.180.10.1</span> / '
+          '<span class="tl">10.160.10.1</span> ; serveur web DMZ <span class="bx">10.180.30.1</span> '
+          '/ <span class="tl">10.160.30.1</span> ; les postes clients en DHCP sur OPT1.</p>'
           + note('gray', '📌 Combien d’interfaces ? (TP1)',
                  'Quatre par pfSense : <strong>WAN, LAN, OPT1, OPT2</strong> — donc quatre cartes '
                  'réseau sur la VM, chacune sur son vSwitch (LAN Serveur, LAN, DMZ, et le vSwitch '
@@ -186,7 +186,7 @@ CORPS = '\n'.join([
           'montent.</p>'
           + '<p>Puis les tests du TP2, depuis un <strong>poste client</strong> (pas depuis pfSense — '
           'un ping lancé du pfSense part avec l’IP WAN, hors du /16 du tunnel) :</p>'
-          + cmd('# depuis un client de Bordeaux (10.180.20.x) :\nping 10.160.20.50        # un client de Toulouse\nping 10.160.10.10        # l\'AD de Toulouse\n\n# acces au partage du serveur AD distant (explorateur Windows) :\n\\\\10.160.10.10\\PARTAGE')
+          + cmd('# depuis un client de Bordeaux (10.180.20.x) :\nping 10.160.20.1        # un client de Toulouse\nping 10.160.10.1        # l\'AD de Toulouse\n\n# acces au partage du serveur AD distant (explorateur Windows) :\n\\\\10.160.10.1\\PARTAGE')
           + note('yellow', '⚠️ « Established mais rien ne passe »',
                  'Le tunnel est monté mais le ping échoue : c’est presque toujours la <strong>phase 2</strong> '
                  '(réseaux locaux/distants mal déclarés, ou pas en miroir) ou l’onglet '
@@ -211,15 +211,15 @@ CORPS = '\n'.join([
           + '<ol class="proc-steps">'
           '<li><strong>Résolution DNS croisée</strong> (indispensable, sinon l’approbation échoue) : sur '
           'l’AD de Bordeaux, un <em>redirecteur conditionnel</em> <code>toulouse.local</code> → '
-          '<code>10.160.10.10</code> ; sur l’AD de Toulouse, <code>bordeaux.local</code> → '
-          '<code>10.180.10.10</code>. (DNS ▸ Redirecteurs conditionnels.)</li>'
+          '<code>10.160.10.1</code> ; sur l’AD de Toulouse, <code>bordeaux.local</code> → '
+          '<code>10.180.10.1</code>. (DNS ▸ Redirecteurs conditionnels.)</li>'
           '<li><strong>Créer l’approbation</strong> : <code>Domaines et approbations Active Directory</code> '
           '→ clic droit sur le domaine → <em>Propriétés</em> → onglet <em>Approbations</em> → '
           '<em>Nouvelle approbation</em> → type <strong>Approbation de forêt</strong> (ou externe), sens '
           '<strong>bidirectionnel</strong>. À faire d’un seul côté avec le mot de passe d’approbation, '
           'puis valider dans les deux sens.</li>'
           '<li><strong>Vérifier</strong> : depuis un poste de Bordeaux, se connecter avec un compte '
-          '<code>TOULOUSE\\utilisateur</code> ; ouvrir <code>\\\\10.160.10.10\\PARTAGE</code> et poser '
+          '<code>TOULOUSE\\utilisateur</code> ; ouvrir <code>\\\\10.160.10.1\\PARTAGE</code> et poser '
           'les droits NTFS pour un groupe de l’autre domaine.</li></ol>'
           + note('gray', '💡 Pourquoi le DNS d’abord',
                  'Une approbation se monte par <strong>nom de domaine</strong>, pas par IP : sans '
