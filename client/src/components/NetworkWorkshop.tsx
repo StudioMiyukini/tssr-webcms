@@ -1,5 +1,9 @@
 import { Fragment, useEffect, useMemo, useState, type CSSProperties, useRef} from 'react';
 import { PictoMateriel, SchemaAtelier, type EtatSchema, type InterfaceSchema } from './SchemaAtelier';
+import {
+  genererFirewall, genererXml, RESTORE_MENU,
+  type ParamsFw, type Iface as IfaceFw, type ClefIface, type Variante,
+} from '@/lib/firewall-scripts';
 
 /**
  * Atelier Réseau & Packet Tracer — assistant multi-étapes à contexte partagé.
@@ -1527,32 +1531,101 @@ function ifaceExterieure(m: Materiel, ctx: Ctx): string | null {
   return null;
 }
 
+/** Plage DHCP raisonnable dans un sous-réseau : .50 → .200, bornée au réseau. */
+function plageDhcp(ipGw: number, cidr: number): { from: string; to: string } | null {
+  const mask = maskFromCidr(cidr);
+  const net = (ipGw & mask) >>> 0;
+  const bc = (net | wildcardFromCidr(cidr)) >>> 0;
+  const premier = (net + 1) >>> 0, dernier = (bc - 1) >>> 0;
+  if (dernier <= premier) return null;                    // /31, /32 : pas de plage
+  let from = (net + 50) >>> 0, to = (net + 200) >>> 0;
+  if (from > dernier) from = premier;
+  if (to > dernier) to = dernier;
+  if (from === ipGw) from = (from + 1) >>> 0;
+  if (to < from) return null;
+  return { from: ipToStr(from), to: ipToStr(to) };
+}
+
 /**
- * Un pare-feu pfSense / OPNsense ne se configure pas en CLI : par l'interface
- * web. On rappelle donc l'adressage calculé et on renvoie vers le configurateur
- * du site, qui écrit le plan complet (interfaces, DHCP, alias, NAT, règles).
+ * Construit un jeu de paramètres OPNsense / pfSense à partir de la topologie
+ * de l'atelier : le pare-feu, ses interfaces câblées et adressées deviennent
+ * WAN / LAN / OPT1… avec leur IP, leur masque, une plage DHCP, le WAN vers le
+ * nuage. C'est le « configurateur » du boîtier alimenté par ce qu'on a relié.
  */
-function configFwWeb(m: Materiel, ctx: Ctx, plan: Plan): string {
+function paramsFwDepuisAtelier(m: Materiel, ctx: Ctx, plan: Plan): ParamsFw {
+  const variante: Variante = m.modele === 'OPNsense' ? 'opnsense' : 'pfsense';
+  const ext = ifaceExterieure(m, ctx);
+  const internes = ifacesDuRouteur(m, ctx, plan).filter(i => i.iface !== ext);
+  const clefsInternes: ClefIface[] = ['lan', 'opt1', 'opt2', 'opt3'];
+  const interfaces: IfaceFw[] = [];
+
+  // WAN : la sortie vers le nuage. Adresse fixe si le contexte la connaît, sinon DHCP.
+  const wanStatic = ipValideWs(ctx.wanIp);
+  interfaces.push({
+    clef: 'wan', ifPhys: 'em0', descr: 'WAN',
+    mode: wanStatic ? 'static' : 'dhcp',
+    ip: wanStatic ? ctx.wanIp.trim() : '', cidr: (ctx.wanCidr || '24').trim(),
+    gw: (ctx.faiGw || '').trim(), dhcpFrom: '', dhcpTo: '',
+  });
+
+  internes.slice(0, clefsInternes.length).forEach((i, idx) => {
+    const ipNum = strToIp(i.ip);
+    const cidr = String(i.cidr || 24);
+    const dhcp = ipNum !== null ? plageDhcp(ipNum, Number(cidr) || 24) : null;
+    interfaces.push({
+      clef: clefsInternes[idx], ifPhys: `em${idx + 1}`,
+      descr: (i.target || i.role || labelIface(clefsInternes[idx])).replace(/[^\w .\-]/g, '').trim() || labelIface(clefsInternes[idx]),
+      mode: 'static', ip: i.ip, cidr, gw: '',
+      dhcpFrom: dhcp?.from || '', dhcpTo: dhcp?.to || '',
+    });
+  });
+
+  return {
+    variante, hostname: nomHoteFw(m.nom), domaine: (ctx.domaine || 'lan').trim(),
+    dns: (ctx.dnsServer || '').trim(), fuseau: 'Europe/Paris',
+    interfaces, aliases: '', nat: '', regles: '', routes: '',
+    vpn: false, vpnReseau: '', vpnLocaux: '', vpnAuth: 'cert',
+  };
+}
+
+const ipValideWs = (s: string) => strToIp((s || '').trim()) !== null;
+const nomHoteFw = (nom: string) => (nom || 'firewall').toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '') || 'firewall';
+const labelIface = (c: ClefIface) => ({ wan: 'WAN', lan: 'LAN', opt1: 'OPT1', opt2: 'OPT2', opt3: 'OPT3' } as Record<ClefIface, string>)[c] || c.toUpperCase();
+
+/**
+ * Les blocs de configuration d'un pare-feu pfSense / OPNsense : un rappel (config
+ * par le web) puis le PLAN complet généré depuis la topologie — interfaces, DHCP,
+ * système, passerelles/routes — et, pour pfSense, le config.xml par zone.
+ */
+function blocsFw(m: Materiel, ctx: Ctx, plan: Plan): BlocCmd[] {
   const url = m.modele === 'OPNsense'
     ? 'https://tssr.miyukini.com/pages/configurateur-opnsense'
     : 'https://tssr.miyukini.com/pages/configurateur-pfsense';
+  const p = paramsFwDepuisAtelier(m, ctx, plan);
   const ext = ifaceExterieure(m, ctx);
-  const l: string[] = [
-    `! === ${m.nom} — ${m.modele} : configuration par l'interface web ===`,
-    `! ${m.modele} se configure dans un navigateur (pas de CLI IOS).`,
-    '! Interfaces à assigner puis adresser (Interfaces > Assignments) :',
+  const rappel: string[] = [
+    `! === ${m.nom} — ${m.modele} : configuration par l'interface web (pas de CLI IOS) ===`,
+    '! Cartes à associer (Interfaces ▸ Assignments) puis adresser :',
   ];
-  const ifs = ifacesDuRouteur(m, ctx, plan);
-  if (ifs.length) {
-    for (const i of ifs) l.push(`!   ${i.iface.padEnd(20)} ${i.role} — ${i.ip}/${i.cidr}  (${i.target})`);
-  } else {
-    l.push('!   (relie et adresse des sous-réseaux dans l\'atelier pour voir la liste ici)');
+  for (const it of p.interfaces) {
+    const cible = it.clef === 'wan' ? (ext ? `sortie ${ext} → nuage` : 'sortie WAN') : it.descr;
+    const adr = it.mode === 'dhcp' ? 'DHCP' : `${it.ip}/${it.cidr}`;
+    rappel.push(`!   ${it.ifPhys.padEnd(6)} ${labelIface(it.clef).padEnd(5)} ${adr.padEnd(18)} ${cible}`);
   }
-  if (ext) l.push(`!   ${ext.padEnd(20)} WAN — la sortie vers le nuage (côté Internet)`);
-  l.push('!');
-  l.push('! Le plan pas à pas (menus + valeur de chaque champ) et, pour pfSense, le');
-  l.push(`! config.xml par zone à restaurer :  ${url}`);
-  return l.join('\n');
+  if (p.interfaces.length <= 1) rappel.push('!   (relie et adresse des sous-réseaux dans l\'atelier pour peupler ce plan)');
+  rappel.push('!');
+  rappel.push(`! Plan détaillé, alias/NAT/règles, VPN, et config.xml éditables :  ${url}`);
+
+  const blocs: BlocCmd[] = [
+    { titre: `Firewall / routeur ${m.modele} — configuration par l’interface web`, texte: rappel.join('\n') },
+  ];
+  for (const s of genererFirewall(p)) blocs.push({ titre: `${m.modele} — ${s.titre}`, texte: s.code });
+  if (p.variante === 'pfsense') {
+    const xml = genererXml(p);
+    for (const s of xml) blocs.push({ titre: s.titre, texte: s.code });
+    if (xml.length) blocs.push({ titre: 'config.xml — restauration', texte: `# Restaurer chaque zone via :\n# ${RESTORE_MENU.pfsense}` });
+  }
+  return blocs;
 }
 
 /**
@@ -1584,6 +1657,54 @@ function configPareFeuIos(m: Materiel, ctx: Ctx, plan: Plan): string {
   ].join('\n');
 }
 
+/**
+ * Les configurateurs « solo » du site qui s'appliquent à un serveur : selon son
+ * rôle, on ouvre l'outil dédié et on y reporte l'adressage calculé ici. Ils ne
+ * vivaient qu'en pages autonomes ; on les rend accessibles depuis l'atelier.
+ */
+const CONFIGURATEURS_SERVEUR: { label: string; url: string; ico: string; note: string }[] = [
+  { ico: '🌿', label: 'Serveur DNS BIND9', url: '/pages/configurateur-bind9', note: 'zones directe + inverse' },
+  { ico: '🌐', label: 'Duo web + base de données', url: '/pages/configurateur-web-bdd', note: 'nginx/Node + MariaDB' },
+  { ico: '⚖️', label: 'Load balancer nginx', url: '/pages/configurateur-loadbalancer', note: 'upstream + keepalived' },
+  { ico: '🔐', label: 'Bastion SSH', url: '/pages/configurateur-bastion', note: 'rebond durci' },
+  { ico: '👥', label: 'Utilisateurs, groupes & droits', url: '/pages/configurateur-utilisateurs', note: 'arborescence + permissions' },
+  { ico: '🖥️', label: 'VM serveur (clonage Hyper-V)', url: '/pages/configurateur-vm', note: 'préparer la VM' },
+  { ico: '🏢', label: 'Active Directory', url: '/pages/configurateur-ad', note: 'OU, comptes, GPO' },
+  { ico: '🗄️', label: 'Serveur de fichiers (AGDLP)', url: '/pages/constructeur-serveur-fichiers', note: 'partages + droits' },
+];
+
+/** Ce que l'adressage laisse deviner du rôle : DNS/AD si c'est le DNS, web si c'est le serveur publié. */
+function recoConfigurateurs(m: Materiel, ctx: Ctx): Set<string> {
+  const s = new Set<string>();
+  const ip = (ctx.postesIp?.[m.id]?.ip || '').trim();
+  if (ip && ip === (ctx.dnsServer || '').trim()) { s.add('/pages/configurateur-bind9'); s.add('/pages/configurateur-ad'); }
+  if (ip && ip === (ctx.webIp || '').trim()) s.add('/pages/configurateur-web-bdd');
+  return s;
+}
+
+/** Le bloc « Par matériel » d'un serveur : son adressage + les configurateurs adaptés. */
+function blocConfigurateursServeur(m: Materiel, ctx: Ctx, plan: Plan): BlocCmd {
+  const conf = ctx.postesIp?.[m.id];
+  const sub = conf?.subId ? plan.subs.find(x => x.id === conf.subId) : undefined;
+  const ip = (conf?.ip || '').trim() || '<adresse>';
+  const masque = sub ? ipToStr(maskFromCidr(sub.cidr)) : '255.255.255.0';
+  const gw = sub && sub.gw !== null ? ipToStr(sub.gw) : '<passerelle>';
+  const dns = (ctx.dnsServer || '').trim() || '<serveur_DNS>';
+  const dom = (ctx.domaine || '').trim() || '<domaine>';
+  const reco = recoConfigurateurs(m, ctx);
+  const l: string[] = [
+    `! === ${m.nom} — serveur : configuration par l'outil adapté ===`,
+    `! Adressage à reporter dans le configurateur :`,
+    `!   IP ${ip} / ${masque}   passerelle ${gw}   DNS ${dns}   domaine ${dom}`,
+    '!',
+    '! Ouvrir le configurateur selon le rôle du serveur (★ = suggéré par l\'adressage) :',
+  ];
+  for (const c of CONFIGURATEURS_SERVEUR) {
+    l.push(`!  ${reco.has(c.url) ? '★' : ' '} ${c.label.padEnd(32)} https://tssr.miyukini.com${c.url}`);
+  }
+  return { titre: 'Configurateurs de service', texte: l.join('\n') };
+}
+
 export function buildTout(ctx: Ctx, plan: Plan): MaterielCmd[] {
   const rcfg = buildRouterConfigs(ctx, plan);
   const swcfg = buildSwitchConfigs(ctx, plan);
@@ -1601,9 +1722,10 @@ export function buildTout(ctx: Ctx, plan: Plan): MaterielCmd[] {
       [...ssh.routers, ...ssh.switches].find(s => s.name === nom);
 
     if (m.type === 'routeur') {
-      // Un pare-feu pfSense / OPNsense se configure par le web, pas en IOS.
+      // Un pare-feu pfSense / OPNsense se configure par le web, pas en IOS :
+      // on génère le plan complet du boîtier depuis la topologie de l'atelier.
       if (m.pareFeu && (m.modele === 'pfSense' || m.modele === 'OPNsense')) {
-        blocs.push({ titre: `Firewall / routeur ${m.modele} — configuration par l’interface web`, texte: configFwWeb(m, ctx, plan) });
+        blocs.push(...blocsFw(m, ctx, plan));
       } else {
         // Ordre demandé : config (interfaces, VLAN, branchement, route), puis les
         // services — DHCP, SSH — et enfin le NAT de sortie.
@@ -1669,14 +1791,16 @@ export function buildTout(ctx: Ctx, plan: Plan): MaterielCmd[] {
       else if (soar) blocs.push({ titre: 'VLAN et trunk (routeur sur un bâton)', texte: soar.text });
       const s = ssh1(m.nom);
       if (s) blocs.push({ titre: 'Accès SSH', texte: s.text });
-    } else if (m.type === 'poste') {
-      // Un poste n'est pas un équipement Cisco : sa « config » est l'adressage
-      // à saisir sur le PC — fixe ou DHCP. Les commandes données sont celles
-      // d'un vrai terminal (Windows / Linux), collables telles quelles.
+    } else if (m.type === 'poste' || m.type === 'serveur') {
+      // Un poste / serveur n'est pas un équipement Cisco : sa « config » est
+      // l'adressage à saisir dessus — fixe ou DHCP. Les commandes données sont
+      // celles d'un vrai terminal (Windows / Linux), collables telles quelles.
+      // Un serveur reçoit en plus la liste des configurateurs de service adaptés.
+      const nomRole = m.type === 'serveur' ? 'du serveur' : 'du poste';
       const conf = ctx.postesIp?.[m.id];
       if (!conf || conf.mode === 'dhcp') {
         blocs.push({
-          titre: 'Adressage du poste — DHCP',
+          titre: `Adressage ${nomRole} — DHCP`,
           texte: [
             `! ${m.nom} reçoit son adresse d'un serveur DHCP (hors poste).`,
             '! Sur le PC : Configuration IP → DHCP (obtenir une adresse automatiquement).',
@@ -1692,7 +1816,7 @@ export function buildTout(ctx: Ctx, plan: Plan): MaterielCmd[] {
         const dns = (ctx.dnsServer || '').trim() || '<serveur_DNS>';
         const ip = (conf.ip || '').trim() || '<adresse>';
         blocs.push({
-          titre: 'Adressage du poste — IP fixe',
+          titre: `Adressage ${nomRole} — IP fixe`,
           texte: [
             `! ${m.nom} — adresse fixe${sub ? ` dans « ${sub.name} »` : ''}`,
             `! IP         : ${ip}`,
@@ -1708,6 +1832,8 @@ export function buildTout(ctx: Ctx, plan: Plan): MaterielCmd[] {
           ].join('\n'),
         });
       }
+      // Un serveur : en plus de l'adressage, les configurateurs de service adaptés.
+      if (m.type === 'serveur') blocs.push(blocConfigurateursServeur(m, ctx, plan));
     }
 
     // Le bloc « d'un trait » : chaque section sous sa bannière, et les
@@ -1982,7 +2108,7 @@ function PosteAdressage({ ctx, m, plan, onCtx }: { ctx: Ctx; m: Materiel; plan: 
   const sub = plan.subs.find(x => x.id === conf.subId) ?? lans[0];
   return (
     <>
-      <div style={legend}>🖥️ Adressage du poste</div>
+      <div style={legend}>🖥️ Adressage {m.type === 'serveur' ? 'du serveur' : 'du poste'}</div>
       <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
         <button type="button" onClick={() => set({ mode: 'dhcp' })}
           style={{ ...smallBtn, ...(conf.mode === 'dhcp' ? { borderColor: 'var(--accent)', color: 'var(--accent)' } : {}) }}>DHCP</button>
@@ -2016,6 +2142,31 @@ function PosteAdressage({ ctx, m, plan, onCtx }: { ctx: Ctx; m: Materiel; plan: 
         </div>
       )}
     </>
+  );
+}
+
+/** Les configurateurs « solo » adaptés à un serveur, en liens cliquables (nouvel onglet). */
+function ServeurConfigurateurs({ ctx, m }: { ctx: Ctx; m: Materiel }) {
+  const reco = recoConfigurateurs(m, ctx);
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={legend}>🧩 Configurateurs de service</div>
+      <div className="meta" style={{ fontSize: 11.5, marginBottom: 8 }}>
+        Selon le rôle de ce serveur, ouvre l’outil dédié (nouvel onglet) et reporte l’adressage ci-dessus.
+        {reco.size > 0 && <> Les <strong>★</strong> sont suggérés d’après le contexte (DNS / serveur web déclarés).</>}
+      </div>
+      <div style={{ display: 'grid', gap: 6 }}>
+        {CONFIGURATEURS_SERVEUR.map(c => (
+          <a key={c.url} href={c.url} target="_blank" rel="noopener noreferrer"
+            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '7px 10px', border: '1px solid var(--border)', borderRadius: 8, textDecoration: 'none', color: 'var(--text)', background: reco.has(c.url) ? 'var(--surface-2)' : 'transparent' }}>
+            <span aria-hidden>{c.ico}</span>
+            <span style={{ fontWeight: 600, fontSize: 13 }}>{c.label}</span>
+            <span className="meta" style={{ fontSize: 11 }}>{c.note}</span>
+            {reco.has(c.url) && <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--accent)', fontWeight: 700 }}>★ suggéré</span>}
+          </a>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -2185,8 +2336,11 @@ function DialogueMateriel({ ctx, m, mlsPlan, plan, onPatch, onPorts, onCtx, onRe
           </>
         ) : m.type === 'routeur' ? (
           <RouteurInterfaces ctx={ctx} m={m} plan={plan} onCtx={onCtx} />
-        ) : m.type === 'poste' ? (
-          <PosteAdressage ctx={ctx} m={m} plan={plan} onCtx={onCtx} />
+        ) : (m.type === 'poste' || m.type === 'serveur') ? (
+          <>
+            <PosteAdressage ctx={ctx} m={m} plan={plan} onCtx={onCtx} />
+            {m.type === 'serveur' && <ServeurConfigurateurs ctx={ctx} m={m} />}
+          </>
         ) : (
           <div className="meta" style={{ fontSize: 12.5 }}>
             Un {m.type} n'a pas de ports à configurer ici : son rôle se lit dans le schéma et l'adressage.
