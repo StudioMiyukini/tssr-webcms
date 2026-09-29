@@ -26,6 +26,12 @@ const CIDR_TO_MASK: Record<number, string> = {
 
 const lsGet = (k: string, d: string) => { try { return localStorage.getItem(k) || d; } catch { return d; } };
 const gatewayFromIp = (ip: string) => { const m = ip.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.\d{1,3}$/); return m ? `${m[1]}.${m[2]}.${m[3]}.254` : ''; };
+/** Prochaine lettre de lecteur libre (E → Z), en évitant celles déjà prises. */
+const prochaineLettre = (disks: { letter: string }[]) => {
+  const pris = new Set(disks.map(d => (d.letter || '').trim().toUpperCase()));
+  for (let c = 69; c <= 90; c++) { const l = String.fromCharCode(c); if (!pris.has(l)) return l; }
+  return 'E';
+};
 
 const fieldStyle: React.CSSProperties = { width: '100%', padding: '8px 10px', border: '1px solid var(--border)', borderRadius: 8, background: 'var(--surface)', color: 'var(--text)', fontSize: 14, boxSizing: 'border-box' };
 const labelStyle: React.CSSProperties = { display: 'block', fontSize: 12.5, fontWeight: 600, color: 'var(--text-soft)', marginBottom: 4 };
@@ -61,6 +67,11 @@ export function VmConfigurator() {
   const [sourceVM, setSourceVM] = useState(() => lsGet('vmcfg_source', 'Master-WS2022'));
   const [exportPath, setExportPath] = useState(() => lsGet('vmcfg_export', 'C:\\TEMP'));
   const [vhdDir, setVhdDir] = useState(() => lsGet('vmcfg_vhddir', 'C:\\Hyper-V\\VHDs'));
+  // Disques : taille du disque système (agrandissement seul) + disques de données à créer
+  const [sysDiskGo, setSysDiskGo] = useState(() => lsGet('vmcfg_sysdisk', ''));
+  const [dataDisks, setDataDisks] = useState<{ size: string; letter: string; label: string }[]>(() => {
+    try { const v = JSON.parse(localStorage.getItem('vmcfg_datadisks') || 'null'); return Array.isArray(v) ? v : [{ size: '10', letter: 'E', label: 'DATA' }]; } catch { return [{ size: '10', letter: 'E', label: 'DATA' }]; }
+  });
   // Appartenance
   const [membership, setMembership] = useState<'workgroup' | 'domain'>('domain');
   const [domain, setDomain] = useState('miyukini.lan');
@@ -76,7 +87,7 @@ export function VmConfigurator() {
   const [unlocked, setUnlocked] = useState(() => { try { return sessionStorage.getItem('vmcfg_ok') === '1'; } catch { return false; } });
   const unlock = () => { setUnlocked(true); try { sessionStorage.setItem('vmcfg_ok', '1'); } catch { /* */ } };
 
-  useEffect(() => { try { localStorage.setItem('vmcfg_source', sourceVM); localStorage.setItem('vmcfg_export', exportPath); localStorage.setItem('vmcfg_vhddir', vhdDir); localStorage.setItem('vmcfg_masters', JSON.stringify(masters)); } catch { /* indisponible */ } }, [sourceVM, exportPath, vhdDir, masters]);
+  useEffect(() => { try { localStorage.setItem('vmcfg_source', sourceVM); localStorage.setItem('vmcfg_export', exportPath); localStorage.setItem('vmcfg_vhddir', vhdDir); localStorage.setItem('vmcfg_masters', JSON.stringify(masters)); localStorage.setItem('vmcfg_sysdisk', sysDiskGo); localStorage.setItem('vmcfg_datadisks', JSON.stringify(dataDisks)); } catch { /* indisponible */ } }, [sourceVM, exportPath, vhdDir, masters, sysDiskGo, dataDisks]);
 
   const num2 = (num || '01').padStart(2, '0');
   const primaryKey = type === 'SRV' ? (roles.includes(primary) ? primary : (roles[0] || 'SRV')) : '';
@@ -123,6 +134,22 @@ export function VmConfigurator() {
     host.push(`                Set-VMMemory    -VMName $VMCloneName -StartupBytes ${ramGo || '4'}GB`);
     host.push(`                if (-not (Get-VMSwitch -Name '${sw}' -ErrorAction SilentlyContinue)) { New-VMSwitch -Name '${sw}' -SwitchType Private }`);
     host.push(`                Connect-VMNetworkAdapter -VMName $VMCloneName -SwitchName '${sw}'`);
+    // ----- Disques : agrandir le VHDX système + ajouter des disques de données (VM arrêtée) -----
+    const sysGo = Number(sysDiskGo) > 0 ? sysDiskGo.trim() : '';
+    const dd = dataDisks.filter(d => Number(d.size) > 0 && /^[A-Za-z]$/.test((d.letter || '').trim()));
+    if (sysGo || dd.length) host.push('                # ----- Disques -----');
+    if (sysGo) {
+      host.push('                # Disque systeme : agrandir le VHDX (agrandissement uniquement ; jamais en dessous du contenu)');
+      host.push('                $OsDisk = Get-VMHardDiskDrive -VMName $VMCloneName | Select-Object -First 1');
+      host.push(`                if ($OsDisk) { Resize-VHD -Path $OsDisk.Path -SizeBytes ${sysGo}GB }`);
+    }
+    dd.forEach((d, i) => {
+      const lbl = (d.label || 'DATA').replace(/[^A-Za-z0-9_-]/g, '') || 'DATA';
+      host.push(`                # Disque de donnees ${d.letter.toUpperCase()}: (${d.size} Go, ${lbl})`);
+      host.push(`                $D${i} = Join-Path $VMCloneImportVhdxPath '${vmName}-${lbl}.vhdx'`);
+      host.push(`                if (-not (Test-Path $D${i})) { New-VHD -Path $D${i} -SizeBytes ${d.size.trim()}GB -Dynamic | Out-Null }`);
+      host.push(`                Add-VMHardDiskDrive -VMName $VMCloneName -Path $D${i}`);
+    });
     host.push('                Start-VM -Name $VMCloneName');
     host.push('                Remove-Item -Path $ExportVMPath -Recurse -Force');
     host.push(`                Write-Output "Clone pret : ${vmName}"`);
@@ -146,6 +173,30 @@ export function VmConfigurator() {
     vm.push('# --- Pare-feu : regles personnalisees pour autoriser le ping (ICMP echo entrant) ---');
     vm.push("New-NetFirewallRule -DisplayName 'Autoriser Ping (ICMPv4 entrant)' -Protocol ICMPv4 -IcmpType 8 -Direction Inbound -Action Allow -Profile Any | Out-Null");
     vm.push("New-NetFirewallRule -DisplayName 'Autoriser Ping (ICMPv6 entrant)' -Protocol ICMPv6 -IcmpType 128 -Direction Inbound -Action Allow -Profile Any | Out-Null");
+    if (sysGo || dd.length) {
+      vm.push('# --- Disques : etendre C: puis initialiser/formater les disques de donnees ---');
+    }
+    if (sysGo) {
+      vm.push('# Etendre C: a tout l\'espace du VHDX agrandi (sans effet si deja au maximum)');
+      vm.push('$max = (Get-PartitionSupportedSize -DriveLetter C).SizeMax');
+      vm.push('Resize-Partition -DriveLetter C -Size $max -ErrorAction SilentlyContinue');
+    }
+    if (dd.length) {
+      vm.push('# Disques de donnees : initialiser (GPT), partitionner et formater en NTFS');
+      vm.push('$Data = @(');
+      dd.forEach((d, i) => {
+        const lbl = (d.label || 'DATA').replace(/[^A-Za-z0-9_-]/g, '') || 'DATA';
+        vm.push(`    @{ Letter = '${d.letter.trim().toUpperCase()}'; Label = '${lbl}' }${i < dd.length - 1 ? ',' : ''}`);
+      });
+      vm.push(')');
+      vm.push('$raw = @(Get-Disk | Where-Object PartitionStyle -eq \'RAW\' | Sort-Object Number)');
+      vm.push('for ($i = 0; $i -lt $Data.Count -and $i -lt $raw.Count; $i++) {');
+      vm.push('    Initialize-Disk -Number $raw[$i].Number -PartitionStyle GPT -ErrorAction SilentlyContinue');
+      vm.push('    New-Partition -DiskNumber $raw[$i].Number -UseMaximumSize -DriveLetter $Data[$i].Letter |');
+      vm.push('        Format-Volume -FileSystem NTFS -NewFileSystemLabel $Data[$i].Label -Confirm:$false | Out-Null');
+      vm.push('    Write-Host "Disque $($Data[$i].Letter): ($($Data[$i].Label)) pret." -ForegroundColor Green');
+      vm.push('}');
+    }
     if (type === 'SRV' && roles.length) {
       const feats = roles.map(k => ROLES.find(r => r.key === k)?.feature).filter(Boolean).join(',');
       vm.push('# --- Installation des roles ---');
@@ -170,7 +221,7 @@ export function VmConfigurator() {
       { id: 'host', title: '① Sur l’hôte Hyper-V — cloner la VM', code: host.join('\n') },
       { id: 'vm', title: '② Dans la VM — configuration', code: vm.join('\n') },
     ];
-  }, [vmName, vcpu, ramGo, sw, type, roles, iface, ip, cidr, effectiveGw, dns, sourceVM, exportPath, vhdDir, membership, domain, workgroup]);
+  }, [vmName, vcpu, ramGo, sw, type, roles, iface, ip, cidr, effectiveGw, dns, sourceVM, exportPath, vhdDir, membership, domain, workgroup, sysDiskGo, dataDisks]);
 
   const copy = (id: string, code: string) => {
     navigator.clipboard?.writeText(code).then(() => { setCopiedId(id); setTimeout(() => setCopiedId(''), 1800); }).catch(() => {});
@@ -286,6 +337,44 @@ export function VmConfigurator() {
               <input style={fieldStyle} value={sw} onChange={e => setSw(e.target.value)} />
             </div>
           </div>
+        </div>
+
+        {/* Disques */}
+        <div style={groupStyle}>
+          <div style={legendStyle}>💽 Disques &amp; partitions (hôte)</div>
+          <div style={rowStyle}>
+            <div>
+              <label style={labelStyle}>Disque système (Go) <span className="meta" style={{ fontWeight: 400 }}>(vide = inchangé)</span></label>
+              <input type="number" min={1} style={fieldStyle} value={sysDiskGo} placeholder="ex. 80" onChange={e => setSysDiskGo(e.target.value)} />
+            </div>
+          </div>
+          <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--text-soft)', margin: '12px 0 6px' }}>Disques de données</div>
+          {dataDisks.map((d, i) => (
+            <div key={i} style={{ display: 'grid', gridTemplateColumns: '1fr 90px 1fr auto', gap: 8, marginBottom: 8, alignItems: 'end' }}>
+              <div>
+                <label style={{ ...labelStyle, fontSize: 11.5 }}>Taille (Go)</label>
+                <input type="number" min={1} style={fieldStyle} value={d.size} placeholder="10"
+                  onChange={e => setDataDisks(ds => ds.map((x, j) => j === i ? { ...x, size: e.target.value } : x))} />
+              </div>
+              <div>
+                <label style={{ ...labelStyle, fontSize: 11.5 }}>Lettre</label>
+                <input maxLength={1} style={{ ...fieldStyle, textAlign: 'center' }} value={d.letter} placeholder="E"
+                  onChange={e => setDataDisks(ds => ds.map((x, j) => j === i ? { ...x, letter: e.target.value.replace(/[^A-Za-z]/g, '') } : x))} />
+              </div>
+              <div>
+                <label style={{ ...labelStyle, fontSize: 11.5 }}>Nom (label)</label>
+                <input style={fieldStyle} value={d.label} placeholder="DATA"
+                  onChange={e => setDataDisks(ds => ds.map((x, j) => j === i ? { ...x, label: e.target.value } : x))} />
+              </div>
+              <button type="button" title="Retirer ce disque" style={{ ...btnStyle, padding: '8px 11px', borderColor: 'var(--border)', color: 'var(--text-soft)' }}
+                onClick={() => setDataDisks(ds => ds.filter((_, j) => j !== i))}>✕</button>
+            </div>
+          ))}
+          <button type="button" style={{ ...btnStyle, padding: '5px 12px', fontSize: 12.5 }}
+            onClick={() => setDataDisks(ds => [...ds, { size: '10', letter: prochaineLettre(ds), label: 'DATA' }])}>+ disque de données</button>
+          <p className="meta" style={{ fontSize: 11.5, marginTop: 8 }}>
+            Le disque système n’est <strong>qu’agrandi</strong> (jamais réduit sous son contenu) : le clone est arrêté, le VHDX étendu, puis <code>C:</code> poussé à tout l’espace dans la VM. Chaque disque de données est créé (VHDX dynamique), attaché, puis <strong>initialisé, partitionné et formaté en NTFS</strong> avec sa lettre et son nom.
+          </p>
         </div>
 
         {/* Clonage */}
