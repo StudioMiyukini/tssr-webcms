@@ -357,9 +357,10 @@ CORPS = '\n'.join([
     etape(7, BLEU, 'Poser la politique de sauvegarde',
           'La règle 3-2-1, la rétention, le chiffrement, le test',
           tab(['Principe', 'Application'],
-              [['<strong>3-2-1</strong>', '3 copies, 2 supports, 1 hors-site (la réplication vers l’autre agence assure le hors-site)'],
+              [['<strong>3-2-1</strong> → <strong>3-2-1-1-0</strong>', '3 copies, 2 supports, 1 hors-site (la réplication assure le hors-site), <strong>1 immuable</strong> (référentiel durci / hors-ligne, à l’épreuve du ransomware), <strong>0 erreur</strong> de restauration vérifiée'],
                ['Rétention', 'Ex. 14 points quotidiens + 4 hebdomadaires — dimensionner le disque de 300 Go'],
                ['Chiffrement', 'Mot de passe sur le job de l’AD, conservé hors du serveur'],
+               ['Vérification d’intégrité', '<strong>Health Check</strong> (relit les blocs) et <strong>SureBackup</strong> (démarre la VM sauvegardée dans un labo isolé) — automatisent le « 0 » de 3-2-1-1-0'],
                ['Test de restauration', 'Restauration périodique vérifiée (fichiers + VM) — sinon ce n’est pas une sauvegarde'],
                ['Isolation', 'Serveur de sauvegarde hors domaine, comptes dédiés, segment filtré (étape 1)']])
           + note('blue', '🔗 Pour aller plus loin',

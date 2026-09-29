@@ -81,10 +81,11 @@ CORPS = '\n'.join([
          'relie les deux et tourne tout seul. Le durcissement d’un serveur rappelle pourquoi : '
          '<a href="/pages/durcissement-linux">une sauvegarde jamais testée n’est pas une sauvegarde</a> '
          '(règle 3-2-1).',
-         'Deux <strong>granularités</strong> selon le besoin : la VM <strong>entière</strong> (job '
-         'image-level, étapes 2–4) ou <strong>seulement certains fichiers</strong> d’une VM (agent '
-         'File Level, étape 5) — le TP demande les deux : la VM Web en entier, et les documents du '
-         'bureau du serveur AD.'),
+         'Trois <strong>granularités</strong> selon le besoin : la VM <strong>entière</strong> (job '
+         'image-level, étapes 2–4), <strong>certains fichiers</strong> d’une VM (agent File Level, '
+         'étape 5), ou un <strong>partage de fichiers</strong> sur un serveur (File Share / Unstructured '
+         'Data, sans agent — étape 5). Le TP demande la VM Web en entier, les documents du bureau du '
+         'serveur AD, et le dossier « Partage » du serveur de fichiers.'),
     note('yellow', '⚠️ Une évidence qu’on oublie : pas sur le même disque',
          'Le référentiel de sauvegarde doit être sur un <strong>support différent</strong> du disque '
          'qui porte les VHDX de la VM — un second disque, un NAS, un partage. Sauvegarder une VM à '
@@ -170,7 +171,17 @@ CORPS = '\n'.join([
                  'Une sauvegarde <em>File Level</em> protège des fichiers, pas le système : on en '
                  'restaure des documents, mais pas la VM par Instant Recovery. Pour pouvoir remonter '
                  'tout le serveur, on garde <strong>en plus</strong> un job image-level de sa VM (comme '
-                 'pour la VM Web). Le VSS applicatif est inutile pour de simples fichiers.')),
+                 'pour la VM Web). Le VSS applicatif est inutile pour de simples fichiers.')
+          + note('blue', '🗂️ Troisième voie : un partage de fichiers (File Share)',
+                 'Pour un <strong>dossier partagé d’un serveur de fichiers</strong> (ex. « Partage » '
+                 'en SMB), ni agent ni image : Veeam sauvegarde le partage <strong>directement</strong>. '
+                 + nav('Inventory ▸ Unstructured Data ▸ Add ▸ File Server') + ' — déclarer le serveur '
+                 'par son nœud <strong>File Server</strong> (et non <em>File Share</em>) — puis '
+                 + nav('Home ▸ Backup Job ▸ File Share') + ' → sélectionner le dossier « Partage » → '
+                 'référentiel + rétention → lancer, et vérifier <em>Success</em> dans '
+                 + nav('History') + '. La restauration d’un fichier supprimé se fait ensuite par '
+                 + nav('Home ▸ Restore ▸ File Share') + ' (restauration granulaire), sans remonter tout '
+                 'le serveur.')),
 
     etape(6, AMBRE, 'Lancer et surveiller les jobs', 'Start, puis Last 24 Hours',
           '<p>À la fin de l’assistant, laisser <em>Run the job when I click Finish</em> — ou plus '
@@ -200,7 +211,17 @@ CORPS = '\n'.join([
                  'Fais au moins une fois une <strong>restauration de fichier</strong> (rapide) et, si '
                  'possible, une <strong>Instant Recovery</strong> dans un réseau isolé : c’est la seule '
                  'preuve que la sauvegarde est exploitable. Une sauvegarde jamais restaurée est une '
-                 'hypothèse, pas une sécurité.')),
+                 'hypothèse, pas une sécurité.')
+          + note('blue', '🔎 Vérifier sans restaurer à la main : Health Check &amp; SureBackup',
+                 'Veeam sait <strong>contrôler l’intégrité</strong> des sauvegardes tout seul. Le '
+                 '<strong>Health Check</strong> (une option du job : <em>Storage ▸ Advanced ▸ '
+                 'Maintenance</em>) relit les blocs et détecte une sauvegarde <em>corrompue</em> — '
+                 'mais il ne prouve pas que la VM redémarre. <strong>SureBackup</strong> va plus loin : '
+                 'il <strong>démarre réellement</strong> la VM sauvegardée dans un <em>bac à sable '
+                 'réseau isolé</em> (virtual lab) et teste qu’elle boote et répond, automatiquement, '
+                 'à chaque cycle. C’est la réponse à « pourquoi tester les restaurations » — sauf que '
+                 'la machine le fait pour toi. <em>(SureBackup n’est pas dans l’édition Community ; '
+                 'à défaut, on garde le test de restauration manuel.)</em>')),
 
     note('green', '✅ À retenir',
          'Trois briques Veeam : l’<strong>hôte</strong> déclaré, un <strong>référentiel</strong> sur un '
@@ -208,9 +229,12 @@ CORPS = '\n'.join([
          'entière</strong> = job <em>image-level</em> (Hyper-V) ; <strong>fichiers précis</strong> = '
          'agent Veeam en mode <em>File Level</em>. Pour une VM AD/base de données, '
          '<strong>application-aware processing</strong> (VSS) est obligatoire pour une sauvegarde image '
-         'restaurable. La chaîne full + incréments suit une <strong>rétention</strong>, et on '
-         '<strong>teste la restauration</strong> — sinon ce n’est pas une sauvegarde. Penser '
-         '<strong>3-2-1</strong> : 3 copies, 2 supports, 1 hors site.'),
+         'restaurable. Un <strong>partage de fichiers</strong> se sauvegarde sans agent (File Share / '
+         'Unstructured Data). La chaîne full + incréments suit une <strong>rétention</strong>, et on '
+         '<strong>teste la restauration</strong> (à la main, ou automatiquement par <strong>Health '
+         'Check / SureBackup</strong>) — sinon ce n’est pas une sauvegarde. Penser <strong>3-2-1</strong>, '
+         'voire <strong>3-2-1-1-0</strong> : 3 copies, 2 supports, 1 hors site, <strong>1 immuable</strong>, '
+         '<strong>0 erreur</strong> de restauration vérifiée.'),
     note('gray', '🔗 À rapprocher',
          '<a href="/pages/procedure-veeam-replication">Réplication et politique de sauvegarde</a> '
          '(la suite : répliquer entre agences, failover / failback) · '
