@@ -44,6 +44,7 @@ const BLOCKS: Record<string, BlockDef> = {
   'pfsense-configurator': { load: () => named(import('./PfsenseConfigurator'), 'PfsenseConfigurator') },
   'loadbalancer-configurator': { load: () => named(import('./LoadBalancerConfigurator'), 'LoadBalancerConfigurator') },
   'vpn-configurator': { load: () => named(import('./VpnConfigurator'), 'VpnConfigurator') },
+  'nginx-mariadb-configurator': { load: () => named(import('./NginxMariadbConfigurator'), 'NginxMariadbConfigurator') },
   'network-workshop': { load: () => named(import('./NetworkWorkshop'), 'NetworkWorkshop') },
   'hex-converter': { load: () => named(import('./HexConverter'), 'HexConverter') },
   'realisation1-trainer': { load: () => named(import('./Realisation1Trainer'), 'Realisation1Trainer') },
