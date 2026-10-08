@@ -48,7 +48,7 @@ const Bloc = memo(function Bloc({ code, refPre }: { code: string; refPre: (el: H
  * @human  Atelier : serveur web nginx + MariaDB (1 ou 2 machines, DNS, port forward, load balancer).
  */
 export function NginxMariadbConfigurator() {
-  const [separe, setSepare] = useState(() => lsGetB('nd_separe', true));
+  const [separe, setSepare] = useState(() => lsGetB('nd_separe', false));
   // Web
   const [vmWeb, setVmWeb] = useState(() => lsGet('nd_vmweb', 'SRV_WEB_01'));
   const [ipWeb, setIpWeb] = useState(() => lsGet('nd_ipweb', '10.180.30.10'));
@@ -148,7 +148,7 @@ export function NginxMariadbConfigurator() {
       <div style={groupe}>
         <div style={legende}>🌐 Le serveur web (nginx + PHP)</div>
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', marginBottom: 12 }}>
-          <label style={check}><input type="checkbox" checked={separe} onChange={e => { setSepare(e.target.checked); lsSetB('nd_separe', e.target.checked); }} /> nginx &amp; MariaDB sur <strong>2 machines</strong> <span className="meta">(décoché = tout sur une seule)</span></label>
+          <label style={check}><input type="checkbox" checked={separe} onChange={e => { setSepare(e.target.checked); lsSetB('nd_separe', e.target.checked); }} /> nginx &amp; MariaDB sur <strong>2 machines</strong> <span className="meta">(décoché = <strong>une seule VM, une seule IP</strong>)</span></label>
           <label style={check}><input type="checkbox" checked={mdpSysteme} onChange={e => setMdpSysteme(e.target.checked)} /> root en {MDP}</label>
         </div>
         <div style={rangee}>
