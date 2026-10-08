@@ -58,7 +58,8 @@
 #    tssr.toolbox.statut       (1)  statut & tests rapides
 #    tssr.toolbox.paquets      (2)  paquets de base
 #    tssr.toolbox.reseau       (3)  configuration IP statique
-#    tssr.toolbox.ssh          (4)  durcissement SSH
+#    tssr.toolbox.ssh          (4)  SSH : durcissement + SPA furtif (fwknop)
+#    tssr.toolbox.ssh.spa           installeur SPA fwknop (SSH furtif)
 #    tssr.toolbox.utilisateur  (5)  création d'un utilisateur
 #    tssr.toolbox.web          (6/7) pile web commune (PHP + MariaDB)
 #    tssr.toolbox.web.apache   (6)  serveur web Apache
@@ -358,11 +359,52 @@ EOF
 # @do durcir_la_configuration_ssh
 # @role securite
 # @layer outil
-# @human Durcissement SSH : changer le port (ex. 2222) et interdire la connexion root, puis redémarrer SSH
+# @human SSH : durcissement (port + root interdit) ET option SPA furtif (fwknop), port 22 fermé par défaut
 # ─────────────────────────────────────────────────────────────────────────────
+# Dispatcher : petit sous-menu de la partie SSH.
 seq_ssh() {
+    SEQ_COURANTE="SSH"
+    titre "4) SSH — durcissement & furtivité"
+    echo "   ${GRAS}a${RAZ}) Durcir SSH (changer le port + interdire root)"
+    echo "   ${GRAS}b${RAZ}) Installer le SPA fwknop (SSH furtif : port 22 fermé par défaut)"
+    echo "   ${GRAS}m${RAZ}) Retour au menu principal"
+    echo
+    local c; read -rp "  Ton choix : " c
+    case "${c,,}" in
+        a) __ssh_hardening ;;
+        b) __ssh_spa ;;
+        *) return 0 ;;
+    esac
+}
+
+# @id tssr.toolbox.ssh.spa
+# @do installer_le_spa_fwknop_pour_un_ssh_furtif
+# @role securite
+# @layer outil
+# @human SPA fwknop : télécharge et lance l'installeur qui ferme le 22 et ne l'ouvre qu'à un paquet signé
+# Télécharge et lance l'installeur SPA (fwknop) — SSH furtif, sans bastion.
+__ssh_spa() {
+    SEQ_COURANTE="SSH furtif (SPA fwknop)"
+    titre "SPA fwknop — SSH furtif (port 22 fermé par défaut)"
+    besoin_root || return 1
+    avert "Le SPA FERME le port SSH : il ne s'ouvre qu'à la volée, pour l'IP qui envoie un paquet signé."
+    avert "Garde une session SSH ouverte ET une clé publique en place (anti-lockout)."
+    confirmer "Télécharger et lancer l'installeur SPA (fwknop) ?" o || { info "Annulé, retour au menu."; return 0; }
+    local URL="https://tssr.miyukini.com/spa-install.sh"
+    if etape "Téléchargement de l'installeur SPA" curl -fsSL "$URL" -o /tmp/spa-install.sh; then
+        chmod +x /tmp/spa-install.sh
+        info "Lancement de l'installeur SPA (il a ses propres gates et son journal)…"
+        echo
+        bash /tmp/spa-install.sh
+    else
+        return 1
+    fi
+}
+
+# Durcissement SSH classique : changer le port + interdire root.
+__ssh_hardening() {
     SEQ_COURANTE="Durcissement SSH"
-    titre "4) Durcissement SSH"
+    titre "Durcissement SSH (port + root interdit)"
     besoin_root || return 1
     command -v sshd >/dev/null 2>&1 || { echouer "openssh-server n'est pas installé"; return 1; }
 
@@ -833,7 +875,7 @@ menu() {
         echo "   ${GRAS}1${RAZ}) Statut & tests rapides (réseau, disque, RAM)"
         echo "   ${GRAS}2${RAZ}) Installer les paquets de base"
         echo "   ${GRAS}3${RAZ}) Configurer l'IP (statique)"
-        echo "   ${GRAS}4${RAZ}) Durcir SSH (port + root interdit)"
+        echo "   ${GRAS}4${RAZ}) SSH — durcissement (port + root) & SPA furtif"
         echo "   ${GRAS}5${RAZ}) Créer un utilisateur"
         echo "   ${GRAS}6${RAZ}) Serveur web Apache + MariaDB + PHP"
         echo "   ${GRAS}7${RAZ}) Serveur web nginx + MariaDB + PHP"
