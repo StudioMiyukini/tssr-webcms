@@ -64,6 +64,18 @@ CONTENU = '\n'.join([
     '<p>Ou avec <code>wget</code> :</p>',
     '<div class="proc-cmd">wget -qO tssr-toolbox.sh ' + URL + ' &amp;&amp; chmod +x tssr-toolbox.sh &amp;&amp; sudo ./tssr-toolbox.sh</div>',
 
+    '<h3>③ Vérifier l’intégrité avant d’exécuter (recommandé)</h3>',
+    '<p>Comme le script se lance <strong>en root</strong>, on vérifie sa somme SHA-256 '
+    '(publiée dans <a href="https://tssr.miyukini.com/SHA256SUMS">SHA256SUMS</a>) avant de l’exécuter :</p>',
+    '<div class="proc-cmd">curl -fsSL ' + URL + ' -o tssr-toolbox.sh\n'
+    'curl -fsSL https://tssr.miyukini.com/SHA256SUMS -o SHA256SUMS\n'
+    'sha256sum --ignore-missing -c SHA256SUMS &amp;&amp; sudo ./tssr-toolbox.sh</div>',
+    note('gray', '🔐 Portée de la vérification',
+         'La somme et le script étant servis par le même site, cela protège surtout d’un '
+         '<strong>téléchargement partiel ou altéré</strong> (cache, coupure). Pour une garantie '
+         'forte contre une modification, compare la somme à celle <strong>communiquée en cours</strong> '
+         '(hors ligne).'),
+
     '<h2>Les séquences du menu</h2>',
     tab(['#', 'Séquence', 'Gate de validation'], [
         ['1', 'Statut &amp; tests rapides — IP, DHCP/statique, passerelle, DNS, '

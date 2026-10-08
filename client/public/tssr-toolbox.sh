@@ -1170,13 +1170,17 @@ menu() {
 # @layer outil
 # @human Point d'entrée : prépare le journal, souhaite la bienvenue, puis lance le menu
 # ─────────────────────────────────────────────────────────────────────────────
-log_init
-titre "Bienvenue dans la boîte à outils TSSR"
-echo "  Debian 13 • scripts pédagogiques • chaque action est journalisée."
-echo "  Journal de cette session : $LOG"
-if [ "$(id -u)" -ne 0 ]; then
-    avert "Tu n'es pas root : les séquences d'installation refuseront de démarrer."
-    avert "Relance en root pour tout débloquer :  sudo $0"
+# TSSR_TOOLBOX_LIB=1 permet de « sourcer » le script sans lancer le menu
+# (pour les tests / smoke-test, et la réutilisation des fonctions en Ansible).
+if [ "${TSSR_TOOLBOX_LIB:-0}" != "1" ]; then
+    log_init
+    titre "Bienvenue dans la boîte à outils TSSR"
+    echo "  Debian 13 • scripts pédagogiques • chaque action est journalisée."
+    echo "  Journal de cette session : $LOG"
+    if [ "$(id -u)" -ne 0 ]; then
+        avert "Tu n'es pas root : les séquences d'installation refuseront de démarrer."
+        avert "Relance en root pour tout débloquer :  sudo $0"
+    fi
+    pause
+    menu
 fi
-pause
-menu
