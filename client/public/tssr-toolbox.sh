@@ -67,6 +67,11 @@
 #    tssr.toolbox.bastion      (8)  bastion Apache Guacamole
 #    tssr.toolbox.glpi         (9)  serveur GLPI
 #    tssr.toolbox.sauvegarde   (10) sauvegarde /etc + /home
+#    tssr.toolbox.zabbix       (11) brancher la VM à Zabbix (agent 2)
+#    tssr.toolbox.modele       (12) préparer un modèle (sceller pour clonage)
+#    tssr.toolbox.parefeu      (13) pare-feu de base + fail2ban
+#    tssr.toolbox.audit        (14) audit sécurité (lecture seule) + rapport
+#    tssr.toolbox.provision    (P)  provisionner une VM (mise en service guidée)
 #    tssr.toolbox.flux         le menu, le retour menu/quitter, la sortie
 #    tssr.toolbox.main         le point d'entrée
 # ════════════════════════════════════════════════════════════════════════════
@@ -839,6 +844,250 @@ seq_backup() {
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# @id tssr.toolbox.zabbix
+# @do brancher_la_vm_a_zabbix_via_l_agent_2
+# @role orchestration
+# @layer outil
+# @human Brancher cette VM à Zabbix : installe l'agent 2, le pointe vers le serveur, rappelle l'ajout d'hôte + template
+# ─────────────────────────────────────────────────────────────────────────────
+seq_zabbix() {
+    SEQ_COURANTE="Brancher à Zabbix"
+    titre "11) Brancher cette VM à Zabbix (agent 2)"
+    besoin_root || return 1
+
+    local SRV HNAME
+    demander "IP du serveur Zabbix" SRV
+    echo "$SRV" | grep -qE '^([0-9]{1,3}\.){3}[0-9]{1,3}$' || { echouer "IP du serveur invalide : $SRV"; return 1; }
+    demander "Nom d'hôte vu par Zabbix" HNAME "$(hostname)"
+
+    # Dépôt Zabbix selon la version de Debian.
+    local DEB ZVER=7.4; . /etc/os-release 2>/dev/null
+    case "${VERSION_ID:-12}" in 13*) DEB=debian13 ;; 12*) DEB=debian12 ;; 11*) DEB=debian11 ;; *) DEB=debian12 ;; esac
+    info "Dépôt Zabbix $ZVER pour $DEB"
+    etape "Téléchargement du dépôt Zabbix" bash -c \
+      "wget -q 'https://repo.zabbix.com/zabbix/${ZVER}/release/debian/pool/main/z/zabbix-release/zabbix-release_latest_${ZVER}+${DEB}_all.deb' -O /tmp/zabbix-release.deb" || return 1
+    etape "Installation du dépôt" dpkg -i /tmp/zabbix-release.deb || return 1
+    etape "Mise à jour APT" apt-get update || return 1
+    etape "Installation de zabbix-agent2" apt-get install -y zabbix-agent2 || return 1
+
+    # Configuration : vers quel serveur, et sous quel nom.
+    local CFG=/etc/zabbix/zabbix_agent2.conf
+    sed -i "s/^Server=.*/Server=$SRV/;s/^ServerActive=.*/ServerActive=$SRV:10051/;s/^Hostname=.*/Hostname=$HNAME/" "$CFG"
+    grep -q "^Server=$SRV" "$CFG"            || echo "Server=$SRV" >> "$CFG"
+    grep -q "^ServerActive=$SRV:10051" "$CFG" || echo "ServerActive=$SRV:10051" >> "$CFG"
+    grep -q "^Hostname=$HNAME" "$CFG"         || echo "Hostname=$HNAME" >> "$CFG"
+    command -v ufw >/dev/null 2>&1 && ufw allow 10050/tcp >> "$LOG" 2>&1
+
+    etape "Activation de l'agent" systemctl enable --now zabbix-agent2 || return 1
+    systemctl restart zabbix-agent2 >> "$LOG" 2>&1; sleep 1
+    gate "l'agent zabbix-agent2 est actif" systemctl is-active --quiet zabbix-agent2 || return 1
+    info "Côté serveur Zabbix : ajoute l'hôte « $HNAME » (interface agent $(hostname -I | awk '{print $1}'):10050)"
+    info "puis applique le template « Linux by Zabbix agent »."
+}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# @id tssr.toolbox.modele
+# @do preparer_un_modele_de_vm_pour_le_clonage
+# @role config
+# @layer outil
+# @human Préparer un modèle : pose le service qui régénère clés SSH + machine-id au 1er boot de chaque clone, puis scelle
+# ─────────────────────────────────────────────────────────────────────────────
+seq_sceller() {
+    SEQ_COURANTE="Sceller pour clonage"
+    titre "12) Préparer un modèle (sceller pour clonage)"
+    besoin_root || return 1
+    info "Pose le service qui régénère l'identité SSH au 1er boot de CHAQUE clone"
+    info "(déclencheur robuste : l'absence de clés d'hôte, pas ConditionFirstBoot)."
+
+    cat > /usr/local/sbin/firstboot-ssh.sh <<'EOF'
+#!/usr/bin/env bash
+# Régénère les clés d'hôte SSH quand elles manquent (= clone fraîchement scellé).
+set -uo pipefail
+if ls /etc/ssh/ssh_host_*_key >/dev/null 2>&1; then exit 0; fi
+logger -t firstboot-ssh "clone détecté (pas de clé d'hôte) -> régénération"
+ssh-keygen -A
+systemctl enable ssh >/dev/null 2>&1
+systemctl restart ssh
+EOF
+    chmod +x /usr/local/sbin/firstboot-ssh.sh
+
+    cat > /etc/systemd/system/firstboot-ssh.service <<'EOF'
+[Unit]
+Description=Régénère l'identité SSH si les clés manquent (après clonage)
+Before=ssh.service
+After=local-fs.target
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/local/sbin/firstboot-ssh.sh
+StandardOutput=journal+console
+[Install]
+WantedBy=multi-user.target
+EOF
+
+    cat > /usr/local/sbin/sceller-modele.sh <<'EOF'
+#!/usr/bin/env bash
+# Scelle la VM : supprime l'identité propre à cette machine, puis éteint.
+set -e
+echo "Scellage : suppression des clés d'hôte + machine-id, puis extinction."
+rm -f /etc/ssh/ssh_host_*
+truncate -s 0 /etc/machine-id
+rm -f /var/lib/dbus/machine-id
+rm -f /root/.bash_history /home/*/.bash_history 2>/dev/null || true
+poweroff
+EOF
+    chmod +x /usr/local/sbin/sceller-modele.sh
+
+    command -v sshd >/dev/null 2>&1 || apt-get install -y openssh-server >> "$LOG" 2>&1
+    systemctl enable ssh >> "$LOG" 2>&1
+    etape "Installation du service firstboot-ssh" bash -c "systemctl daemon-reload && systemctl enable firstboot-ssh.service" || return 1
+    gate "le service firstboot-ssh est activé" systemctl is-enabled --quiet firstboot-ssh.service || return 1
+
+    echo
+    avert "SCELLER MAINTENANT supprime les clés + vide machine-id PUIS ÉTEINT la VM."
+    avert "À ne faire QUE si cette VM est bien ton MODÈLE à cloner."
+    if confirmer "Sceller et éteindre maintenant ?" n; then
+        info "Scellage… la VM va s'éteindre, clone-la ensuite."
+        /usr/local/sbin/sceller-modele.sh
+    else
+        ok "Service posé. Quand le modèle est prêt :  sudo /usr/local/sbin/sceller-modele.sh"
+    fi
+}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# @id tssr.toolbox.parefeu
+# @do poser_un_pare_feu_de_base_et_fail2ban
+# @role securite
+# @layer outil
+# @human Pare-feu de base (nftables : seuls les ports choisis ouverts) + fail2ban contre le brute-force SSH
+# ─────────────────────────────────────────────────────────────────────────────
+seq_parefeu() {
+    SEQ_COURANTE="Pare-feu + fail2ban"
+    titre "13) Pare-feu de base + fail2ban"
+    besoin_root || return 1
+
+    if systemctl is-active --quiet fwknop-server 2>/dev/null; then
+        avert "Le SPA (fwknop) gère déjà le 22. Une politique nftables globale peut entrer en conflit."
+        confirmer "Continuer quand même ?" n || { info "Annulé, retour au menu."; return 0; }
+    fi
+
+    local SSHP PORTS
+    SSHP="$(sshd -T 2>/dev/null | awk '/^port /{print $2; exit}')"; SSHP="${SSHP:-22}"
+    demander "Ports TCP à laisser OUVERTS (séparés par un espace)" PORTS "$SSHP 80 443"
+    # On force le port SSH dans la liste (anti-lockout).
+    echo " $PORTS " | grep -q " $SSHP " || PORTS="$SSHP $PORTS"
+    avert "Seuls ces ports resteront accessibles : $PORTS (tout le reste sera fermé)."
+    confirmer "Appliquer cette politique nftables ?" n || { info "Annulé, retour au menu."; return 0; }
+
+    etape "Installation (nftables, fail2ban)" apt-get install -y nftables fail2ban || return 1
+    local SAVE=/etc/nftables.conf.bak-$(date +%Y%m%d-%H%M%S)
+    [ -f /etc/nftables.conf ] && cp /etc/nftables.conf "$SAVE" && info "Sauvegarde : $SAVE"
+    {
+        echo '#!/usr/sbin/nft -f'
+        echo 'flush ruleset'
+        echo 'table inet filtre {'
+        echo '  chain entree {'
+        echo '    type filter hook input priority 0; policy drop;'
+        echo '    ct state established,related accept'
+        echo '    iif "lo" accept'
+        echo '    ip protocol icmp icmp type echo-request limit rate 5/second accept'
+        local p; for p in $PORTS; do echo "    tcp dport $p accept"; done
+        echo '  }'
+        echo '}'
+    } > /etc/nftables.conf
+    etape "Chargement des règles nftables" bash -c "nft -f /etc/nftables.conf" || { [ -f "$SAVE" ] && cp "$SAVE" /etc/nftables.conf; return 1; }
+    etape "Activation de nftables au boot" systemctl enable --now nftables || return 1
+
+    cat > /etc/fail2ban/jail.local <<EOF
+[DEFAULT]
+bantime = 1h
+findtime = 10m
+maxretry = 5
+
+[sshd]
+enabled = true
+port    = $SSHP
+EOF
+    etape "Activation de fail2ban" systemctl enable --now fail2ban || return 1
+    systemctl restart fail2ban >> "$LOG" 2>&1; sleep 1
+    gate "nftables chargé et fail2ban actif" bash -c "nft list ruleset >/dev/null 2>&1 && systemctl is-active --quiet fail2ban" || return 1
+    info "Ports ouverts : $PORTS · fail2ban surveille le SSH (port $SSHP)."
+}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# @id tssr.toolbox.audit
+# @do produire_un_audit_securite_en_lecture_seule
+# @role securite
+# @layer outil
+# @human Audit sécurité (lecture seule) : ports ouverts, conf SSH, comptes sudo, pare-feu, MAJ en attente -> rapport
+# ─────────────────────────────────────────────────────────────────────────────
+seq_audit() {
+    SEQ_COURANTE="Audit sécu / rapport"
+    titre "14) Audit sécurité (lecture seule) + rapport"
+    [ "$(id -u)" -eq 0 ] || avert "Sans root, la lecture de /etc/shadow (mots de passe vides) sera ignorée."
+
+    local F="/var/log/tssr-audit-$(date +%Y%m%d-%H%M%S).md"
+    {
+        echo "# Audit TSSR — $(hostname) — $(date '+%F %T')"
+        echo; echo "## Système"; echo '```'
+        echo "OS     : $(. /etc/os-release 2>/dev/null; echo "${PRETTY_NAME:-?}")"
+        echo "Noyau  : $(uname -r)"
+        echo "Uptime : $(uptime -p 2>/dev/null)"
+        echo '```'
+        echo "## Ports en écoute"; echo '```'; ss -tulnp 2>/dev/null; echo '```'
+        echo "## Configuration SSH (effective)"; echo '```'
+        sshd -T 2>/dev/null | grep -Ei '^(port|permitrootlogin|passwordauthentication|pubkeyauthentication|kbdinteractiveauthentication|permitemptypasswords|x11forwarding)' || echo "(sshd -T indisponible)"
+        echo '```'
+        echo "## Comptes à privilèges (groupe sudo)"; echo '```'; getent group sudo | awk -F: '{print $4}'; echo '```'
+        echo "## Comptes à mot de passe VIDE (à corriger si présents)"; echo '```'
+        awk -F: '($2==""){print $1}' /etc/shadow 2>/dev/null || echo "(lecture impossible — relance en root)"
+        echo '```'
+        echo "## Pare-feu & protections"; echo '```'
+        systemctl is-active --quiet fwknop-server 2>/dev/null && echo "SPA fwknop : ACTIF (SSH furtif)"
+        systemctl is-active --quiet fail2ban 2>/dev/null && echo "fail2ban   : ACTIF"
+        command -v ufw >/dev/null 2>&1 && ufw status 2>/dev/null | head -1
+        command -v nft >/dev/null 2>&1 && { echo "-- nftables (extrait) --"; nft list ruleset 2>/dev/null | head -25; }
+        echo '```'
+        echo "## Mises à jour en attente"; echo '```'
+        apt-get -s upgrade 2>/dev/null | awk '/^Inst /{c++} END{print (c+0)" paquet(s) à mettre à jour"}'
+        echo '```'
+        echo "## Derniers échecs de connexion"; echo '```'; (lastb -n 5 2>/dev/null || echo "(lastb indisponible)"); echo '```'
+    } > "$F" 2>&1
+
+    info "Rapport écrit : ${G}$F${R}"
+    echo; sed -n '1,40p' "$F" | sed 's/^/    /'; echo
+    ok "GATE OK — audit produit ($F)"
+}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# @id tssr.toolbox.provision
+# @do provisionner_une_vm_en_une_passe_guidee
+# @role orchestration
+# @layer outil
+# @human Provisionner une VM : enchaîne paquets -> IP -> durcissement SSH -> utilisateur -> supervision Zabbix
+# ─────────────────────────────────────────────────────────────────────────────
+seq_provision() {
+    SEQ_COURANTE="Provisionner une VM"
+    titre "P) Provisionner une VM (mise en service guidée)"
+    besoin_root || return 1
+    info "Enchaînement : paquets → (IP) → durcissement SSH → utilisateur → (Zabbix)."
+    confirmer "Démarrer la mise en service ?" o || { info "Annulé, retour au menu."; return 0; }
+
+    seq_paquets || { confirmer "Étape paquets en échec — continuer malgré tout ?" n || return 1; }
+    if confirmer "Configurer une IP statique maintenant ?" n; then seq_config_ip || true; fi
+    __ssh_hardening || true
+    if confirmer "Créer un utilisateur maintenant ?" o; then seq_user || true; fi
+    if confirmer "Brancher cette VM à Zabbix maintenant ?" n; then seq_zabbix || true; fi
+
+    echo; ok "GATE OK — mise en service terminée (relis les gates de chaque étape)"
+}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # @id tssr.toolbox.flux
 # @do orchestrer_le_menu_le_retour_et_la_sortie
 # @role orchestration
@@ -872,20 +1121,23 @@ menu() {
         echo "${GRAS}${CYAN}  ╚══════════════════════════════════════════════════╝${RAZ}"
         echo "   Journal de session : $LOG"
         echo
-        echo "   ${GRAS}1${RAZ}) Statut & tests rapides (réseau, disque, RAM)"
-        echo "   ${GRAS}2${RAZ}) Installer les paquets de base"
-        echo "   ${GRAS}3${RAZ}) Configurer l'IP (statique)"
-        echo "   ${GRAS}4${RAZ}) SSH — durcissement (port + root) & SPA furtif"
-        echo "   ${GRAS}5${RAZ}) Créer un utilisateur"
-        echo "   ${GRAS}6${RAZ}) Serveur web Apache + MariaDB + PHP"
-        echo "   ${GRAS}7${RAZ}) Serveur web nginx + MariaDB + PHP"
-        echo "   ${GRAS}8${RAZ}) Serveur bastion (Guacamole)"
-        echo "   ${GRAS}9${RAZ}) Serveur GLPI"
-        echo "  ${GRAS}10${RAZ}) Sauvegarde de /etc et /home"
-        echo "   ${GRAS}0${RAZ}) Quitter"
+        echo "   ${G}Diagnostic & système${R}"
+        echo "    ${GRAS}1${RAZ}) Statut & tests rapides      ${GRAS}2${RAZ}) Paquets de base      ${GRAS}3${RAZ}) Config IP (statique)"
+        echo
+        echo "   ${G}Sécurité${R}"
+        echo "    ${GRAS}4${RAZ}) SSH — durcissement & SPA furtif    ${GRAS}13${RAZ}) Pare-feu + fail2ban    ${GRAS}14${RAZ}) Audit sécurité"
+        echo
+        echo "   ${G}Comptes & services${R}"
+        echo "    ${GRAS}5${RAZ}) Créer un utilisateur   ${GRAS}6${RAZ}) Web Apache   ${GRAS}7${RAZ}) Web nginx   ${GRAS}8${RAZ}) Bastion   ${GRAS}9${RAZ}) GLPI"
+        echo
+        echo "   ${G}Supervision & cycle de vie${R}"
+        echo "   ${GRAS}11${RAZ}) Brancher à Zabbix   ${GRAS}12${RAZ}) Sceller pour clonage   ${GRAS}10${RAZ}) Sauvegarde /etc + /home"
+        echo
+        echo "   ${G}Spécial${R}"
+        echo "    ${GRAS}P${RAZ}) Provisionner une VM (mise en service guidée)      ${GRAS}0${RAZ}) Quitter"
         echo
         local choix; read -rp "  Ton choix : " choix
-        case "$choix" in
+        case "${choix,,}" in
             1)  seq_statut    ;;
             2)  seq_paquets   ;;
             3)  seq_config_ip ;;
@@ -896,7 +1148,12 @@ menu() {
             8)  seq_bastion   ;;
             9)  seq_glpi      ;;
             10) seq_backup    ;;
-            0|q|Q) quitter    ;;
+            11) seq_zabbix    ;;
+            12) seq_sceller   ;;
+            13) seq_parefeu   ;;
+            14) seq_audit     ;;
+            p)  seq_provision ;;
+            0|q|quitter) quitter ;;
             *) avert "Choix invalide : $choix"; sleep 1; continue ;;
         esac
         # Qu'il y ait eu succès OU échec, la séquence est revenue ici :
