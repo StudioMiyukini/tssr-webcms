@@ -43,18 +43,20 @@ else
     wget -q --show-progress -O "$ORIG.part" "$BASEURL$ISONAME" && mv "$ORIG.part" "$ORIG"
 fi
 
-echo "== 2/5 Extraction de l'ISO =="
-xorriso -osirrox on -indev "$ORIG" -extract / "$WORK/iso" >/dev/null 2>&1
-chmod -R u+w "$WORK/iso"
+echo "== 2/4 Extraction des SEULS fichiers de boot (empreinte mémoire minime) =="
+mkdir -p "$WORK/mod/isolinux" "$WORK/mod/boot/grub" "$WORK/add"
+for f in /isolinux/txt.cfg /isolinux/isolinux.cfg /boot/grub/grub.cfg; do
+    xorriso -osirrox on -indev "$ORIG" -extract "$f" "$WORK/mod$f" 2>/dev/null || true
+done
+chmod -R u+w "$WORK/mod" 2>/dev/null || true
 
-echo "== 3/5 Injection du preseed + bootloaders =="
+echo "== 3/4 Préparation du preseed, du .deb et des entrées de boot =="
 # .deb embarqué → preseed HORS-LIGNE (install depuis le CD) ; sinon preseed en ligne.
 if [ -n "$EMBED_DEB" ]; then
     [ -f "$EMBED_DEB" ] || { echo "EMBED_DEB introuvable : $EMBED_DEB"; exit 1; }
-    mkdir -p "$WORK/iso/miyukini"; cp "$EMBED_DEB" "$WORK/iso/miyukini/"
-    # preseed = base (tout avant late_command) + late_command qui installe le .deb du CD
-    sed '/^#### late_command/,$d' "$HERE/preseed.cfg" > "$WORK/iso/preseed.cfg"
-    cat >> "$WORK/iso/preseed.cfg" <<'EOF'
+    mkdir -p "$WORK/add/miyukini"; cp "$EMBED_DEB" "$WORK/add/miyukini/"
+    sed '/^#### late_command/,$d' "$HERE/preseed.cfg" > "$WORK/add/preseed.cfg"
+    cat >> "$WORK/add/preseed.cfg" <<'EOF'
 #### late_command : installe miyukini-toolbox depuis le .deb EMBARQUÉ (hors-ligne)
 d-i preseed/late_command string \
   cp -r /cdrom/miyukini /target/tmp/ ; \
@@ -63,18 +65,18 @@ d-i preseed/late_command string \
 EOF
     echo "   -> .deb embarqué ($(basename "$EMBED_DEB")) + preseed hors-ligne"
 else
-    cp "$HERE/preseed.cfg" "$WORK/iso/preseed.cfg"
+    cp "$HERE/preseed.cfg" "$WORK/add/preseed.cfg"
 fi
 # DVD = install hors-ligne complète : apt depuis le disque, pas de miroir réseau.
 if [ "$VARIANT" = dvd ]; then
-    { echo "d-i apt-setup/use_mirror boolean false"; echo "d-i netcfg/dhcp_timeout string 15"; } >> "$WORK/iso/preseed.cfg"
+    { echo "d-i apt-setup/use_mirror boolean false"; echo "d-i netcfg/dhcp_timeout string 15"; } >> "$WORK/add/preseed.cfg"
     echo "   -> preseed DVD : miroir réseau désactivé (install hors-ligne)"
 fi
 APPEND='auto=true priority=critical preseed/file=/cdrom/preseed.cfg'
 # BIOS (isolinux)
-if [ -f "$WORK/iso/isolinux/isolinux.cfg" ]; then
-    sed -i 's/^timeout .*/timeout 30/' "$WORK/iso/isolinux/isolinux.cfg" || true
-    cat >> "$WORK/iso/isolinux/txt.cfg" <<EOF
+[ -f "$WORK/mod/isolinux/isolinux.cfg" ] && sed -i 's/^timeout .*/timeout 30/' "$WORK/mod/isolinux/isolinux.cfg" 2>/dev/null || true
+if [ -f "$WORK/mod/isolinux/txt.cfg" ]; then
+    cat >> "$WORK/mod/isolinux/txt.cfg" <<EOF
 
 label miyukini
 	menu label ^Installation auto Miyukini (Debian 13)
@@ -84,26 +86,25 @@ label miyukini
 EOF
 fi
 # UEFI (grub)
-if [ -f "$WORK/iso/boot/grub/grub.cfg" ]; then
+if [ -f "$WORK/mod/boot/grub/grub.cfg" ]; then
     { echo; echo "menuentry 'Installation auto Miyukini (Debian 13)' {";
       echo "    linux /install.amd/vmlinuz $APPEND ---";
-      echo "    initrd /install.amd/initrd.gz"; echo "}"; } >> "$WORK/iso/boot/grub/grub.cfg"
-    sed -i 's/^set default=.*/set default=0/; s/^set timeout=.*/set timeout=3/' "$WORK/iso/boot/grub/grub.cfg" || true
+      echo "    initrd /install.amd/initrd.gz"; echo "}"; } >> "$WORK/mod/boot/grub/grub.cfg"
+    sed -i 's/^set default=.*/set default=0/; s/^set timeout=.*/set timeout=3/' "$WORK/mod/boot/grub/grub.cfg" 2>/dev/null || true
 fi
 
-echo "== 4/5 Recalcul des sommes md5 (sinon l'installeur rouspète) =="
-( cd "$WORK/iso" && find . -type f -not -name md5sum.txt -exec md5sum {} + > md5sum.txt )
-
-echo "== 5/5 Reconstruction de l'ISO (BIOS + UEFI) =="
+echo "== 4/4 Reconstruction (copie indev->outdev + overlay, sans tout extraire) =="
 if [ "$VARIANT" = dvd ]; then OUTISO="$OUT/debian-13-miyukini-dvd.iso"
 elif [ -n "$EMBED_DEB" ]; then OUTISO="$OUT/debian-13-miyukini-offline.iso"
 else OUTISO="$OUT/debian-13-miyukini.iso"; fi
-xorriso -as mkisofs -r -V "DEBIAN13_MIYUKINI" -J -joliet-long \
-    -isohybrid-mbr "$ISOHDPFX" \
-    -c isolinux/boot.cat -b isolinux/isolinux.bin \
-    -no-emul-boot -boot-load-size 4 -boot-info-table \
-    -eltorito-alt-boot -e boot/grub/efi.img -no-emul-boot -isohybrid-gpt-basdat \
-    -o "$OUTISO" "$WORK/iso"
+rm -f "$OUTISO"
+MAPS=( -map "$WORK/add/preseed.cfg" /preseed.cfg )
+[ -f "$WORK/mod/isolinux/txt.cfg" ]      && MAPS+=( -map "$WORK/mod/isolinux/txt.cfg" /isolinux/txt.cfg )
+[ -f "$WORK/mod/isolinux/isolinux.cfg" ] && MAPS+=( -map "$WORK/mod/isolinux/isolinux.cfg" /isolinux/isolinux.cfg )
+[ -f "$WORK/mod/boot/grub/grub.cfg" ]    && MAPS+=( -map "$WORK/mod/boot/grub/grub.cfg" /boot/grub/grub.cfg )
+[ -d "$WORK/add/miyukini" ]              && MAPS+=( -map "$WORK/add/miyukini" /miyukini )
+# -boot_image any replay : réutilise les boot records (BIOS+UEFI) de l'ISO d'origine.
+xorriso -indev "$ORIG" -outdev "$OUTISO" -boot_image any replay "${MAPS[@]}"
 
 echo
 echo "ISO générée : $OUTISO"
