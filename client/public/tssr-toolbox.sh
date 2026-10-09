@@ -55,6 +55,7 @@
 #    tssr.toolbox.journal      le journal horodaté (actions + raisons d'échec)
 #    tssr.toolbox.ui           couleurs, titres, questions oui/non, saisies
 #    tssr.toolbox.gate         étapes, gates de validation, explication des échecs
+#    tssr.toolbox.distro       détection distro + commandes (apt/dnf, sudo/wheel, firewalld/nft, SELinux/AppArmor)
 #    tssr.toolbox.statut       (1)  statut & tests rapides
 #    tssr.toolbox.paquets      (2)  paquets de base
 #    tssr.toolbox.reseau       (3)  configuration IP statique
@@ -71,6 +72,9 @@
 #    tssr.toolbox.modele       (12) préparer un modèle (sceller pour clonage)
 #    tssr.toolbox.parefeu      (13) pare-feu de base + fail2ban
 #    tssr.toolbox.audit        (14) audit sécurité (lecture seule) + rapport
+#    tssr.toolbox.hardening    (15) durcissement serveur (baseline du guide)
+#    tssr.toolbox.motdepasse   (16) politique de mots de passe (pwquality + login.defs)
+#    tssr.toolbox.checklist    (17) check-list de conformité (rapport)
 #    tssr.toolbox.provision    (P)  provisionner une VM (mise en service guidée)
 #    tssr.toolbox.flux         le menu, le retour menu/quitter, la sortie
 #    tssr.toolbox.main         le point d'entrée
@@ -190,6 +194,45 @@ besoin_root() {
         echouer "cette séquence doit être lancée en root (sudo $0)"
         return 1
     fi
+}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# @id tssr.toolbox.distro
+# @do detecter_la_distribution_et_abstraire_les_commandes
+# @role config
+# @layer outil
+# @human Détecte Debian/RHEL et choisit les bonnes commandes : apt/dnf, groupe sudo/wheel, pare-feu, SELinux/AppArmor
+# ─────────────────────────────────────────────────────────────────────────────
+PKG="inconnu"; FAMILLE="inconnu"; GRP_ADMIN="sudo"; FW="aucun"; MAC="aucun"; SSHD_SVC="ssh"
+detect_distro() {
+    . /etc/os-release 2>/dev/null
+    if   command -v apt-get >/dev/null 2>&1; then PKG=apt; FAMILLE=debian; GRP_ADMIN=sudo;  MAC=apparmor; SSHD_SVC=ssh
+    elif command -v dnf     >/dev/null 2>&1; then PKG=dnf; FAMILLE=rhel;   GRP_ADMIN=wheel; MAC=selinux;  SSHD_SVC=sshd
+    elif command -v yum     >/dev/null 2>&1; then PKG=yum; FAMILLE=rhel;   GRP_ADMIN=wheel; MAC=selinux;  SSHD_SVC=sshd
+    fi
+    if   command -v firewall-cmd >/dev/null 2>&1; then FW=firewalld
+    elif command -v nft          >/dev/null 2>&1; then FW=nftables
+    elif command -v ufw          >/dev/null 2>&1; then FW=ufw
+    fi
+}
+pkg_update_index() { case "$PKG" in apt) apt-get update ;; dnf) dnf -y makecache ;; yum) yum -y makecache ;; esac; }
+pkg_upgrade()      { case "$PKG" in apt) DEBIAN_FRONTEND=noninteractive apt-get -y upgrade ;; dnf) dnf -y upgrade ;; yum) yum -y update ;; esac; }
+pkg_install()      { case "$PKG" in apt) DEBIAN_FRONTEND=noninteractive apt-get install -y "$@" ;; dnf) dnf install -y "$@" ;; yum) yum install -y "$@" ;; esac; }
+# Nombre de paquets pouvant être mis à jour (0 = système à jour).
+pkg_upgradable()   { case "$PKG" in apt) apt-get -s upgrade 2>/dev/null | grep -c '^Inst ' ;; dnf|yum) dnf -q check-update 2>/dev/null | grep -cE '^[a-zA-Z0-9]' ;; *) echo 0 ;; esac; }
+# Renvoie 0 (vrai) si un redémarrage est nécessaire.
+reboot_needed() {
+    if [ "$PKG" = apt ]; then [ -f /var/run/reboot-required ]; return; fi
+    if command -v needs-restarting >/dev/null 2>&1; then needs-restarting -r >/dev/null 2>&1 && return 1 || return 0; fi
+    return 1
+}
+# Ouvre un port TCP dans le pare-feu actif (idempotent, best-effort).
+fw_ouvrir_port() {
+    case "$FW" in
+        firewalld) firewall-cmd --permanent --add-port="$1"/tcp >/dev/null 2>&1; firewall-cmd --reload >/dev/null 2>&1 ;;
+        ufw)       ufw allow "$1"/tcp >/dev/null 2>&1 ;;
+    esac
 }
 
 
@@ -411,6 +454,7 @@ __ssh_hardening() {
     SEQ_COURANTE="Durcissement SSH"
     titre "Durcissement SSH (port + root interdit)"
     besoin_root || return 1
+    detect_distro
     command -v sshd >/dev/null 2>&1 || { echouer "openssh-server n'est pas installé"; return 1; }
 
     local PORT
@@ -447,20 +491,48 @@ __ssh_hardening() {
         return 1
     fi
 
-    # Ouverture du port dans le pare-feu si ufw est là.
-    if command -v ufw >/dev/null 2>&1; then
-        ufw allow "$PORT"/tcp >> "$LOG" 2>&1 && info "Pare-feu : $PORT/tcp autorisé (ufw)"
-    fi
+    # Ouverture du port dans le pare-feu actif (ufw/firewalld), best-effort.
+    fw_ouvrir_port "$PORT"; [ "$FW" != aucun ] && info "Pare-feu ($FW) : $PORT/tcp autorisé."
 
-    etape "Redémarrage de SSH" systemctl restart ssh || return 1
+    etape "Redémarrage de SSH" systemctl restart "$SSHD_SVC" || return 1
     sleep 1
-
-    # GATE : SSH écoute-t-il bien sur le nouveau port ?
     if ss -tlnp 2>/dev/null | grep -q ":$PORT "; then
-        ok "GATE OK — SSH écoute sur le port $PORT et root est interdit"
+        ok "SSH écoute sur le port $PORT et root est interdit"
     else
         echouer "SSH n'écoute pas sur le port $PORT (restaure avec : cp $SAVE $CFG)"
         return 1
+    fi
+
+    # ── Durcissement avancé (recommandations du guide hardening) ──────────────
+    if confirmer "Appliquer le durcissement SSH avancé (tentatives, timeouts, AllowGroups) ?" o; then
+        local GRP
+        avert "Assure-toi que TON compte est membre du groupe choisi, sinon AllowGroups t'enferme dehors."
+        demander "Groupe autorisé à se connecter en SSH" GRP "$GRP_ADMIN"
+        mkdir -p /etc/ssh/sshd_config.d
+        cat > /etc/ssh/sshd_config.d/99-tssr-hardening.conf <<EOF
+# Durcissement SSH avancé (guide) — posé par tssr-toolbox.sh
+MaxAuthTries 3
+LoginGraceTime 30
+ClientAliveInterval 300
+ClientAliveCountMax 0
+AllowGroups $GRP
+EOF
+        if confirmer "Passer aussi en clés uniquement (désactive le mot de passe) ?" n; then
+            if grep -rqsE 'ssh-(ed25519|rsa|ecdsa)' /root/.ssh/authorized_keys /home/*/.ssh/authorized_keys 2>/dev/null; then
+                printf 'PasswordAuthentication no\nPubkeyAuthentication yes\nKbdInteractiveAuthentication no\n' >> /etc/ssh/sshd_config.d/99-tssr-hardening.conf
+                info "Authentification par clés uniquement activée."
+            else
+                avert "Aucune clé publique trouvée → mot de passe CONSERVÉ (anti-lockout)."
+            fi
+        fi
+        if sshd -t >> "$LOG" 2>&1; then
+            etape "Rechargement SSH (durcissement avancé)" systemctl reload "$SSHD_SVC" || return 1
+            ok "GATE OK — durcissement SSH avancé appliqué (AllowGroups $GRP)"
+        else
+            rm -f /etc/ssh/sshd_config.d/99-tssr-hardening.conf
+            echouer "sshd -t a refusé le durcissement avancé (annulé)"
+            return 1
+        fi
     fi
 }
 
@@ -1088,6 +1160,155 @@ seq_provision() {
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# @id tssr.toolbox.hardening
+# @do appliquer_une_baseline_de_durcissement_serveur
+# @role securite
+# @layer outil
+# @human Durcissement serveur : mises à jour (+reboot ?), services inutiles, statut SELinux/AppArmor, moindre privilège
+# ─────────────────────────────────────────────────────────────────────────────
+seq_hardening() {
+    SEQ_COURANTE="Durcissement serveur"
+    titre "15) Durcissement serveur (baseline du guide)"
+    besoin_root || return 1
+    detect_distro
+    info "Distribution : ${G}$FAMILLE${R} (paquets $PKG · groupe admin $GRP_ADMIN · pare-feu $FW · MAC $MAC)"
+
+    # 1) Mises à jour système + besoin de redémarrage.
+    if confirmer "Appliquer les mises à jour système maintenant ?" o; then
+        etape "Mise à jour de l'index" pkg_update_index || true
+        etape "Installation des mises à jour" pkg_upgrade || true
+        if reboot_needed; then avert "Un REDÉMARRAGE est nécessaire (noyau / bibliothèques critiques)."
+        else ok "Pas de redémarrage requis."; fi
+    fi
+
+    # 2) Services actifs (réduire la surface d'attaque).
+    info "Services actuellement en cours d'exécution :"
+    systemctl list-units --type=service --state=running 2>/dev/null | awk '/\.service/{print "     "$1}' | head -40
+    if confirmer "Désactiver un service inutile maintenant ?" n; then
+        local SVC; demander "Nom du service à désactiver (ex: avahi-daemon, cups)" SVC
+        [ -n "$SVC" ] && etape "Désactivation de $SVC" systemctl disable --now "$SVC" || true
+    fi
+
+    # 3) MAC : SELinux (RHEL) ou AppArmor (Debian).
+    if [ "$MAC" = selinux ]; then
+        local ETAT; ETAT="$(getenforce 2>/dev/null)"
+        info "SELinux : ${ETAT:-inconnu}"
+        [ "$ETAT" != "Enforcing" ] && avert "Recommandé : SELinux en Enforcing (setenforce 1 + /etc/selinux/config)."
+    else
+        if command -v aa-status >/dev/null 2>&1 && aa-status --enabled 2>/dev/null; then ok "AppArmor activé."
+        else avert "AppArmor non actif — à installer : apt install apparmor apparmor-utils."; fi
+    fi
+
+    # 4) Moindre privilège : qui est admin ?
+    info "Membres du groupe $GRP_ADMIN : ${G}$(getent group "$GRP_ADMIN" | cut -d: -f4)${R}"
+    avert "Chaque membre doit être justifié (principe du moindre privilège). Verrouille les comptes inutiles : usermod -L <user>."
+
+    ok "GATE OK — baseline de durcissement passée en revue (applique les recommandations ci-dessus)"
+    info "Pour un état chiffré, lance la ${G}check-list de conformité (17)${R}."
+}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# @id tssr.toolbox.motdepasse
+# @do definir_une_politique_de_mots_de_passe
+# @role securite
+# @layer outil
+# @human Politique de mots de passe : complexité via pam_pwquality (minlen 14, minclass 3) et login.defs (expiration)
+# ─────────────────────────────────────────────────────────────────────────────
+seq_password() {
+    SEQ_COURANTE="Politique de mots de passe"
+    titre "16) Politique de mots de passe"
+    besoin_root || return 1
+    detect_distro
+
+    local PKGPW; [ "$PKG" = apt ] && PKGPW=libpam-pwquality || PKGPW=libpwquality
+    etape "Installation de $PKGPW" pkg_install "$PKGPW" || true
+
+    # Complexité (pam_pwquality).
+    local CONF=/etc/security/pwquality.conf
+    if [ -f "$CONF" ]; then
+        cp "$CONF" "$CONF.bak-$(date +%Y%m%d-%H%M%S)"
+        local kv key
+        for kv in "minlen = 14" "minclass = 3" "maxrepeat = 3"; do
+            key="${kv%% *}"
+            if grep -qE "^\s*#?\s*$key\b" "$CONF"; then sed -i "s/^\s*#\?\s*$key\b.*/$kv/" "$CONF"; else echo "$kv" >> "$CONF"; fi
+        done
+        ok "pwquality.conf : minlen 14, minclass 3, maxrepeat 3"
+    else
+        avert "$CONF introuvable (pam_pwquality non installé ?)."
+    fi
+
+    # Expiration (login.defs) pour les nouveaux comptes.
+    local LD=/etc/login.defs
+    if [ -f "$LD" ]; then
+        cp "$LD" "$LD.bak-$(date +%Y%m%d-%H%M%S)"
+        _defs() { local k="$1" v="$2"; if grep -qE "^\s*#?\s*$k\b" "$LD"; then sed -i "s/^\s*#\?\s*$k\b.*/$k\t$v/" "$LD"; else printf '%s\t%s\n' "$k" "$v" >> "$LD"; fi; }
+        _defs PASS_MAX_DAYS 90
+        _defs PASS_MIN_DAYS 1
+        _defs PASS_WARN_AGE 7
+        ok "login.defs : PASS_MAX_DAYS 90, PASS_MIN_DAYS 1, PASS_WARN_AGE 7 (nouveaux comptes)"
+    fi
+
+    avert "Les règles de complexité s'appliquent aux PROCHAINS changements de mot de passe."
+    gate "pwquality.conf présent" bash -c "[ -f /etc/security/pwquality.conf ]" || return 1
+}
+
+
+# Prédicats de conformité (renvoient 0 = conforme) — utilisés par la check-list.
+_p_maj()     { [ "$(pkg_upgradable)" = "0" ]; }
+_p_rootno()  { sshd -T 2>/dev/null | grep -qi '^permitrootlogin no'; }
+_p_pwno()    { sshd -T 2>/dev/null | grep -qi '^passwordauthentication no'; }
+_p_maxauth() { local v; v="$(sshd -T 2>/dev/null | awk '/^maxauthtries/{print $2}')"; [ -n "$v" ] && [ "$v" -le 3 ]; }
+_p_idle()    { sshd -T 2>/dev/null | awk '/^clientaliveinterval/{print $2}' | grep -qE '^[1-9]'; }
+_p_allow()   { sshd -T 2>/dev/null | grep -qiE '^allow(users|groups) '; }
+_p_fw()      { systemctl is-active --quiet firewalld || systemctl is-active --quiet nftables || ufw status 2>/dev/null | grep -qi active; }
+_p_f2b()     { systemctl is-active --quiet fail2ban; }
+_p_mac()     { if [ "$MAC" = selinux ]; then [ "$(getenforce 2>/dev/null)" = Enforcing ]; else aa-status --enabled 2>/dev/null; fi; }
+_p_pwq()     { grep -qE '^\s*minlen\s*=\s*(1[4-9]|[2-9][0-9])' /etc/security/pwquality.conf 2>/dev/null; }
+_p_noempty() { ! awk -F: '($2==""){f=1} END{exit !f}' /etc/shadow 2>/dev/null; }
+_p_backup()  { ls /var/backups/*.tar.gz >/dev/null 2>&1; }
+
+# ─────────────────────────────────────────────────────────────────────────────
+# @id tssr.toolbox.checklist
+# @do produire_une_check_list_de_conformite_au_durcissement
+# @role gate
+# @layer outil
+# @human Check-list de conformité : coche les points du guide (maj, SSH, pare-feu, MAC, mots de passe…) dans un rapport
+# ─────────────────────────────────────────────────────────────────────────────
+seq_checklist() {
+    SEQ_COURANTE="Check-list de conformité"
+    titre "17) Check-list de conformité (durcissement)"
+    [ "$(id -u)" -eq 0 ] || avert "Sans root, certains contrôles (/etc/shadow) seront faussés."
+    detect_distro
+    local F="/var/log/tssr-conformite-$(date +%Y%m%d-%H%M%S).md"
+    local ok_n=0 ko_n=0
+    { echo "# Check-list de conformité — $(hostname) — $(date '+%F %T')"
+      echo; echo "- Distribution : $FAMILLE ($PKG)"; echo; } > "$F"
+    # chk "libellé" predicat...
+    chk() { if "$@" >/dev/null 2>&1; then echo "  ${VERT}✔${R} $1"; echo "- [x] $1" >> "$F"; ok_n=$((ok_n+1));
+            else echo "  ${ROUGE}✘${R} $1"; echo "- [ ] $1" >> "$F"; ko_n=$((ko_n+1)); fi; }
+
+    chk "Système à jour (0 paquet en attente)"           _p_maj
+    chk "Connexion root SSH interdite"                    _p_rootno
+    chk "Mot de passe SSH désactivé (clés uniquement)"    _p_pwno
+    chk "SSH : MaxAuthTries ≤ 3"                          _p_maxauth
+    chk "SSH : timeout d'inactivité configuré"           _p_idle
+    chk "SSH : utilisateurs restreints (AllowUsers/Groups)" _p_allow
+    chk "Pare-feu actif"                                  _p_fw
+    chk "fail2ban actif"                                  _p_f2b
+    chk "MAC actif (SELinux Enforcing / AppArmor)"        _p_mac
+    chk "Politique de mots de passe (minlen ≥ 14)"       _p_pwq
+    chk "Aucun compte à mot de passe vide"                _p_noempty
+    chk "Sauvegarde présente (/var/backups)"              _p_backup
+
+    { echo; echo "## Score : $ok_n / $((ok_n+ko_n)) conformes"; } >> "$F"
+    echo
+    ok "GATE OK — check-list produite : ${G}$ok_n/$((ok_n+ko_n))${R} conformes → $F"
+    [ "$ko_n" -gt 0 ] && avert "$ko_n point(s) à corriger (détail dans le rapport)."
+}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # @id tssr.toolbox.flux
 # @do orchestrer_le_menu_le_retour_et_la_sortie
 # @role orchestration
@@ -1126,6 +1347,7 @@ menu() {
         echo
         echo "   ${G}Sécurité${R}"
         echo "    ${GRAS}4${RAZ}) SSH — durcissement & SPA furtif    ${GRAS}13${RAZ}) Pare-feu + fail2ban    ${GRAS}14${RAZ}) Audit sécurité"
+        echo "   ${GRAS}15${RAZ}) Durcissement serveur   ${GRAS}16${RAZ}) Politique mots de passe   ${GRAS}17${RAZ}) Check-list conformité"
         echo
         echo "   ${G}Comptes & services${R}"
         echo "    ${GRAS}5${RAZ}) Créer un utilisateur   ${GRAS}6${RAZ}) Web Apache   ${GRAS}7${RAZ}) Web nginx   ${GRAS}8${RAZ}) Bastion   ${GRAS}9${RAZ}) GLPI"
@@ -1152,6 +1374,9 @@ menu() {
             12) seq_sceller   ;;
             13) seq_parefeu   ;;
             14) seq_audit     ;;
+            15) seq_hardening ;;
+            16) seq_password  ;;
+            17) seq_checklist ;;
             p)  seq_provision ;;
             0|q|quitter) quitter ;;
             *) avert "Choix invalide : $choix"; sleep 1; continue ;;
@@ -1174,6 +1399,7 @@ menu() {
 # (pour les tests / smoke-test, et la réutilisation des fonctions en Ansible).
 if [ "${TSSR_TOOLBOX_LIB:-0}" != "1" ]; then
     log_init
+    detect_distro
     titre "Bienvenue dans la boîte à outils TSSR"
     echo "  Debian 13 • scripts pédagogiques • chaque action est journalisée."
     echo "  Journal de cette session : $LOG"

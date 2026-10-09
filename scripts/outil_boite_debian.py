@@ -105,9 +105,21 @@ CONTENU = '\n'.join([
                'anti-lockout, détecte un conflit SPA)', 'nft chargé + fail2ban actif'],
         ['14', 'Audit sécurité (lecture seule) — ports, conf SSH, comptes sudo, pare-feu, MAJ en '
                'attente → <strong>rapport markdown</strong>', 'rapport produit'],
+        ['15', '<strong>Durcissement serveur</strong> — mises à jour (+ reboot ?), services inutiles, '
+               'statut SELinux/AppArmor, moindre privilège', 'baseline passée en revue'],
+        ['16', '<strong>Politique de mots de passe</strong> — pam_pwquality (minlen 14, minclass 3) + '
+               '<code>login.defs</code> (expiration)', '<code>pwquality.conf</code> en place'],
+        ['17', '<strong>Check-list de conformité</strong> — coche les points du guide (MAJ, SSH, '
+               'pare-feu, MAC, mots de passe…) → <strong>rapport</strong> noté', 'score produit'],
         ['P', 'Provisionner une VM — enchaîne paquets → IP → durcissement SSH → utilisateur → Zabbix',
               'mise en service terminée'],
     ]),
+    note('blue', '🐧 Debian ET RHEL (distro-aware)',
+         'Les séquences de durcissement (15-17) et le durcissement SSH détectent la distribution : '
+         '<strong>apt</strong>/<strong>dnf</strong>, groupe <strong>sudo</strong>/<strong>wheel</strong>, '
+         '<strong>nftables·ufw</strong>/<strong>firewalld</strong>, <strong>AppArmor</strong>/'
+         '<strong>SELinux</strong>. La même boîte sert donc Debian et la famille RHEL '
+         '(Rocky, AlmaLinux). Inspiré d’un guide de durcissement Linux (RHEL) adapté aux deux mondes.'),
 
     '<h2>Le SPA fwknop (SSH furtif) dans la partie SSH</h2>',
     '<p>La séquence <strong>4) SSH</strong> est un sous-menu : le durcissement classique, <strong>ou</strong> '
