@@ -14,8 +14,15 @@ set -euo pipefail
 HERE="$(cd "$(dirname "$0")" && pwd)"
 ROOT="$(cd "$HERE/.." && pwd)"
 OUT="${OUT:-$ROOT/dist/iso}"
-BASEURL="${ISO_URL:-https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/}"
 EMBED_DEB="${EMBED_DEB:-}"
+# VARIANT : netinst (léger, l'install tire la base depuis Internet) ou
+#           dvd (~3,7 Go, pool complet → install TOTALEMENT hors-ligne).
+VARIANT="${VARIANT:-netinst}"
+case "$VARIANT" in
+    dvd) DEF_URL="https://cdimage.debian.org/debian-cd/current/amd64/iso-dvd/"; PATTERN='debian-[0-9.]+-amd64-DVD-1\.iso' ;;
+    *)   DEF_URL="https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/";  PATTERN='debian-[0-9.]+-amd64-netinst\.iso' ;;
+esac
+BASEURL="${ISO_URL:-$DEF_URL}"
 
 for o in xorriso wget; do command -v "$o" >/dev/null 2>&1 || { echo "manque $o (apt install xorriso wget)"; exit 1; }; done
 ISOHDPFX=/usr/lib/ISOLINUX/isohdpfx.bin
@@ -26,8 +33,8 @@ WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
 
 echo "== 1/5 Récupération du netinst Debian (avec cache) =="
 CACHE="$OUT/.cache"; mkdir -p "$CACHE"
-ISONAME="$(wget -qO- "$BASEURL" | grep -oE 'debian-[0-9.]+-amd64-netinst\.iso' | head -1)"
-[ -n "$ISONAME" ] || { echo "netinst introuvable sous $BASEURL"; exit 1; }
+ISONAME="$(wget -qO- "$BASEURL" | grep -oE "$PATTERN" | head -1)"
+[ -n "$ISONAME" ] || { echo "image ($VARIANT) introuvable sous $BASEURL"; exit 1; }
 ORIG="$CACHE/$ISONAME"
 if [ -f "$ORIG" ]; then
     echo "   -> réutilisation du cache : $ISONAME"
@@ -58,6 +65,11 @@ EOF
 else
     cp "$HERE/preseed.cfg" "$WORK/iso/preseed.cfg"
 fi
+# DVD = install hors-ligne complète : apt depuis le disque, pas de miroir réseau.
+if [ "$VARIANT" = dvd ]; then
+    { echo "d-i apt-setup/use_mirror boolean false"; echo "d-i netcfg/dhcp_timeout string 15"; } >> "$WORK/iso/preseed.cfg"
+    echo "   -> preseed DVD : miroir réseau désactivé (install hors-ligne)"
+fi
 APPEND='auto=true priority=critical preseed/file=/cdrom/preseed.cfg'
 # BIOS (isolinux)
 if [ -f "$WORK/iso/isolinux/isolinux.cfg" ]; then
@@ -83,7 +95,9 @@ echo "== 4/5 Recalcul des sommes md5 (sinon l'installeur rouspète) =="
 ( cd "$WORK/iso" && find . -type f -not -name md5sum.txt -exec md5sum {} + > md5sum.txt )
 
 echo "== 5/5 Reconstruction de l'ISO (BIOS + UEFI) =="
-if [ -n "$EMBED_DEB" ]; then OUTISO="$OUT/debian-13-miyukini-offline.iso"; else OUTISO="$OUT/debian-13-miyukini.iso"; fi
+if [ "$VARIANT" = dvd ]; then OUTISO="$OUT/debian-13-miyukini-dvd.iso"
+elif [ -n "$EMBED_DEB" ]; then OUTISO="$OUT/debian-13-miyukini-offline.iso"
+else OUTISO="$OUT/debian-13-miyukini.iso"; fi
 xorriso -as mkisofs -r -V "DEBIAN13_MIYUKINI" -J -joliet-long \
     -isohybrid-mbr "$ISOHDPFX" \
     -c isolinux/boot.cat -b isolinux/isolinux.bin \
