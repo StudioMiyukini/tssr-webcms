@@ -37,3 +37,9 @@ SPA="non"                      # "oui" = installer le SPA fwknop (nécessite une
 
 # ── Supervision ──────────────────────────────────────────────────────────────
 ZABBIX_SERVER=""               # IP du serveur Zabbix (vide = pas d'agent)
+
+# ── Premier boot automatique (paquet / ISO custom) ──────────────────────────
+# "oui" = le service miyukini-firstboot lance tout seul tssr-postinstall au
+# PREMIER démarrage (une seule fois). À réserver aux images/clones/ISO.
+# Sur un serveur déjà en service, laisse "non".
+FIRSTBOOT="non"

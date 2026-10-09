@@ -1,0 +1,15 @@
+[Unit]
+Description=Miyukini — post-installation automatique au premier boot
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/etc/tssr/postinstall.conf
+ConditionPathExists=!/var/lib/miyukini/firstboot.done
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/miyukini-firstboot
+StandardOutput=journal+console
+
+[Install]
+WantedBy=multi-user.target

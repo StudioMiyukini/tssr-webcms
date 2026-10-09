@@ -437,7 +437,12 @@ __ssh_spa() {
     besoin_root || return 1
     avert "Le SPA FERME le port SSH : il ne s'ouvre qu'à la volée, pour l'IP qui envoie un paquet signé."
     avert "Garde une session SSH ouverte ET une clé publique en place (anti-lockout)."
-    confirmer "Télécharger et lancer l'installeur SPA (fwknop) ?" o || { info "Annulé, retour au menu."; return 0; }
+    confirmer "Installer le SPA (fwknop) ?" o || { info "Annulé, retour au menu."; return 0; }
+    # Si le paquet est installé, l'installeur SPA est local → marche hors ligne.
+    if command -v spa-install >/dev/null 2>&1; then
+        info "Installeur SPA local détecté — lancement…"; echo
+        spa-install; return 0
+    fi
     local URL="https://tssr.miyukini.com/spa-install.sh"
     if etape "Téléchargement de l'installeur SPA" curl -fsSL "$URL" -o /tmp/spa-install.sh; then
         chmod +x /tmp/spa-install.sh

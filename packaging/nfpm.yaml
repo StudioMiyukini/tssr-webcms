@@ -1,0 +1,85 @@
+# nfpm — un seul fichier → paquet .deb (Debian/Ubuntu) ET .rpm (RHEL/Rocky/Alma).
+# Build :  bash packaging/build-packages.sh   (lance nfpm depuis la racine du dépôt)
+# Doc nfpm : https://nfpm.goreleaser.com
+name: miyukini-toolbox
+arch: all                     # -> 'all' en deb, 'noarch' en rpm
+platform: linux
+version: 1.0.0
+section: admin
+priority: optional
+maintainer: "Miyukini <miyukini@gmail.com>"
+vendor: "Miyukini"
+homepage: https://tssr.miyukini.com
+license: MIT
+description: |
+  Boîte à outils d'administration et de durcissement TSSR (Debian & RHEL).
+  Menu interactif (miyukini-toolbox), post-installation automatique
+  (tssr-postinstall), SPA fwknop, audit pare-feu pfSense/OPNsense.
+
+# Dépendances (Debian par défaut ; override rpm plus bas).
+depends:
+  - bash
+  - coreutils
+  - iproute2
+recommends:
+  - nftables
+  - fail2ban
+  - chrony
+  - openssh-server
+  - curl
+
+contents:
+  # Socle (bibliothèque)
+  - src: client/public/tssr-lib.sh
+    dst: /usr/lib/miyukini-toolbox/tssr-lib.sh
+  # Commandes
+  - src: client/public/tssr-toolbox.sh
+    dst: /usr/bin/miyukini-toolbox
+    file_info: { mode: 0755 }
+  - src: client/public/tssr-postinstall.sh
+    dst: /usr/bin/tssr-postinstall
+    file_info: { mode: 0755 }
+  - src: client/public/spa-install.sh
+    dst: /usr/bin/spa-install
+    file_info: { mode: 0755 }
+  - src: client/public/spa-connect.sh
+    dst: /usr/bin/spa-connect
+    file_info: { mode: 0755 }
+  - src: client/public/fw-audit.sh
+    dst: /usr/bin/fw-audit
+    file_info: { mode: 0755 }
+  - src: client/public/opnsense-harden.sh
+    dst: /usr/bin/opnsense-harden
+    file_info: { mode: 0755 }
+  - src: client/public/pfsense-harden.sh
+    dst: /usr/bin/pfsense-harden
+    file_info: { mode: 0755 }
+  - src: client/public/bashrc-couleurs.sh
+    dst: /usr/share/miyukini-toolbox/bashrc-couleurs.sh
+  # Premier boot
+  - src: packaging/miyukini-firstboot
+    dst: /usr/bin/miyukini-firstboot
+    file_info: { mode: 0755 }
+  - src: packaging/miyukini-firstboot.service
+    dst: /lib/systemd/system/miyukini-firstboot.service
+  # Fichier de réponses (préservé aux mises à jour)
+  - src: client/public/postinstall.conf.example
+    dst: /etc/tssr/postinstall.conf
+    type: config|noreplace
+
+scripts:
+  postinstall: packaging/postinst.sh
+  preremove: packaging/prerm.sh
+
+overrides:
+  rpm:
+    depends:
+      - bash
+      - coreutils
+      - iproute
+    recommends:
+      - nftables
+      - fail2ban
+      - chrony
+      - openssh-server
+      - curl

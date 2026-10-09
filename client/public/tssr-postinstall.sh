@@ -17,12 +17,17 @@
 # ============================================================================
 set -uo pipefail
 
-# ── Charger la bibliothèque commune (locale, sinon depuis le site) ───────────
-LIB_LOCAL="$(dirname "$0")/tssr-lib.sh"
-if [ -f "$LIB_LOCAL" ]; then
-    # shellcheck source=/dev/null
-    source "$LIB_LOCAL"
-else
+# ── Charger la bibliothèque commune ──────────────────────────────────────────
+# Cherche la lib à côté du script (usage autonome), puis aux emplacements du
+# paquet (/usr/lib, /usr/local/lib), et en dernier recours depuis le site.
+LIB_CHARGEE=""
+for _cand in "$(dirname "$0")/tssr-lib.sh" /usr/lib/miyukini-toolbox/tssr-lib.sh /usr/local/lib/miyukini-toolbox/tssr-lib.sh; do
+    if [ -f "$_cand" ]; then
+        # shellcheck source=/dev/null
+        source "$_cand"; LIB_CHARGEE=1; break
+    fi
+done
+if [ -z "$LIB_CHARGEE" ]; then
     # shellcheck disable=SC1090
     source <(curl -fsSL https://tssr.miyukini.com/tssr-lib.sh) || { echo "Bibliothèque tssr-lib.sh introuvable."; exit 1; }
 fi

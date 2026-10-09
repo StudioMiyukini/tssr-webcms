@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# miyukini-firstboot — lance la post-installation automatique au PREMIER boot,
+# une seule fois, et seulement si l'opérateur l'a explicitement demandé.
+#
+# Déclenché par miyukini-firstboot.service. Ne fait RIEN par défaut : il faut
+# FIRSTBOOT=oui dans /etc/tssr/postinstall.conf (typiquement posé dans une image
+# clonée ou une ISO custom). Sentinelle anti-rejeu : /var/lib/miyukini/firstboot.done
+set -uo pipefail
+
+CONF=/etc/tssr/postinstall.conf
+SENTINELLE=/var/lib/miyukini/firstboot.done
+
+[ -f "$CONF" ] || exit 0
+[ -f "$SENTINELLE" ] && exit 0
+
+# Lire le drapeau FIRSTBOOT sans exécuter tout le fichier.
+FIRSTBOOT="$(. "$CONF" 2>/dev/null; echo "${FIRSTBOOT:-non}")"
+[ "$FIRSTBOOT" = oui ] || exit 0
+
+mkdir -p "$(dirname "$SENTINELLE")"
+/usr/bin/tssr-postinstall --conf "$CONF"
+rc=$?
+date '+%Y-%m-%d %H:%M:%S' > "$SENTINELLE"
+exit "$rc"
