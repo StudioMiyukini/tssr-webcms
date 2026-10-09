@@ -1,5 +1,5 @@
 // PM2 — serveur de téléchargement des paquets + son tunnel dédié.
-//   pm2 start packaging/ecosystem.toolbox.cjs && pm2 save
+//   pm2 start packaging/ecosystem.toolbox.config.cjs ; pm2 save
 //
 // Deux process : le mini serveur (127.0.0.1:3491) et SON tunnel cloudflared
 // (toolbox-deb.miyukini.org + toolbox-rpm.miyukini.org). Tunnel DÉDIÉ, comme les
