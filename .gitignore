@@ -24,3 +24,4 @@ __pycache__/
 .smoke-bind9/
 .smoke-users/
 backups/
+repo/

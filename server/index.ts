@@ -144,6 +144,15 @@ async function createServer() {
     },
   }));
 
+  // Dépôt de paquets (apt/rpm) servi en statique depuis un dossier PERSISTANT, hors
+  // dist/client (que vite vide à chaque build). fallthrough:false → un fichier absent
+  // renvoie un vrai 404 (et non le HTML du SPA, ce qui casserait apt/dnf). REPO_DIR surchargeable.
+  const REPO_DIR = process.env.REPO_DIR || path.resolve(ROOT_DIR, 'repo');
+  if (fs.existsSync(REPO_DIR)) {
+    app.use('/apt', express.static(path.join(REPO_DIR, 'apt'), { maxAge: '5m', fallthrough: false }));
+    app.use('/rpm', express.static(path.join(REPO_DIR, 'rpm'), { maxAge: '5m', fallthrough: false }));
+  }
+
   // 404 JSON pour les routes API inconnues (avant le fallback SPA qui renvoie du HTML).
   app.use('/api', (_req, res) => { res.status(404).json({ error: 'Endpoint introuvable' }); });
 
