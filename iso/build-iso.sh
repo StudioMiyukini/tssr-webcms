@@ -25,8 +25,8 @@ esac
 BASEURL="${ISO_URL:-$DEF_URL}"
 
 for o in xorriso wget; do command -v "$o" >/dev/null 2>&1 || { echo "manque $o (apt install xorriso wget)"; exit 1; }; done
-ISOHDPFX=/usr/lib/ISOLINUX/isohdpfx.bin
-[ -f "$ISOHDPFX" ] || { echo "manque isohdpfx.bin (apt install isolinux)"; exit 1; }
+# Le MBR/isohybrid et les boot records sont réutilisés depuis l'ISO source
+# (-boot_image any replay) : pas besoin d'isolinux/isohdpfx.bin.
 
 mkdir -p "$OUT"
 WORK="$(mktemp -d)"; trap 'rm -rf "$WORK"' EXIT
