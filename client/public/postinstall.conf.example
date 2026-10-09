@@ -1,0 +1,39 @@
+# ============================================================================
+#  postinstall.conf — fichier de réponses de tssr-postinstall.sh
+#  -----------------------------------------------------------------------------
+#  Copie-le en /etc/tssr/postinstall.conf (ou passe-le via --conf), adapte les
+#  valeurs, puis lance :  sudo tssr-postinstall.sh
+#
+#  C'est un fichier de variables shell (clé="valeur"). Tout est optionnel : une
+#  valeur vide = étape ignorée. Oui/non en minuscules.
+# ============================================================================
+
+# ── Identité ──────────────────────────────────────────────────────────────────
+NOM_HOTE="srv-web-01"          # hostname unique (CRUCIAL après un clonage !)
+DOMAINE="lab.local"            # suffixe DNS (optionnel)
+TIMEZONE="Europe/Paris"
+LOCALE="fr_FR.UTF-8"
+
+# ── Réseau ───────────────────────────────────────────────────────────────────
+RESEAU="dhcp"                  # "dhcp" ou "static"
+# Si static, renseigne :
+IP=""                          # ex: 10.22.10.50/24
+GW=""                          # ex: 10.22.10.254
+DNS="1.1.1.1 8.8.8.8"
+IFACE=""                       # vide = auto-détection
+
+# ── Compte d'administration ──────────────────────────────────────────────────
+NEW_USER="admin"               # compte à créer (vide = aucun)
+ADMIN_SUDO="oui"               # l'ajouter au groupe sudo/wheel
+CLE_PUBLIQUE=""                # ex: "ssh-ed25519 AAAA... toi@poste"
+                               # (sans clé, le mot de passe SSH est CONSERVÉ : anti-lockout)
+
+# ── Sécurité ─────────────────────────────────────────────────────────────────
+SSH_PORT="22"                  # change-le (ex: 2222) si tu veux
+PORTS_OUVERTS=""               # ports TCP en plus à ouvrir, ex: "80 443"
+MAJ_NOW="oui"                  # appliquer les mises à jour tout de suite
+AUTO_UPDATES="oui"             # activer les mises à jour de sécurité automatiques
+SPA="non"                      # "oui" = installer le SPA fwknop (nécessite une clé)
+
+# ── Supervision ──────────────────────────────────────────────────────────────
+ZABBIX_SERVER=""               # IP du serveur Zabbix (vide = pas d'agent)

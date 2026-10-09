@@ -21,13 +21,13 @@ mkdir -p "$DST"
 
 shopt -s nullglob
 copies=()
-for f in "$SRC"/*.sh; do
+for f in "$SRC"/*.sh "$SRC"/*.conf.example; do
     cp "$f" "$DST/$(basename "$f")"
     copies+=("$(basename "$f")")
 done
 
 # Sommes de contrôle (noms de base), écrites dans les deux dossiers.
-( cd "$SRC" && sha256sum *.sh > SHA256SUMS )
+( cd "$SRC" && sha256sum *.sh *.conf.example > SHA256SUMS )
 cp "$SRC/SHA256SUMS" "$DST/SHA256SUMS"
 
 echo "Scripts publiés dans $DST : ${copies[*]}"
