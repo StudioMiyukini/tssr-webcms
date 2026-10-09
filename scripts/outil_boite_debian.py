@@ -111,6 +111,9 @@ CONTENU = '\n'.join([
                '<code>login.defs</code> (expiration)', '<code>pwquality.conf</code> en place'],
         ['17', '<strong>Check-list de conformité</strong> — coche les points du guide (MAJ, SSH, '
                'pare-feu, MAC, mots de passe…) → <strong>rapport</strong> noté', 'score produit'],
+        ['18', '<strong>Réseau intelligent + rôle</strong> — sonde le DHCP, sinon déduit '
+               'IP/passerelle/DNS (avec confirmation), puis applique un <strong>rôle</strong> '
+               '(web, bastion, sonde, <strong>routeur/NAT</strong>)', 'réseau OK + rôle traité'],
         ['P', 'Provisionner une VM — enchaîne paquets → IP → durcissement SSH → utilisateur → Zabbix',
               'mise en service terminée'],
     ]),

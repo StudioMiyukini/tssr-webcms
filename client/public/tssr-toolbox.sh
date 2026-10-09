@@ -75,6 +75,7 @@
 #    tssr.toolbox.hardening    (15) durcissement serveur (baseline du guide)
 #    tssr.toolbox.motdepasse   (16) politique de mots de passe (pwquality + login.defs)
 #    tssr.toolbox.checklist    (17) check-list de conformité (rapport)
+#    tssr.toolbox.netauto      (18) réseau intelligent (DHCP/fixe déduit) + rôle (dont routeur/NAT)
 #    tssr.toolbox.provision    (P)  provisionner une VM (mise en service guidée)
 #    tssr.toolbox.flux         le menu, le retour menu/quitter, la sortie
 #    tssr.toolbox.main         le point d'entrée
@@ -1314,6 +1315,172 @@ seq_checklist() {
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# @id tssr.toolbox.netauto
+# @do configurer_le_reseau_automatiquement_puis_appliquer_un_role
+# @role orchestration
+# @layer outil
+# @human Réseau intelligent : détecte le DHCP, sinon déduit IP/passerelle/DNS (avec confirmation), puis applique un rôle (dont routeur/NAT)
+# ─────────────────────────────────────────────────────────────────────────────
+
+# Écrit une config IP statique persistante (Debian interfaces / RHEL nmcli).
+__persist_static() {
+    local IF="$1" IPCIDR="$2" GW="$3" DNS="$4" d
+    if [ "$FAMILLE" = debian ]; then
+        cp /etc/network/interfaces "/etc/network/interfaces.bak-$(date +%s)" 2>/dev/null
+        { echo "source /etc/network/interfaces.d/*"; echo "auto lo"; echo "iface lo inet loopback";
+          echo "auto $IF"; echo "iface $IF inet static"; echo "    address $IPCIDR"; echo "    gateway $GW";
+          printf "    dns-nameservers"; for d in $DNS; do printf " %s" "$d"; done; echo; } > /etc/network/interfaces
+        { echo "# tssr"; for d in $DNS; do echo "nameserver $d"; done; } > /etc/resolv.conf
+        etape "Application du statique ($IPCIDR sur $IF)" bash -c "systemctl restart networking 2>/dev/null || { ifdown $IF; ifup $IF; }"
+    else
+        local con; con="$(nmcli -g NAME con show 2>/dev/null | head -1)"
+        etape "Application du statique via nmcli" bash -c "nmcli con mod \"$con\" ipv4.addresses $IPCIDR ipv4.gateway $GW ipv4.dns \"${DNS// /,}\" ipv4.method manual && nmcli con up \"$con\""
+    fi
+}
+
+__net_dhcp() {
+    local IF="$1"
+    if [ "$FAMILLE" = debian ]; then
+        cp /etc/network/interfaces "/etc/network/interfaces.bak-$(date +%s)" 2>/dev/null
+        { echo "source /etc/network/interfaces.d/*"; echo "auto lo"; echo "iface lo inet loopback"; echo "auto $IF"; echo "iface $IF inet dhcp"; } > /etc/network/interfaces
+        etape "Bascule en DHCP ($IF)" bash -c "systemctl restart networking 2>/dev/null || { ifdown $IF; ifup $IF; }"
+    else
+        local con; con="$(nmcli -g NAME con show 2>/dev/null | head -1)"
+        etape "Bascule en DHCP via nmcli" bash -c "nmcli con mod \"$con\" ipv4.method auto && nmcli con up \"$con\""
+    fi
+}
+
+# Moteur heuristique : déduit subnet / IP libre / passerelle / DNS, puis confirme.
+__net_static() {
+    local IF="$1" BASE PREFIX=24 GW="" IPLIBRE="" DNS1 n g
+    local curip; curip="$(ip -o -4 addr show "$IF" scope global 2>/dev/null | awk '{print $4}' | head -1)"
+    if [ -n "$curip" ]; then
+        BASE="$(echo "${curip%/*}" | cut -d. -f1-3)"; PREFIX="${curip#*/}"
+        info "Sous-réseau déduit de l'IP actuelle : $BASE.0/$PREFIX"
+    else
+        info "Écoute ARP pour déduire le sous-réseau (quelques secondes)…"
+        local seen=""
+        command -v tcpdump >/dev/null 2>&1 && seen="$(timeout 6 tcpdump -ni "$IF" -c 20 arp 2>/dev/null | grep -oE 'tell [0-9.]+' | awk '{print $2}' | sort | uniq -c | sort -rn | head -1 | awk '{print $2}')"
+        if [ -n "$seen" ]; then BASE="$(echo "$seen" | cut -d. -f1-3)"; info "Sous-réseau observé : $BASE.0/24"
+        else demander "Sous-réseau indéterminé — saisis-le (ex: 10.22.10)" BASE; fi
+    fi
+    # IP libre : DAD via arping si dispo, sinon proposition
+    if command -v arping >/dev/null 2>&1; then
+        for n in 50 60 70 80 90 100; do
+            if arping -D -c2 -I "$IF" "$BASE.$n" >/dev/null 2>&1; then IPLIBRE="$BASE.$n"; break; fi
+        done
+    fi
+    [ -z "$IPLIBRE" ] && demander "IP à utiliser" IPLIBRE "$BASE.50"
+    # Passerelle : IP temporaire puis test de sortie réelle sur des candidats
+    ip addr add "$IPLIBRE/$PREFIX" dev "$IF" 2>/dev/null; ip link set "$IF" up 2>/dev/null
+    for g in "$BASE.254" "$BASE.1" "$BASE.253" "$BASE.250"; do
+        ip route replace default via "$g" dev "$IF" 2>/dev/null
+        if ping -c1 -W2 "$g" >/dev/null 2>&1 && ping -c1 -W2 8.8.8.8 >/dev/null 2>&1; then GW="$g"; break; fi
+    done
+    # DNS : la passerelle si elle résout, sinon public
+    if [ -n "$GW" ] && command -v dig >/dev/null 2>&1 && dig +time=2 +tries=1 "@$GW" google.fr >/dev/null 2>&1; then DNS1="$GW"; else DNS1="1.1.1.1"; fi
+    echo
+    info "${G}Proposition :${RAZ} IP=${CYAN}$IPLIBRE/$PREFIX${RAZ}  passerelle=${CYAN}${GW:-<non trouvée>}${RAZ}  DNS=${CYAN}$DNS1 8.8.8.8${RAZ}"
+    [ -z "$GW" ] && avert "Passerelle non trouvée automatiquement — vérifie/saisis-la."
+    if ! confirmer "Appliquer cette configuration fixe ?" o; then
+        ip addr del "$IPLIBRE/$PREFIX" dev "$IF" 2>/dev/null; info "Annulé."; return 1
+    fi
+    [ -z "$GW" ] && demander "Passerelle" GW "$BASE.254"
+    ip addr del "$IPLIBRE/$PREFIX" dev "$IF" 2>/dev/null   # on nettoie le provisoire, __persist_static réécrit proprement
+    __persist_static "$IF" "$IPLIBRE/$PREFIX" "$GW" "$DNS1 8.8.8.8"
+}
+
+__net_tests() {
+    local GW DNS1
+    GW="$(ip -4 route show default 2>/dev/null | awk '/default/{print $3; exit}')"
+    DNS1="$(awk '/^nameserver/{print $2; exit}' /etc/resolv.conf 2>/dev/null)"
+    _t() { ping -c1 -W1 "$1" >/dev/null 2>&1 && echo "${VERT}OK${RAZ}" || echo "${ROUGE}KO${RAZ}"; }
+    [ -n "$GW" ]   && info "Ping passerelle ($GW) : $(_t "$GW")"
+    [ -n "$DNS1" ] && info "Ping DNS ($DNS1) : $(_t "$DNS1")"
+    info "Ping 8.8.8.8 : $(_t 8.8.8.8)"
+    ping -c1 -W1 google.fr >/dev/null 2>&1 && info "Résolution DNS (google.fr) : ${VERT}OK${RAZ}" || info "Résolution DNS : ${ROUGE}KO${RAZ}"
+}
+
+# Rôle routeur/pare-feu : ip_forward + NAT (masquerade) LAN -> WAN.
+__role_routeur() {
+    SEQ_COURANTE="Rôle routeur/pare-feu (NAT)"
+    titre "Rôle routeur / pare-feu — NAT"
+    detect_distro
+    info "Interfaces : $(ip -o link | awk -F': ' '$2!="lo"{print $2}' | tr '\n' ' ')"
+    local WAN LAN
+    demander "Interface WAN (vers Internet)" WAN
+    demander "Interface LAN (réseau interne)" LAN
+    [ -n "$WAN" ] && [ -n "$LAN" ] || { echouer "WAN et LAN requis."; return 1; }
+    echo 'net.ipv4.ip_forward=1' > /etc/sysctl.d/99-tssr-router.conf
+    sysctl -w net.ipv4.ip_forward=1 >> "$LOG" 2>&1
+    pkg_install nftables >> "$LOG" 2>&1
+    cat > /etc/nftables.conf <<EOF
+#!/usr/sbin/nft -f
+flush ruleset
+table inet filtre {
+  chain forward { type filter hook forward priority 0; policy drop;
+    ct state established,related accept
+    iifname "$LAN" oifname "$WAN" accept
+  }
+}
+table ip nat {
+  chain postrouting { type nat hook postrouting priority 100;
+    oifname "$WAN" masquerade
+  }
+}
+EOF
+    etape "Chargement des règles NAT" nft -f /etc/nftables.conf || return 1
+    etape "Activation de nftables" systemctl enable --now nftables || return 1
+    gate "ip_forward actif" bash -c '[ "$(cat /proc/sys/net/ipv4/ip_forward)" = 1 ]' || return 1
+    info "NAT $LAN → $WAN en place. Test depuis un client du LAN : ping 8.8.8.8."
+}
+
+__role_menu() {
+    echo; titre "Rôle de cette VM"
+    echo "   ${GRAS}1${RAZ}) Serveur web nginx   ${GRAS}2${RAZ}) Serveur web Apache   ${GRAS}3${RAZ}) Bastion   ${GRAS}4${RAZ}) Sonde Zabbix   ${GRAS}5${RAZ}) Routeur/pare-feu (NAT)   ${GRAS}0${RAZ}) Aucun"
+    local r; read -rp "  Rôle : " r
+    case "$r" in
+        1) seq_nginx ;; 2) seq_apache ;; 3) seq_bastion ;; 4) seq_zabbix ;; 5) __role_routeur ;;
+        *) info "Aucun rôle appliqué." ;;
+    esac
+}
+
+seq_netauto() {
+    SEQ_COURANTE="Réseau intelligent + rôle"
+    titre "18) Réseau intelligent (auto + confirmation) + rôle"
+    besoin_root || return 1
+    detect_distro
+    # Outils de détection (best-effort).
+    for o in nmap tcpdump arping; do command -v "$o" >/dev/null 2>&1 || pkg_install "$o" >> "$LOG" 2>&1; done
+
+    local IFACE
+    IFACE="$(ip -o -4 route show to default 2>/dev/null | awk '{print $5; exit}')"
+    [ -z "$IFACE" ] && IFACE="$(ip -o link 2>/dev/null | awk -F': ' '$2!="lo"{print $2; exit}')"
+    demander "Interface à configurer" IFACE "$IFACE"
+
+    info "Sonde DHCP sur $IFACE…"
+    local DHCP="non"
+    if command -v nmap >/dev/null 2>&1; then
+        nmap --script broadcast-dhcp-discover -e "$IFACE" 2>/dev/null | grep -qiE "Server Identifier|DHCP Message Type" && DHCP="oui"
+    fi
+    if [ "$DHCP" = oui ]; then
+        ok "Un serveur DHCP répond."
+        if confirmer "Utiliser le DHCP ?" o; then __net_dhcp "$IFACE"; else __net_static "$IFACE"; fi
+    else
+        avert "Aucun DHCP détecté → configuration fixe déduite."
+        __net_static "$IFACE" || { info "Réseau non appliqué — retour au menu."; return 0; }
+    fi
+
+    sleep 2
+    titre "Tests réseau"
+    __net_tests
+
+    __role_menu
+    ok "GATE OK — réseau configuré, rôle traité (voir les gates ci-dessus)."
+}
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # @id tssr.toolbox.flux
 # @do orchestrer_le_menu_le_retour_et_la_sortie
 # @role orchestration
@@ -1348,7 +1515,7 @@ menu() {
         echo "   Journal de session : $LOG"
         echo
         echo "   ${G}Diagnostic & système${R}"
-        echo "    ${GRAS}1${RAZ}) Statut & tests rapides      ${GRAS}2${RAZ}) Paquets de base      ${GRAS}3${RAZ}) Config IP (statique)"
+        echo "    ${GRAS}1${RAZ}) Statut & tests rapides   ${GRAS}2${RAZ}) Paquets de base   ${GRAS}3${RAZ}) Config IP (statique)   ${GRAS}18${RAZ}) Réseau intelligent + rôle"
         echo
         echo "   ${G}Sécurité${R}"
         echo "    ${GRAS}4${RAZ}) SSH — durcissement & SPA furtif    ${GRAS}13${RAZ}) Pare-feu + fail2ban    ${GRAS}14${RAZ}) Audit sécurité"
@@ -1382,6 +1549,7 @@ menu() {
             15) seq_hardening ;;
             16) seq_password  ;;
             17) seq_checklist ;;
+            18) seq_netauto   ;;
             p)  seq_provision ;;
             0|q|quitter) quitter ;;
             *) avert "Choix invalide : $choix"; sleep 1; continue ;;
