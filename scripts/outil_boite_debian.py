@@ -18,9 +18,10 @@ TITRE = 'Boîte à outils Debian — administration TSSR'
 URL = 'https://tssr.miyukini.com/tssr-toolbox.sh'
 
 EXTRAIT = ('Un script bash interactif et pédagogique pour administrer une Debian de TP : menu, '
-           'séquences (statut réseau, paquets, IP, SSH, utilisateur, serveurs web Apache/nginx, '
-           'bastion Guacamole, GLPI, sauvegarde), chacune avec une gate de validation et un journal '
-           'des erreurs. Récupérable en une ligne depuis la VM.')
+           'séquences (statut, paquets, IP, SSH — durcissement &amp; SPA furtif fwknop, utilisateur, '
+           'web Apache/nginx, bastion, GLPI, sauvegarde, supervision Zabbix, scellage pour clonage, '
+           'pare-feu/fail2ban, audit sécurité, provisionnement), chacune avec une gate de validation '
+           'et un journal des erreurs. Récupérable en une ligne depuis la VM.')
 
 CONTENU = '\n'.join([
     hero('Outil · Linux · Debian', TITRE,
@@ -84,8 +85,9 @@ CONTENU = '\n'.join([
         ['2', 'Paquets de base — curl, git, vim, htop, tree, net-tools, ufw, sudo', 'chaque outil répond'],
         ['3', 'Config IP statique — réécrit <code>/etc/network/interfaces</code>, redémarre le réseau '
               '(sauvegarde l’ancienne conf)', 'l’IP est active sur l’interface'],
-        ['4', 'Durcissement SSH — port personnalisé (ex. 2222), <code>PermitRootLogin no</code>, '
-              '<code>sshd -t</code> avant redémarrage', 'SSH écoute sur le nouveau port'],
+        ['4', 'SSH — sous-menu : <strong>durcissement</strong> (port personnalisé, '
+              '<code>PermitRootLogin no</code>, <code>sshd -t</code>) <strong>ou SPA furtif (fwknop)</strong> '
+              '— voir plus bas', 'SSH écoute / SPA posé'],
         ['5', 'Créer un utilisateur — mot de passe lab <code>Azerty77</code> ou aléatoire, option '
               'sudo, option invite colorée (statut ✔/✘ + chemin absolu)', 'le compte existe'],
         ['6', 'Serveur web <strong>Apache</strong> + MariaDB + PHP — base locale ou distante, '
@@ -95,7 +97,38 @@ CONTENU = '\n'.join([
         ['9', 'Serveur <strong>GLPI</strong> — LAMP + extensions + base dédiée + dépôt', '<code>/glpi</code> répond'],
         ['10', 'Sauvegarde — <code>/etc</code> + <code>/home</code> dans '
                '<code>/var/backups/backup_AAAA-MM-JJ.tar.gz</code>', 'archive présente et intègre'],
+        ['11', 'Brancher à <strong>Zabbix</strong> — dépôt + agent 2, pointage serveur, rappel '
+               'hôte + template', 'agent actif'],
+        ['12', 'Préparer un modèle (<strong>sceller pour clonage</strong>) — service firstboot-ssh '
+               '(régénère clés + identité au 1<sup>er</sup> boot de chaque clone)', 'service activé'],
+        ['13', 'Pare-feu de base + <strong>fail2ban</strong> — nftables (ports choisis, SSH forcé '
+               'anti-lockout, détecte un conflit SPA)', 'nft chargé + fail2ban actif'],
+        ['14', 'Audit sécurité (lecture seule) — ports, conf SSH, comptes sudo, pare-feu, MAJ en '
+               'attente → <strong>rapport markdown</strong>', 'rapport produit'],
+        ['P', 'Provisionner une VM — enchaîne paquets → IP → durcissement SSH → utilisateur → Zabbix',
+              'mise en service terminée'],
     ]),
+
+    '<h2>Le SPA fwknop (SSH furtif) dans la partie SSH</h2>',
+    '<p>La séquence <strong>4) SSH</strong> est un sous-menu : le durcissement classique, <strong>ou</strong> '
+    'l’installation du <strong>SPA — Single Packet Authorization (fwknop)</strong>. Avec le SPA, le port 22 '
+    'reste <strong>fermé par défaut</strong> (invisible au scan) et ne s’ouvre que quelques secondes, pour '
+    'l’IP qui envoie un <strong>paquet unique signé</strong>. Aucun bastion : tout est local à l’hôte. '
+    'L’installeur dédié est <a href="https://tssr.miyukini.com/spa-install.sh">spa-install.sh</a>, et côté '
+    'poste opérateur le wrapper <a href="https://tssr.miyukini.com/spa-connect.sh">spa-connect.sh</a> '
+    'enchaîne « knock + ssh » en une commande.</p>',
+
+    note('blue', '🔐 Le durcisseur SSH de la pile',
+         'La pile SPA ne se contente pas de cacher le port — elle pose aussi un <strong>durcissement '
+         'SSH</strong>, la vraie barrière derrière le filtrage. Il bascule SSH en <strong>authentification '
+         'par clé uniquement</strong> (<code>PasswordAuthentication no</code>), <strong>interdit le compte '
+         'root</strong> (<code>PermitRootLogin no</code>) et coupe l’authentification interactive par mot de '
+         'passe, le tout dans un drop-in <code>/etc/ssh/sshd_config.d/</code> validé par <code>sshd -t</code> '
+         '<em>avant</em> rechargement. <strong>Garde-fou anti-lockout</strong> : si <strong>aucune clé '
+         'publique</strong> n’est présente, le durcissement est <strong>refusé</strong> (sinon = enfermement '
+         'garanti) ; et l’IP de management reste autorisée en permanence le temps de valider un premier '
+         'knock. On retrouve ce même durcissement, en version interactive, dans l’option <strong>a)</strong> '
+         'du sous-menu SSH.'),
 
     note('gray', '🧭 Les règles communes à toutes les séquences',
          'Un <strong>menu principal</strong> (avec une entrée <em>Quitter</em>) ; après chaque '
